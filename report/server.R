@@ -21,11 +21,26 @@ shinyServer(function(input, output, session) {
                 clearShapes() %>%
                 addPolygons() %>% 
                 fitBounds(b[["xmin"]], b[["ymin"]], b[["xmax"]], b[["ymax"]])
+            
+            leafletProxy("side_map", data = geom) %>%
+                clearShapes() %>%
+                addPolygons() %>% 
+                fitBounds(b[["xmin"]], b[["ymin"]], b[["xmax"]], b[["ymax"]])
         }
         
     })
     
     output$report_map <- renderLeaflet({
+        
+        leaflet(
+            options = leafletOptions(
+                zoomControl = F,
+                attributionControl = F)) %>%
+            addProviderTiles(providers$Esri.OceanBasemap) %>% 
+            setView(-93.4, 37.4, 4)
+    })
+    
+    output$side_map <- renderLeaflet({
         
         leaflet(
             options = leafletOptions(
@@ -50,5 +65,6 @@ shinyServer(function(input, output, session) {
             img(src=img_tech))
     })
     
+    output$txtTitle <- renderText({ input$txtTitle })
     
 })
