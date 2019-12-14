@@ -17,15 +17,15 @@ shinyServer(function(input, output, session) {
             #geom <- read_sf("data/geom.geojson")
             b <- st_bbox(geom)
             
-            leafletProxy("report_map", data = geom) %>%
+            leafletProxy("report_map") %>%
                 clearShapes() %>%
-                addPolygons() %>% 
+                addPolygons(data = geom) %>% 
                 fitBounds(b[["xmin"]], b[["ymin"]], b[["xmax"]], b[["ymax"]])
             
-            leafletProxy("side_map", data = geom) %>%
-                clearShapes() %>%
-                addPolygons() %>% 
-                fitBounds(b[["xmin"]], b[["ymin"]], b[["xmax"]], b[["ymax"]])
+            # leafletProxy("side_map") %>%
+            #     clearShapes() %>%
+            #     addPolygons(data = geom) %>% 
+            #     fitBounds(b[["xmin"]], b[["ymin"]], b[["xmax"]], b[["ymax"]])
         }
         
     })
@@ -57,7 +57,6 @@ shinyServer(function(input, output, session) {
         img_tech <- tech %>% 
             filter(tech2 == input$selTech) %>% 
             pull(gif)
-        
         
         tagList(
             h4("Technology"),

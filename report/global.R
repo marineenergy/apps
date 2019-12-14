@@ -11,6 +11,14 @@ library(tidyr)
 library(readr)
 library(glue)
 
+# TODO: 
+# - Report as Rmd; download as html, docx, pdf, pptx
+# - Get report_map to work
+# - save to [session-id]/config.yml (with saved=T/F), study.geojson,...
+#   - session-id: glue("{date::now()}_{tools::md5sum(files)}")
+#   - bookmark state, save url, restore
+#   - remove old saved=F
+
 # setwd(here("draw-site"))
 
 # tech_choices: csv to list; for selTech
