@@ -27,7 +27,7 @@ dashboardPage(
                         id = 1,
                         title = tagList(icon("gear"), "Configuration"),
                         color = "danger",
-                        collapsed = F,
+                        collapsed = FALSE,
                         h4("Location"),
                         leafletOutput("report_map", width=200, height=200),
                         uiOutput("tech_ui")),

@@ -26,6 +26,7 @@ shinyServer(function(input, output, session) {
             #alert("Sorry, only polygons are currently supported.")
             showModal(modalDialog ("Sorry, only polygons are currently supported."))
             req(NULL)
+
         }
         message(glue("st_geometry_type(crud()$finished): {st_geometry_type(crud()$finished)}"))
         
@@ -130,7 +131,6 @@ shinyServer(function(input, output, session) {
         img_tech <- tech %>% 
             filter(tech2 == input$selTech) %>% 
             pull(gif)
-        
         
         tagList(
             h4("Technology"),
