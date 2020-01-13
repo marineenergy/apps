@@ -11,14 +11,14 @@ dashboardPage(
             "selEnv", "Select Environment", c("Tidal", "Riverine", "Ocean")),
         selectInput(
             "selTech", "Select Technology", tech_choices),
-        leafletOutput("side_map", width=200, height=200),
-        actionButton('save', 'Save Site')),
+        leafletOutput("side_map", width=200, height=200)),
+        #actionButton('save', 'Save Site')),
 
     dashboardBody(
         tabsetPanel(
             tabPanel(
                 "Draw Site",
-                editModUI("map")),
+                editModUI("mapEdit")),
             tabPanel(
                 "Report",
                 h2(verbatimTextOutput("txtTitle")),
@@ -27,7 +27,7 @@ dashboardPage(
                         id = 1,
                         title = tagList(icon("gear"), "Configuration"),
                         color = "danger",
-                        collapsed = TRUE,
+                        collapsed = F,
                         h4("Location"),
                         leafletOutput("report_map", width=200, height=200),
                         uiOutput("tech_ui")),

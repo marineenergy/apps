@@ -1,0 +1,78 @@
+---
+output: html_document
+params:  
+  data:  
+    input: file  
+    label: "Input config.yml:"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = T)
+```
+
+```{r}
+library(yaml)
+
+config <- read_yaml(params$data)
+print(config)
+```
+
+# `r title` 
+
+## Configuration
+
+### Location
+
+```{r}
+# TODO: read geom from json
+
+leaflet(
+  options = leafletOptions(
+    zoomControl = F,
+    attributionControl = F)) %>%
+  addProviderTiles(providers$Esri.OceanBasemap) %>%
+  addPolygons(data = geom)
+```
+
+### Technology
+
+```{r}
+# tech_choices: csv to list; for selTech
+tech <- read_csv("data/tech_choices.csv")
+d <- tech %>% 
+  group_by(tech1) %>% 
+  summarize(
+    tech2 = paste(sort(tech2), collapse = "|"))
+tech_choices <- pull(d, tech2) %>% strsplit("\\|")
+names(tech_choices) <- pull(d, tech1)
+
+tech1 <- tech %>% 
+    filter(tech2 == input$selTech) %>% 
+    pull(tech1)
+img_tech <- tech %>% 
+    filter(tech2 == input$selTech) %>% 
+    pull(gif)
+
+
+tagList(
+    h4("Technology"),
+    h5(glue("{tech1}: {input$selTech} in {input$selEnv} environment")),
+    img(src=img_tech))
+```
+
+                        leafletOutput("report_map", width=200, height=200),
+                        uiOutput("tech_ui")),
+                    accordionItem(
+                        id = 2,
+                        title = tagList(
+                            icon("tint"), "Physical & Oceanographic"),
+                        color = "warning",
+                        collapsed = TRUE,
+                        HTML(renderMarkdown(here("report/data/text_01.md")))),
+                    accordionItem(
+                        id = 2,
+                        title = tagList(
+                            icon("leaf"), "Habitats & Species"),
+                        color = "warning",
+                        collapsed = TRUE,
+                        HTML(renderMarkdown(here("report/data/text_01.md"))))

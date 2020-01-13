@@ -3,6 +3,6 @@
 "name": "geom",
 "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
 "features": [
-{ "type": "Feature", "properties": { "X_leaflet_id": 138, "feature_type": "rectangle" }, "geometry": { "type": "Polygon", "coordinates": [ [ [ -77.658234, 35.483486 ], [ -77.658234, 38.565562 ], [ -73.733094, 38.565562 ], [ -73.733094, 35.483486 ], [ -77.658234, 35.483486 ] ] ] } }
+{ "type": "Feature", "properties": { "X_leaflet_id": 397, "feature_type": "polygon" }, "geometry": { "type": "Polygon", "coordinates": [ [ [ -67.068186, 44.994159 ], [ -67.185697, 44.947075 ], [ -67.21651, 44.880584 ], [ -67.158342, 44.788707 ], [ -67.043853, 44.81789 ], [ -66.910146, 44.862792 ], [ -67.068186, 44.994159 ] ] ] } }
 ]
 }

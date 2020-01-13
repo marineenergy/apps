@@ -1,6 +1,7 @@
 library(shiny)
 library(shinydashboard)
 library(shinydashboardPlus)
+library(shinyjs)
 library(markdown)
 library(leaflet)
 library(mapedit)
@@ -10,6 +11,11 @@ library(dplyr)
 library(tidyr)
 library(readr)
 library(glue)
+library(yaml)
+library(geojsonsf)
+
+#library(geosphere)
+#data(merc)
 
 # setwd(here("draw-site"))
 
@@ -22,7 +28,7 @@ d <- tech %>%
 tech_choices <- pull(d, tech2) %>% strsplit("\\|")
 names(tech_choices) <- pull(d, tech1)
 
-map <- leaflet() %>%
-  addProviderTiles(providers$Esri.OceanBasemap) %>% 
+m <- leaflet() %>%
+  addProviderTiles(providers$Esri.OceanBasemap) %>%
   setView(-93.4, 37.4, 4)
 
