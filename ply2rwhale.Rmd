@@ -1,0 +1,91 @@
+---
+title: "ply2rwhale"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = T, warning = F, message = F, code_folding = T)
+```
+
+## Download right whale dataset
+
+from MarineCadastre.
+
+```{r cars}
+library(here)
+library(fs)
+library(utils)
+
+url <- "http://seamap.env.duke.edu/models/Duke-EC-GOM-2015/results/EC_North_Atlantic_right_whale.zip"
+
+dir_data  <- here("data")
+zip       <- file.path(dir_data, basename(url))
+dir_unzip <- path(dir_data, path_ext_remove(basename(zip)))
+
+if (!dir_exists(dir_unzip)){
+  dir_create(dir_unzip)
+  download.file(url, zip)
+  unzip(zip, exdir = dir_unzip)
+  file_delete(zip)
+}
+```
+
+### Map of right whale data
+
+```{r}
+library(raster)
+library(leaflet)
+
+rwhale_img <- "data/EC_North_Atlantic_right_whale/EC_North_Atlantic_right_whale_month05_abundance.img"
+
+rwhale <- raster(rwhale_img)
+
+col_pal <- colorNumeric(
+  "Spectral", values(rwhale), reverse = T, na.color = "transparent")
+
+leaflet(
+  options = leafletOptions(attributionControl = F)) %>%
+  addProviderTiles(providers$Esri.OceanBasemap) %>%
+  addRasterImage(
+    rwhale, colors = col_pal, opacity = 0.7) %>% 
+  addLegend(
+    pal = col_pal, values = values(rwhale), 
+    title = "right whales")
+```
+
+
+## Map of polygon
+
+```{r pressure, echo=FALSE}
+library(sf)
+
+ply_geo <- here("data/test_poly.geojson")
+
+ply <- read_sf(ply_geo)
+
+leaflet(
+  options = leafletOptions(attributionControl = F)) %>%
+  addProviderTiles(providers$Esri.OceanBasemap) %>%
+  addRasterImage(
+    rwhale, colors = col_pal, opacity = 0.7) %>% 
+  addLegend(
+    pal = col_pal, values = values(rwhale), 
+    title = "right whales") %>%
+    addPolygons(
+      data = ply, 
+      color = "pink", fillColor = "pink")
+```
+
+## Extraction of data
+
+```{r}
+vals <- extract(rwhale, ply)[[1]]
+
+hist(vals)
+```
+

@@ -46,6 +46,9 @@ shinyServer(function(input, output, session) {
         # 
         # write_yaml()
         
+        #browser()
+        #st_geometry(crud()$finished) %>% write_sf(here("data/test_poly.geojson"))
+        
         leaflet(
             options = leafletOptions(
                 zoomControl = F,

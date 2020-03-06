@@ -1,0 +1,60 @@
+---
+title: "tethys_scrape"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Simple one page result
+
+```{r cars}
+library(rvest)
+library(DT)
+
+url <- "https://tethys.pnnl.gov/knowledge-base-marine-energy?f[0]=receptor:496&f[1]=technology:428"
+
+d <- read_html(url) %>% 
+  html_table() %>% 
+  .[[1]]
+
+datatable(d)
+```
+
+## multi-page result
+
+```{r}
+url <- "https://tethys.pnnl.gov/knowledge-base-marine-energy?f[0]=technology:428"
+
+
+# TODO: 
+read_html(url) %>% 
+  html_nodes(":contains(pager)")
+
+get_tethys_refs <- function(url){
+  read_html(url) %>% 
+    html_table() %>% 
+    .[[1]]
+}
+
+# https://tethys.pnnl.gov/knowledge-base-marine-energy?f[0]=technology:428&search=&page=3
+
+base_url <- "https://tethys.pnnl.gov/knowledge-base-marine-energy"
+tags <- c("receptor:496", "technology:428")
+
+
+while (!last_page){
+  tbl_pg <- get_tethys_refs()
+  tbl <- bind_rows(tbl, tbl_pg)
+  ck_last_page()
+}
+
+
+datatable(d)
+
+
+
+
+```
+
