@@ -1,15 +1,22 @@
 ---
 title: "tethys_scrape"
-output: html_document
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    code_folding: hide
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = T, warning = F, message = F)
 ```
 
 ## Simple one page result
 
-```{r cars}
+```{r}
 library(rvest)
 library(DT)
 
@@ -22,9 +29,87 @@ d <- read_html(url) %>%
 datatable(d)
 ```
 
-## multi-page result
+## get tags
 
 ```{r}
+library(rvest)
+library(DT)
+library(zeallot)
+library(stringr)
+library(dplyr)
+library(tibble)
+library(purrr)
+
+# helper functions ----
+get_facet_items <- function(facet_name){
+  # facet_name = "technology"
+  item_nodes <- facet_nodes[[which(facet_names == facet_name)]] %>% 
+    html_nodes(".facet-item")
+  
+  map_df(item_nodes, get_facet_item)
+  
+}
+
+get_facet_item <- function(item_node){
+  # item_node <- item_nodes[[1]]
+  
+  # keys <- c("category" = 1, "id" = 2)
+  # stopifnot(key %in% names(keys))
+  
+  label <- item_node  %>%
+    html_node("a span.facet-item__value") %>% 
+    html_text()
+
+  keys <- item_node  %>%
+    html_node("a") %>%
+    html_attr("data-drupal-facet-item-id") %>% 
+    str_split("-") %>% 
+    .[[1]]
+  
+  tibble(facet = keys[1], item_id = keys[2], item_label = label)
+}
+
+# variables ----
+url <- "https://tethys.pnnl.gov/knowledge-base-marine-energy"
+
+# scrape html ----
+html <- read_html(url)
+
+facet_nodes <- html_nodes(html, ".js-facets-checkbox-links")
+facet_names <- html_attr(facet_nodes, "data-drupal-facet-alias")
+
+# explore
+#html_structure(facet_nodes[[1]])
+#html_text(facet_nodes[[1]]) %>% cat()
+#as_list(facet_nodes[[1]])
+
+d <- tibble(facet = facet_names) %>% 
+  group_by(facet) %>%
+  do(get_facet_items(.$facet)) %>% 
+  ungroup()
+
+datatable(d)
+```
+
+## table of receptors x stressors
+
+```{r}
+receptors <- filter(d, facet == "receptor") %>% pull(item_label)
+stressors <- filter(d, facet == "stressor") %>% pull(item_label)
+
+s_r <- matrix(
+  NA, 
+  nrow = length(receptors), ncol = length(stressors),
+  dimnames = list(receptors, stressors)) %>% 
+  as_tibble(rownames = "receptor")
+
+datatable(s_r)
+```
+
+
+## multi-page result
+
+```{r, eval=F}
 url <- "https://tethys.pnnl.gov/knowledge-base-marine-energy?f[0]=technology:428"
 
 
@@ -52,9 +137,5 @@ while (!last_page){
 
 
 datatable(d)
-
-
-
-
 ```
 
