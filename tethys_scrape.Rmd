@@ -107,9 +107,13 @@ datatable(d)
 # 
 # datatable(s_r_m)
 
+library(readr)
+library(here)
 library(tidyr)
 library(glue)
 library(htmltools)
+
+s_r_csv <- here("data/tethys_stressor_receptor.csv")
 
 receptor <- 
   filter(d, facet == "receptor") %>% pull(item_label) %>% unique() %>% sort()
@@ -118,22 +122,56 @@ stressor <-
 
 tethys_pfx <- "https://tethys.pnnl.gov/knowledge-base-marine-energy"
 
-s_r <- expand_grid(receptor, stressor) %>% 
-  left_join(
-    d %>% 
-      filter(facet == "receptor") %>% 
-      select(receptor = item_label, receptor_id = item_id),
-    by = "receptor") %>% 
-  left_join(
-    d %>% 
-      filter(facet == "stressor") %>% 
-      select(stressor = item_label, stressor_id = item_id),
-    by = "stressor") %>% 
-  mutate(
-    link = glue(
-      "<a href='{tethys_pfx}?f[0]=receptor:{receptor_id}&f[1]=stressor:{stressor_id}'>{receptor} x {stressor}</a>"))
+
+get_num_refs <- function(url){
+  # url = "https://tethys.pnnl.gov/knowledge-base-marine-energy?f[0]=receptor:280&f[1]=stressor:355"
+  
+  #if (url == "https://tethys.pnnl.gov/knowledge-base-marine-energy?f[0]=receptor:284&f[1]=stressor:531") browser()
+  message(glue("url: {url}"))
+  
+  tbls <- read_html(url) %>% 
+    html_table() 
+  
+  if (length(tbls) == 0){
+    num_refs <- 0 %>% as.integer()
+  } else{
+    num_refs <- nrow(tbls[[1]])
+  }
+
+  num_refs
+}
+
+  
+if (!file.exists(s_r_csv)){
+  
+  s_r <- expand_grid(receptor, stressor) %>% 
+    left_join(
+      d %>% 
+        filter(facet == "receptor") %>% 
+        select(receptor = item_label, receptor_id = item_id),
+      by = "receptor") %>% 
+    left_join(
+      d %>% 
+        filter(facet == "stressor") %>% 
+        select(stressor = item_label, stressor_id = item_id),
+      by = "stressor") %>% 
+    mutate(
+      url      = glue("{tethys_pfx}?f[0]=receptor:{receptor_id}&f[1]=stressor:{stressor_id}"),
+      num_refs = map_int(url, get_num_refs),
+      link     = glue(
+        "<a href='{url}'>{receptor} x {stressor} ({num_refs})</a>"))
+  
+  write_csv(s_r, s_r_csv)
+}
+s_r <- read_csv(s_r_csv)
 
 s_r %>% 
+  mutate(
+    link     = 
+      if_else(
+        num_refs > 0,
+        glue("<a href='{url}'>{num_refs}</a>"),
+        "0")) %>% 
   select(stressor, receptor, link) %>% 
   pivot_wider(names_from = "stressor", values_from = link) %>% 
   datatable(escape = F)
