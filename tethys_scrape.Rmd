@@ -94,22 +94,55 @@ datatable(d)
 ## table of receptors x stressors
 
 ```{r}
-receptors <- filter(d, facet == "receptor") %>% pull(item_label)
-stressors <- filter(d, facet == "stressor") %>% pull(item_label)
+# receptor <- 
+#   filter(d, facet == "receptor") %>% pull(item_label)
+# stressor <- 
+#   filter(d, facet == "stressor") %>% pull(item_label)
+# 
+# s_r_m <- matrix(
+#   NA, 
+#   nrow = length(receptor), ncol = length(stressor),
+#   dimnames = list(receptor, stressor)) %>% 
+#   as_tibble(rownames = "receptor")
+# 
+# datatable(s_r_m)
 
-s_r <- matrix(
-  NA, 
-  nrow = length(receptors), ncol = length(stressors),
-  dimnames = list(receptors, stressors)) %>% 
-  as_tibble(rownames = "receptor")
+library(tidyr)
+library(glue)
+library(htmltools)
 
-datatable(s_r)
+receptor <- 
+  filter(d, facet == "receptor") %>% pull(item_label) %>% unique() %>% sort()
+stressor <- 
+  filter(d, facet == "stressor") %>% pull(item_label)
+
+tethys_pfx <- "https://tethys.pnnl.gov/knowledge-base-marine-energy"
+
+s_r <- expand_grid(receptor, stressor) %>% 
+  left_join(
+    d %>% 
+      filter(facet == "receptor") %>% 
+      select(receptor = item_label, receptor_id = item_id),
+    by = "receptor") %>% 
+  left_join(
+    d %>% 
+      filter(facet == "stressor") %>% 
+      select(stressor = item_label, stressor_id = item_id),
+    by = "stressor") %>% 
+  mutate(
+    link = glue(
+      "<a href='{tethys_pfx}?f[0]=receptor:{receptor_id}&f[1]=stressor:{stressor_id}'>{receptor} x {stressor}</a>"))
+
+s_r %>% 
+  select(stressor, receptor, link) %>% 
+  pivot_wider(names_from = "stressor", values_from = link) %>% 
+  datatable(escape = F)
 ```
 
 
+```{r, eval=F}
 ## multi-page result
 
-```{r, eval=F}
 url <- "https://tethys.pnnl.gov/knowledge-base-marine-energy?f[0]=technology:428"
 
 
@@ -138,4 +171,6 @@ while (!last_page){
 
 datatable(d)
 ```
+
+
 
