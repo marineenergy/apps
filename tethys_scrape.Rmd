@@ -170,7 +170,7 @@ s_r %>%
     link     = 
       if_else(
         num_refs > 0,
-        glue("<a href='{url}'>{num_refs}</a>"),
+        glue("<a href='{url}'>{if_else(num_refs == 50, '50+', as.character(num_refs))}</a>"),
         "0")) %>% 
   select(stressor, receptor, link) %>% 
   pivot_wider(names_from = "stressor", values_from = link) %>% 
