@@ -13,11 +13,13 @@ library(readr)
 library(glue)
 library(yaml)
 library(geojsonsf)
+library(rhandsontable)
 
 #library(geosphere)
 #data(merc)
 
 # TODO: 
+# - handle login (see )
 # - Report as Rmd; download as html, docx, pdf, pptx
 # - Get report_map to work
 # - save to [session-id]/config.yml (with saved=T/F), study.geojson,...
@@ -40,3 +42,15 @@ m <- leaflet() %>%
   addProviderTiles(providers$Esri.OceanBasemap) %>%
   setView(-93.4, 37.4, 4)
 
+s_r_csv       <- here("data/tethys_stressor_receptor.csv")
+# TODO: make per user session
+s_r_ckbox_csv <- here("data/shiny_stressor_receptor_ckbox.csv")
+
+if (!file.exists(s_r_ckbox_csv)){
+  read_csv(s_r_csv) %>% 
+    mutate(
+      ckbox = F) %>% 
+    select(stressor, receptor, ckbox) %>% 
+    pivot_wider(names_from = "stressor", values_from = ckbox) %>% 
+    write_csv(s_r_ckbox_csv) 
+}

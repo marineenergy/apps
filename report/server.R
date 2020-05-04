@@ -143,4 +143,25 @@ shinyServer(function(input, output, session) {
     
     output$txtTitle <- renderText({ input$txtTitle })
     
+    
+    observeEvent(input$mdlStressorReceptors, {
+        # http://stla.github.io/stlapblog/posts/shiny_editTable.html
+        
+        s_r_ckbox <- read_csv(s_r_ckbox_csv) 
+        #editTable(s_r_ckbox, outdir="~/Documents/", outfilename="newDF")
+        
+        # TODO: maked checkbox table editable and save per user session
+        # * [Using DT in Shiny](https://rstudio.github.io/DT/shiny.html)
+        # * [Double-click to edit table cells](https://yihui.shinyapps.io/DT-edit/)
+        # * [Radio Buttons in Tables](https://rstudio.github.io/DT/011-radio.html)
+        # * [Saturn Elephant - Useful callbacks for DT (in Shiny)](https://laustep.github.io/stlahblog/posts/DTcallbacks.html)
+        
+        showModal(modalDialog(
+            title = "Select Stressor-Receptors",
+            "Table with clickable elements here...",
+            easyClose = TRUE,
+            footer = tagList(
+                modalButton("Cancel"),
+                actionButton("ok", "OK"))))
+    })
 })
