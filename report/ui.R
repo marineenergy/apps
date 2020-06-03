@@ -40,12 +40,14 @@ dashboardPage(
                         collapsed = TRUE,
                         HTML(renderMarkdown(here("report/data/text_01.md")))),
                     accordionItem(
-                        id = 2,
+                        id = 3,
                         title = tagList(
                             icon("leaf"), "Habitats & Species"),
                         color = "warning",
                         collapsed = TRUE,
-                        HTML(renderMarkdown(here("report/data/text_01.md"))))
+                        #HTML(renderMarkdown(here("report/data/text_01.md"))))
+                        #uiOutput("ui_hab_spp"))
+                        tableOutput("tbl_hab_spp"))
                     ))))
 )
 

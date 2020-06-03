@@ -47,7 +47,8 @@ shinyServer(function(input, output, session) {
         # write_yaml()
         
         #browser()
-        #st_geometry(crud()$finished) %>% write_sf(here("data/test_poly.geojson"))
+        st_geometry(crud()$finished) %>% write_sf(here("data/aoi_tmp__crud_finished_geom.geojson"))
+        crud()$finished %>% write_sf(here("data/aoi_tmp_crud_finished.geojson"))
         
         leaflet(
             options = leafletOptions(
@@ -59,6 +60,44 @@ shinyServer(function(input, output, session) {
         
     })
     
+    output$tbl_hab_spp <- function() {
+        req(crud()$finished)
+        
+        aoi_wkt <- st_as_text(st_geometry(crud()$finished), EWKT=T)
+        
+        dist_m  <- 10*1000
+        sql <- glue("
+            SELECT *
+            FROM public.{d_tbl} d
+            WHERE ST_DWithin(Geography(d.geometry), '{aoi_wkt}', {dist_m});")
+        d_win <- st_read(con, query = sql)
+        
+        message(glue("returning tagList with nrow(d_win): {nrow(d_win)}"))
+        
+        #glue("nrow(d_win): {nrow(d_win)}")
+        d_win %>% 
+            select(cmn_name, sci_name, stock_pop, bia_type, bia_time, bia_name, bia_id) %>% 
+            st_drop_geometry() %>% 
+            kable("html") %>%
+            kable_styling("striped", full_width = F)
+        
+        # leaflet() %>% 
+        #     addProviderTiles(providers$Esri.OceanBasemap, group = "Esri Ocean") %>% 
+        #     addProviderTiles( providers$Stamen.TonerLite, group = "Toner Lite") %>%
+        #     addPolygons(data = aoi_ply, color =    "red", group = "AOI") %>% 
+        #     addPolygons(data =   d_win, color =  "green", group = "BIAs w/in 10km") %>% 
+        #     addPolygons(data =   d_ply, color =   "#03F", group = "BIAs") %>% 
+        #     addScaleBar() %>% 
+        #     fitBounds(bb[1], bb[2], bb[3], bb[4]) %>% 
+        #     addLayersControl(
+        #         baseGroups = c("Esri Ocean", "Toner Lite"),
+        #         overlayGroups = c("AOI", "BIAs w/in 10km", "BIAs"),
+        #         options = layersControlOptions(collapsed = FALSE)) %>% 
+        #     hideGroup("BIAs"),
+        # d_win %>% 
+        #     st_drop_geometry() %>% 
+        #     datatable())
+    }
     
     # observeEvent(input$save, {
     #     

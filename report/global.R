@@ -14,6 +14,10 @@ library(glue)
 library(yaml)
 library(geojsonsf)
 library(rhandsontable)
+library(DBI)
+library(RPostgres)
+library(knitr)
+library(kableExtra)
 
 #library(geosphere)
 #data(merc)
@@ -54,3 +58,13 @@ if (!file.exists(s_r_ckbox_csv)){
     pivot_wider(names_from = "stressor", values_from = ckbox) %>% 
     write_csv(s_r_ckbox_csv) 
 }
+
+# connect to database
+pass <- readLines("/share/.password_mhk-env.us")
+con  <- DBI::dbConnect(
+  RPostgres::Postgres(),
+  dbname   = "gis",
+  host     = "postgis",
+  port     = 5432,
+  user     = "admin",
+  password = pass)
