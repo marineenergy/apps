@@ -47,8 +47,8 @@ shinyServer(function(input, output, session) {
         # write_yaml()
         
         #browser()
-        st_geometry(crud()$finished) %>% write_sf(here("data/aoi_tmp__crud_finished_geom.geojson"))
-        crud()$finished %>% write_sf(here("data/aoi_tmp_crud_finished.geojson"))
+        #st_geometry(crud()$finished) %>% write_sf(here("data/aoi_tmp__crud_finished_geom.geojson"))
+        #crud()$finished %>% write_sf(here("data/aoi_tmp_crud_finished.geojson"))
         
         leaflet(
             options = leafletOptions(
@@ -64,6 +64,7 @@ shinyServer(function(input, output, session) {
         req(crud()$finished)
         
         aoi_wkt <- st_as_text(st_geometry(crud()$finished), EWKT=T)
+        d_tbl <- "cetmap_bia"
         
         dist_m  <- 10*1000
         sql <- glue("
@@ -78,7 +79,9 @@ shinyServer(function(input, output, session) {
         d_win %>% 
             select(cmn_name, sci_name, stock_pop, bia_type, bia_time, bia_name, bia_id) %>% 
             st_drop_geometry() %>% 
-            kable("html") %>%
+            kable("html",
+                  caption = HTML(markdownToHTML(
+                      text = "[Cetacean Biologically Important Areas](https://cetsound.noaa.gov/important) within 10 kilometers of site."))) %>%
             kable_styling("striped", full_width = F)
         
         # leaflet() %>% 

@@ -28,7 +28,7 @@ dashboardPage(
                         id = 1,
                         title = tagList(icon("gear"), "Configuration"),
                         color = "danger",
-                        collapsed = FALSE,
+                        collapsed = T,
                         h4("Location"),
                         leafletOutput("report_map", width=200, height=200),
                         uiOutput("tech_ui")),
@@ -37,14 +37,14 @@ dashboardPage(
                         title = tagList(
                             icon("tint"), "Physical & Oceanographic"),
                         color = "warning",
-                        collapsed = TRUE,
+                        collapsed = T,
                         HTML(renderMarkdown(here("report/data/text_01.md")))),
                     accordionItem(
                         id = 3,
                         title = tagList(
                             icon("leaf"), "Habitats & Species"),
                         color = "warning",
-                        collapsed = TRUE,
+                        collapsed = F,
                         #HTML(renderMarkdown(here("report/data/text_01.md"))))
                         #uiOutput("ui_hab_spp"))
                         tableOutput("tbl_hab_spp"))
