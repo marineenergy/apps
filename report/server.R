@@ -186,6 +186,21 @@ shinyServer(function(input, output, session) {
     output$txtTitle <- renderText({ input$txtTitle })
     
     
+    output$dt_s_r_ckbox <- renderDT({
+        s_r_ckbox <- read_csv(s_r_ckbox_csv)
+        
+        s_r_ckbox
+    }, 
+    editable  = T,
+    rownames  = F,
+    server    = F,
+    options   = list(
+        pageLength = Inf, 
+        #dom        = 't',
+        searching  = F, 
+        bPaginate  = F, 
+        info       = F))
+    
     observeEvent(input$mdlStressorReceptors, {
         # http://stla.github.io/stlapblog/posts/shiny_editTable.html
         
@@ -197,10 +212,23 @@ shinyServer(function(input, output, session) {
         # * [Double-click to edit table cells](https://yihui.shinyapps.io/DT-edit/)
         # * [Radio Buttons in Tables](https://rstudio.github.io/DT/011-radio.html)
         # * [Saturn Elephant - Useful callbacks for DT (in Shiny)](https://laustep.github.io/stlahblog/posts/DTcallbacks.html)
+        # * [Edit a table with Shiny and rhandsontable](http://stla.github.io/stlapblog/posts/shiny_editTable.html)
+        
+        w_l_modal = 900
+        w_tbl = w_l_modal - (15 * 2)
+        w_col = w_tbl/ncol(s_r_ckbox)
         
         showModal(modalDialog(
+            size = "l",
             title = "Select Stressor-Receptors",
-            "Table with clickable elements here...",
+            #"Table with clickable elements here...",
+            #DTOutput('dt_s_r_ckbox'),
+            #rhandsontable(s_r_ckbox, width = 600, height = 300),
+            rhandsontable(
+                s_r_ckbox, 
+                rowHeaders = NULL, width = w_tbl) %>%
+                hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
+                hot_cols(colWidths = w_col),
             easyClose = TRUE,
             footer = tagList(
                 modalButton("Cancel"),

@@ -18,6 +18,7 @@ library(DBI)
 library(RPostgres)
 library(knitr)
 library(kableExtra)
+library(DT)
 
 #library(geosphere)
 #data(merc)
@@ -58,6 +59,7 @@ if (!file.exists(s_r_ckbox_csv)){
     pivot_wider(names_from = "stressor", values_from = ckbox) %>% 
     write_csv(s_r_ckbox_csv) 
 }
+s_r_ckbox <- read_csv(s_r_ckbox_csv)
 
 # connect to database
 pass <- readLines("/share/.password_mhk-env.us")
