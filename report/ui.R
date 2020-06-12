@@ -7,11 +7,12 @@ dashboardPage(
     dashboardSidebar(
         textInput(
             "txtTitle", "Report Title"),
+        # selectInput(
+        #     "selEnv", "Select Environment", c("Tidal", "Riverine", "Ocean")),
         selectInput(
-            "selEnv", "Select Environment", c("Tidal", "Riverine", "Ocean")),
-        selectInput(
-            "selTech", "Select Technology", tech_choices),
-        actionButton("mdlStressorReceptors", "Select Stressor-Receptors"),
+            "selTech", "Select Technology", tech_choices, width = "230px"),
+        actionButton("btnStressorReceptors", "Select Stressor-Receptors", width = "200px"),
+        actionButton("btnSelectProjects", "Select Projects", width = "200px"),
         leafletOutput("side_map", width=200, height=200)),
         #actionButton('save', 'Save Site')),
 

@@ -179,7 +179,8 @@ shinyServer(function(input, output, session) {
         
         tagList(
             h4("Technology"),
-            h5(glue("{tech1}: {input$selTech} in {input$selEnv} environment")),
+            #h5(glue("{tech1}: {input$selTech} in {input$selEnv} environment")),
+            h5(glue("{tech1}: {input$selTech}")),
             img(src=img_tech))
     })
     
@@ -201,7 +202,7 @@ shinyServer(function(input, output, session) {
         bPaginate  = F, 
         info       = F))
     
-    observeEvent(input$mdlStressorReceptors, {
+    observeEvent(input$btnStressorReceptors, {
         # http://stla.github.io/stlapblog/posts/shiny_editTable.html
         
         s_r_ckbox <- read_csv(s_r_ckbox_csv) 
@@ -229,6 +230,20 @@ shinyServer(function(input, output, session) {
                 rowHeaders = NULL, width = w_tbl) %>%
                 hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
                 hot_cols(colWidths = w_col),
+            easyClose = TRUE,
+            footer = tagList(
+                modalButton("Cancel"),
+                actionButton("ok", "OK"))))
+    })
+    
+    observeEvent(input$btnSelectProjects, {
+
+        showModal(modalDialog(
+            size = "l",
+            title = "Select Projects",
+            "TODO: Select: [ ] Tethys; [X] FERC eLibrary",
+            "Table of selectable Projects",
+            "(links to project mitigations from either Tethys or FERC e-Library documents. Ideally, it will search Tethys Project Site (Content Type) documents and manually downloaded FERC e-library documents according to user-specified geography, technology, and/or stressor-receptors.)",
             easyClose = TRUE,
             footer = tagList(
                 modalButton("Cancel"),
