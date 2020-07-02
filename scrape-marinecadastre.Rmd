@@ -199,3 +199,23 @@ d %>%
     dir_size_mb = scales::comma(dir_size_mb)) %>%
   datatable(options = list(pageLength = 50))
 ```
+
+## datasets_marinecadastre.gov.csv - Google Sheet
+
+Read the Google Sheet into a data frame in R.
+
+```{r}
+library(glue)
+library(readr)
+library(DT)
+
+# datasets_marinecadastre.gov.csv - Google Sheet
+#   edit online: https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=0
+datasets_gid <- "1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ"
+datasets_csv <- glue::glue("https://docs.google.com/spreadsheets/d/{datasets_gid}/gviz/tq?tqx=out:csv&sheet=modals")
+datasets     <- readr::read_csv(datasets_csv)
+
+d %>%
+  DT::datatable(options = list(pageLength = 50))
+```
+
