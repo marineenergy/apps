@@ -1,0 +1,201 @@
+---
+title: "Scrape MarineCadastre.gov for Datasets"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
+```
+
+## Install phantomjs on ubuntu
+
+```bash
+uname -a
+# Linux d85016b9068e 4.15.0-99-generic #100-Ubuntu SMP Wed Apr 22 20:32:56 UTC 2020 x86_64 GNU/Linux
+```
+
+```bash
+sudo apt-get update
+sudo apt-get install -y build-essential chrpath libssl-dev libxft-dev libfreetype6 libfreetype6-dev libfontconfig1 libfontconfig1-dev
+```
+
+Get latest version at https://phantomjs.org/download.html.
+
+```bash
+cd ~
+export PHANTOM_JS="phantomjs-2.1.1-linux-x86_64"
+wget https://bitbucket.org/ariya/phantomjs/downloads/$PHANTOM_JS.tar.bz2
+sudo tar xvjf $PHANTOM_JS.tar.bz2
+sudo mv $PHANTOM_JS /usr/local/share
+sudo ln -sf /usr/local/share/$PHANTOM_JS/bin/phantomjs /usr/local/bin
+# I managed to solve this error by creating the OPENSSL_CONF variable.
+# https://github.com/bazelbuild/rules_closure/pull/353#issuecomment-619092111
+sudo apt install openssl
+export OPENSSL_CONF=/etc/ssl/
+phantomjs --version
+```
+
+
+
+Now, It should have PhantomJS properly on your system.
+
+
+
+## Scrape for Datasets
+
+
+Scrape datasets with links for downloads and metadata from [marinecadastre.gov/data](https://marinecadastre.gov/data/) using the R package `rvest` (see `vignette("selectorgadget")`).
+
+- [rvest: easy web scraping with R | RStudio Blog](https://blog.rstudio.org/2014/11/24/rvest-easy-web-scraping-with-r/)
+
+```{r scrape}
+library(tidyverse)
+library(rvest)
+library(webshot)
+library(stringr)
+library(DT)
+library(glue)
+library(dplyr)
+library(tibble)
+
+url_mc    <- 'https://marinecadastre.gov/data/'
+dir_mc    <- '/share/data/marinecadastre.gov'
+csv_mc    <- file.path(dir_mc, '_datasets.csv')
+csv_mc_gh <- "/share/github/mhk-env_shiny-apps/data/datasets_marinecadastre.gov.csv"
+
+dir.create(dir_mc, showWarnings = F)
+
+get_page = function(url, js='scrape.js', html='scraped.html'){
+  # url = url_mc; js='scrape.js'; html='scraped.html'
+  
+  # write javascript for feeding to phantomjs for obtaining rendered html
+  write(paste0(
+  "var url ='", url, "';
+  var page = new WebPage(); var fs = require('fs');
+  // open page, wait 5000 miliseconds, write html
+  page.open(url, function (status) {
+    just_wait();
+  });
+  function just_wait() {
+    setTimeout(function() {
+      fs.write('", html, "', page.content, 'w');
+      phantom.exit();
+    }, 5000);
+  }
+  "), js)
+  #bin_phantom <- webshot:::find_phantom(quiet = T)
+  # cd /share/github/mhk-env_shiny-apps; /usr/local/bin/phantomjs scrape.js
+  #system("./phantomjs scrape_dow_30.js") ## apply scraping 
+  #webshot:::phantom_run(js)
+  
+  bin_phantom <- "/usr/local/bin/phantomjs"
+  system(glue("{bin_phantom} {js}"))
+  return(html)
+}
+
+# library(V8)
+# emailjs <- read_html(link) %>% html_nodes('li') %>% html_nodes('script') %>% html_text()
+# # Create a new v8 context
+# ct <- v8()
+# #parse the html content from the js output and print it as text
+# read_html(ct$eval(gsub('document.write','',emailjs))) %>% 
+#  html_text()
+
+
+if (!file.exists(csv_mc)){
+  # h = get_page(url_mc) %>%
+  #   read_html()
+  h = read_html(html)
+  #unlink(c('scrape.js','scraped.html'))
+  nodes = h %>% html_nodes('div.mc-panel-layer')
+  
+  d = tibble(
+    #node         = h %>% html_nodes('div.mc-panel-layer'))
+    title        = nodes %>% html_nodes('h4') %>% html_text(trim=T),
+    description  = nodes %>% html_nodes('div.panel-body') %>% html_text(trim=T),
+    provider     = nodes %>% html_nodes('p') %>% html_text(trim=T),
+    provider_url = nodes %>% html_nodes('p a') %>% html_attr('href'),
+    downloads    = map(nodes, function(x) html_nodes(
+      x, 'a[analytics-event="Download"]') %>% 
+        html_attr('href')),
+    metadatas    = map(nodes, function(x) html_nodes(
+      x, 'li[ng-repeat="metadata in layer.Metadata[0].MetadataInfo"] > a') %>% 
+        html_attr('href')),
+    downloads_piped = map_chr(downloads, function(x) paste(x, collapse='|')),
+    downloads_n     = map_int(downloads, length),
+    metadatas_piped = map_chr(metadatas, function(x) paste(x, collapse='|')),
+    metadatas_n     = map_int(metadatas, length))
+    
+  #write_csv(d %>% select(-node, -downloads, -metadatas), mc_csv)
+  write_csv(d %>% select(-downloads, -metadatas), csv_mc)
+  #file.copy(csv_mc, csv_mc2)
+  
+  file.copy(csv_mc, csv_mc_gh)
+}
+
+# show parsed dataset info ----
+read_csv(csv_mc) %>%
+  select(-description) %>%
+  datatable(options = list(pageLength = 50))
+```
+
+
+## Download Datasets
+
+```{r download}
+mc = read_csv(csv_mc) %>%
+  mutate(
+    downloads = str_split(downloads_piped, fixed('|')),
+    metadatas = str_split(metadatas_piped, fixed('|')))
+
+for (i in 1:nrow(mc)){ # i=1
+  dir_i = file.path(dir_mc, str_replace_all(mc$title[i], '[:/]','-'))
+  
+  if (dir.exists(dir_i)){
+    #cat(sprintf('  Output directory exists, so skipping\n'))
+    next
+  }
+  
+  dir.create(dir_i, showWarnings = F, recursive = T)
+  cat(sprintf('i=%03d: %s\n', i, basename(dir_i)))
+  
+  for (j in 1:length(mc$downloads[[i]])){ # j=1
+    down  = mc$downloads[[i]][j]
+    dest  = file.path(dir_i, basename(down))
+    dir_j = file.path(dir_i, sprintf('%s_dir', tools::file_path_sans_ext(basename(down))))
+    err_j = file.path(dir_i, sprintf('%s_error.txt', tools::file_path_sans_ext(basename(down))))
+
+    cat(sprintf('  j=%d: %s\n', j, basename(down)))
+    r = try({
+      download.file(down, dest)
+      dir.create(dir_j, showWarnings = F)
+      unzip(dest, exdir=dir_j)
+    })
+    
+    if ('try-error' %in% class(r)){
+      write_file(as.character(r), err_j)
+    }
+  }
+}
+
+# show size of files ----
+d = read_csv(csv_mc) %>%
+  mutate(
+    dir_path = file.path(dir_mc, str_replace_all(mc$title, '[:/]','-')),
+    dir_base = basename(dir_path),
+    dir_size_mb = map_dbl(dir_path, function(p){
+      list.files(p, all.files=T, full.names=T, recursive=T) %>%
+        file.info() %>% .$size %>% sum(na.rm=T) / (1000*1000)
+      }),
+    dir_size_mb  = round(dir_size_mb, digits=2))
+
+d %>%
+  select(title, dir_base, dir_size_mb) %>%
+  mutate(
+    dir_size_mb = scales::comma(dir_size_mb)) %>%
+  datatable(options = list(pageLength = 50))
+```
