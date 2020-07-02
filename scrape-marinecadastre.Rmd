@@ -208,6 +208,7 @@ Read the Google Sheet into a data frame in R.
 library(glue)
 library(readr)
 library(DT)
+library(dplyr)
 
 # datasets_marinecadastre.gov.csv - Google Sheet
 #   edit online: https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=0
