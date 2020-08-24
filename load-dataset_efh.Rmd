@@ -1,0 +1,232 @@
+---
+title: "Load vector dataset: Essential Fish Habitat"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    code_folding: hide
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = T, message = F, warning = F)
+```
+
+## Read dataset
+
+```{r}
+library(here)
+library(glue)
+library(readr)
+library(fs)
+library(sf)
+library(lwgeom)
+#library(raster)
+library(mapview)
+library(leaflet)
+library(DT)
+library(dplyr)
+
+dir_mc       <- '/share/data/marinecadastre.gov'
+csv_mc       <- file.path(dir_mc, '_datasets.csv')
+csv_mc_paths <- file.path(dir_mc, '_datasets_paths.csv')
+
+d <- read_csv(csv_mc_paths) %>% 
+  filter(title == "Essential Fish Habitat (EFH)")
+
+# get shapefile(s)
+shp <- list.files(d$dir_path, ".*\\.shp$", recursive = T, full.names = T)
+
+# read in shapefile
+d_ply <- read_sf(shp)
+```
+
+
+```{python, eval = F, echo=F}
+import pandas
+```
+
+```{r funk, eval=FALSE, echo=F}
+
+# quick view
+# mapview(fc) # SLOW!
+
+fc_tbl <- fc %>% st_drop_geometry() 
+#View(fc_tbl)
+
+library(skimr)
+
+fc_tbl$TYPE <- as.factor(fc_tbl$TYPE)
+fc_tbl$FMC <- as.factor(fc_tbl$FMC)
+skim(fc_tbl)
+summary(fc_tbl)
+
+# raster aside ----
+
+d <- read_csv(csv_mc_paths) %>% 
+  filter(title == "Fish Species Richness: Fall")
+
+# get raster GeoTIFFs
+tifs <- list.files(d$dir_path, ".*\\.tif$", recursive = T, full.names = T)
+
+# loop ...
+tif <- tifs[1]
+basename(tif)
+
+r <- raster(tif)
+
+leaflet() %>% 
+  addProviderTiles(providers$Esri.OceanBasemap) %>% 
+  addRasterImage(r)
+
+mapview(r)
+plot(r)
+# Fish Species Richness: Fall
+
+# how to seperate the data and which attributes and what if any buffer distances?
+```
+
+
+```{r, eval=F, echo=F}
+# dataset variables
+# TODO: wrap this as dataset_zip2vector function
+d_url  <- "https://cetsound.noaa.gov/Assets/cetsound/data/CetMap_BIA_WGS84.zip"
+d_zip  <- here(glue("data/{basename(d_url)}"))
+d_dir  <- path_ext_remove(d_zip)
+d_tbl  <- "cetmap_bia" # prefix: mc_ for MarineCadastre, ds_ for dataset?
+d_redo <- FALSE
+
+stopifnot(tolower(d_tbl) == d_tbl)
+
+# download and extract, if needed
+if (!dir_exists(d_dir) & !d_redo){
+  download.file(d_url, d_zip)
+  unzip(d_zip, exdir = d_dir)
+  file_delete(d_zip)
+}
+```
+
+```{r, eval=F, echo=F}
+# get shapefile path
+d_shp <- dir_ls(d_dir, glob="*.shp")
+
+# read shapefile
+d_ply <- read_sf(d_shp)
+
+# quick map
+mapview(d_ply)
+
+# quick table
+d_ply %>% 
+  st_drop_geometry() %>% 
+  # View() # interactive RStudio use only
+  datatable()
+```
+
+## Connect to database
+
+```{r db_connect}
+# connect to database
+library(DBI)
+library(RPostgres)
+
+pass <- readLines("/share/.password_mhk-env.us")
+con  <- DBI::dbConnect(
+  RPostgres::Postgres(),
+  dbname   = "gis",
+  host     = "postgis",
+  port     = 5432,
+  user     = "admin",
+  password = pass)
+
+tbls <- dbListTables(con)
+tbls
+```
+
+```{r}
+# helper functions
+drop_d <- function(d_tbl){
+  dbSendQuery(con, glue("SELECT DropGeometryTable ('public','{d_tbl}');"))
+}
+
+dbSafeNames = function(names) {
+  # make names db safe: no '.' or other illegal characters,
+  # all lower case and unique
+  names = gsub('[^a-z0-9]+','_',tolower(names))
+  names = make.names(names, unique=TRUE, allow_=TRUE)
+  names = gsub('.','_',names, fixed=TRUE)
+  names
+}
+
+dbRenameTable <- function(con, old, new){
+  if (old %in% dbListTables(con))
+    dbExecute(con, glue("ALTER TABLE {old} RENAME TO {new}"))
+}
+
+# rename old table
+dbRenameTable(con, "cetmap_bia", "d_cetmap_bia")
+```
+
+## Load dataset
+
+```{r}
+# set field names
+names(d_ply) <- dbSafeNames(names(d_ply))
+
+d_tbl  <- "d_efh" # prefix: mc_ for MarineCadastre, ds_ for dataset?
+d_redo <- FALSE
+
+# project to geographic coordinate reference system if need be
+if (st_crs(d_ply) != st_crs(4326)){
+  d_ply <- st_transform(d_ply, crs = 4326)
+}
+
+if (!d_tbl %in% tbls | d_redo){
+  st_write(d_ply, con, d_tbl)
+}
+dbListTables(con)
+```
+
+## Spatial query
+
+```{r}
+aoi_geo <- here("report/data/geom.geojson")
+
+aoi_ply <- read_sf(aoi_geo)
+aoi_wkt <- st_as_text(aoi_ply$geometry, EWKT=T)
+
+d_cols <- tbl(con, d_tbl) %>% head(0) %>% collect() %>% names()
+#d_cols_notgeom <- setdiff(d_cols, c("geometry", "geom"))
+
+#dist_m  <- 10*1000
+dist_m  <- 0
+sql <- glue("
+  SELECT {paste(d_cols, collapse=',')}
+  FROM public.{d_tbl} d
+  WHERE ST_DWithin(Geography(d.geometry), '{aoi_wkt}', {dist_m});")
+d_win <- st_read(con, query = sql)
+
+bb <- st_bbox(aoi_ply) %>% as.vector()
+
+leaflet() %>% 
+  addProviderTiles(providers$Esri.OceanBasemap, group = "Esri Ocean") %>% 
+  addProviderTiles( providers$Stamen.TonerLite, group = "Toner Lite") %>%
+  addPolygons(data = aoi_ply, color =    "red", group = "AOI") %>% 
+  addPolygons(data =   d_win, color =  "green", group = "EFH w/in 0km") %>% 
+  #addPolygons(data =   d_ply, color =   "#03F", group = "EFHs") %>% 
+  addScaleBar() %>% 
+  fitBounds(bb[1], bb[2], bb[3], bb[4]) %>% 
+  addLayersControl(
+    baseGroups = c("Esri Ocean", "Toner Lite"),
+    #overlayGroups = c("AOI", "EFH w/in 0km", "EFHs"),
+    overlayGroups = c("AOI", "EFH w/in 0km"),
+    options = layersControlOptions(collapsed = FALSE)) # %>% 
+  #hideGroup("EFHs")
+
+d_win %>% 
+  st_drop_geometry() %>% 
+  datatable()
+```
+

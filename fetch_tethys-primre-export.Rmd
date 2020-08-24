@@ -1,0 +1,55 @@
+---
+title: "fetch tethys"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r cars}
+library(jsonlite)
+library(tidyjson)
+library(dplyr)
+library(purrr)
+library(tibble)
+library(listviewer) # devtools::install_github('timelyportfolio/reactR')
+
+tethys_url <- "https://tethys.pnnl.gov/api/primre_export?modifiedDate=2020-06-01"
+tethys     <- read_json(tethys_url)
+
+tethys_json <- "data/tethys-primre-export.json"
+download.file(tethys_url, tethys_json)
+tethys_flt     <- read_json(tethys_url, flatten = T)
+
+reactjson(tethys)
+
+
+tethys_df <- tethys %>% tbl_json()
+
+tethys_tbl <- tethys %>% spread_all
+View(tethys_tbl)
+
+tethys_cnt <- tethys %>% gather_object %>% json_types %>% count(name, type)
+View(tethys_cnt)
+
+tethys_arr <- tethys %>% gather_object %>% 
+  filter(is_json_array(.)) %>% gather_array
+
+tethys_authors <- tethys %>% enter_object(author) %>% gather_array %>% spread_all
+
+
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

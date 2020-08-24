@@ -5,6 +5,8 @@ output:
     toc: true
     toc_float: true
     code_folding: hide
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -62,10 +64,11 @@ library(glue)
 library(dplyr)
 library(tibble)
 
-url_mc    <- 'https://marinecadastre.gov/data/'
-dir_mc    <- '/share/data/marinecadastre.gov'
-csv_mc    <- file.path(dir_mc, '_datasets.csv')
-csv_mc_gh <- "/share/github/mhk-env_shiny-apps/data/datasets_marinecadastre.gov.csv"
+url_mc       <- 'https://marinecadastre.gov/data/'
+dir_mc       <- '/share/data/marinecadastre.gov'
+csv_mc       <- file.path(dir_mc, '_datasets.csv')
+csv_mc_paths <- file.path(dir_mc, '_datasets_paths.csv')
+csv_mc_gh    <- "/share/github/mhk-env_shiny-apps/data/datasets_marinecadastre.gov.csv"
 
 dir.create(dir_mc, showWarnings = F)
 
@@ -160,8 +163,8 @@ for (i in 1:nrow(mc)){ # i=1
     next
   }
   
-  dir.create(dir_i, showWarnings = F, recursive = T)
   cat(sprintf('i=%03d: %s\n', i, basename(dir_i)))
+  dir.create(dir_i, showWarnings = F, recursive = T)
   
   for (j in 1:length(mc$downloads[[i]])){ # j=1
     down  = mc$downloads[[i]][j]
@@ -185,7 +188,7 @@ for (i in 1:nrow(mc)){ # i=1
 # show size of files ----
 d = read_csv(csv_mc) %>%
   mutate(
-    dir_path = file.path(dir_mc, str_replace_all(mc$title, '[:/]','-')),
+    dir_path = file.path(dir_mc, str_replace_all(title, '[:/]','-')),
     dir_base = basename(dir_path),
     dir_size_mb = map_dbl(dir_path, function(p){
       list.files(p, all.files=T, full.names=T, recursive=T) %>%
@@ -193,12 +196,30 @@ d = read_csv(csv_mc) %>%
       }),
     dir_size_mb  = round(dir_size_mb, digits=2))
 
+write_csv(d, csv_mc_paths)
+
 d %>%
   select(title, dir_base, dir_size_mb) %>%
   mutate(
     dir_size_mb = scales::comma(dir_size_mb)) %>%
   datatable(options = list(pageLength = 50))
 ```
+
+## test read of EFH
+
+```{r}
+library(sf)
+
+
+d_shp <- "/share/data/marinecadastre.gov/Essential Fish Habitat (EFH)/nationwide_efh_dir/nationwide_efh.shp"
+
+d <- read_sf(d_shp)
+# d %>% st_drop_geometry() %>% View()
+
+mapview::mapview(d)
+
+```
+
 
 ## datasets_marinecadastre.gov.csv - Google Sheet
 
