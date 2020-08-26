@@ -1,0 +1,31 @@
+---
+title: "project_timelines"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Fetch Data
+
+Using [MHK Project Timeline Input - Google Sheets](https://docs.google.com/spreadsheets/d/1HC5hXyi2RQSHevnV7rvyk748U5-X3iUw70ewHEfrHm0/edit#gid=793817660)
+
+```{r cars}
+csv_key <- "1HC5hXyi2RQSHevnV7rvyk748U5-X3iUw70ewHEfrHm0"
+csv_url <- glue::glue("https://docs.google.com/spreadsheets/d/{csv_key}/gviz/tq?tqx=out:csv&sheet=0")
+
+d <- readr::read_csv(csv_url) %>% 
+  select(-starts_with("X"))
+d_times <- d %>% 
+  filter(!is.na(`Start Date`))
+d_permits <- d %>% 
+  filter(!is.na(`Permit Type`))
+
+View(d_times)
+View(d_permits)
+
+# ...plotly::...
+```
+
+
