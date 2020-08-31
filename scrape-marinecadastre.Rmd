@@ -226,18 +226,56 @@ mapview::mapview(d)
 Read the Google Sheet into a data frame in R.
 
 ```{r}
-library(glue)
-library(readr)
-library(DT)
-library(dplyr)
+source(here::here("functions.R"))
 
 # datasets_marinecadastre.gov.csv - Google Sheet
 #   edit online: https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=0
 datasets_gid <- "1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ"
 datasets_csv <- glue::glue("https://docs.google.com/spreadsheets/d/{datasets_gid}/gviz/tq?tqx=out:csv&sheet=modals")
-datasets     <- readr::read_csv(datasets_csv)
 
-d %>%
-  DT::datatable(options = list(pageLength = 50))
+d_shps  <- read_csv(datasets_csv) %>% 
+  select(-starts_with("X")) %>% 
+  mutate(
+    shps_lst = map(
+      dir_path, 
+      function(x){
+        list.files(x, ".*\\.shp$", recursive = T, full.names = T) }),
+    shps_n   = map_int(shps_lst, length)) %>% 
+  filter(shps_n > 0) %>%
+  rename(shp_path = shps_lst) %>% 
+  unnest(shp_path) %>% 
+  mutate(
+    shp_fname   = basename(shp_path),
+    shp_size_mb = dir_size_mb / shps_n,
+    shp_tbl     = map2_chr(title, shp_fname, titleshp2tbl),
+    shp_tbl_duplicated = duplicated(shp_tbl)) %>% 
+  arrange(desc(shp_size_mb))
+  #arrange(shp_tbl)
+
+stopifnot(sum(d_shps$shp_tbl_duplicated) == 0)
+
+d_shps %>%
+  select(shp_tbl, shp_tbl_duplicated, title, shp_fname, priority, dataset_code, shps_n, dir_size_mb, shp_size_mb,  shp_path) %>%
+  View()
+
+s_shps <- d_shps %>%
+  group_by(shp_fname) %>%
+  nest() %>% 
+  mutate(
+    n_rows = map_int(data, nrow)) %>% 
+  arrange(desc(n_rows))
+
+# TODO: just load based on shapfile name, update dataset_vectors with lookups shp to dataset
+#View(s_shps)
+
+
+d_shps %>% 
+  select(
+    shp = shp_path, 
+    tbl = shp_tbl) %>% 
+  pwalk(shp2db)
+
+# d_shps %>%
+#   DT::datatable(options = list(pageLength = 50))
 ```
 

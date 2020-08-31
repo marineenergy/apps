@@ -17,12 +17,14 @@ library(purrr)
 library(tibble)
 library(listviewer) # devtools::install_github('timelyportfolio/reactR')
 
-tethys_url <- "https://tethys.pnnl.gov/api/primre_export?modifiedDate=2020-06-01"
-tethys     <- read_json(tethys_url)
-
-tethys_json <- "data/tethys-primre-export.json"
+tethys_url  <- "https://tethys.pnnl.gov/api/primre_export?modifiedDate=2020-06-01"
+tethys_json <- "data/tethys.json"
 download.file(tethys_url, tethys_json)
-tethys_flt     <- read_json(tethys_url, flatten = T)
+# tethys     <- read_json(tethys_json)
+# 
+# tethys_json <- "data/tethys-primre-export.json"
+# download.file(tethys_url, tethys_json)
+tethys_flt     <- tidyjson::read_json(tethys_json, flatten = T)
 
 reactjson(tethys)
 
