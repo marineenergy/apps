@@ -6,52 +6,36 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, eval = F, message = F, warning = F)
 ```
 
-```{r cars}
+```{r get db connection, eval = T}
+source("functions.R") # connection object
+
 library(jsonlite)
+library(DT)
 library(tidyjson)
 library(dplyr)
 library(purrr)
 library(tibble)
 library(listviewer) # devtools::install_github('timelyportfolio/reactR')
+```
 
+```{r read json}
 tethys_url  <- "https://tethys.pnnl.gov/api/primre_export?modifiedDate=2020-06-01"
 tethys_json <- "data/tethys.json"
 download.file(tethys_url, tethys_json)
 tethys     <- read_json(tethys_json)
- 
-# tethys_json <- "data/tethys-primre-export.json"
-# download.file(tethys_url, tethys_json)
-#tethys_flt     <- tidyjson::read_json(tethys_json, flatten = T)
 
-reactjson(tethys)
-
-
-# tethys_df <- tethys %>% tbl_json()
-# 
-# tethys_tbl <- tethys %>% spread_all
-# View(tethys_tbl)
-# 
-# tethys_cnt <- tethys %>% gather_object %>% json_types %>% count(name, type)
-# View(tethys_cnt)
-
-# tethys_arr <- tethys %>% gather_object %>% 
-#   filter(is_json_array(.)) %>% gather_array
-# 
-# tethys_authors <- tethys %>% enter_object(author) %>% gather_array %>% spread_all
+tethys_content <- tethys[["..JSON"]][[1]] 
+# reactjson(tethys_content[1:20])
 ```
 
-## Insert into db
-
-```{r db connection}
-source("functions.R") # connection object
-```
+## Create table
 
 Run once:
 
-```{r create tbl, eval=F}
+```{r create tbl}
 sql <- glue("
   CREATE TABLE tethys_pubs (
 	  uri text NOT NULL PRIMARY KEY,
@@ -60,123 +44,55 @@ sql <- glue("
 dbExecute(con, sql)
 ```
 
-```{r}
-row1 <- tethys[["..JSON"]][[1]][[1]]
+## Update table
 
-tethys_uris <- map_chr(tethys[["..JSON"]][[1]], "URI")
-tethys_data <- map_chr(tethys[["..JSON"]][[1]], toJSON)
-
-tethys_data <- str_replace_all(tethys_data, "'","''")
-
-tethys_uris5 <- tethys_uris[2:6]
-tethys_data5 <- tethys_data[2:6]
+```{r json to csv}
+tethys_uris <- map_chr(tethys_content, "URI")
+tethys_data <- map_chr(tethys_content, toJSON) %>% 
+  str_replace_all("'","''")
 
 tibble(
-  uri = tethys_uris5,
-  data = tethys_data5) %>% 
-  write_csv("data/tethys5.csv")
-
-cat(toJSON(row1))
-
-sql <- glue("
-  INSERT INTO tethys_pubs (uri, data)
-  VALUES('{row1[['URI']]}', '{toJSON(row1)}')")
-write_lines(sql, "data/tethys1.sql")
-sql
-sql <- glue("
-  INSERT INTO tethys_pubs (uri, data)
-  VALUES('{tethys_uris5}', '{tethys_data5}')") %>% 
-  paste(collapse = ";\n")
-write_lines(sql, "data/tethys5.sql")
-
-c(dbname   = "gis",
-  host     = "postgis",
-  port     = 5432,
-  user     = "admin",
-  password = pass)
-
-sql <- glue("
-  INSERT INTO tethys_pubs (uri, data)
-  VALUES('{tethys_uris}', '{tethys_data}')") %>% 
-  paste(collapse = ";\n")
-sql
-dbExecute(con, sql)
-
-res <- dbGetQuery(con, "SELECT * FROM tethys_pubs")
-res
-
-res_list <- fromJSON(res$data)
-res
-
-
-SELECT info ->> 'customer' AS customer
-FROM orders
-WHERE info -> 'items' ->> 'product' = 'Diaper';
-
-dbGetQuery(con, "SELECT uri FROM tethys_pubs LIMIT 10")
-
-dbGetQuery(con, "SELECT VERSION();")
-
-res <- dbGetQuery(con, "SELECT uri, data ->> 'type' AS type FROM tethys_pubs")
-View(res)
-res <- dbGetQuery(con, "SELECT uri, data ->> 'type' AS type FROM tethys_pubs WHERE data -> 'type' ? 'Collision'")
-res <- dbGetQuery(con, "SELECT uri, data ->> 'tags' AS tagsm, json_array_elements(data->'tags')::text AS tags_arr 
-      FROM tethys_pubs")
-res
-
-res$tags_arr[1]
-res <- dbGetQuery(con, "
-  SELECT * FROM (
-    SELECT uri, data ->> 'tags' AS tagsm, json_array_elements(data->'tags') AS tags_arr 
-      FROM tethys_pubs) a
-  WHERE a.tags_arr::text = '[\"Noise\"]'")
-res
-
-View(res)
-res <- dbGetQuery(con, "select * from (select uri, data -> 'tags' as tags, json_typeof (data->'tags') from tethys_pubs) a where tags::text ilike '%Changes in Flow%'
-")
-
-select t.*
-from my_table t,
-json_array_elements(my_json->'people') elem
-where elem->>'name' = 'Toby';
-
-"SELECT * FROM users WHERE data->tags ? 'admin';"
-
-
-res <- dbGetQuery(con, "SELECT uri, ARRAY(SELECT json_array_elements_text(t.data->'tags')) AS tag FROM tethys_pubs t WHERE ARRAY(SELECT json_array_elements_text(t.data->'tags')) = 'Collision';")
-res
-
-SELECT t.tbl_id, d.list
-FROM   tbl t
-CROSS  JOIN LATERAL (
-   SELECT string_agg(d.elem::text, ', ') AS list
-   FROM   json_array_elements_text(t.data->'tags') AS d(elem)
-   ) d;
-
-res <- dbGetQuery(con, "SELECT uri FROM tethys_pubs WHERE (data -> 'tags')::jsonb ? 'Changes in Flow'")
-
-res <- dbGetQuery(con, "select * from (select uri, data -> 'tags' as tags, json_typeof (data->'tags') from tethys_pubs) a where 'Changes in Flow' IN tags::array")
-
-
-res
-"Changes in Flow" 
-
+  uri = tethys_uris,
+  data = tethys_data) %>% 
+  write_csv("data/tethys.csv")
 ```
 
+```{r clear tethys_pubs}
+dbExecute(con, "DELETE FROM tethys_pubs;")
+```
+
+Run once to install software and test connection to database:
 
 ```bash
 sudo apt-get update
 sudo apt-get install postgresql-client
 
+# test
 psql -h postgis -p 5432 -U admin gis
+```
 
+```bash
+# use this password when prompted
+cat /share/.password_mhk-env.us
 
-path_csv='/share/github/mhk-env_shiny-apps/data/tethys5.csv'
-
-Mhk-3nv!
-
+path_csv='/share/github/mhk-env_shiny-apps/data/tethys.csv'
 cat $path_csv | psql -h postgis -p 5432 -U admin -c "COPY tethys_pubs (uri, data) FROM STDIN WITH (FORMAT CSV, HEADER TRUE);" gis
+```
 
-cat /data.json | psql -h localhost -p 5432 feeds -c "COPY news_feed (data) FROM STDIN;"
+## Query based on tag
+
+```{r query tags, eval = T}
+tag = "Changes in Flow"
+
+res <- dbGetQuery(
+  con, glue("
+  SELECT * from (
+    SELECT 
+      uri, 
+      data ->'title' ->> 0 AS title,
+      json_array_elements(data->'tags') ->> 0 as tag_text
+    FROM tethys_pubs) q
+  WHERE q.tag_text = '{tag}';"))
+
+datatable(res)
 ```
