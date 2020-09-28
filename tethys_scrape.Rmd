@@ -70,7 +70,8 @@ get_facet_item <- function(item_node){
 }
 
 # variables ----
-url <- "https://tethys.pnnl.gov/knowledge-base-marine-energy"
+url      <- "https://tethys.pnnl.gov/knowledge-base-marine-energy"
+tags_csv <- here("data/tags.csv")
 
 # scrape html ----
 html <- read_html(url)
@@ -87,6 +88,8 @@ d <- tibble(facet = facet_names) %>%
   group_by(facet) %>%
   do(get_facet_items(.$facet)) %>% 
   ungroup()
+
+write_csv(d, tags_csv)
 
 datatable(d)
 ```

@@ -12,7 +12,7 @@ shelf(
   # todo: use these
   # googledrive,
   # report
-  DT, knitr, rmarkdown,
+  DT, knitr, rmarkdown, shiny,
   # utility
   fs, glue, here, stringr)
 here <- here::here
