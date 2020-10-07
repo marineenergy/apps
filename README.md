@@ -1,5 +1,14 @@
 # shiny-apps
 
+Normally, on command line, get this repo:
+
+```bash
+git clone https://github.com/mhk-env/mhk-env_shiny-apps
+```
+
+Or in Rstudio, File -> New Project... -> Version Control -> git ...
+
+Might need to install [Git](https://git-scm.com/).
 
 ## todo
 
