@@ -1,76 +1,178 @@
 ---
-title: "project_timelines"
+title: "MHK_Timeline_alt"
 output: html_document
-editor_options: 
-  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Fetch Data
-
-Using [MHK Project Timeline Input - Google Sheets](https://docs.google.com/spreadsheets/d/1HC5hXyi2RQSHevnV7rvyk748U5-X3iUw70ewHEfrHm0/edit#gid=793817660)
 
 ```{r}
 library(dplyr)
 library(htmltools)
 library(htmlwidgets)
-
+library(jsonlite)
+library(plotly)
 csv_key <- "1HC5hXyi2RQSHevnV7rvyk748U5-X3iUw70ewHEfrHm0"
 csv_url <- glue::glue("https://docs.google.com/spreadsheets/d/{csv_key}/gviz/tq?tqx=out:csv&sheet=0")
-
 d <- readr::read_csv(csv_url) %>% 
   select(-starts_with("X"))
+```
+
+
+
+
+
+```{r}
+d$permit_type <- factor(d$permit_type, levels = c("Notice of Intent", "Draft License App", "Final License App", "Permit Issued"))
 
 d_times <- d %>% 
-  filter(!is.na(date_beg))
+  filter(!is.na(date_beg)) %>% 
+  mutate(
+    date_beg = as.Date(date_beg, format = "%m/%d/%Y"),
+    date_end = as.Date(date_end, format = "%m/%d/%Y")) %>% 
+  arrange(project_number, project_name)
 
 d_permits <- d %>% 
   filter(!is.na(permit_type)) %>% 
-  select(project_name, permit_type, license_date, permit_doc_link) %>% 
-  mutate(
-    license_date = as.Date(license_date, format = "%m/%d/%Y")) %>% 
-  arrange(project_name, license_date)
+  select(project_name, project_number, permit_type, license_date, link) %>% 
+  mutate(license_date = as.Date(license_date, format = "%m/%d/%Y")) %>% 
+  arrange(project_number, project_name, license_date) %>% 
+  arrange(permit_type, project_number)
+
+d_permits <- rename(d_permits, urls = link)
+
+d_permits_2 <- d_permits %>% 
+  arrange(permit_type, project_name, .by_group = T)
+
+
+#test <- d_permits %>%
+#  arrange(permit_type, project_number)
+
 #d_permits
-
 # View(d_times)
-# View(d_permits)
-
+View(d_permits_2)
 library(ggplot2)
 library(plotly)
+```
 
-g <- ggplot(
-  d_permits, 
-  aes(
-    x = license_date, 
-    y = project_name,
-    color = factor(permit_type))) + 
-  geom_point(shape = 17)
 
+
+
+
+```{r, fig.width = 10, fig.height = 7}
+g <- ggplot(d_permits_2, aes(text = paste('License Date: ', license_date, '\nProject Name: ', project_name, '\nPermit Type: ', permit_type)))+
+  geom_segment(data = d_times, aes(x = date_beg, y = project_name, xend = date_end, yend = project_name), size = 4, color = "gray80")+
+  geom_point(data = d_permits_2, 
+             aes(x = license_date, y = project_name, color = permit_type), size = 3, shape = 17)+
+  scale_color_manual(name = "Permit Type", values = c("red2", "orange", "yellow2", "forestgreen")) +
+  labs(title = "MHK Project Timeline", x = "Year of Project", y = "")+
+  theme(panel.grid.minor = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        #legend.position = c(0.9, 0.84),
+        #legend.background = element_rect(fill = "transparent", colour = NA),
+        axis.text.x = element_text(color="black", size=12, angle=45, vjust=1, hjust = 1),
+        axis.text.y = element_text(color="black", size=12, vjust = -1),
+        axis.title.y=element_text(face="bold", size=13),
+        axis.title.x=element_text(face="bold", size=13),
+        #plot.margin = margin(.15, .2, 0, 0, "cm"),
+        plot.background = element_rect(fill = "transparent", colour = NA))
 # static
 g
+```
 
+
+```{r, fig.width = 10, fig.height = 7}
 # interactive
-ggplotly(g)
-  
+ggplotly(g, tooltip = 'text')
+```
 
-js <- HTML(paste("var myPlot = document.getElementById('PlotlyGraph');
-myPlot.on('plotly_click', function(data){
-var urls = ['", paste(d_permits$permit_doc_link, collapse = "', '"), "'];
-window.open(urls[data.points[0].pointNumber],'_blank');
-});", sep=''))
 
+
+```{r, fig.width = 10, fig.height = 7}
+js <- HTML(paste("
+                var myPlot = document.getElementById('PlotlyGraph');
+                myPlot.on('plotly_click', function(data){
+                var urls = ", toJSON(split(d_permits_2, d_permits_2$permit_type)), ";
+                window.open(urls[data.points[0].data.name][data.points[0].pointNumber]['urls'],'_blank');
+                });", sep=''))
 # clickable
+p <- ggplotly(g, tooltip = 'text')
+#p <- plotly_build(g)
 
-p <- plotly_build(g)
 p$elementId <- "PlotlyGraph"
 
 tagList(
-  #ggplotly(g),
   p,
   onStaticRenderComplete(js))
-```
 
+
+
+
+```
+```{r}
+urls <- toJSON(split(d_permits, d_permits$permit_type))
+urls
+
+```
+```{r}
+g <- plot_ly(d_permits_2, x = ~license_date, y = ~reorder(project_name, -project_number)) %>% 
+  add_markers(customdata = ~urls)
+
+g
+
+onRender(g, "
+         function(el, x) {
+         el.on('plotly_click', function(d) {
+         var url = d.points[0].d_permits_2$urls;
+         window.open(url);
+         });
+         }
+         ")
+
+
+
+```
+```{r}
+
+mtcars$
+p <- plot_ly(mtcars, x = ~wt, y = ~mpg, color=~mpg) %>%
+  add_markers(
+    color=~mpg,
+    text = rownames(mtcars),
+    customdata = paste0("http://google.com/#q=", rownames(mtcars))
+  )
+  
+onRender(
+  p, "
+  function(el) {
+    el.on('plotly_click', function(d) {
+      var url = d.points[0].customdata;
+      window.open(url);
+    });
+  }
+")
+```
+```{r}
+p <- plot_ly(d_permits_2, x = ~license_date, y = ~reorder(project_name, -project_number), type = 'scatter',
+    marker = list(size = 10, color=~permit_type), 
+    
+    #text = rownames(mtcars),
+    #customdata = paste0("http://google.com/#q=", rownames(mtcars)
+    customdata = ~urls
+  )
+  
+onRender(
+  p, "
+  function(el) {
+    el.on('plotly_click', function(d) {
+      var url = d.points[0].customdata;
+      window.open(url);
+    });
+  }
+")
+```
 
