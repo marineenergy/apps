@@ -64,14 +64,17 @@ shinyServer(function(input, output, session) {
         req(crud()$finished)
         
         aoi_wkt <- st_as_text(st_geometry(crud()$finished), EWKT=T)
-        d_tbl <- "cetmap_bia"
+        d_tbl <- "shp_CetMap_BIA_WGS84"
         
         dist_m  <- 10*1000
         sql <- glue("
             SELECT *
-            FROM public.{d_tbl} d
+            FROM \"{d_tbl}\" d
             WHERE ST_DWithin(Geography(d.geometry), '{aoi_wkt}', {dist_m});")
         d_win <- st_read(con, query = sql)
+        
+        d_title <- "Biologically Important Areas for Cetaceans%"
+        dbGetQuery(con, glue("SELECT * FROM dataset_shps WHERE title LIKE '{d_title}'"))
         
         message(glue("returning tagList with nrow(d_win): {nrow(d_win)}"))
         
