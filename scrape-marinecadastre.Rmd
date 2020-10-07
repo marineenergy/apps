@@ -221,6 +221,26 @@ mapview::mapview(d)
 ```
 
 
+## connect to database
+
+```{r db_connect}
+# connect to database
+library(DBI)
+library(RPostgres)
+
+pass <- readLines("/share/.password_mhk-env.us")
+con  <- DBI::dbConnect(
+  RPostgres::Postgres(),
+  dbname   = "gis",
+  host     = "postgis",
+  port     = 5432,
+  user     = "admin",
+  password = pass)
+
+tbls <- dbListTables(con)
+tbls
+```
+
 ## datasets_marinecadastre.gov.csv - Google Sheet
 
 Read the Google Sheet into a data frame in R.
@@ -233,25 +253,52 @@ source(here::here("functions.R"))
 datasets_gid <- "1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ"
 datasets_csv <- glue::glue("https://docs.google.com/spreadsheets/d/{datasets_gid}/gviz/tq?tqx=out:csv&sheet=modals")
 
-d_shps  <- read_csv(datasets_csv) %>% 
-  select(-starts_with("X")) %>% 
+redo_datasets <- F
+
+datasets <- read_csv(datasets_csv) %>% 
+  select(-starts_with("X"))
+
+if (!"datasets" %in% dbListTables(con) | redo_datasets){
+  #dbSendQuery(con, "DROP TABLE IF EXISTS datasets CASCADE;")
+  #dbGetQuery(con, 'DROP TABLE IF EXISTS "Pacific Northwest Physiographic Habitat - V4_0_SGH_WA_OR_NCA.sh" CASCADE;')
+  #dbGetQuery(con, 'DROP TABLE IF EXISTS "Pacific North~ | V4_0_SGH_WA_OR_NCA.shp" CASCADE;')
+  dbWriteTable(con, "datasets", datasets)
+}
+
+dataset_shps <- datasets %>% 
+  select(title, dir_path) %>% 
   mutate(
     shps_lst = map(
       dir_path, 
       function(x){
         list.files(x, ".*\\.shp$", recursive = T, full.names = T) }),
-    shps_n   = map_int(shps_lst, length)) %>% 
+    shps_n = map_int(shps_lst, length)) %>% 
   filter(shps_n > 0) %>%
   rename(shp_path = shps_lst) %>% 
   unnest(shp_path) %>% 
   mutate(
-    shp_fname   = basename(shp_path),
-    shp_size_mb = dir_size_mb / shps_n,
-    shp_tbl     = map2_chr(title, shp_fname, titleshp2tbl),
-    shp_tbl_duplicated = duplicated(shp_tbl)) %>% 
-  arrange(desc(shp_size_mb))
-  #arrange(shp_tbl)
+    shp_tbl              = map_chr(shp_path, shp2tbl),
+    shp_tbl_duplicated   = duplicated(shp_tbl)) %>% 
+  arrange(title, shp_tbl)
 
+if (!"dataset_shps" %in% dbListTables(con) | redo_datasets){
+  dbWriteTable(con, "dataset_shps", dataset_shps)
+}
+
+shp_tbls_dupes <- dataset_shps %>% 
+  filter(shp_tbl_duplicated) %>% 
+  distinct(shp_tbl) %>% 
+  pull(shp_tbl)
+
+# show duplicates: shp_tbl, title
+dataset_shps %>% 
+  filter(shp_tbl %in% shp_tbls_dupes) %>% 
+  select(shp_tbl, title) %>% 
+  arrange(shp_tbl, title)
+
+
+
+stopifnot(sum(d_shps$shp_tbl_duplicated) == 0)
 stopifnot(sum(d_shps$shp_tbl_duplicated) == 0)
 
 d_shps %>%
@@ -268,11 +315,14 @@ s_shps <- d_shps %>%
 # TODO: just load based on shapfile name, update dataset_vectors with lookups shp to dataset
 #View(s_shps)
 
-
-d_shps %>% 
+dataset_shps4db <- dataset_shps %>% 
+  filter(!shp_tbl_duplicated) %>% 
   select(
-    shp = shp_path, 
-    tbl = shp_tbl) %>% 
+    tbl = shp_tbl,
+    shp = shp_path) %>% 
+  arrange(tbl)
+
+dataset_shps4db %>% 
   pwalk(shp2db)
 
 # d_shps %>%
