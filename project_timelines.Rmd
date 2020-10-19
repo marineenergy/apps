@@ -258,7 +258,7 @@ g <- ggplot(d_permits_2,
   #choose colors for permit types
   #scale_color_manual(name = "Permit Type", values = c("red2", "orange", "yellow2", "forestgreen", 'aquamarine', #'cornflowerblue', 'hotpink', 'darkorchid4')) +
   
-  scale_color_brewer(palette = 'YlOrRd') + 
+  scale_color_brewer(palette = 'PiYG') + 
   
   
   #label the plot
@@ -396,19 +396,27 @@ Interactive figure with clicking
 #convert the data to JSON format, grouped by permit_type
 #once you click on the point, get the url of that point and open the window
 test1 <- lapply(split(d_permits_2, d_permits_2$permit_type), function(x) split(x, x$technology_type))
+test2 <- split(d_permits_2, d_permits_2$permit_type)
 
 js <- HTML(paste("
                 var myPlot = document.getElementById('PlotlyGraph');
                 myPlot.on('plotly_click', function(data){
                 // console.log(`data: ${JSON.stringify(data, null, 2)}`)
-                // var urls_0 = ", toJSON(split(d_permits_2, d_permits_2$permit_type)), ";
-                var urls = ", toJSON(test1, pretty=T), ";
+                // var urls = ", toJSON(split(d_permits_2, d_permits_2$permit_type)), ";
+                var urls = ", toJSON(test2, pretty=T), ";
+                
                 console.log(`name: ${data.points[0].data.name}`);
                 console.log(`index: ${data.points[0].pointNumber}`);
                 console.log(`x: ${data.points[0].x}`);
                 console.log(`y: ${data.points[0].y}`);
+                console.log(`text1: ${data.points[0].text}`);
+                console.log(`text2: ${urls[data.points[0].text]}`);
                 console.log(`data: ${JSON.stringify(data.points[0].data, null, 2)}`);
                 console.log(`url: ${data.points[0].data}`);
+                // console.log(`name again: ${JSON.stringify(urls[data.points[0].data.name], null, 2)}`);
+                console.log(`thinks this is click: ${JSON.stringify(urls[data.points[0].data.name][data.points[0].pointNumber], null, 2)}`);
+                console.log(`tech type: ${JSON.stringify(urls[data.points[0].data.name][data.points[0].pointNumber]['technology_type'], null, 2)}`);
+                
                 window.open(urls[data.points[0].data.name][data.points[0].pointNumber]['urls'],'_blank');
                 });", sep=''))
 
