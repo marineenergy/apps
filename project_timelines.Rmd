@@ -1,6 +1,9 @@
 ---
 title: "MHK_Timeline_alt"
-output: html_document
+output:
+  html_document:
+    self_contained: false
+    mathjax: null
 ---
 
 ```{r setup, include=FALSE}
@@ -58,8 +61,8 @@ d_permits <- d %>%
   arrange(permit_type, project_number)
 
 #rename the link column to url
-d_permits <- rename(d_permits, urls = link)
-d_permits_2 <- d_permits
+d_permits_2 <- d_permits %>% 
+  rename(urls = link)
 
 d_permits_2 <- d_permits %>% 
   arrange(technology_type, permit_type, project_name, .by_group = F)
@@ -389,50 +392,47 @@ p
 Interactive figure with clicking
 
 ```{r, fig.width = 10, fig.height = 7}
+d_projects <- d_permits %>%
+  arrange(technology_type, permit_type, project_name) %>% 
+  nest_by(technology_type, permit_type) %>% 
+  nest_by(technology_type)
 
-###javascript that will enable clicking on points
-#identify the graph element by id
-#turn on click functionality
-#convert the data to JSON format, grouped by permit_type
-#once you click on the point, get the url of that point and open the window
-test1 <- lapply(split(d_permits_2, d_permits_2$permit_type), function(x) split(x, x$technology_type))
-test2 <- split(d_permits_2, d_permits_2$permit_type)
-
-js <- HTML(paste("
-                var myPlot = document.getElementById('PlotlyGraph');
-                myPlot.on('plotly_click', function(data){
-                // console.log(`data: ${JSON.stringify(data, null, 2)}`)
-                // var urls = ", toJSON(split(d_permits_2, d_permits_2$permit_type)), ";
-                var urls = ", toJSON(test2, pretty=T), ";
-                
-                console.log(`name: ${data.points[0].data.name}`);
-                console.log(`index: ${data.points[0].pointNumber}`);
-                console.log(`x: ${data.points[0].x}`);
-                console.log(`y: ${data.points[0].y}`);
-                console.log(`text1: ${data.points[0].text}`);
-                console.log(`text2: ${urls[data.points[0].text]}`);
-                console.log(`data: ${JSON.stringify(data.points[0].data, null, 2)}`);
-                console.log(`url: ${data.points[0].data}`);
-                // console.log(`name again: ${JSON.stringify(urls[data.points[0].data.name], null, 2)}`);
-                console.log(`thinks this is click: ${JSON.stringify(urls[data.points[0].data.name][data.points[0].pointNumber], null, 2)}`);
-                console.log(`tech type: ${JSON.stringify(urls[data.points[0].data.name][data.points[0].pointNumber]['technology_type'], null, 2)}`);
-                
-                window.open(urls[data.points[0].data.name][data.points[0].pointNumber]['urls'],'_blank');
-                });", sep=''))
-
-#window.alert('Here is the text associated with your point:\n' + data.points[0].fullData);
-
-
-#js <- HTML(paste("
-#                var myPlot = document.getElementById('PlotlyGraph');
-#                myPlot.on('plotly_click', function(data){
-#                var pts = '';
-#                for(var i=0; i < data.points.length; i++){
-#                    annotate_text = 'x = '+data.points[i].x +
-#                                  'y = '+data.points[i].y.toPrecision(4);}
-#                window.alert('Here is the text associated with your point:\n' +pts);
-#                console.log(data.points[0])}", sep=''))
-
+js <- HTML(paste(
+  "
+  d_projects = ", toJSON(d_projects, pretty=T), ";
+  
+  // technology_type facets
+  yidx = {'y': 0, 'y2': 1, 'y3': 2};
+  
+  var myPlot = document.getElementById('PlotlyGraph');
+  
+  myPlot.on('plotly_click', function(data){
+  
+    // technology_type
+    var yaxis = data.points[0].fullData.yaxis;
+    // permit_type
+    var legendgroup = data.points[0].data.legendgroup;
+    // project
+    var pointIndex = data.points[0].pointIndex;
+  
+    console.log(`yaxis: ${yaxis}`);
+    console.log(`legendgroup: ${legendgroup}`);
+    console.log(`pointIndex: ${pointIndex}`);
+  
+    if(typeof legendgroup !== 'undefined' | typeof pointIndex !== 'undefined'){
+    
+      d_tech     = d_projects[yidx[yaxis]].data; 
+      idx_permit = d_tech.findIndex(x => x.permit_type === legendgroup);
+      d_permits  = d_tech[idx_permit].data;
+      d_project = d_permits[pointIndex];
+      link = d_permits[pointIndex].link;
+      
+      console.log(`project_name: ${d_project.project_name}`);
+      console.log(`link: ${link}`);
+      
+      window.open(link,'_blank');
+    }
+  });", sep=''))
 
 #tag the plot
 p$elementId <- "PlotlyGraph"
