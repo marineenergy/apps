@@ -2,12 +2,16 @@
 title: "MHK_Timeline_alt"
 output:
   html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    code_folding: hide
     self_contained: false
     mathjax: null
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = T, message = F, warning = F)
 ```
 
 
@@ -33,7 +37,7 @@ d <- readr::read_csv(csv_url) %>%
 
 
 
-Data Cleaning
+## Data Cleaning
 
 ```{r}
 #sort data by permit type
@@ -95,7 +99,7 @@ d_times <- d_times %>%
 ```
 
 
-Static Figure
+## Static Figure
 
 ```{r, fig.width = 10, fig.height = 7}
 
@@ -142,7 +146,9 @@ g <- ggplot(d_permits_2,
 # static
 g
 ```
-Static figure with different color ramp option
+
+## Static figure with different color ramp option
+
 ```{r, fig.width = 10, fig.height = 7}
 
 ###ggplot figure that has points and bars indicating permitting
@@ -192,7 +198,8 @@ g <- ggplot(d_permits_2,
 g
 ```
 
-Static figure with third color ramp option
+## Static figure with third color ramp option
+
 ```{r, fig.width = 10, fig.height = 7}
 ###ggplot figure that has points and bars indicating permitting
 #the fig.width and fig.height above determine the figure size overall
@@ -241,7 +248,8 @@ g <- ggplot(d_permits_2,
 g
 ```
 
-Static figure with sequential color palette
+## Static figure with sequential color palette
+
 ```{r, fig.width = 10, fig.height = 7}
 ###ggplot figure that has points and bars indicating permitting
 #the fig.width and fig.height above determine the figure size overall
@@ -290,7 +298,7 @@ g <- ggplot(d_permits_2,
 g
 ```
 
-Interactive figure with tooltip
+## Interactive figure with tooltip
 
 ```{r, fig.width = 10, fig.height = 7}
 # interactive plot with tooltip
@@ -382,14 +390,7 @@ p
 
 ```
 
-
-
-
-
-
-
-
-Interactive figure with clicking
+## Interactive figure with clicking
 
 ```{r, fig.width = 10, fig.height = 7}
 d_projects <- d_permits %>%
