@@ -2,16 +2,12 @@
 title: "MHK_Timeline_alt"
 output:
   html_document:
-    toc: true
-    toc_depth: 2
-    toc_float: true
-    code_folding: hide
     self_contained: false
     mathjax: null
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = T, message = F, warning = F)
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
@@ -37,7 +33,7 @@ d <- readr::read_csv(csv_url) %>%
 
 
 
-## Data Cleaning
+Data Cleaning
 
 ```{r}
 #sort data by permit type
@@ -99,7 +95,7 @@ d_times <- d_times %>%
 ```
 
 
-## Static Figure
+Static Figure
 
 ```{r, fig.width = 10, fig.height = 7}
 
@@ -147,12 +143,16 @@ g <- ggplot(d_permits_2,
 g
 ```
 
-## Static figure with different color ramp option
 
+
+Static figure with sequential color palette
 ```{r, fig.width = 10, fig.height = 7}
-
 ###ggplot figure that has points and bars indicating permitting
 #the fig.width and fig.height above determine the figure size overall
+
+#pick the color scale
+scale <- brewer.pal(n=10, name = 'PiYG')
+scale <- scale[c(1:4, 7:10)]
 
 #the input to ggplot is what determines the tooltip label
 g <- ggplot(d_permits_2, 
@@ -166,11 +166,7 @@ g <- ggplot(d_permits_2,
   geom_point(data = d_permits_2, 
              aes(x = license_date, y = project_name, color = permit_type), size = 3, shape = 17) +
   
-  #choose colors for permit types
-  #scale_color_manual(name = "Permit Type", values = c("red2", "orange", "yellow2", "forestgreen", 'aquamarine', #'cornflowerblue', 'hotpink', 'darkorchid4')) +
-  
-  scale_color_brewer(palette = 'Dark2') + 
-  
+  scale_color_manual(values = scale) + 
   
   #label the plot
   labs(title = "MHK Project Timeline", x = "Year of Project", y = "") +
@@ -198,107 +194,7 @@ g <- ggplot(d_permits_2,
 g
 ```
 
-## Static figure with third color ramp option
-
-```{r, fig.width = 10, fig.height = 7}
-###ggplot figure that has points and bars indicating permitting
-#the fig.width and fig.height above determine the figure size overall
-
-#the input to ggplot is what determines the tooltip label
-g <- ggplot(d_permits_2, 
-            aes(text = paste('License Date: ', license_date, '\nProject Name: ', project_name, '\nPermit Type: ', permit_type))) +
-  
-  #the segment is a gray bar that covers the time period of the permits
-  geom_segment(data = d_times, 
-               aes(x = date_beg, y = project_name, xend = date_end, yend = project_name), size = 4, color =         "gray80") +
-  
-  #the points have colors and shapes indicating different permit types
-  geom_point(data = d_permits_2, 
-             aes(x = license_date, y = project_name, color = permit_type), size = 3, shape = 17) +
-  
-  #choose colors for permit types
-  #scale_color_manual(name = "Permit Type", values = c("red2", "orange", "yellow2", "forestgreen", 'aquamarine', #'cornflowerblue', 'hotpink', 'darkorchid4')) +
-  
-  scale_color_brewer(palette = 'Set1') + 
-  
-  
-  #label the plot
-  labs(title = "MHK Project Timeline", x = "Year of Project", y = "") +
-  
-  facet_grid(rows = vars(technology_type), scales='free_y', space = 'free') +
-  
-  #choose a theme
-  theme(panel.grid.minor = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.background = element_blank(), 
-        axis.line = element_line(colour = "black"),
-        #legend.margin=margin(100,100,100,100),
-        #legend.box.margin=margin(20,20,20,20),
-        #legend.position = c(0.9, 0.84),
-        #legend.background = element_rect(fill = "transparent", colour = NA),
-        #axis.text.y = axis.groups(unique(d_times$technology_type)),
-        axis.text.x = element_text(color="black", size=12, angle=45, vjust=1, hjust = 1),
-        axis.text.y = element_text(color="black", size=12, vjust = -1),
-        axis.title.y=element_text(face="bold", size=13),
-        axis.title.x=element_text(face="bold", size=13),
-        #plot.margin = margin(.15, .2, 0, 0, "cm"),
-        plot.background = element_rect(fill = "transparent", colour = NA))
-
-# static
-g
-```
-
-## Static figure with sequential color palette
-
-```{r, fig.width = 10, fig.height = 7}
-###ggplot figure that has points and bars indicating permitting
-#the fig.width and fig.height above determine the figure size overall
-
-#the input to ggplot is what determines the tooltip label
-g <- ggplot(d_permits_2, 
-            aes(text = paste('License Date: ', license_date, '\nProject Name: ', project_name, '\nPermit Type: ', permit_type))) +
-  
-  #the segment is a gray bar that covers the time period of the permits
-  geom_segment(data = d_times, 
-               aes(x = date_beg, y = project_name, xend = date_end, yend = project_name), size = 4, color =         "gray80") +
-  
-  #the points have colors and shapes indicating different permit types
-  geom_point(data = d_permits_2, 
-             aes(x = license_date, y = project_name, color = permit_type), size = 3, shape = 17) +
-  
-  #choose colors for permit types
-  #scale_color_manual(name = "Permit Type", values = c("red2", "orange", "yellow2", "forestgreen", 'aquamarine', #'cornflowerblue', 'hotpink', 'darkorchid4')) +
-  
-  scale_color_brewer(palette = 'PiYG') + 
-  
-  
-  #label the plot
-  labs(title = "MHK Project Timeline", x = "Year of Project", y = "") +
-  
-  facet_grid(rows = vars(technology_type), scales='free_y', space = 'free') +
-  
-  #choose a theme
-  theme(panel.grid.minor = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.background = element_blank(), 
-        axis.line = element_line(colour = "black"),
-        #legend.margin=margin(100,100,100,100),
-        #legend.box.margin=margin(20,20,20,20),
-        #legend.position = c(0.9, 0.84),
-        #legend.background = element_rect(fill = "transparent", colour = NA),
-        #axis.text.y = axis.groups(unique(d_times$technology_type)),
-        axis.text.x = element_text(color="black", size=12, angle=45, vjust=1, hjust = 1),
-        axis.text.y = element_text(color="black", size=12, vjust = -1),
-        axis.title.y=element_text(face="bold", size=13),
-        axis.title.x=element_text(face="bold", size=13),
-        #plot.margin = margin(.15, .2, 0, 0, "cm"),
-        plot.background = element_rect(fill = "transparent", colour = NA))
-
-# static
-g
-```
-
-## Interactive figure with tooltip
+Interactive figure with tooltip
 
 ```{r, fig.width = 10, fig.height = 7}
 # interactive plot with tooltip
@@ -390,7 +286,9 @@ p
 
 ```
 
-## Interactive figure with clicking
+
+
+Interactive figure with clicking
 
 ```{r, fig.width = 10, fig.height = 7}
 d_projects <- d_permits %>%
