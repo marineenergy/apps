@@ -1,10 +1,21 @@
 # libraries & functions ----
 
 source(here::here("functions.R"))
-shelf(mapview)
+shelf(r-spatial/mapview) # https://github.com/r-spatial/mapview/issues/324
+mapviewOptions(
+    basemaps = c("Stamen.TonerLite", "Esri.OceanBasemap"),
+    platform = "leaflet")
 
 dataset_titles <- dbGetQuery(con, "SELECT DISTINCT title FROM dataset_shps ORDER BY title") %>% 
     pull(title)
+datasets <- dbGetQuery(
+    con, 
+    "SELECT title, COUNT(*) AS n_shps FROM dataset_shps 
+     GROUP BY title ORDER BY title") %>% 
+    mutate(
+        title_nshps = glue("{title} [{n_shps}]"))
+dataset_choices = with(datasets, setNames(title, title_nshps))
+
 shp_tbls <- dbGetQuery(con, glue(
     "SELECT title, shp_tbl FROM dataset_shps 
      WHERE title = '{dataset_titles[1]}' ORDER BY shp_tbl")) %>% 
@@ -19,8 +30,8 @@ ui <- fluidPage(
         sidebarPanel(
             selectInput(
                 "sel_dataset",
-                "Dataset:",
-                dataset_titles),
+                "Dataset [# shapefiles]:",
+                dataset_choices),
             selectInput(
                 "sel_shp_tbls",
                 "Shapefile:",
@@ -40,6 +51,9 @@ server <- function(input, output, session) {
     get_shp <- reactive({
         req(input$sel_shp_tbls)
         
+        message(glue("input$sel_shp_tbls: {input$sel_shp_tbls}"))
+        #input <- list(sel_shp_tbls = "shp_USMaritimeLimitsNBoundaries")
+        
         shp <- st_read(con, query = glue('SELECT * FROM "{input$sel_shp_tbls}"'))
     })
 
@@ -47,10 +61,7 @@ server <- function(input, output, session) {
     output$map <- renderLeaflet({
         shp <- get_shp()
         
-        mapviewOptions(
-            basemaps = c("Stamen.TonerLite"), "Esri.OceanBasemap")
         m <- mapview(shp)
-        
         m@map
     })
 
