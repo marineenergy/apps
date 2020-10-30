@@ -37,7 +37,7 @@ Data Cleaning
 
 ```{r}
 #sort data by permit type
-d$permit_type <- factor(d$permit_type, levels = c("Notice of Intent", 'Draft Pilot License App', 'Final Pilot License App', "Draft License App", "Final License App", 'Environmental Assessment', 'Settlement Agreement', "Permit Issued"))
+d$permit_type <- factor(d$permit_type, levels = c("Notice of Intent/Preliminary Permit Application", 'Draft Pilot License App', 'Final Pilot License App', "Draft License App", "Final License App", 'Environmental Assessment', 'Settlement Agreement', "Permit Issued"))
 
 d$technology_type <- factor(d$technology_type, levels = c('Riverine Energy', 'Tidal Energy', 'Wave Energy'))
 
@@ -199,7 +199,7 @@ Interactive figure with tooltip
 ```{r, fig.width = 10, fig.height = 7}
 # interactive plot with tooltip
 #specify the tooltip in the ggplotly function to get custom text
-p = ggplotly(g, tooltip = 'text', height = 700, width = 800)
+p = ggplotly(g, tooltip = 'text', height = 700, width = 1000)
 #p
 
 ##this part is from stackoverflow and works to adjust the y axis ticks and labels, as well as partly adjust the gray bars on the right
@@ -290,7 +290,7 @@ p
 
 Interactive figure with clicking
 
-```{r, fig.width = 10, fig.height = 7}
+```{r, fig.width = 12, fig.height = 7}
 d_projects <- d_permits %>%
   arrange(technology_type, permit_type, project_name) %>% 
   nest_by(technology_type, permit_type) %>% 
