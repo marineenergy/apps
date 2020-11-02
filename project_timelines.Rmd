@@ -215,18 +215,25 @@ total_length = total + len * spacer
 end <- 1
 start <- 1
 
-for (i in c('', seq(1, len))) {
-  tick_l <- length(p[['x']][['layout']][[paste('yaxis', i, sep='')]][['ticktext']]) + 1
+# fix y-axis tick marks: yaxis, yaxis2, yaxis3
+#for (i in c('', seq(1, len))) { # i = 1
+for (i in seq(1, len)) { # i = 1
+  yaxis <- ifelse(
+    i == 1,
+    "yaxis",
+    paste0('yaxis', i))
+  
+  tick_l <- length(p[['x']][['layout']][[yaxis]][['ticktext']]) + 1
 
   #fix the y-axis
-  p[['x']][['layout']][[paste('yaxis', i, sep='')]][['tickvals']] <- seq(1, tick_l)
-  p[['x']][['layout']][[paste('yaxis', i, sep='')]][['ticktext']][[tick_l]] <- ''
+  p[['x']][['layout']][[yaxis]][['tickvals']] <- seq(1, tick_l)
+  p[['x']][['layout']][[yaxis]][['ticktext']][[tick_l]] <- ''
 
   end <- start - spacer
   start <- start - (tick_l - 1) / total_length
   v <- c(start, end)
   #fix the size
-  p[['x']][['layout']][[paste('yaxis', i, sep='')]]$domain <- v
+  p[['x']][['layout']][[yaxis]]$domain <- v
 }
 
 #fix the first entry which has a different name than the rest
