@@ -20,6 +20,7 @@ ui <- fluidPage(
     
     sidebarLayout(
         sidebarPanel(
+            # TODO: listbox of AND statements to select/remove with OR between
             selectInput(
                 "tags", "Select tag(s):", 
                 lst_tags,
@@ -54,7 +55,20 @@ server <- function(input, output) {
                  GROUP BY uri, title")) %>% 
             filter(tag_cnt == length(tags))
         
-        datatable(res) })
+        res %>%
+            mutate(
+                Title = map2_chr(
+                    title, uri,
+                    function(x, y)
+                        glue("<a href={y}>{x}</a>"))) %>%
+            select(Title) %>%
+            arrange(Title) %>%
+            datatable(
+                escape = F,
+                options = list(
+                    pageLength = 50,
+                    dom = 't'))
+        })
 }
 
 shinyApp(ui = ui, server = server)
