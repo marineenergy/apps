@@ -37,8 +37,14 @@ ui <- fluidPage(
                 "Shapefile:",
                 shp_tbls),
             textAreaInput(
-                "txt_customR",
-                "R code to customize")),
+                "txt_select_sql",
+                "SQL to SELECT")),
+            textAreaInput(
+                "txt_summarize_r",
+                "R code to summarize (optional R method)")),
+            textAreaInput(
+                "txt_summarize_sql",
+                "SQL code to customize (optional SQL method)")),
         
         mainPanel(
             leafletOutput("map"),

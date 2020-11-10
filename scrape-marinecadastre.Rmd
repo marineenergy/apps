@@ -250,24 +250,41 @@ source(here::here("functions.R"))
 
 # datasets_marinecadastre.gov.csv - Google Sheet
 #   edit online: https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=0
-datasets_gid <- "1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ"
-datasets_csv <- glue::glue("https://docs.google.com/spreadsheets/d/{datasets_gid}/gviz/tq?tqx=out:csv&sheet=modals")
+datasets_gid      <- "1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ"
+datasets_csv      <- glue("https://docs.google.com/spreadsheets/d/{datasets_gid}/gviz/tq?tqx=out:csv&sheet=datasets")
+datasets_mc_csv   <- glue("https://docs.google.com/spreadsheets/d/{datasets_gid}/gviz/tq?tqx=out:csv&sheet=datasets_mc}")
 
-redo_datasets <- F
+redo_datasets    <- F
+redo_datasets_mc <- F
 
 datasets <- read_csv(datasets_csv) %>% 
   select(-starts_with("X"))
 
+datasets_mc <- read_csv(datasets_mc_csv) %>% 
+  select(-starts_with("X"))
+
 if (!"datasets" %in% dbListTables(con) | redo_datasets){
-  #dbSendQuery(con, "DROP TABLE IF EXISTS datasets CASCADE;")
+  #dbSendQuery(con, "DROP TABLE IF EXISTS datasets_mc CASCADE;")
   #dbGetQuery(con, 'DROP TABLE IF EXISTS "Pacific Northwest Physiographic Habitat - V4_0_SGH_WA_OR_NCA.sh" CASCADE;')
   #dbGetQuery(con, 'DROP TABLE IF EXISTS "Pacific North~ | V4_0_SGH_WA_OR_NCA.shp" CASCADE;')
+  #dbGetQuery(con, 'ALTER TABLE datasets RENAME TO datasets_0pre_mc;')
   dbWriteTable(con, "datasets", datasets)
 }
 
-dataset_shps <- datasets %>% 
-  select(title, dir_path) %>% 
+if (!"datasets_mc" %in% dbListTables(con) | redo_datasets_mc)
+  dbWriteTable(con, "datasets_mc", datasets_mc)
+
+dataset_shps <- datasets_mc %>% 
+  select(title, dir_path) %>% # TODO: where did dir_path go?
   mutate(
+    # TODO: 
+    # - raster: cd /share/data/marinecadastre.gov; find . -type f -name "*.tif"
+    # - other?: missing *.shp or *.tif, so *.mdb or error like: cd /share/data/marinecadastre.gov; ls *Turtle* # NA_error.txt
+    tif_lst = map(
+      dir_path,
+      function(x){
+        list.files(x, ".*\\.tif$", recursive = T, full.names = T) }),
+    )
     shps_lst = map(
       dir_path, 
       function(x){
@@ -281,7 +298,7 @@ dataset_shps <- datasets %>%
     shp_tbl_duplicated   = duplicated(shp_tbl)) %>% 
   arrange(title, shp_tbl)
 
-if (!"dataset_shps" %in% dbListTables(con) | redo_datasets){
+if (!"dataset_shps" %in% dbListTables(con) | redo_datasets_mc){
   dbWriteTable(con, "dataset_shps", dataset_shps)
 }
 
@@ -296,14 +313,15 @@ dataset_shps %>%
   select(shp_tbl, title) %>% 
   arrange(shp_tbl, title)
 
-
-
 stopifnot(sum(d_shps$shp_tbl_duplicated) == 0)
 stopifnot(sum(d_shps$shp_tbl_duplicated) == 0)
 
-d_shps %>%
-  select(shp_tbl, shp_tbl_duplicated, title, shp_fname, priority, dataset_code, shps_n, dir_size_mb, shp_size_mb,  shp_path) %>%
-  View()
+# d_shps %>%
+#   select(
+#     shp_tbl, shp_tbl_duplicated, 
+#     title, shp_fname, priority, 
+#     dataset_code, shps_n, dir_size_mb, shp_size_mb,  shp_path) %>%
+#   View()
 
 s_shps <- d_shps %>%
   group_by(shp_fname) %>%

@@ -1,0 +1,17 @@
+
+#### {{tag}}
+
+```{r}
+# This document _docs_tethys.Rmd is called by knit_tethys_literature_from_tags(), which is invoked by report_template.Rmd
+tags <- str_split("{{tag}}", " AND ") %>% unlist()
+```
+
+```{r stressor {{tag}} html, eval = knitr::is_html_output()}
+# source("functions.R"); stressor = "EMF"
+tabulate_tethys_literature_from_tags(tags)
+```
+
+```{r stressor {{tag}} not html, eval = !knitr::is_html_output(), results='asis'}
+# source("functions.R"); stressor = "EMF"
+tabulate_tethys_literature_from_tags(tags)
+```

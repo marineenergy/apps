@@ -1,0 +1,12 @@
+
+```{r}
+# i_datasets = 1
+d <- datasets %>% slice({{i_datasets}})
+```
+
+## `r d$tag`: `r d$title`
+
+```{r}
+# source("functions.R"); stressor = "EMF"
+tabulate_dataset_shp_within_aoi(d$code, params$aoi_wkt)
+```
