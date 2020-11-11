@@ -1,27 +1,42 @@
 ---
 title: "`r params$title`"
 params:
-  title: "Custom Report"
-  technology: "Cross Flow"
-  aoi_wkt: "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
+  #title: "Custom Report"
+  title: "Test Report"
+  #technology: "Cross Flow"
+  technology: "Ocean Current"
+  # aoi_wkt: "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
+  aoi_wkt: "POLYGON ((-68.37953 44.857, -67.38415 43.89608, -64.21114 45.0997, -64.90587 45.89335, -68.37953 44.857))"
   stressors: 
-    - Noise
+    # - Noise
+    # - EMF
     - EMF
+    - Lighting
   receptors:
-    - Marine Mammals
-    - Fish
+    # - Marine Mammals
+    # - Fish
+    - Cetaceans
+    - Pinnipeds
   stressor_receptors:
-    - Marine Mammals AND Noise
-    - Fish AND EMF
+    # - Marine Mammals AND Noise
+    # - Fish AND EMF
+    - Bats AND Displacement
+    - Cetaceans AND Noise
+    - Pinnipeds AND Noise
+  lit_tethys: true
+  lit_ferc: false
+  spatial: true
+  mgt_tethys: false
 output:
-  word_document:
-    toc: true
-    toc_depth: 4
-    number_sections: true
   html_document:
     toc: true
     toc_depth: 4
     toc_float: true
+    number_sections: true
+    mathjax: null
+  word_document:
+    toc: true
+    toc_depth: 4
     number_sections: true
   pdf_document:
     toc: true
@@ -35,16 +50,17 @@ always_allow_html: true
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = F, warning = F, message = F, eval = T)
+knitr::opts_chunk$set(echo = F, warning = F, message = F, eval = F)
 ```
 
-```{r init}
+```{r init, eval = T}
 source(here::here("functions.R")) # libraries, db connection object (con)
+# rmd_params <- readRDS(here("data/tmp_rmd_params.rds"))
 ```
 
 # Configuration
 
-```{r}
+```{r, eval = T}
 # params = list(technology="Cross Flow")
 tech_choices <- read_csv(here("report/data/tech_choices.csv"))
 d <- tech_choices %>% 
@@ -73,101 +89,4 @@ bullets <- function(tags, indent=1){
 }
 ```
 
-## Technology: `r glue("{tech$tech1} -- {params$technology}")`
-
-![](`r ifelse(knitr::is_html_output(), tech$gif, tech$img_local)`)
-
-<!-- ### Tags -->
-
-## Stressors & Receptors
-
-* Stressors
-
-```{r, results='asis'}
-bullets(params$stressors)
-```
-
-* Receptors
-
-```{r, results='asis'}
-bullets(params$receptors)
-```
-
-* Stressor-Receptors
-
-```{r, results='asis'}
-bullets(params$stressor_receptors)
-```
-
-## Location
-
-```{r map}
-# params = list(aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))")
-
-aoi_sf <- tibble(
-  geometry = params$aoi_wkt) %>%
-  st_as_sf(wkt = "geometry", crs=4326)
-
-leaflet(
-  options = leafletOptions(
-    zoomControl = F,
-    attributionControl = F)) %>%
-  addProviderTiles(providers$Esri.OceanBasemap) %>%
-  addPolygons(data = aoi_sf)
-```
-
-# Literature
-
-## Stressors
-
-Stressors are potentially harmful environmental effects from technology for marine renewable energy.
-
-```{r stressors, results='asis'}
-# params = list(stressors = c("Noise", "EMF"))
-knit_tethys_literature_from_tags(params$stressors)
-```
-
-## Receptors
-
-Receptors are species, habitats and human activities of environmental concern. Spatial data of receptors are extracted for the area of interest from data harvested predominantly from [MarineCadastre.gov](https://MarineCadastre.gov).
-
-```{r receptors, results='asis'}
-# params = list(receptors = c("Marine Mammals", "Fish"))
-knit_tethys_literature_from_tags(params$receptors)
-```
-
-## Stressor-Receptors
-
-```{r stressor_receptors, results='asis'}
-# params = list(stressor_receptors = c("Marine Mammals AND Noise", "Fish AND EMF"))
-knit_tethys_literature_from_tags(params$stressor_receptors)
-```
-
-# Spatial
-
-```{r, results='asis'}
-# datasets_gsheet2db ----
-# datasets_marinecadastre.gov.csv - Google Sheet
-#   edit online: https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=0
-# datasets_gsheet2db()
-
-# params = list(
-#   receptors = c("Marine Mammals", "Fish"),
-#   aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))")
-
-datasets <- tbl(con, "datasets") %>% 
-  collect() %>%
-  replace_na(list(buffer_km = 0)) %>% 
-  select(-notes, -issues) %>% 
-  separate_rows(tags, sep = ";") %>% 
-  rename(tag = tags) %>% 
-  filter(
-    tag %in% params$receptors) %>% 
-  arrange(tag, title)
-
-lapply(1:nrow(datasets), function(i_datasets) {
-    knit_expand('_spatial-tag-dataset.Rmd') }) %>% 
-    knit_child(text = unlist(.), quiet = T) %>% 
-    cat(sep = '\n\n')
-```
 

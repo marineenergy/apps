@@ -252,4 +252,6 @@ shinyServer(function(input, output, session) {
                 modalButton("Cancel"),
                 actionButton("ok", "OK"))))
     })
+    
+    
 })

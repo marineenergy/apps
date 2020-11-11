@@ -117,15 +117,15 @@ stressor,533,Entrapment,Physical Interaction
 stressor,356,Habitat Change,
 stressor,354,Lighting,
 stressor,355,Noise,
-technology,431,Land-Based Wind,
+technology,431,Land-Based Wind,Wind Energy (General)
 technology,423,Marine Energy (General),
-technology,424,Ocean Current,
-technology,432,Offshore Wind,
-technology,425,OTEC,
-technology,426,Riverine,
-technology,427,Salinity Gradient,
-technology,428,Tidal,
-technology,429,Wave,
+technology,424,Ocean Current,Marine Energy (General)
+technology,432,Offshore Wind,Wind Energy (General)
+technology,425,OTEC,Marine Energy (General)
+technology,426,Riverine,Marine Energy (General)
+technology,427,Salinity Gradient,Marine Energy (General)
+technology,428,Tidal,Marine Energy (General)
+technology,429,Wave,Marine Energy (General)
 technology,430,Wind Energy (General),
 stressor,,Behavioral Interaction,
 stressor,,Physical Interaction,
