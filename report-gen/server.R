@@ -78,7 +78,7 @@ shinyServer(function(input, output, session) {
           #render(tmp_rmd, output_format=out_fmt, output_file=file, params = list(url=url))
           # saveRDS(rmd_params, here("data/tmp_rmd_params.rds"))
           # rmd_params <- readRDS(here("data/tmp_rmd_params.rds"))
-          browser()
+          #browser()
           # file <- here("data/tmp_rmd_params_report.html")
           render(rmd, output_format=out_fmt, output_file=file, params = rmd_params)})
     }

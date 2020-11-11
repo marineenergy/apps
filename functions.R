@@ -14,7 +14,7 @@ shelf(
   # report
   DT, gt, htmltools, htmlwidgets, kableExtra, knitr, markdown, rmarkdown, shiny, webshot,
   # utility
-  fs, glue, here, stringr)
+  fs, glue, here, stringr, urltools)
 here <- here::here
 
 # rstudio/webshot2
@@ -184,16 +184,26 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt){
     ds$buffer_nm == 0,
     glue("\n\nSpatial: within site", .trim = F),
     glue("\n\nSpatial: within {ds$buffer_nm} nautical miles of site", .trim = F))
+
+  if (knitr::is_html_output()){
+    x_caption <- HTML(markdownToHTML(
+      text = glue("Source: [{ds$src_name}]({ds$src_url}){x_spatial}"),
+      fragment.only = T))
+    
+    tbl <- x_df %>% 
+      kbl(caption = x_caption) %>%
+      kable_styling(
+        # full_width = F, position = "left", # position = "float_right"
+        bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+    
+  } else {
+    x_caption <- glue("Source: [{ds$src_name}]({ds$src_url}){x_spatial}")
+    
+    tbl <- x_df %>% 
+      kable(caption = x_caption, format = "pipe")
+  }
   
-  x_caption <- HTML(markdownToHTML(
-    text = glue("Source: [{ds$src_name}]({ds$src_url}){x_spatial}"),
-    fragment.only = T))
-  
-  x_df %>% 
-    kbl(caption = x_caption) %>%
-    kable_styling(
-      # full_width = F, position = "left", # position = "float_right"
-      bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+  tbl
 }
 
 tabulate_tethys_literature_from_tags <- function(tags){
@@ -217,7 +227,7 @@ tabulate_tethys_literature_from_tags <- function(tags){
      GROUP BY uri, title")) %>% 
     filter(tag_cnt == length(tags))
   
-  caption_md <- glue("Literature from [Tethys Knowledge Base](https://tethys.pnnl.gov/knowledge-base-all) based on tags: {paste(tags, collapse=', ')}.")
+  caption_md <- glue("Literature from [Tethys Knowledge Base](https://tethys.pnnl.gov/knowledge-base-all)}.")
   
   if (knitr::is_html_output()){
     caption_html <- HTML(markdownToHTML(
@@ -241,7 +251,7 @@ tabulate_tethys_literature_from_tags <- function(tags){
     
     res %>%
       mutate(
-        li_title = glue("- [{title}]({uri})")) %>%
+        li_title = glue("1. [{title}]({uri})")) %>%
       pull(li_title) %>% 
       paste(collapse = "\n") %>% 
       cat()

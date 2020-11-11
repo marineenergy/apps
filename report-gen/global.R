@@ -45,7 +45,7 @@ n_s <- length(choices_stressors)
 s_r <- matrix(
   rep(F, n_r * n_s), 
   nrow = n_r, ncol = n_s) %>% 
-  as_tibble() %>% 
+  as.data.frame() %>% 
   setNames(., choices_stressors) %>%  
   mutate(
     Stressor = names(choices_receptors)) %>% 

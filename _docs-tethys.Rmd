@@ -1,5 +1,5 @@
 
-#### {{tag}}
+### {{tag}}
 
 ```{r}
 # This document _docs_tethys.Rmd is called by knit_tethys_literature_from_tags(), which is invoked by report_template.Rmd

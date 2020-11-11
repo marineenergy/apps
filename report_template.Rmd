@@ -10,8 +10,7 @@ params:
   stressors: 
     # - Noise
     # - EMF
-    - EMF
-    - Lighting
+    - Noise
   receptors:
     # - Marine Mammals
     # - Fish
@@ -20,7 +19,6 @@ params:
   stressor_receptors:
     # - Marine Mammals AND Noise
     # - Fish AND EMF
-    - Bats AND Displacement
     - Cetaceans AND Noise
     - Pinnipeds AND Noise
   lit_tethys: true
@@ -28,59 +26,59 @@ params:
   spatial: true
   mgt_tethys: false
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 4
+    number_sections: true
+    #keep_md: yes
+    #latex_engine: xelatex
+  word_document:
+    toc: true
+    toc_depth: 4
+    number_sections: true
+    #keep_md: yes
   html_document:
     toc: true
     toc_depth: 4
     toc_float: true
     number_sections: true
     mathjax: null
-  word_document:
-    toc: true
-    toc_depth: 4
-    number_sections: true
-  pdf_document:
-    toc: true
-    toc_depth: 4
-    number_sections: true
-    # keep_md: yes
-    latex_engine: xelatex
 editor_options: 
   chunk_output_type: console
 always_allow_html: true
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = F, warning = F, message = F, eval = F)
+```{r setup, include=F}
+knitr::opts_chunk$set(echo = F, warning = F, message = F, eval = T)
 ```
 
-```{r init, eval = T}
+```{r init}
 source(here::here("functions.R")) # libraries, db connection object (con)
 # rmd_params <- readRDS(here("data/tmp_rmd_params.rds"))
 ```
 
 # Configuration
 
-```{r, eval = T}
+```{r}
 # params = list(technology="Cross Flow")
-tech_choices <- read_csv(here("report/data/tech_choices.csv"))
-d <- tech_choices %>% 
-  group_by(tech1) %>% 
-  summarize(
-    tech2 = paste(sort(tech2), collapse = "|"))
-tech_list <- pull(d, tech2) %>% strsplit("\\|")
-names(tech_list) <- pull(d, tech1)
-
-tech <- tech_choices %>% 
-  filter(tech2 == params$technology) %>% 
+#tech_choices <- read_csv(here("report/data/tech_choices.csv"))
+# TODO: integrate finer detail in tech_choices.csv with tags.csv
+tech <- read_csv(here("data/tags.csv")) %>% 
+  filter(facet == "technology") %>% 
+  select(tag = item_label, tag_parent, tag_img) %>% 
+  filter(tag == params$technology) %>% 
   mutate(
     img_local = map_chr(
-      img, 
+      tag_img, 
       function(url){
-        # url <- tech$img
-        img_local <- file.path(here("report/data/tech_images"), basename(url))
+        # url <- tech$tag_img
+        fname         <- urltools::path(url) %>% url_decode() %>% basename()
+        img_local <- file.path(here("report/data/tech_images"), fname)
         if (!file.exists(img_local))
           download.file(url, img_local)
         img_local}))
+
+stopifnot(nrow(tech) == 1)
 
 bullets <- function(tags, indent=1){
   glue("{strrep(' ', indent*2)}- {tags}", .trim = F) %>% 
@@ -89,4 +87,106 @@ bullets <- function(tags, indent=1){
 }
 ```
 
+## Technology: `r glue("{params$technology}")`
 
+![](`r ifelse(knitr::is_html_output(), tech$tag_img, tech$img_local)`)
+
+## Stressors & Receptors
+
+* Stressors
+
+```{r, results='asis'}
+bullets(params$stressors)
+```
+
+* Receptors
+
+```{r, results='asis'}
+bullets(params$receptors)
+```
+
+* Stressor-Receptors
+
+```{r, results='asis'}
+bullets(params$stressor_receptors)
+```
+
+## Location
+
+```{r map}
+# params = list(aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))")
+
+aoi_sf <- tibble(
+  geometry = params$aoi_wkt) %>%
+  st_as_sf(wkt = "geometry", crs=4326)
+
+# TODO: inset map showing larger area
+leaflet(
+  options = leafletOptions(
+    zoomControl = F,
+    attributionControl = F)) %>%
+  addProviderTiles(providers$Esri.OceanBasemap) %>%
+  addPolygons(data = aoi_sf)
+```
+
+# Literature
+
+## Stressors
+
+Stressors are potentially harmful environmental effects from technology for marine renewable energy.
+
+```{r stressors, results='asis'}
+# params = list(stressors = c("Noise", "EMF"))
+if (params$lit_tethys)
+  knit_tethys_literature_from_tags(params$stressors)
+```
+
+## Receptors
+
+Receptors are species, habitats and human activities of environmental concern.
+
+```{r receptors, results='asis'}
+# params = list(receptors = c("Marine Mammals", "Fish"))
+if (params$lit_tethys)
+  knit_tethys_literature_from_tags(params$receptors)
+```
+
+## Stressor-Receptors
+
+```{r stressor_receptors, results='asis'}
+# params = list(stressor_receptors = c("Marine Mammals AND Noise", "Fish AND EMF"))
+if (params$lit_tethys)
+  knit_tethys_literature_from_tags(params$stressor_receptors)
+```
+
+# Spatial
+
+Spatial data of Receptors are extracted for the Location from datasets harvested predominantly from [MarineCadastre.gov](https://MarineCadastre.gov).
+
+```{r, results='asis'}
+# datasets_gsheet2db ----
+# datasets_marinecadastre.gov.csv - Google Sheet
+#   edit online: https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=0
+# datasets_gsheet2db()
+
+# params = list(
+#   receptors = c("Marine Mammals", "Fish"),
+#   aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))")
+
+if (params$spatial){
+  datasets <- tbl(con, "datasets") %>% 
+    collect() %>%
+    replace_na(list(buffer_km = 0)) %>% 
+    select(-notes, -issues) %>% 
+    separate_rows(tags, sep = ";") %>% 
+    rename(tag = tags) %>% 
+    filter(
+      tag %in% params$receptors) %>% 
+    arrange(tag, title)
+  
+  lapply(1:nrow(datasets), function(i_datasets) {
+    knit_expand('_spatial-tag-dataset.Rmd') }) %>% 
+    knit_child(text = unlist(.), quiet = T) %>% 
+    cat(sep = '\n\n')
+}
+```
