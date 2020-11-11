@@ -49,6 +49,9 @@ always_allow_html: true
 ---
 
 ```{r setup, include=F}
+# render("report_template.Rmd", output_file="report_template.pdf", output_format="pdf_document")
+# render("report_template.Rmd", output_file="report_template.docx", output_format="word_document")
+# render("report_template.Rmd", output_file="report_template.html", output_format="html_document")
 knitr::opts_chunk$set(echo = F, warning = F, message = F, eval = T)
 ```
 
