@@ -1,24 +1,15 @@
 ---
 title: "`r params$title`"
 params:
-  #title: "Custom Report"
   title: "Test Report"
-  #technology: "Cross Flow"
   technology: "Ocean Current"
-  # aoi_wkt: "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
   aoi_wkt: "POLYGON ((-68.37953 44.857, -67.38415 43.89608, -64.21114 45.0997, -64.90587 45.89335, -68.37953 44.857))"
   stressors: 
-    # - Noise
-    # - EMF
     - Noise
   receptors:
-    # - Marine Mammals
-    # - Fish
     - Cetaceans
     - Pinnipeds
   stressor_receptors:
-    # - Marine Mammals AND Noise
-    # - Fish AND EMF
     - Cetaceans AND Noise
     - Pinnipeds AND Noise
   lit_tethys: true
@@ -31,7 +22,7 @@ output:
     toc_depth: 4
     number_sections: true
     #keep_md: yes
-    #latex_engine: xelatex
+    latex_engine: xelatex
   word_document:
     toc: true
     toc_depth: 4
@@ -116,20 +107,33 @@ bullets(params$stressor_receptors)
 
 ## Location
 
-```{r map}
+```{r map, out.width = '100%'}
 # params = list(aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))")
 
-aoi_sf <- tibble(
-  geometry = params$aoi_wkt) %>%
-  st_as_sf(wkt = "geometry", crs=4326)
-
-# TODO: inset map showing larger area
-leaflet(
-  options = leafletOptions(
-    zoomControl = F,
-    attributionControl = F)) %>%
-  addProviderTiles(providers$Esri.OceanBasemap) %>%
-  addPolygons(data = aoi_sf)
+if (is.null(params$aoi_wkt) || str_trim(params$aoi_wkt) == ""){
+  cat("Please draw a Location to include a map here.")
+} else {
+    
+  aoi_sf <- tibble(
+    geometry = params$aoi_wkt) %>%
+    st_as_sf(wkt = "geometry", crs=4326)
+  
+  # TODO: inset map showing larger area
+  m <- leaflet(
+    options = leafletOptions(
+      zoomControl = F,
+      attributionControl = F)) %>%
+    addProviderTiles(providers$Esri.OceanBasemap) %>%
+    addPolygons(data = aoi_sf)
+  
+  if (knitr::is_html_output()){
+    m
+  } else {
+    m_png <- "_tmp_map.png"
+    mapshot(m, file = m_png)
+    include_graphics(m_png)
+  }
+}
 ```
 
 # Literature
@@ -140,7 +144,7 @@ Stressors are potentially harmful environmental effects from technology for mari
 
 ```{r stressors, results='asis'}
 # params = list(stressors = c("Noise", "EMF"))
-if (params$lit_tethys)
+if (params$lit_tethys & !is.null(params$stressors))
   knit_tethys_literature_from_tags(params$stressors)
 ```
 
@@ -150,7 +154,7 @@ Receptors are species, habitats and human activities of environmental concern.
 
 ```{r receptors, results='asis'}
 # params = list(receptors = c("Marine Mammals", "Fish"))
-if (params$lit_tethys)
+if (params$lit_tethys & !is.null(params$receptors))
   knit_tethys_literature_from_tags(params$receptors)
 ```
 
@@ -158,7 +162,7 @@ if (params$lit_tethys)
 
 ```{r stressor_receptors, results='asis'}
 # params = list(stressor_receptors = c("Marine Mammals AND Noise", "Fish AND EMF"))
-if (params$lit_tethys)
+if (params$lit_tethys & !is.null(params$stressor_receptors))
   knit_tethys_literature_from_tags(params$stressor_receptors)
 ```
 
