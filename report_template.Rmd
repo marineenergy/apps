@@ -176,7 +176,7 @@ Spatial data of Receptors are extracted for the Location from datasets harvested
 #   receptors = c("Marine Mammals", "Fish"),
 #   aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))")
 
-if (params$spatial){
+if (params$spatial & !is.null(params$receptors)){
   datasets <- tbl(con, "datasets") %>% 
     collect() %>%
     replace_na(list(buffer_km = 0)) %>% 

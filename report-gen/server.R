@@ -46,6 +46,7 @@ shinyServer(function(input, output, session) {
           mutate(
             str_and = glue("{str_trim(Stressor)} AND {str_trim(Receptor)}")) %>% 
           pull(str_and)
+        stressor_receptors <- ifelse(length(stressor_receptors) == 0, NULL, stressor_receptors)
       }
       
       rmd_params <- list(
@@ -69,10 +70,10 @@ shinyServer(function(input, output, session) {
           paste0('mhk-env_report_', str_replace_all(format(Sys.time(), tz='GMT'), '[ ]', '.'), '-GMT.', out_ext)},
         content = function(file) {
           
-          url = bkmark(session)
+          #url = bkmark(session)
           #plots = values$saved_plots
           
-          rmd <- here("report_template.Rmd")
+          input_rmd <- here("report_template.Rmd")
           
           rmd_params <- get_rmd_params()
           #render(tmp_rmd, output_format=out_fmt, output_file=file, params = list(url=url))
@@ -80,7 +81,21 @@ shinyServer(function(input, output, session) {
           # rmd_params <- readRDS(here("data/tmp_rmd_params.rds"))
           #browser()
           # file <- here("data/tmp_rmd_params_report.html")
-          render(rmd, output_format=out_fmt, output_file=file, params = rmd_params)})
+          message(glue(
+            "
+            # render ----
+            time_start: {Sys.time()}
+            input: {input_rmd}
+            output_format: {out_fmt}
+            output_file: {file}
+            params: {str(rmd_params)}
+            "))
+          render(input=input_rmd, output_format=out_fmt, output_file=file, params = rmd_params)
+          # message(glue(
+          #   "
+          #   time_end: {Sys.time()}
+          #   "))
+        })
     }
     
     # out btn_download_* ----

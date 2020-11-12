@@ -6,10 +6,10 @@ dashboardPage(
     textInput(
       "txtTitle", "Report Title"),
     nbsp, "Include in report:",
-    checkboxInput("ckboxLitTethys"       , "Literature from Tethys"),
+    checkboxInput("ckboxLitTethys"       , "Literature from Tethys"             , value = T),
     disabled(
       checkboxInput("ckboxLitFERC"       , "Literature from FERC")),
-    checkboxInput("ckboxSpatialReceptors", "Spatial intersection with Receptors"),
+    checkboxInput("ckboxSpatialReceptors", "Spatial intersection with Receptors", value = T),
     disabled(
       checkboxInput("ckboxMgtTethys"     , "Management measures from Tethys")),
     dropdownButton(
@@ -55,9 +55,7 @@ dashboardPage(
           multiple = T)),
         box(
           title = "Stressor AND Receptor interactions", width = 12,
-          helpText("Changes to the table will be automatically saved to the source file."),
-          # uncomment line below to use action button to commit changes
-          #actionButton("saveBtn", "Save"),
+          helpText("Click on a Stressor-Receptor interaction in the table below to include it in your report."),
           rHandsontableOutput("tblStressorReceptor"))),
       
       tabPanel(
