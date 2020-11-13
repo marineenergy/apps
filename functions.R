@@ -6,7 +6,7 @@ shelf(
   # database
   DBI, RPostgres,
   # spatial
-  leaflet, sf, sp,
+  leaflet, mapview, sf, sp,
   # tidyverse
   dplyr, purrr, readr, tibble, tidyr,
   # todo: use these
@@ -14,7 +14,7 @@ shelf(
   # report
   DT, gt, htmltools, htmlwidgets, kableExtra, knitr, markdown, rmarkdown, shiny, webshot,
   # utility
-  fs, glue, here, stringr, urltools)
+  fs, glue, here, png, stringr, urltools)
 here <- here::here
 
 # rstudio/webshot2
@@ -35,7 +35,7 @@ csv_mc       <- file.path(dir_mc, '_datasets.csv')
 csv_mc_paths <- file.path(dir_mc, '_datasets_paths.csv')
 
 pass <- readLines("/share/.password_mhk-env.us")
-con  <- DBI::dbConnect(
+con  <<- DBI::dbConnect(
   RPostgres::Postgres(),
   dbname   = "gis",
   host     = "postgis",
@@ -156,6 +156,10 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt){
   
   # dataset_code = "cetacean-bia"; aoi_wkt = params$aoi_wkt
   # dataset_code = "efh"; aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
+    message(glue("tabulate_dataset_shp_within_aoi(dataset_code='{dataset_code}', aoi_wkt='{aoi_wkt}')"))
+  
+  if (is.null(aoi_wkt))
+    return("Please draw a Location to get a summary of the intersecting features for this dataset.")
   
   ds <- tbl(con, "datasets") %>% 
     filter(code == !!dataset_code) %>% 

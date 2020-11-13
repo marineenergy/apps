@@ -1,15 +1,16 @@
 source(here::here("functions.R")) # libraries, db connection object (con)
 shelf(
   # shiny
-  shinydashboard, shinyWidgets, shinyjs, # shinydashboardPlus, nutterb/shinydust,
+  rintrojs, shinydashboard, shinyEventLogger, shinyWidgets, shinyjs, waiter, yaml, # shinydashboardPlus, nutterb/shinydust,
   # report
   hadley/emo, rhandsontable,
   # spatial
   mapedit)
+set_logging(file = "/share/github/mhk-env_shiny-apps/logging.txt")
 
 map_default <- leaflet(
   options = leafletOptions(
-    zoomControl = F,
+    zoomControl = T,
     attributionControl = F)) %>%
   addProviderTiles(providers$Esri.OceanBasemap) %>% 
   setView(-93.4, 37.4, 4)
@@ -55,3 +56,8 @@ tagLabel <- function(lbl){
   tag("label", lbl) %>% 
     tagAppendAttributes(class = "control-label")  
 }
+
+waiting_screen <- tagList(
+  spin_flower(),
+  h3("Generating custom report...")
+) 
