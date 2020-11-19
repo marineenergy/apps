@@ -49,8 +49,8 @@ s_r <- matrix(
   as.data.frame() %>% 
   setNames(., choices_stressors) %>%  
   mutate(
-    Stressor = names(choices_receptors)) %>% 
-  relocate(Stressor, .before = 1)
+    Receptor = names(choices_receptors)) %>% 
+  relocate(Receptor, .before = 1)
 
 tagLabel <- function(lbl){
   tag("label", lbl) %>% 

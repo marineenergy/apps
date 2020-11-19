@@ -31,7 +31,7 @@ shinyServer(function(input, output, session) {
       stressor_receptors = NULL
     } else {
       stressor_receptors <- hot_to_r(input$tblStressorReceptor) %>%
-        tidyr::pivot_longer(-Stressor, "Receptor") %>%
+        tidyr::pivot_longer(-Receptor, "Stressor") %>%
         filter(value == T) %>%
         mutate(
           str_and = glue("{str_trim(Stressor)} AND {str_trim(Receptor)}")) %>%

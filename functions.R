@@ -6,7 +6,9 @@ shelf(
   # database
   DBI, RPostgres,
   # spatial
-  leaflet, mapview, sf, sp,
+  ggmap, leaflet, 
+  r-spatial/mapview, # https://github.com/r-spatial/mapview/issues/324
+  sf, sp,
   # tidyverse
   dplyr, purrr, readr, tibble, tidyr,
   # todo: use these
@@ -14,14 +16,13 @@ shelf(
   # report
   DT, gt, htmltools, htmlwidgets, kableExtra, knitr, markdown, rmarkdown, shiny, webshot,
   # utility
-  fs, glue, here, png, stringr, urltools)
+  fs, glue, here, png, scales, stringr, urltools)
 here <- here::here
 
-# rstudio/webshot2
-# wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-# sudo dpkg -i google-chrome-stable_current_amd64.deb; sudo apt-get -fy install
+if (!is_phantomjs_installed())
+  install_phantomjs()
 
-# webshot
+# webshot::install_phantomjs()
 # webshot.js returned failure value: 1
 # https://www.vultr.com/docs/how-to-install-phantomjs-on-ubuntu-16-04
 # /usr/local/bin/phantomjs
