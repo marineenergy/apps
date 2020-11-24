@@ -63,6 +63,7 @@ datatable(d)
 
 ```{r}
 library(rvest)
+library(here)
 library(DT)
 library(zeallot)
 library(stringr)
@@ -146,6 +147,7 @@ library(tidyr)
 library(glue)
 library(htmltools)
 
+s_r_redo <- T
 s_r_csv <- here("data/tethys_stressor_receptor.csv")
 
 receptor <- 
@@ -175,7 +177,7 @@ get_num_refs <- function(url){
 }
 
   
-if (!file.exists(s_r_csv)){
+if (!file.exists(s_r_csv) | s_r_redo){
   
   s_r <- expand_grid(receptor, stressor) %>% 
     left_join(

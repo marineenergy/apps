@@ -22,12 +22,16 @@ library(listviewer) # devtools::install_github('timelyportfolio/reactR')
 ```
 
 ```{r read json}
-tethys_url  <- "https://tethys.pnnl.gov/api/primre_export?modifiedDate=2020-06-01"
+#today <- Sys.Date()
+#tethys_url  <- glue("https://tethys.pnnl.gov/api/primre_export?modifiedDate={today}")
+tethys_url  <- glue("https://tethys.pnnl.gov/api/primre_export")
 tethys_json <- "data/tethys.json"
-download.file(tethys_url, tethys_json)
-tethys     <- read_json(tethys_json)
+if (!file.exists(tethys_json))
+  download.file(tethys_url, tethys_json)
+tethys <- read_json(tethys_json)
 
-tethys_content <- tethys[["..JSON"]][[1]] 
+#tethys_content <- tethys[["..JSON"]][[1]]
+tethys_content <- tethys
 # reactjson(tethys_content[1:20])
 ```
 
@@ -35,7 +39,7 @@ tethys_content <- tethys[["..JSON"]][[1]]
 
 Run once:
 
-```{r create tbl}
+```{r create tbl, eval = F}
 sql <- glue("
   CREATE TABLE tethys_pubs (
 	  uri text NOT NULL PRIMARY KEY,
