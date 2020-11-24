@@ -52,8 +52,6 @@ dashboardPage(
             width = 12,
             introBox(
               "Location",
-              # tagLabel("Location") %>% 
-              # tagAppendAttributes(style = "margin-left: 40px;"), 
               editModUI("mapEdit"),      
               data.step  = 2,
               data.intro = "
@@ -75,8 +73,7 @@ dashboardPage(
             introBox(
               selectInput(
                 "selTech", "Technology",
-                choices = choices_tech), # %>% 
-              #tagAppendAttributes(style = "margin-left: 40px"),
+                choices = choices_tech),
               data.step  = 3.5,
               data.intro = "Select Technology for proposed marine renewable energy development."))),
         
@@ -114,19 +111,8 @@ dashboardPage(
         fluidRow(
           box(
             title = "Queries", width=12,
-            dataTableOutput("tblLitQueries"),
             
-            # selectInput(
-            #   "selLitQueries", "Queries (n=0)",
-            #   choices = "", size = 5, multiple = T, selectize=F, width="100%"),
-            # box(
-            #   width = 12,
-            #   introBox(
-            #     title = "Stressor AND Receptor interactions",
-            #     helpText("Click on a Stressor-Receptor interaction in the table below to include it in your report."),
-            #     data.step  = 6,
-            #     data.intro = "Select combinations of Stressor and Receptor tags for relevant Literature on interactions."),
-            #   rHandsontableOutput("tblStressorReceptor"))),
+            dataTableOutput("tblLitQueries"),
             
             actionButton("btnRmLitQuery", "Remove Query", icon = icon("minus"))))),
       

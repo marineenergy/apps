@@ -7,27 +7,14 @@ shinyServer(function(input, output, session) {
     editMod, "mapEdit", map_default, "ply",
     editorOptions = list(
       polylineOptions = F, markerOptions = F, circleMarkerOptions = F,
-      singleFeature = T)) # , editor = "leafpm")
+      singleFeature = T))
 
   vals <- reactiveValues(
     queries_lit = tibble(
       Receptors  = character(0),
       Stressors  = character(0),
       Technology = character(0))) 
-  
-  # rxLitQuery <- reactive({
-  #   
-  #   tibble(
-  #     Receptors  = input$selReceptors %>% paste(collapse = " AND "),
-  #     Stressors  = input$selStressors %>% paste(collapse = " AND "),
-  #     Technology = input$selTech      %>% paste(collapse = " AND "))
-  # 
-  # })
-  
-  # output$txtCurrentQuery <- renderText({ 
-  #   rxLitQuery()
-  # })
-  
+
   updateLitQueries <- function(technology, receptors, stressors){
     
     queries <- expand.grid(
@@ -36,7 +23,6 @@ shinyServer(function(input, output, session) {
       Technology = technology,
       stringsAsFactors = F)
     
-    # vals$queries_lit <- union(vals$queries_lit, queries)
     vals$queries_lit <- full_join(
       vals$queries_lit,
       queries,
@@ -44,35 +30,15 @@ shinyServer(function(input, output, session) {
       distinct(Receptors, Stressors, Technology) %>% 
       arrange(Receptors, Stressors, Technology)
     
-    message(glue("updateLitQueries() vals$queries_lit (n={nrow(vals$queries_lit)})"))
-    
-    #message(glue("vals$queries_lit (n={length(vals$queries_lit)}) pre-btnAddAllLitQueries: {paste(vals$queries_lit, collapse='\n\t')}"))
-    #message(glue("pre-btnAddReceptorLitQueries: vals$queries_lit (n={length(vals$queries_lit)})"))
-    
-    # updateSelectInput(
-    #   session, 
-    #   "selLitQueries", 
-    #   choices = vals$queries_lit, selected = NULL)
-    # 
   }
   
+  # btnAddLitQ* ----
   observeEvent(input$btnAddLitQuery, {
-    
-    # vals$queries_lit <- bind_rows(
-    #   vals$queries_lit,
-    #   rxLitQuery())
     
     updateLitQueries(
       technology = input$selTech,
       receptor   = input$selReceptors %>% paste(collapse = " AND "),
       stressor   = input$selStressors %>% paste(collapse = " AND "))
-    
-    
-    # updateSelectInput(
-    #   session, 
-    #   "selLitQueries", 
-    #   choices = vals$queries_lit, selected = NULL)
-    
   })
   
   
@@ -82,7 +48,6 @@ shinyServer(function(input, output, session) {
       technology = input$selTech,
       receptor   = choices_receptors,
       stressor   = choices_stressors)
-    
   })
   
   observeEvent(input$btnAddReceptorLitQueries, {
@@ -91,7 +56,6 @@ shinyServer(function(input, output, session) {
       technology = input$selTech,
       receptor   = input$selReceptors %>% paste(collapse = " AND "),
       stressor   = choices_stressors)
-    
   })
   
   observeEvent(input$btnAddStressorLitQueries, {
@@ -100,63 +64,21 @@ shinyServer(function(input, output, session) {
       technology = input$selTech,
       receptor   = choices_receptors,
       stressor   = input$selStressors %>% paste(collapse = " AND "))
-    
   })
   
-  
+  # tblLitQueries ----
   output$tblLitQueries <- DT::renderDataTable({
-    
-    # if (length(vals$queries_lit) > 0){
-    #   tbl <- tibble(
-    #     q = vals$queries_lit) %>% 
-    #     separate(
-    #       q, 
-    #       into = c("Receptor", "Stressor", "Technology"),
-    #       sep  = "' AND '")
-    # } else {
-    #   tbl <- tibble(
-    #     Receptor   = NULL,
-    #     Stressor   = NULL,
-    #     Technology = NULL)
-    # }
+
     vals$queries_lit
   })
   
-  
+  # btnRmLitQuery ----
   observeEvent(input$btnRmLitQuery, {
-    
-    #browser()
     
     vals$queries_lit <- vals$queries_lit %>% 
       slice(-input$tblLitQueries_rows_selected)
-    
-    # updateSelectInput(
-    #   session, 
-    #   "selLitQueries", 
-    #   choices = vals$queries_lit, selected = NULL)
-    
-  })
-  
-  observe({
-    
-    n <- length(vals$queries_lit)
-    
-    updateSelectInput(
-      session, 
-      "selLitQueries", 
-      label = glue("Queries (n={n})"))
-    
-  })
-  
-  output$tblStressorReceptor = renderRHandsontable({
-    if (!is.null(input$tblStressorReceptor)) {
-      DF = hot_to_r(input$tblStressorReceptor)
-    } else {
-      DF = s_r
-    }
 
-    rhandsontable(DF) %>%
-      hot_table(highlightCol = TRUE, highlightRow = TRUE) })
+  })
 
   get_rmd_params <- function(){
     
@@ -217,26 +139,11 @@ shinyServer(function(input, output, session) {
         log_output(list(input_rmd=input_rmd, out_fmt=out_fmt, file=file) %>% as.yaml())
         log_output(rmd_params %>% as.yaml())
 
-        #withProgress(message = 'Generating report', value = 0.1, {
-          # input_rmd <- here("report_template.Rmd"); out_fmt = "pdf_document"; file = here("report_template.pdf")
-          # rmd_params = list(
-          #   title = "demo",
-          #   technology = "Wave",
-          #   aoi_wkt = "POLYGON ((-121.2012 32.91649, -121.2012 34.8138, -116.4551 34.8138, -116.4551 32.91649, -121.2012 32.91649))",
-          #   stressors = NULL,
-          #   receptors = NULL,
-          #   stressor_receptors = "Fish AND Displacement",
-          #   lit_tethys = TRUE,
-          #   lit_ferc = FALSE,
-          #   spatial = TRUE,
-          #   mgt_tethys = FALSE)
-          
         waiter_show(html = waiting_screen, color = "black")
         
         render(input=input_rmd, output_format=out_fmt, output_file=file, params = rmd_params)
         
         waiter_hide()
-        #})
       })
   }
   
@@ -273,9 +180,6 @@ shinyServer(function(input, output, session) {
     
     url
   }
-  
-  # TODO: reactives ----
-  values = reactiveValues(saved_plots = list(), env_datewindow=NULL)
   
   # TODO: onRestored ----
   onRestored(function(state) {
