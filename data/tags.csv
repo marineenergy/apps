@@ -119,13 +119,13 @@ stressor,356,Habitat Change,,
 stressor,354,Lighting,,
 stressor,355,Noise,,
 stressor,,Physical Interaction,,
-technology,423,Marine Energy (General),,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/Marine%20Renewable%20Energy%20general.jpg?itok=dYD6EN4G
-technology,424,Ocean Current,Marine Energy (General),https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/OceanBased%20Perpetual%20Energy%20-%20Ocean%20Current%20Energy%20Converter%204.jpg?itok=9vD56YZ3
-technology,425,OTEC,Marine Energy (General),https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/OTEC%20-%20Courtesy%20of%20Okinawa%20Prefecture%20Industrial%20Policy%20Division.jpg?itok=AFxP00wb
-technology,426,Riverine,Marine Energy (General),https://tethys.pnnl.gov/sites/default/files/inline-images/Riverine%20-%20Courtesy%20of%20ORPC.jpeg
-technology,427,Salinity Gradient,Marine Energy (General),https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/SalinityGradient.jpg?itok=yUVK-3rk
-technology,428,Tidal,Marine Energy (General),https://tethys.pnnl.gov/sites/default/files/inline-images/Axial%20Flow%20-%20Courtesy%20of%20BALAO-SABELLA.jpg
-technology,429,Wave,Marine Energy (General),https://tethys.pnnl.gov/sites/default/files/inline-images/Point%20Absorber%20-%20Courtesy%20of%20Ocean%20Power%20Technologies.jpg
-technology,430,Wind Energy (General),,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/Wind%20Energy%20General.png?itok=82o8305u
-technology,431,Land-Based Wind,Wind Energy (General),https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/Land-Based%20Wind.png?itok=QZK3C9xN
-technology,432,Offshore Wind,Wind Energy (General),https://tethys.pnnl.gov/sites/default/files/inline-images/Monopile-Foundation.jpg
+technology,423,Marine Energy,,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/Marine%20Renewable%20Energy%20general.jpg?itok=dYD6EN4G
+technology,424,Current,Marine Energy,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/OceanBased%20Perpetual%20Energy%20-%20Ocean%20Current%20Energy%20Converter%204.jpg?itok=9vD56YZ3
+technology,425,OTEC,Marine Energy,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/OTEC%20-%20Courtesy%20of%20Okinawa%20Prefecture%20Industrial%20Policy%20Division.jpg?itok=AFxP00wb
+technology,426,Riverine,Marine Energy,https://tethys.pnnl.gov/sites/default/files/inline-images/Riverine%20-%20Courtesy%20of%20ORPC.jpeg
+technology,427,Salinity Gradient,Marine Energy,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/SalinityGradient.jpg?itok=yUVK-3rk
+technology,428,Tidal,Marine Energy,https://tethys.pnnl.gov/sites/default/files/inline-images/Axial%20Flow%20-%20Courtesy%20of%20BALAO-SABELLA.jpg
+technology,429,Wave,Marine Energy,https://tethys.pnnl.gov/sites/default/files/inline-images/Point%20Absorber%20-%20Courtesy%20of%20Ocean%20Power%20Technologies.jpg
+technology,430,Wind Energy,,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/Wind%20Energy%20General.png?itok=82o8305u
+technology,431,Land-Based Wind,Wind Energy,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/Land-Based%20Wind.png?itok=QZK3C9xN
+technology,432,Offshore Wind,Wind Energy,https://tethys.pnnl.gov/sites/default/files/inline-images/Monopile-Foundation.jpg

@@ -157,10 +157,24 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt){
   
   # dataset_code = "cetacean-bia"; aoi_wkt = params$aoi_wkt
   # dataset_code = "efh"; aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
-    message(glue("tabulate_dataset_shp_within_aoi(dataset_code='{dataset_code}', aoi_wkt='{aoi_wkt}')"))
-  
+    message(glue("tab..._shp_within_aoi(dataset_code='{dataset_code}', aoi_wkt='{aoi_wkt}')"))
+
+# params <- yaml.load("
+# title: Testing
+# aoi_wkt:
+# - POLYGON ((-115.9245 32.26236, -115.9245 32.26565, -115.9206 32.26565, -115.9206
+#               32.26236, -115.9245 32.26236))
+# - POLYGON ((-121.9503 33.01519, -121.9503 35.51658, -115.8711 35.51658, -115.8711
+#             33.01519, -121.9503 33.01519))")
+# aoi_wkt <- params$aoi_wkt
+
   if (is.null(aoi_wkt))
     return("Please draw a Location to get a summary of the intersecting features for this dataset.")
+
+  if (length(aoi_wkt) > 1)
+    return("Please draw only ONE polygon to get a summary of the intersecting features for this dataset.")
+    
+    
   
   ds <- tbl(con, "datasets") %>% 
     filter(code == !!dataset_code) %>% 
@@ -218,7 +232,8 @@ tabulate_tethys_literature_from_tags <- function(tags){
   #
   # tags = c("Marine Mammals AND Noise", "Fish AND EMF")
   # tags <- str_split(tags, " AND ") %>% unlist()
-
+  # tags <- str_split("Birds AND Collision AND Marine Energy (General)", " AND ") %>% unlist()
+  
   res <- dbGetQuery(
     con, 
     glue("
@@ -232,7 +247,7 @@ tabulate_tethys_literature_from_tags <- function(tags){
      GROUP BY uri, title")) %>% 
     filter(tag_cnt == length(tags))
   
-  caption_md <- glue("Literature from [Tethys Knowledge Base](https://tethys.pnnl.gov/knowledge-base-all)}.")
+  caption_md <- glue("Literature from [Tethys Knowledge Base](https://tethys.pnnl.gov/knowledge-base-all).")
   
   if (knitr::is_html_output()){
     caption_html <- HTML(markdownToHTML(
@@ -294,7 +309,178 @@ tabulate_tethys_literature_from_tags <- function(tags){
   }
 }
 
+tabulate_tethys_literature_from_tags_gen <- function(tags){
+  
+  # tags <- params$stressors[1]
+  # tags <- "EMF"
+  #
+  # tags = c("Marine Mammals AND Noise", "Fish AND EMF")
+  # tags <- str_split(tags, " AND ") %>% unlist()
+  # tags <- str_split("Birds AND Collision AND Marine Energy", " AND ") %>% unlist()
+  # tags <- str_split("Birds AND Collision AND Current", " AND ") %>% unlist()
+  # tags <- str_split("Environment AND Human Dimensions AND Current", " AND ") %>% unlist()
+
+  # Tech Ideal:
+  # tech <- read_csv(here("data/tags.csv")) %>% 
+  #   filter(
+  #     facet == "technology",
+  #     item_label %in% tags) %>% 
+  #   pull(item_label)
+  
+  # Tech Actual:
+  # https://tethys.pnnl.gov/knowledge-base-marine-energy
+  # Technology ---
+  # * Marine Energy (2433)
+  #   - Tidal (878)
+  #   - Wave (674)
+  #   - Riverine (87)
+  #   - OTEC (57)
+  #   - Ocean Current (32)
+  #   - Salinity Gradient (9)
+  # * Wind Energy (493)
+  #   - Offshore Wind (418)
+  #   - Land-Based Wind (9)
+  #
+  # dbGetQuery(
+  #   con,
+  #   glue("
+  #       SELECT json_array_elements(data->'technologyType') ->> 0 as tech_text
+  #       FROM tethys_pubs")) %>%
+  #   group_by(tech_text) %>%
+  #   summarize(n = n())
+  # 
+  # 4 Wave                591
+  # 1 Current             873 # Tidal
+  # 2 OTEC                 57
+  # 3 Salinity Gradient     8
+  
+  message(glue("tab..._tags_gen(): {paste(tags, collapse='|')}"))
+  
+  # tags = c("Birds", "Marine Energy")
+  
+  tech_avail <- c("Marine Energy", "OTEC", "Salinity Gradient", "Current", "Wave")
+  
+  tech_tags <- intersect(tags, tech_avail)
+  s_r_tags  <- setdiff(tags, tech_tags)
+  
+  # drop Marine Energy since includes all, but use above to exclude from s_r_tags
+  tech_tags <- setdiff(tech_tags, "Marine Energy")
+  
+  s_r_res <- dbGetQuery(
+    con, 
+    glue("
+        SELECT uri, title, COUNT(tag_text) AS tag_cnt FROM (
+            SELECT 
+              uri, 
+              data ->'title'                    ->> 0 AS title,
+              json_array_elements(data->'tags') ->> 0 as tag_text
+            FROM tethys_pubs) q 
+         WHERE 
+          tag_text IN ('{paste(s_r_tags, collapse = \"','\")}')
+         GROUP BY uri, title")) %>% 
+    filter(tag_cnt == length(s_r_tags)) %>% 
+    select(uri, title) %>% 
+    tibble()
+  
+  if (length(tech_tags) > 0){
+    tech_res <- dbGetQuery(
+      con, 
+      glue("
+        SELECT uri, title, COUNT(tag_text) AS tag_cnt FROM (
+            SELECT 
+              uri, 
+              data ->'title'                              ->> 0 AS title,
+              json_array_elements(data->'technologyType') ->> 0 as tag_text
+            FROM tethys_pubs) q 
+         WHERE 
+          tag_text IN ('{paste(tech_tags, collapse = \"','\")}')
+         GROUP BY uri, title")) %>% 
+      filter(tag_cnt == length(tech_tags)) %>% 
+      select(uri, title) %>% 
+      tibble()
+    
+    res <- inner_join(
+      s_r_res,
+      tech_res,
+      by = c("uri", "title"))
+    
+  } else {
+    res <- s_r_res
+  }
+
+  caption_md <- glue("Literature from [Tethys Knowledge Base](https://tethys.pnnl.gov/knowledge-base-all).")
+  
+  if (knitr::is_html_output()){
+    caption_html <- HTML(markdownToHTML(
+      text = caption_md,
+      fragment.only = T))
+    
+    res %>%
+    mutate(
+      Title = map2_chr(
+        title, uri,
+        function(x, y)
+          glue("<a href={y} target='_blank'>{x}</a>"))) %>%
+      select(Title) %>%
+      arrange(Title) %>%
+      datatable(
+        caption = caption_html,
+        escape = F)
+  } else {
+    
+    glue("{caption_md}:\n\n", .trim=F) %>% cat()
+    
+    res %>%
+      mutate(
+        li_title = glue("1. [{title}]({uri})")) %>%
+      pull(li_title) %>% 
+      paste(collapse = "\n") %>% 
+      cat()
+    
+    # res %>%
+    #   tibble() %>% 
+    #   mutate(
+    #     Title = glue("[{title}]({uri})")) %>%
+    #   select(Title) %>% 
+    #   gt() %>%
+    #   fmt_markdown(columns = vars(Title)) %>% 
+    #   cols_align(align = "left", columns = vars(Title)) %>% 
+    #   tab_options(
+    #     row.striping.include_table_body = T,
+    #     table.width = pct(100)) %>% 
+    #   tab_header(
+    #     title    = md(caption_md), 
+    #     subtitle = md("&nbsp;")) # need blank subtitle for now: https://github.com/rstudio/gt/issues/197)
+    # tab_source_note(md(caption_md))
+    
+    # tbl %>% 
+    #   mutate(test = paste0("\\href{http://", link, "}{", test, "}")) %>%
+    #   kable("latex", escape = F, booktabs = T) %>%
+    #   kable_styling(bootstrap_options = c("hover", "condensed")) 
+    # 
+    # 
+    # res %>%
+    #   mutate(
+    #     Title = cell_spec(title, "html", link = uri)) %>% 
+    #   select(Title) %>% 
+    #   kbl(caption = caption_md, escape = F) %>%
+    #   kable_styling(
+    #     # full_width = F, position = "left", # position = "float_right"
+    #     bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+  }
+}
+
+knit_tethys_literature_from_tags_gen <- function(tags){
+  
+  lapply(tags, function(tag) {
+    knit_expand('_docs-tethys_gen.Rmd') }) %>% 
+    knit_child(text = unlist(.), quiet = T) %>% 
+    cat(sep = '\n\n')
+}
+
+
 knit_tethys_literature_from_tags <- function(tags){
+  
   
   lapply(tags, function(tag) {
     knit_expand('_docs-tethys.Rmd') }) %>% 

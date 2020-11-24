@@ -17,7 +17,7 @@ map_default <- leaflet(
 
 nbsp <- "\u00A0" # Unicode (UTF-8) for non-breaking space
 
-# using keys instead of tags, since tags is a Shiny / HTML thing
+# using "keys" instead of "tags", since tags is a Shiny / HTML thing
 keys <- read_csv(here("data/tags.csv")) %>% 
   select(key_facet = facet, key = item_label, key_parent = tag_parent) %>% 
   mutate(
@@ -31,9 +31,28 @@ keys <- read_csv(here("data/tags.csv")) %>%
       glue("{nbsp %>% strrep(4)}{key}"))) %>% 
   arrange(key_facet, key_order) # View(keys)
 
-choices_tech <- keys %>% 
-  filter(key_facet == "technology") %>% 
-  {setNames(.$key, .$key_spaced)}
+# choices_tech <- keys %>% 
+#   filter(key_facet == "technology") %>% 
+#   {setNames(.$key, .$key_spaced)}
+# dbGetQuery(
+#   con,
+#   glue("
+#         SELECT json_array_elements(data->'technologyType') ->> 0 as tech_text
+#         FROM tethys_pubs")) %>%
+#   group_by(tech_text) %>%
+#   summarize(n = n())
+# 4 Wave                591
+# 1 Current             873 # Tidal
+# 2 OTEC                 57
+# 3 Salinity Gradient     8
+choices_tech <- c(
+  "Marine Energy"         = "Marine Energy",
+  "    OTEC"              = "OTEC",
+  "    Salinity Gradient" = "Salinity Gradient",
+  "    Tidal"             = "Current",
+  "    Wave"              = "Wave")
+names(choices_tech) <- str_replace(names(choices_tech), "    ", strrep(nbsp, 4))
+
 choices_stressors <- keys %>% 
   filter(key_facet == "stressor") %>% 
   {setNames(.$key, .$key_spaced)}

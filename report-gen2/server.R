@@ -72,11 +72,20 @@ shinyServer(function(input, output, session) {
     vals$queries_lit
   })
   
-  # btnRmLitQuery ----
+  # btnRmLitQ* ----
   observeEvent(input$btnRmLitQuery, {
     
     vals$queries_lit <- vals$queries_lit %>% 
       slice(-input$tblLitQueries_rows_selected)
+
+  })
+
+  observeEvent(input$btnRmAllLitQuery, {
+    
+    vals$queries_lit <- tibble(
+      Receptors  = character(0),
+      Stressors  = character(0),
+      Technology = character(0))
 
   })
 
@@ -88,32 +97,44 @@ shinyServer(function(input, output, session) {
       aoi_wkt <- crud()$finished %>% pull(geometry) %>% st_as_text()
     }
     
-    if (is.null(input$tblStressorReceptor)) {
-      stressor_receptors = NULL
-    } else {
-      stressor_receptors <- hot_to_r(input$tblStressorReceptor) %>%
-        tidyr::pivot_longer(-Receptor, "Stressor") %>%
-        filter(value == T) %>%
-        mutate(
-          str_and = glue("{str_trim(Stressor)} AND {str_trim(Receptor)}")) %>%
-        pull(str_and)
-      if (length(stressor_receptors) == 0)
-        stressor_receptors <- NULL
-      stressor_receptors
-    }
+    #browser()
     
+    lit_queries <- vals$queries_lit %>% 
+      mutate(
+        q = pmap(., function(Receptors, Stressors, Technology, ...){
+          keys <- c(Receptors, Stressors, Technology) %>% 
+            str_replace_all('"', '') %>%
+            na_if("") %>% 
+            na.omit()
+          paste(keys, collapse = " AND ") })) %>% 
+      pull(q) %>% 
+      as.character()
+    
+    technology <- vals$queries_lit %>% 
+      distinct(Technology) %>% 
+      pull(Technology)
+    
+    if (length(technology) == 0)
+      technology = "Marine Energy"
+      
     rmd_params <- list(
       title              = input$txtTitle,
-      technology         = input$selTech,
       aoi_wkt            = aoi_wkt,
-      lit_tags           = 
-      stressors          = input$selStressors,
-      receptors          = input$selReceptors,
-      stressor_receptors = stressor_receptors,
+      
+      technology         = technology,
+      #stressors          = input$selStressors,
+      #receptors          = input$selReceptors,
+      #stressor_receptors = stressor_receptors,
+      lit_queries        = lit_queries,
+      spatial_receptors  = input$selSpReceptors,
+      
       lit_tethys         = input$ckboxLitTethys,
       lit_ferc           = input$ckboxLitFERC,
       spatial            = input$ckboxSpatialReceptors,
       mgt_tethys         = input$ckboxMgtTethys)
+    
+    message(cat(as.yaml(list(params = rmd_params))))
+    
     rmd_params
   }
   
@@ -127,7 +148,7 @@ shinyServer(function(input, output, session) {
         #url = bkmark(session)
         #plots = values$saved_plots
         
-        input_rmd <- here("report_template.Rmd")
+        input_rmd <- here("report_template_gen.Rmd")
         
         rmd_params <- get_rmd_params()
         # render(tmp_rmd, output_format=out_fmt, output_file=file, params = list(url=url))

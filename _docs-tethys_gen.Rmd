@@ -1,0 +1,18 @@
+
+### {{tag}}
+
+```{r}
+# This document _docs_tethys.Rmd is called by knit_tethys_literature_from_tags(), which is invoked by report_template.Rmd
+tags <- str_split("{{tag}}", " AND ") %>% unlist()
+# tags <- str_split("Birds AND Changes in Flow AND Marine Energy (General)", " AND ") %>% unlist()
+```
+
+```{r lit_tethys {{tag}} html, eval = knitr::is_html_output()}
+# source("functions.R"); stressor = "EMF"
+tabulate_tethys_literature_from_tags_gen(tags)
+```
+
+```{r lit_tethys {{tag}} not html, eval = !knitr::is_html_output(), results='asis'}
+# source("functions.R"); stressor = "EMF"
+tabulate_tethys_literature_from_tags_gen(tags)
+```
