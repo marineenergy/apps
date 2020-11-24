@@ -1,29 +1,12 @@
 ---
 title: "`r params$title`"
 params:
-  # title: 'Test Gen'
-  # aoi_wkt: POLYGON ((-122.6833 32.35398, -122.6833 35.31737, -116.1166 35.31737, -116.1166 32.35398, -122.6833 32.35398))
-  # technology: Marine Energy
-  # spatial_receptors:
   # - Marine Mammals
   # - Fish
-  # lit_queries:
   # - Lighting AND Marine Energy
   # - Birds AND Marine Energy
   # - Birds AND Lighting AND Marine Energy
   # - Birds AND Bats AND Lighting AND Marine Energy
-  # lit_tethys: yes
-  # lit_ferc: no
-  # spatial: yes
-  # mgt_tethys: no  
-  title: Testing
-  aoi_wkt:
-  - POLYGON ((-115.9245 32.26236, -115.9245 32.26565, -115.9206 32.26565, -115.9206
-    32.26236, -115.9245 32.26236))
-  - POLYGON ((-121.9503 33.01519, -121.9503 35.51658, -115.8711 35.51658, -115.8711
-    33.01519, -121.9503 33.01519))
-  technology: Marine Energy
-  lit_queries:
   # - Birds AND Attraction AND Marine Energy
   # - Birds AND Avoidance AND Marine Energy
   # - Birds AND Behavioral Interaction AND Marine Energy
@@ -37,17 +20,36 @@ params:
   # - Birds AND Lighting AND Marine Energy
   # - Birds AND Noise AND Marine Energy
   # - Birds AND Physical Interaction AND Marine Energy
-  - Birds AND Bats AND EMF AND Lighting AND Marine Energy
+  #   26.67814, -82.84218 26.44127))
+  
+  # title: 'Test Gen'
+  # aoi_wkt: POLYGON ((-122.6833 32.35398, -122.6833 35.31737, -116.1166 35.31737, -116.1166 32.35398, -122.6833 32.35398))
+  # technology: Marine Energy
+  # spatial_receptors:
+  # lit_queries:
+  # lit_tethys: yes
+  # lit_ferc: no
+  # spatial: yes
+  # mgt_tethys: no  
+  title: test
+  aoi_wkt: POLYGON ((-122.2285 32.23642, -122.2285 35.65562, -116.7259 35.65562, -116.7259
+    32.23642, -122.2285 32.23642))
+  technology:
+  - Current
+  - Marine Energy
+  lit_queries:
+  - Bats AND Birds AND Avoidance AND Current
+  - Bats AND Birds AND Avoidance AND Marine Energy
+  - Marine Mammals AND Noise AND Current
   spatial_receptors:
   - Marine Mammals
   - Fish
   lit_tethys: yes
   lit_ferc: no
-  spatial: no
-  mgt_tethys: no  
+  spatial: yes
+  mgt_tethys: no 
   # technology: Marine Energy (General)
   # aoi_wkt: POLYGON ((-82.84218 26.44127, -81.89644 24.29934, -78.92945 24.86505, -78.89557
-  #   26.67814, -82.84218 26.44127))
   # lit_queries: null
   # receptors: null
   # stressor_receptors: null
@@ -55,7 +57,6 @@ params:
   # lit_ferc: no
   # spatial: yes
   # mgt_tethys: no
-  
   # title: "Test Report"
   # technology: "Ocean Current"
   # aoi_wkt: "POLYGON ((-68.37953 44.857, -67.38415 43.89608, -64.21114 45.0997, -64.90587 45.89335, -68.37953 44.857))"

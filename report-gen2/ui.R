@@ -130,7 +130,6 @@ dashboardPage(
               
               actionButton("btnRmLitQuery"   , "Remove selected queries", icon = icon("minus")),
               actionButton("btnRmAllLitQuery", "Remove ALL queries"     , icon = icon("minus")),
-              actionButton("btnAddStressorLitQueries", "Add all Receptor interactions with selected Stressor(s)", icon = icon("plus")),
               data.step  = 7,
               data.intro = "Refine your queries from the combinations of Receptors, Stressors & Technology.")))),
         
