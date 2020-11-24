@@ -157,41 +157,53 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt){
   
   # dataset_code = "cetacean-bia"; aoi_wkt = params$aoi_wkt
   # dataset_code = "efh"; aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
-    message(glue("tab..._shp_within_aoi(dataset_code='{dataset_code}', aoi_wkt='{aoi_wkt}')"))
+  message(glue("tab..._shp_within_aoi(dataset_code='{dataset_code}', aoi_wkt='{paste(aoi_wkt, collapse=';')}')"))
 
-# params <- yaml.load("
-# title: Testing
-# aoi_wkt:
-# - POLYGON ((-115.9245 32.26236, -115.9245 32.26565, -115.9206 32.26565, -115.9206
-#               32.26236, -115.9245 32.26236))
-# - POLYGON ((-121.9503 33.01519, -121.9503 35.51658, -115.8711 35.51658, -115.8711
-#             33.01519, -121.9503 33.01519))")
-# aoi_wkt <- params$aoi_wkt
+  # dataset_code = "cetacean-bia";
+  # params <- yaml::yaml.load("
+  # title: Testing
+  # aoi_wkt:
+  # - POLYGON ((-115.9245 32.26236, -115.9245 32.26565, -115.9206 32.26565, -115.9206
+  #               32.26236, -115.9245 32.26236))
+  # - POLYGON ((-121.9503 33.01519, -121.9503 35.51658, -115.8711 35.51658, -115.8711
+  #             33.01519, -121.9503 33.01519))")
+  # aoi_wkt <- params$aoi_wkt
 
   if (is.null(aoi_wkt))
     return("Please draw a Location to get a summary of the intersecting features for this dataset.")
 
-  if (length(aoi_wkt) > 1)
-    return("Please draw only ONE polygon to get a summary of the intersecting features for this dataset.")
+  # if (length(aoi_wkt) > 1)
+  #   return("Please draw only ONE polygon to get a summary of the intersecting features for this dataset.")
     
-    
-  
   ds <- tbl(con, "datasets") %>% 
     filter(code == !!dataset_code) %>% 
     replace_na(list(buffer_nm = 0)) %>% 
     collect()
   
+  if (length(aoi_wkt) > 1){
+    aoi_wkts <- glue("'SRID=4326;{aoi_wkt}'::geometry")
+    #aoi_sql  <- glue("ST_COLLECT(\n{paste(aoi_wkts, collapse=',\n')})")
+    aoi_sql  <- glue("ST_COLLECT(\n{paste(aoi_wkts, collapse=',\n')})")
+    # cat(aoi_sql)
+  } else {
+    aoi_sql <- glue("'SRID=4326;{aoi_wkt}'")
+    # aoi_sql <- glue("'SRID=4326;{aoi_wkt[2]}'")
+  }
+
+  
+  dbSendQuery(con, glue("DROP TABLE IF EXISTS tmp_aoi CASCADE;"))
   if (!is.na(ds$summarize_sql)){
     sql_intersection <- glue("
       {ds$select_sql} AS ds
-      WHERE ST_DWithin(Geography(ds.geometry), 'SRID=4326;{aoi_wkt}', {ds$buffer_nm} * 1852);")
+      WHERE ST_DWithin(Geography(ds.geometry), {aoi_sql}, {ds$buffer_nm} * 1852);")
     dbExecute(con, glue("CREATE TEMPORARY TABLE tmp_aoi AS {sql_intersection};"))
-    sql_summarize <- "SELECT sitename_l AS Species, string_agg(lifestage, ', ') AS Lifestage FROM tmp_aoi GROUP BY sitename_l"
-    x_df <- dbGetQuery(con, sql_summarize)
+    # sql_summarize <- "SELECT sitename_l AS Species, string_agg(lifestage, ', ') AS Lifestage FROM tmp_aoi GROUP BY sitename_l"
+    # sql_summarize <- "SELECT * FROM tmp_aoi"
+    x_df <- dbGetQuery(con, ds$summarize_sql)
   } else {
     x_sql <- glue("
       {ds$select_sql} AS ds
-      WHERE ST_DWithin(Geography(ds.geometry), 'SRID=4326;{aoi_wkt}', {ds$buffer_nm} * 1852);")
+      WHERE ST_DWithin(Geography(ds.geometry), {aoi_sql}, {ds$buffer_nm} * 1852);")
     x_sf <- st_read(con, query = x_sql)
     x_df <- st_drop_geometry(x_sf)
     
