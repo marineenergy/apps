@@ -105,13 +105,17 @@ source(here::here("functions.R")) # libraries, db connection object (con)
 # Configuration
 
 ```{r}
+# params <- yaml::yaml.load("
+# technology:
+# - Current
+# - Marine Energy")
 # params = list(technology="Marine Energy")
 #tech_choices <- read_csv(here("report/data/tech_choices.csv"))
 # TODO: integrate finer detail in tech_choices.csv with tags.csv
 tech <- read_csv(here("data/tags.csv")) %>% 
   filter(facet == "technology") %>% 
   select(tag = item_label, tag_parent, tag_img) %>% 
-  filter(tag == params$technology) %>% 
+  filter(tag %in% params$technology) %>% 
   mutate(
     img_local = map_chr(
       tag_img, 
@@ -123,21 +127,28 @@ tech <- read_csv(here("data/tags.csv")) %>%
           download.file(url, img_local)
         img_local}))
 
-if(nrow(tech) != 1) 
-  cat("WARNING: This report only shows one Technology in the Configuration for now.")
-
-tech <- tech %>% slice(1)
+# if(nrow(tech) != 1) 
+#   cat("WARNING: This report only shows one Technology in the Configuration for now.")
+# tech <- tech %>% slice(1)
 
 bullets <- function(tags, indent=1){
   glue("{strrep(' ', indent*2)}- {tags}", .trim = F) %>% 
   paste(collapse = "\n") %>% 
   cat()
 }
+
+tech_img_width <- glue("{floor(100/nrow(tech))}%")
 ```
 
-## Technology: `r tech$tag`
+## Technology: `r paste(tech$tag, collapse=', ')`
 
-![](`r ifelse(knitr::is_html_output(), tech$tag_img, tech$img_local)`)
+```{r, out.width = tech_img_width}
+if (knitr::is_html_output()){
+  include_graphics(tech$tag_img)
+} else {
+  include_graphics(tech$img_local)
+}
+```
 
 ## Literature
 
