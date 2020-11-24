@@ -1,0 +1,252 @@
+---
+title: "`r params$title`"
+params:
+  #   - Noise
+  #   - Cetaceans
+  #   - Pinnipeds
+  #   - Cetaceans AND Noise
+  #   - Pinnipeds AND Noise
+  title: ''
+  technology: Marine Energy (General)
+  aoi_wkt: POLYGON ((-82.84218 26.44127, -81.89644 24.29934, -78.92945 24.86505, -78.89557
+    26.67814, -82.84218 26.44127))
+  lit_queries: null
+  receptors: null
+  stressor_receptors: null
+  lit_tethys: no
+  lit_ferc: no
+  spatial: yes
+  mgt_tethys: no
+  # title: "Test Report"
+  # technology: "Ocean Current"
+  # aoi_wkt: "POLYGON ((-68.37953 44.857, -67.38415 43.89608, -64.21114 45.0997, -64.90587 45.89335, -68.37953 44.857))"
+  # stressors: 
+  # receptors:
+  # stressor_receptors:
+  # lit_tethys: true
+  # lit_ferc: false
+  # spatial: true
+  # mgt_tethys: false
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 4
+    number_sections: true
+    #keep_md: yes
+    latex_engine: xelatex
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float: true
+    number_sections: true
+    mathjax: null
+  word_document:
+    toc: true
+    toc_depth: 4
+    number_sections: true
+    #keep_md: yes
+editor_options: 
+  chunk_output_type: console
+always_allow_html: true
+---
+
+```{r setup, include=F}
+# render("report_template.Rmd", output_file="report_template.pdf", output_format="pdf_document")
+# render("report_template.Rmd", output_file="report_template.docx", output_format="word_document")
+# render("report_template.Rmd", output_file="report_template.html", output_format="html_document")
+knitr::opts_chunk$set(echo = F, warning = F, message = F, eval = T)
+```
+
+```{r init}
+source(here::here("functions.R")) # libraries, db connection object (con)
+# rmd_params <- readRDS(here("data/tmp_rmd_params.rds"))
+```
+
+# Configuration
+
+```{r}
+# params = list(technology="Cross Flow")
+#tech_choices <- read_csv(here("report/data/tech_choices.csv"))
+# TODO: integrate finer detail in tech_choices.csv with tags.csv
+tech <- read_csv(here("data/tags.csv")) %>% 
+  filter(facet == "technology") %>% 
+  select(tag = item_label, tag_parent, tag_img) %>% 
+  filter(tag == params$technology) %>% 
+  mutate(
+    img_local = map_chr(
+      tag_img, 
+      function(url){
+        # url <- tech$tag_img
+        fname         <- urltools::path(url) %>% url_decode() %>% basename()
+        img_local <- file.path(here("report/data/tech_images"), fname)
+        if (!file.exists(img_local))
+          download.file(url, img_local)
+        img_local}))
+
+stopifnot(nrow(tech) == 1)
+
+bullets <- function(tags, indent=1){
+  glue("{strrep(' ', indent*2)}- {tags}", .trim = F) %>% 
+  paste(collapse = "\n") %>% 
+  cat()
+}
+```
+
+## Technology: `r glue("{params$technology}")`
+
+![](`r ifelse(knitr::is_html_output(), tech$tag_img, tech$img_local)`)
+
+## Stressors & Receptors
+
+* Stressors
+
+```{r, results='asis'}
+bullets(params$stressors)
+```
+
+* Receptors
+
+```{r, results='asis'}
+bullets(params$receptors)
+```
+
+* Stressor-Receptors
+
+```{r, results='asis'}
+bullets(params$stressor_receptors)
+```
+
+## Location
+
+```{r map, dpi=150, out.width = '100%'}
+#{r map, out.width = '100%', cache=F}
+# params = list(aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))")
+
+if (is.null(params$aoi_wkt) || str_trim(params$aoi_wkt) == ""){
+  cat("Please draw a Location to include a map here.")
+} else {
+    
+  aoi_sf <- tibble(
+    geometry = params$aoi_wkt) %>%
+    st_as_sf(wkt = "geometry", crs=4326)
+
+  if (knitr::is_html_output()){
+    # TODO: inset map showing larger area
+    m <- leaflet(
+      options = leafletOptions(
+        zoomControl = F,
+        attributionControl = F)) %>%
+      addProviderTiles(providers$Esri.OceanBasemap) %>%
+      addPolygons(data = aoi_sf)
+    m
+  } else {
+    
+    
+    # OLD (slow):
+    #   m_png <- tempfile(fileext = ".png")
+    #   mapshot(m, file = m_png)
+    #   include_graphics(m_png)
+    # NEW: https://github.com/dkahle/ggmap/issues/160 ...
+    
+    bb <- st_bbox(aoi_sf) %>% as.vector()
+    bb_m <- 0.15
+    bb_x <- expand_range(c(bb[1], bb[3]), bb_m)
+    bb_y <- expand_range(c(bb[2], bb[4]), bb_m)
+    bb <- c(bb_x[1], bb_y[1], bb_x[2], bb_y[2])
+    
+    # Convert to 3857
+    aoi_3857 <- st_transform(aoi_sf, 3857)
+    
+    bkmap <- get_map(location = bb, source = "stamen")
+    
+    # Define a function to fix the bbox to be in EPSG:3857
+    ggmap_bbox <- function(map) {
+      if (!inherits(map, "ggmap")) stop("map must be a ggmap object")
+      # Extract the bounding box (in lat/lon) from the ggmap to a numeric vector, 
+      # and set the names to what sf::st_bbox expects:
+      map_bbox <- setNames(unlist(attr(map, "bb")), 
+                           c("ymin", "xmin", "ymax", "xmax"))
+      
+      # Coonvert the bbox to an sf polygon, transform it to 3857, 
+      # and convert back to a bbox (convoluted, but it works)
+      bbox_3857 <- st_bbox(st_transform(st_as_sfc(st_bbox(map_bbox, crs = 4326)), 3857))
+      
+      # Overwrite the bbox of the ggmap object with the transformed coordinates 
+      attr(map, "bb")$ll.lat <- bbox_3857["ymin"]
+      attr(map, "bb")$ll.lon <- bbox_3857["xmin"]
+      attr(map, "bb")$ur.lat <- bbox_3857["ymax"]
+      attr(map, "bb")$ur.lon <- bbox_3857["xmax"]
+      map
+    }
+    
+    # Use the function:
+    bkmap <- ggmap_bbox(bkmap)
+    
+    ggmap(bkmap) + 
+      coord_sf(crs = st_crs(3857)) + # force the ggplot2 map to be in 3857
+      geom_sf(data = aoi_3857, inherit.aes = F, fill="red", alpha=.5)
+  }
+}
+```
+
+# Literature
+
+## Stressors
+
+Stressors are potentially harmful environmental effects from technology for marine renewable energy.
+
+```{r stressors, results='asis'}
+# params = list(stressors = c("Noise", "EMF"))
+if (params$lit_tethys & !is.null(params$stressors))
+  knit_tethys_literature_from_tags(params$stressors)
+```
+
+## Receptors
+
+Receptors are species, habitats and human activities of environmental concern.
+
+```{r receptors, results='asis'}
+# params = list(receptors = c("Marine Mammals", "Fish"))
+if (params$lit_tethys & !is.null(params$receptors))
+  knit_tethys_literature_from_tags(params$receptors)
+```
+
+## Stressor-Receptors
+
+```{r stressor_receptors, results='asis'}
+# params = list(stressor_receptors = c("Marine Mammals AND Noise", "Fish AND EMF"))
+if (params$lit_tethys & !is.null(params$stressor_receptors))
+  knit_tethys_literature_from_tags(params$stressor_receptors)
+```
+
+# Spatial
+
+Spatial data of Receptors are extracted for the Location from datasets harvested predominantly from [MarineCadastre.gov](https://MarineCadastre.gov).
+
+```{r, results='asis'}
+# datasets_gsheet2db ----
+# datasets_marinecadastre.gov.csv - Google Sheet
+#   edit online: https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=0
+# datasets_gsheet2db()
+
+# params = list(
+#   receptors = c("Marine Mammals", "Fish"),
+#   aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))")
+
+if (params$spatial & !is.null(params$receptors)){
+  datasets <- tbl(con, "datasets") %>% 
+    collect() %>%
+    replace_na(list(buffer_km = 0)) %>% 
+    select(-notes, -issues) %>% 
+    separate_rows(tags, sep = ";") %>% 
+    rename(tag = tags) %>% 
+    filter(
+      tag %in% params$receptors) %>% 
+    arrange(tag, title)
+  
+  lapply(1:nrow(datasets), function(i_datasets) {
+    knit_expand('_spatial-tag-dataset.Rmd') }) %>% 
+    knit_child(text = unlist(.), quiet = T) %>% 
+    cat(sep = '\n\n')
+}
+```
