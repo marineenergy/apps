@@ -216,4 +216,8 @@ shinyServer(function(input, output, session) {
     input$tour,
     introjs(session, events = list(onbeforechange = readCallback("switchTabs"))))
   
+  # js$disableTab("Projects")
+  # js$disableTab("Regulations")
+  # js$disableTab("Management")
+  # js$disableTab("Reports")
 })

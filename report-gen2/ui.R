@@ -14,17 +14,17 @@ dashboardPage(
       data.intro = "Enter title of your custom report."),
     nbsp, "Include in report:",
     introBox(
-      checkboxInput("ckboxLitTethys"       , "Literature from Tethys"             , value = T),
-      data.step  = 9,
-      data.intro = "Check to include Literature from Tethys: linked titles based on selected Stressors, Receptors and Stressor-Receptor interactions."),
-    disabled(
-      checkboxInput("ckboxLitFERC"       , "Literature from FERC")),
-    introBox(
-      checkboxInput("ckboxSpatialReceptors", "Spatial intersection with Receptors", value = T),
+      checkboxInput("ckboxSpatialReceptors", "Spatial", value = T),
       data.step  = 10,
       data.intro = "Check to include Spatial data from MarineCadastre.gov: summary of intersection with drawn Location and footprints of selected Receptors (species, habitats and human activities)."),
-    disabled(
-      checkboxInput("ckboxMgtTethys"     , "Management measures from Tethys")),
+    introBox(
+      checkboxInput("ckboxLitTethys"       , "Literature"             , value = T),
+      data.step  = 9,
+      data.intro = "Check to include Literature from Tethys: linked titles based on selected Stressors, Receptors and Stressor-Receptor interactions."),
+    # disabled(
+    #   checkboxInput("ckboxLitFERC"       , "Literature from FERC")),
+    # disabled(
+    #   checkboxInput("ckboxMgtTethys"     , "Management measures from Tethys")),
     introBox(
       dropdownButton(
         label = 'Download Report', icon=icon('file-o'), circle=F, size='sm',
@@ -40,6 +40,8 @@ dashboardPage(
     shiny::tags$head(
       shiny::tags$link(rel = "stylesheet", type = "text/css", href = "style.css")),
     useShinyjs(),
+    # extendShinyjs(text = tabdisable_js, functions="disableTab"),
+    # inlineCSS(tabdisable_css),
     use_waiter(),
     
     tabsetPanel(
@@ -131,13 +133,21 @@ dashboardPage(
               actionButton("btnRmLitQuery"   , "Remove selected queries", icon = icon("minus")),
               actionButton("btnRmAllLitQuery", "Remove ALL queries"     , icon = icon("minus")),
               data.step  = 7,
-              data.intro = "Refine your queries from the combinations of Receptors, Stressors & Technology.")))),
+              data.intro = "Refine your queries from the combinations of Receptors, Stressors & Technology."))))
         
-      tabPanel(
-        "Projects",
-        "Under construction", emo::ji("construction")),
-      
-      tabPanel(
-        "Regulations",
-        "Under construction", emo::ji("construction"))
+      # tabPanel(
+      #   "Projects",
+      #   "Under construction", emo::ji("construction")),
+      # 
+      # tabPanel(
+      #   "Regulations",
+      #   "Under construction", emo::ji("construction")),
+      # 
+      # tabPanel(
+      #   "Management",
+      #   "Under construction", emo::ji("construction")),
+      # 
+      # tabPanel(
+      #   "Reports",
+      #   "Under construction", emo::ji("construction"))
     )))
