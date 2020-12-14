@@ -19,18 +19,21 @@ lst_tags <- list(
 
 # user interface ----
 ui <- fluidPage(
-    titlePanel("Tethys Literature Search"),
     
-    sidebarLayout(
-        sidebarPanel(
+    fluidRow(
+    # titlePanel("Tethys Literature Search"),
+    
+    # sidebarLayout(
+    #     sidebarPanel(
             # TODO: 
             #  - 1. listbox of AND statements to select/remove with OR between
             #  - 2. add technology to select list: wind, wave, tide
             #  - 3. limit selectable elements after first choice to those having second
-            selectInput(
-                "tags", "Select tag(s):", 
-                lst_tags,
-                multiple = T)),
+        selectInput(
+            "tags", "Select tag(s):", 
+            lst_tags,
+            multiple = T)),
+    fluidRow(
         
         mainPanel(
             DTOutput("tbl"))))
