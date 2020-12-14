@@ -68,7 +68,7 @@ dashboardPage(
             introBox(
               selectInput(
                 "selSpReceptors", "Receptors",
-                choices = c("Marine Mammals","Cetaceans", "Fish"),
+                choices = choices_sp_receptors,
                 multiple = T),
               data.step  = 2,
               data.intro = "Select Receptor tags for Spatial. This list will expand as datasets get loaded from MarineCadastre.gov.")),

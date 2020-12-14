@@ -155,6 +155,9 @@ datasets_gsheet2db <- function(tbl = "datasets", redo = T){
 tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt){
   # summarize shapefile dataset from area of interest
   
+  # TODO: pull from db: https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=936111013
+  # datasets_gsheet2db()
+  
   # dataset_code = "cetacean-bia"; aoi_wkt = params$aoi_wkt
   # dataset_code = "efh"; aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
   message(glue("tab..._shp_within_aoi(dataset_code='{dataset_code}', aoi_wkt='{paste(aoi_wkt, collapse=';')}')"))
@@ -168,7 +171,14 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt){
   # - POLYGON ((-121.9503 33.01519, -121.9503 35.51658, -115.8711 35.51658, -115.8711
   #             33.01519, -121.9503 33.01519))")
   # aoi_wkt <- params$aoi_wkt
-
+  # dataset_code = "oil-gas-wells"
+  # aoi_wkt      = "POLYGON ((-157.4273 55.22198, -157.4273 61.76097, -143.1428 61.76097, -143.1428 55.22198, -157.4273 55.22198))"
+  # dataset_code='fed-sand-gravel-lease'
+  # aoi_wkt='POLYGON ((-175.4932 15.34568, -175.4932 27.93566, -151.813 27.93566, -151.813 15.34568, -175.4932 15.34568))'
+  
+  # dataset_code='monuments'
+  # aoi_wkt='POLYGON ((-180.0668 16.98081, -180.0668 29.87807, -153.4797 29.87807, -153.4797 16.98081, -180.0668 16.98081))'
+  
   if (is.null(aoi_wkt))
     return("Please draw a Location to get a summary of the intersecting features for this dataset.")
 
@@ -199,6 +209,7 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt){
     dbExecute(con, glue("CREATE TEMPORARY TABLE tmp_aoi AS {sql_intersection};"))
     # sql_summarize <- "SELECT sitename_l AS Species, string_agg(lifestage, ', ') AS Lifestage FROM tmp_aoi GROUP BY sitename_l"
     # sql_summarize <- "SELECT * FROM tmp_aoi"
+    #cat(ds$summarize_sql)
     x_df <- dbGetQuery(con, ds$summarize_sql)
   } else {
     x_sql <- glue("

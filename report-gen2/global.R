@@ -81,6 +81,21 @@ waiting_screen <- tagList(
   h3("Generating custom report...")
 ) 
 
+# TODO: pull from db: https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=936111013
+# datasets_gsheet2db()
+
+# choices_sp_receptors <- c(
+#   "Marine Mammals","Cetaceans", "Fish", 
+#   "Marine Spatial Planning", "Social & Economic Data")
+choices_sp_receptors <- dbGetQuery(con, "SELECT tags FROM datasets WHERE ready") %>% 
+  separate_rows(tags, sep = ";") %>% 
+  rename(tag = tags) %>% 
+  mutate(
+    tag = str_trim(tag)) %>% 
+  filter(!is.na(tag), tag != "") %>% 
+  distinct(tag) %>% 
+  arrange(tag)
+
 # tabdisable_js <- "
 # shinyjs.disableTab = function(name) {
 #   var tab = $('.nav li a[data-value=' + name + ']');

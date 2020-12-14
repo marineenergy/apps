@@ -266,10 +266,13 @@ Spatial data of Receptors are extracted for the Location from datasets harvested
 if (params$spatial & !is.null(params$spatial_receptors)){
   datasets <- tbl(con, "datasets") %>% 
     collect() %>%
+    filter(ready) %>% 
     replace_na(list(buffer_km = 0)) %>% 
     select(-notes, -issues) %>% 
     separate_rows(tags, sep = ";") %>% 
     rename(tag = tags) %>% 
+    mutate(
+      tag = str_trim(tag)) %>% 
     filter(
       tag %in% params$spatial_receptors) %>% 
     arrange(tag, title)
