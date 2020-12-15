@@ -245,7 +245,7 @@ if (is.null(params$aoi_wkt) || str_trim(params$aoi_wkt) == ""){
 
 ```{r lit_queries, results='asis'}
 # params = list(stressors = c("Noise", "EMF"))
-if (params$lit_tethys & !is.null(params$lit_queries))
+if (params$lit_tethys && !is.null(params$lit_queries) && length(params$lit_queries) != 0)
   knit_tethys_literature_from_tags_gen(params$lit_queries)
 ```
 
