@@ -23,6 +23,7 @@ library(rvest)
 library(readr)
 library(dplyr)
 library(DT)
+library(here)
 
 url <- "https://tethys.pnnl.gov/management-measures"
 measures_csv <- here("data/management-measures.csv")

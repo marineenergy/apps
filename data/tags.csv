@@ -1,131 +1,164 @@
-facet,item_id,item_label,tag_parent,tag_img
-attachment,1,Available on Tethys,,
-content,538,Book,,
-content,539,Book Chapter,,
-content,540,Conference Paper,,
-content,541,Guidance,,
-content,542,Journal Article,,
-content,543,Magazine Article,,
-content,544,Presentation,,
-content,550,Project Site,,
-content,545,Report,,
-content,551,Research Study,,
-content,552,Summary,,
-content,546,Thesis,,
-content,547,Video,,
-content,548,Website,,
-content,549,Workshop Article,,
-country,5,Angola,,
-country,6,Antigua & Barbuda,,
-country,9,Australia,,
-country,12,Bahamas,,
-country,17,Belgium,,
-country,24,Brazil,,
-country,25,Brunei,,
-country,31,Canada,,
-country,35,Chile,,
-country,36,China,,
-country,37,Colombia,,
-country,41,Costa Rica,,
-country,47,Denmark,,
-country,60,Finland,,
-country,61,France,,
-country,65,Germany,,
-country,66,Ghana,,
-country,67,Greece,,
-country,75,Hungary,,
-country,77,India,,
-country,78,Indonesia,,
-country,79,International,,
-country,80,Iran,,
-country,82,Ireland,,
-country,83,Israel,,
-country,84,Italy,,
-country,86,Japan,,
-country,92,Korea South,,
-country,96,Laos,,
-country,103,Lithuania,,
-country,106,Madagascar,,
-country,108,Malaysia,,
-country,115,Mexico,,
-country,116,Micronesia,,
-country,121,Morocco,,
-country,122,Mozambique,,
-country,127,Netherlands,,
-country,128,New Zealand,,
-country,132,Norway,,
-country,137,Panama,,
-country,140,Peru,,
-country,141,Philippines,,
-country,142,Poland,,
-country,143,Portugal,,
-country,144,Puerto Rico,,
-country,145,Qatar,,
-country,146,Romania,,
-country,147,Russia,,
-country,152,Saudi Arabia,,
-country,159,Slovenia,,
-country,162,South Africa,,
-country,164,Spain,,
-country,172,Sweden,,
-country,175,Taiwan,,
-country,180,Tonga,,
-country,181,Trinidad & Tobago,,
-country,189,United Kingdom,,
-country,190,United States of America,,
-receptor,272,Ground-Nesting Birds,Birds,
-receptor,273,Passerines,Birds,
-receptor,274,Raptors,Birds,
-receptor,275,Seabirds,Birds,
-receptor,276,Shorebirds,Birds,
-receptor,277,Waterfowl,Birds,
-receptor,525,Demersal Fish,Fish,
-receptor,526,Pelagic Fish,Fish,
-receptor,286,Climate Change,Human Dimensions,
-receptor,527,Environmental Impact Assessment,Human Dimensions,
-receptor,287,Fisheries,Human Dimensions,
-receptor,288,Legal & Policy,Human Dimensions,
-receptor,289,Life Cycle Assessment,Human Dimensions,
-receptor,528,Marine Spatial Planning,Human Dimensions,
-receptor,290,Navigation,Human Dimensions,
-receptor,291,Recreation & Tourism,Human Dimensions,
-receptor,529,Social & Economic Data,Human Dimensions,
-receptor,292,Stakeholder Engagement,Human Dimensions,
-receptor,285,Visual Impacts,Human Dimensions,
-receptor,496,Cetaceans,Marine Mammals,
-receptor,497,Pinnipeds,Marine Mammals,
-receptor,534,Sediment Transport,Physical Environment,
-receptor,535,Water Quality,Physical Environment,
-receptor,269,Bats,,
-receptor,271,Birds,,
-receptor,278,Ecosystem Processes,,
-receptor,280,Fish,,
-receptor,284,Human Dimensions,,
-receptor,270,Invertebrates,,
-receptor,281,Marine Mammals,,
-receptor,279,Physical Environment,,
-receptor,283,Reptiles,,
-receptor,293,Terrestrial Mammals,,
-stressor,530,Attraction,Behavioral Interaction,
-stressor,531,Avoidance,Behavioral Interaction,
-stressor,532,Displacement,Behavioral Interaction,
-stressor,353,Changes in Flow,Physical Interaction,
-stressor,350,Chemicals,Physical Interaction,
-stressor,351,Collision,Physical Interaction,
-stressor,533,Entrapment,Physical Interaction,
-stressor,,Behavioral Interaction,,
-stressor,352,EMF,,
-stressor,356,Habitat Change,,
-stressor,354,Lighting,,
-stressor,355,Noise,,
-stressor,,Physical Interaction,,
-technology,423,Marine Energy,,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/Marine%20Renewable%20Energy%20general.jpg?itok=dYD6EN4G
-technology,424,Current,Marine Energy,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/OceanBased%20Perpetual%20Energy%20-%20Ocean%20Current%20Energy%20Converter%204.jpg?itok=9vD56YZ3
-technology,425,OTEC,Marine Energy,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/OTEC%20-%20Courtesy%20of%20Okinawa%20Prefecture%20Industrial%20Policy%20Division.jpg?itok=AFxP00wb
-technology,426,Riverine,Marine Energy,https://tethys.pnnl.gov/sites/default/files/inline-images/Riverine%20-%20Courtesy%20of%20ORPC.jpeg
-technology,427,Salinity Gradient,Marine Energy,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/SalinityGradient.jpg?itok=yUVK-3rk
-technology,428,Tidal,Marine Energy,https://tethys.pnnl.gov/sites/default/files/inline-images/Axial%20Flow%20-%20Courtesy%20of%20BALAO-SABELLA.jpg
-technology,429,Wave,Marine Energy,https://tethys.pnnl.gov/sites/default/files/inline-images/Point%20Absorber%20-%20Courtesy%20of%20Ocean%20Power%20Technologies.jpg
-technology,430,Wind Energy,,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/Wind%20Energy%20General.png?itok=82o8305u
-technology,431,Land-Based Wind,Wind Energy,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/Land-Based%20Wind.png?itok=QZK3C9xN
-technology,432,Offshore Wind,Wind Energy,https://tethys.pnnl.gov/sites/default/files/inline-images/Monopile-Foundation.jpg
+facet,item_id,item_label
+attachment,1,Available on Tethys
+content,542,Journal Article
+content,545,Report
+content,540,Conference Paper
+content,539,Book Chapter
+content,544,Presentation
+content,550,Project Site
+content,546,Thesis
+content,551,Research Study
+content,538,Book
+content,548,Website
+content,549,Workshop Article
+content,543,Magazine Article
+content,552,Summary
+content,541,Guidance
+content,547,Video
+country,189,United Kingdom
+country,190,United States of America
+country,31,Canada
+country,9,Australia
+country,164,Spain
+country,82,Ireland
+country,61,France
+country,172,Sweden
+country,36,China
+country,84,Italy
+country,143,Portugal
+country,132,Norway
+country,47,Denmark
+country,128,New Zealand
+country,86,Japan
+country,127,Netherlands
+country,79,International
+country,65,Germany
+country,92,Korea South
+country,67,Greece
+country,35,Chile
+country,142,Poland
+country,17,Belgium
+country,24,Brazil
+country,115,Mexico
+country,60,Finland
+country,77,India
+country,83,Israel
+country,162,South Africa
+country,78,Indonesia
+country,108,Malaysia
+country,122,Mozambique
+country,146,Romania
+country,147,Russia
+country,6,Antigua & Barbuda
+country,12,Bahamas
+country,121,Morocco
+country,175,Taiwan
+country,5,Angola
+country,14,Bangladesh
+country,25,Brunei
+country,37,Colombia
+country,41,Costa Rica
+country,66,Ghana
+country,75,Hungary
+country,80,Iran
+country,96,Laos
+country,103,Lithuania
+country,106,Madagascar
+country,116,Micronesia
+country,137,Panama
+country,140,Peru
+country,141,Philippines
+country,144,Puerto Rico
+country,145,Qatar
+country,152,Saudi Arabia
+country,159,Slovenia
+country,180,Tonga
+country,181,Trinidad & Tobago
+date,2022,2022
+date,2021,2021
+date,2020,2020
+date,2019,2019
+date,2018,2018
+date,2017,2017
+date,2016,2016
+date,2015,2015
+date,2014,2014
+date,2013,2013
+date,2012,2012
+date,2011,2011
+date,2010,2010
+date,2009,2009
+date,2008,2008
+date,2007,2007
+date,2006,2006
+date,2005,2005
+date,2004,2004
+date,2003,2003
+date,2002,2002
+date,2001,2001
+date,2000,2000
+date,1999,1999
+date,1998,1998
+date,1997,1997
+date,1996,1996
+date,1995,1995
+date,1994,1994
+date,1993,1993
+date,1992,1992
+date,1991,1991
+date,1990,1990
+date,1989,1989
+date,1988,1988
+date,1987,1987
+date,1986,1986
+date,1985,1985
+date,1984,1984
+date,1983,1983
+date,1982,1982
+date,1981,1981
+date,1980,1980
+date,1979,1979
+date,1978,1978
+date,1977,1977
+date,1976,1976
+date,1975,1975
+date,1973,1973
+date,1971,1971
+date,1969,1969
+date,1968,1968
+date,1967,1967
+date,1966,1966
+date,1962,1962
+date,1957,1957
+date,1877,1877
+receptor,284,Human Dimensions
+receptor,281,Marine Mammals
+receptor,280,Fish
+receptor,279,Physical Environment
+receptor,270,Invertebrates
+receptor,271,Birds
+receptor,278,Ecosystem Processes
+receptor,283,Reptiles
+receptor,269,Bats
+receptor,293,Terrestrial Mammals
+stressor,355,Noise
+stressor,353,Changes in Flow
+stressor,356,Habitat Change
+stressor,351,Collision
+stressor,352,EMF
+stressor,530,Attraction
+stressor,531,Avoidance
+stressor,532,Displacement
+stressor,350,Chemicals
+stressor,533,Entrapment
+stressor,354,Lighting
+technology,423,Marine Energy
+technology,428,Tidal
+technology,429,Wave
+technology,426,Riverine
+technology,425,OTEC
+technology,424,Ocean Current
+technology,427,Salinity Gradient
+technology,430,Wind Energy
+technology,432,Offshore Wind
+technology,431,Land-Based Wind
