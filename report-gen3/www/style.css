@@ -1,0 +1,3 @@
+.leaflet-touch .leaflet-draw-toolbar .leaflet-draw-draw-polyline {
+    visibility: hidden;
+}

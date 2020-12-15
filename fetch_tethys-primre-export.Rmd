@@ -82,6 +82,71 @@ path_csv='/share/github/mhk-env_shiny-apps/data/tethys.csv'
 cat $path_csv | psql -h postgis -p 5432 -U admin -c "COPY tethys_pubs (uri, data) FROM STDIN WITH (FORMAT CSV, HEADER TRUE);" gis
 ```
 
+
+## Update tables for easier querying
+
+```{r}
+source("functions.R")
+
+pubs <- dbGetQuery(
+  con, 
+  "SELECT 
+     uri, 
+     data -> 'title'         ->> 0  AS title, 
+     data -> 'tags'                 AS tags, 
+     data -> 'technologyType'       AS technologyType
+   FROM tethys_pubs") %>% 
+  arrange(uri) %>% 
+  tibble()
+pubs # 6,484 rows
+pubs %>% head(10) %>% View()
+
+# TODO: evaluate counts of tags, esp. "Environment"
+
+pub_tags <- dbGetQuery(
+  con, 
+  "SELECT 
+     uri, 
+     json_array_elements(data->'tags')           ->> 0 as tag
+   FROM tethys_pubs
+  UNION
+   SELECT
+     uri, 
+     json_array_elements(data->'technologyType') ->> 0 as tag
+   FROM tethys_pubs") %>% 
+  arrange(uri, tag) %>% 
+  tibble()
+
+dbWriteTable(con, "tethys_pub_tags", pub_tags)
+pub_tags # 14,505 rows
+pub_tags # 16,034 rows after UNION
+
+pub_tech <- dbGetQuery(
+  con, 
+  "SELECT
+     uri, 
+     json_array_elements(data->'technologyType') ->> 0 as tag
+   FROM tethys_pubs") %>% 
+  arrange(uri, tag_tech) %>% 
+  tibble()
+pub_tech
+
+
+
+tethys_pub_tags
+
+pubs_without_tags <- setdiff(pubs %>% select(uri), pub_tags %>% select(uri))
+pubs_without_tags # 0 rows
+pubs_without_tech <- setdiff(pubs %>% select(uri), pub_tech %>% select(uri)) %>% 
+  left_join(
+    pubs %>% 
+      select(uri, title, tags)) %>% 
+  arrange(desc(title))
+pubs_without_tech # 5,158 rows
+View(pubs_without_tech)
+```
+
+
 ## Query based on tag
 
 ```{r query tags, eval = T}
