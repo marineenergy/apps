@@ -51,11 +51,12 @@ dashboardPage(
           "Configure",
           data.step  = 3,
           data.intro = "Select."),
-        helpText("Choose combination of tags for Technology, Stressors and Receptors with which to search the Tethys literature."),
         
         tabsetPanel(
           tabPanel(
             "Tags",
+            
+            helpText("Choose combination of tags for Receptors, Stressors and Technology with which to search the Literature and Spatial (limited to Receptors)."),
             
             fluidRow(
               align="center", 
@@ -111,13 +112,12 @@ dashboardPage(
                   data.intro = "Refine your queries from the combinations of Receptors, Stressors & Technology.")))),
           
           tabPanel(
-            "Spatial",
+            "Location",
             
             fluidRow(
               box(
                 width = 12,
                 introBox(
-                  "Location",
                   editModUI("mapEdit"),      
                   data.step  = 1,
                   data.intro = "
@@ -140,7 +140,23 @@ dashboardPage(
       
       tabPanel(
         "Literature",
-        DTOutput("tblLit"))
+        DTOutput("tblLiterature")),
+      
+      tabPanel(
+        "Spatial",
+        
+        helpText(
+          "The Spatial results represent intersections with the given Location and spatial data on Receptors 
+            (i.e. species, habitats and human activities)."),
+        
+        DTOutput("tblSpatial"),
+        
+        helpText(
+          "To see the detailed results, you need to for now generate a Report. 
+          In future, these results will be nested here by dataset. 
+          Please also give results an extra 10 seconds to show up after selecting Location and Tags.
+          So far, the only spatial datasets loaded from MarineCadastre.gov include the following tags:", 
+          choices_sp_receptors %>% pull(tag) %>% paste(collapse = ", "), "."))
         
       # tabPanel(
       #   "Projects",

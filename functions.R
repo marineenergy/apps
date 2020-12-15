@@ -152,7 +152,7 @@ datasets_gsheet2db <- function(tbl = "datasets", redo = T){
 # datasets_gsheet2db()
 
 
-tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt){
+tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kable"){
   # summarize shapefile dataset from area of interest
   
   # TODO: pull from db: https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=936111013
@@ -220,6 +220,10 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt){
     
     if (!is.na(ds$summarize_r))
       eval(parse(text=ds$summarize_r))
+  }
+  
+  if (output == "tibble"){
+    return(x_df)
   }
   
   x_spatial <- ifelse(

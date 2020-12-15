@@ -221,30 +221,24 @@ shinyServer(function(input, output, session) {
   # js$disableTab("Management")
   # js$disableTab("Reports")
   
-  
-  output$tblLit <- renderDT({
-    # req(input$tags)
-    # 
-    # tags <- input$tags
-    # tags = c("Birds", "Marine Energy")
-    
-    
+# tblLiterature() ----
+output$tblLiterature <- renderDT({
     req(vals$queries_lit)
     
-    message("output$tblLit")
-    # browser() # vals$queries_lit
+    message("output$tblLiterature")
     
-    # tech_avail <- c("Marine Energy", "OTEC", "Salinity Gradient", "Current", "Wave")
-    # 
-    # tech_tags <- intersect(tags, tech_avail)
-    # s_r_tags  <- setdiff(tags, tech_tags)
-    
-    # drop Marine Energy since includes all, but use above to exclude from s_r_tags
-    # tech_tags <- setdiff(tech_tags, "Marine Energy")
+    if (nrow(vals$queries_lit) == 0 ){
+      dt_empty <- tibble(
+        message = "Please Configure Tags to see results here") %>%
+        datatable(rownames = F, options = list(dom = 't'))
+      
+      return(dt_empty)
+    }
     
     q <- vals$queries_lit %>% 
       add_rownames() %>% 
       pivot_longer(-rowname, names_to = "type", values_to = "tag") %>% 
+      # drop Marine Energy since includes all
       filter(tag != "Marine Energy") %>% 
       group_by(rowname) %>% 
       summarize(
@@ -256,7 +250,6 @@ shinyServer(function(input, output, session) {
         SELECT uri
         FROM tethys_pub_tags
         WHERE tag IN ({q$tags})"), collapse = "\n UNION \n")
-    # cat(sql)
     q_pubs <- glue(
       "
       SELECT DISTINCT q.uri, p.title FROM (\n{q_tags}\n) q 
@@ -266,7 +259,6 @@ shinyServer(function(input, output, session) {
           data -> 'title' ->> 0  AS title 
         FROM tethys_pubs) p ON q.uri = p.uri
       ORDER BY p.title")
-    # cat(sql)
     
     res <- dbGetQuery(con, q_pubs)  %>% 
       tibble() %>% 
@@ -282,43 +274,71 @@ shinyServer(function(input, output, session) {
       select(Title) %>%
       arrange(Title) %>%
       datatable(
-        # caption = caption_html,
         escape = F)
     
-    # tags <- str_split("{{tag}}", " AND ") %>% unlist()
-    # tags <- str_split("Birds AND Changes in Flow AND Marine Energy (General)", " AND ") %>% unlist()
-    #tabulate_tethys_literature_from_tags_gen(tags)
+  })
+  
+# tblSpatial() ----
+output$tblSpatial <- renderDT({
+
+    req(vals$queries_lit)
     
-    #browser()
+    message("output$tblSpatial")
     
-    # Environment, Human Dimensions: https://tethys.pnnl.gov/node/643, https://tethys.pnnl.gov/node/2817,...
-    # tags <- c("Environment", "Human Dimensions")
+    if (is.null(crud()$finished)){
+      aoi_wkt <- NULL
+    } else {
+      aoi_wkt <- crud()$finished %>% pull(geometry) %>% st_as_text()
+    }
     
-    # res <- dbGetQuery(
-    #   con, 
-    #   glue("
-    #             SELECT uri, title, COUNT(tag_text) AS tag_cnt from (
-    #                 SELECT 
-    #                   uri, 
-    #                   data ->'title' ->> 0 AS title,
-    #                   json_array_elements(data->'tags') ->> 0 as tag_text
-    #                 FROM tethys_pubs) q 
-    #              WHERE tag_text IN ('{paste(tags, collapse = \"','\")}')
-    #              GROUP BY uri, title")) %>% 
-    #   filter(tag_cnt == length(tags))
-    # 
-    # res %>%
-    #   mutate(
-    #     Title = map2_chr(
-    #       title, uri,
-    #       function(x, y)
-    #         glue("<a href={y} target='_blank'>{x}</a>"))) %>%
-    #   select(Title) %>%
-    #   arrange(Title) %>%
-    #   datatable(
-    #     escape = F,
-    #     options = list(
-    #       pageLength = 50,
-    #       dom = 't'))
+    if (nrow(vals$queries_lit) == 0 || is.null(aoi_wkt)){
+      dt_empty <- tibble(
+        message = "Please Configure Tags and Locations to see results here") %>%
+        datatable(rownames = F, options = list(dom = 't'))
+      
+      return(dt_empty)
+    }
+    
+    receptors <- vals$queries_lit %>% 
+      pull(Receptors) %>% 
+      unique() %>% 
+      sort()
+    
+    # receptors = c("Marine Mammals", "Fish")
+    # aoi_wkt = "POLYGON ((-122.6833 32.35398, -122.6833 35.31737, -116.1166 35.31737, -116.1166 32.35398, -122.6833 32.35398))"
+    
+    datasets <- tbl(con, "datasets") %>% 
+      collect() %>%
+      filter(ready) %>% 
+      replace_na(list(buffer_km = 0)) %>% 
+      select(-notes, -issues) %>% 
+      separate_rows(tags, sep = ";") %>% 
+      rename(tag = tags) %>% 
+      mutate(
+        tag = str_trim(tag)) %>% 
+      filter(
+        tag %in% receptors) %>% 
+      arrange(tag, title) %>% 
+      mutate(
+        data      = map(
+          code, 
+          tabulate_dataset_shp_within_aoi, 
+          aoi_wkt = aoi_wkt, output = "tibble"),
+        data_nrow = map_int(data, nrow),
+        Title     = map2_chr(
+          title, src_url,
+          function(x, y)
+            glue("<a href={y} target='_blank'>{x}</a>")),
+        Title     = ifelse(
+          buffer_nm > 0,
+          glue("{Title} [within {buffer_nm} nm of Location]"),
+          Title)) %>% 
+      select(
+        Title,
+        `Rows of Results` = data_nrow) %>% 
+      arrange(Title)
+    
+    datatable(datasets, escape = F)
+    
   })
 })
