@@ -33,20 +33,21 @@ params:
   # mgt_tethys: no  
   title: test
   aoi_wkt: 
-  - POLYGON ((-115.9245 32.26236, -115.9245 32.26565, -115.9206 32.26565, -115.9206
-                32.26236, -115.9245 32.26236))
+  # - POLYGON ((-115.9245 32.26236, -115.9245 32.26565, -115.9206 32.26565, -115.9206
+  #             32.26236, -115.9245 32.26236))
   - POLYGON ((-121.9503 33.01519, -121.9503 35.51658, -115.8711 35.51658, -115.8711
-              33.01519, -121.9503 33.01519))")
+              33.01519, -121.9503 33.01519))
   technology:
-  - Current
   - Marine Energy
   lit_queries:
-  - Bats AND Birds AND Avoidance AND Current
-  - Bats AND Birds AND Avoidance AND Marine Energy
-  - Marine Mammals AND Noise AND Current
+  # - Bats AND Birds AND Avoidance AND Current
+  # - Bats AND Birds AND Avoidance AND Marine Energy
+  # - Marine Mammals AND Noise AND Current
+  - Cetaceans AND Entrapment AND Marine Energy
   spatial_receptors:
-  - Marine Mammals
-  - Fish
+  # - Marine Mammals
+  # - Fish
+  - Cetaceans
   lit_tethys: yes
   lit_ferc: no
   spatial: yes
@@ -115,7 +116,7 @@ source(here::here("functions.R")) # libraries, db connection object (con)
 # params = list(technology="Marine Energy")
 #tech_choices <- read_csv(here("report/data/tech_choices.csv"))
 # TODO: integrate finer detail in tech_choices.csv with tags.csv
-tech <- read_csv(here("data/tags.csv")) %>% 
+tech <- read_csv(here("data/tags_extra.csv")) %>% 
   filter(facet == "technology") %>% 
   select(tag = item_label, tag_parent, tag_img) %>% 
   filter(tag %in% params$technology) %>% 
@@ -153,13 +154,13 @@ if (knitr::is_html_output()){
 }
 ```
 
-## Literature
+## Queries
 
 ```{r, results='asis'}
 bullets(params$lit_queries)
 ```
 
-## Spatial
+## Spatial Receptors
 
 ```{r, results='asis'}
 bullets(params$spatial_receptors)
@@ -240,8 +241,13 @@ if (is.null(params$aoi_wkt) || str_trim(params$aoi_wkt) == ""){
 
 # Literature
 
-- Stressors are potentially harmful environmental effects from technology for marine renewable energy.
-- Receptors are species, habitats and human activities of environmental concern.
+Here are literature results based on the combination of:
+
+- **Receptors**: species, habitats and human activities of environmental concern.
+
+- **Stressors**: potentially harmful environmental effects from technology for marine renewable energy.
+
+- **Technology**: specific wave or tidal technology used.
 
 ```{r lit_queries, results='asis'}
 # params = list(stressors = c("Noise", "EMF"))
@@ -251,7 +257,7 @@ if (params$lit_tethys && !is.null(params$lit_queries) && length(params$lit_queri
 
 # Spatial
 
-Spatial data of Receptors are extracted for the Location from datasets harvested predominantly from [MarineCadastre.gov](https://MarineCadastre.gov).
+Spatial data are extracted for the Location from datasets harvested predominantly from [MarineCadastre.gov](https://MarineCadastre.gov) and filtered for those matching Receptors. Results are presented with headings indicating [Receptor tag]: [Dataset title].
 
 ```{r, results='asis'}
 # datasets_gsheet2db ----
@@ -260,6 +266,7 @@ Spatial data of Receptors are extracted for the Location from datasets harvested
 # datasets_gsheet2db()
 
 # params = list(
+#   spatial = TRUE,
 #   spatial_receptors = c("Marine Mammals", "Fish"),
 #   aoi_wkt = "POLYGON ((-122.6833 32.35398, -122.6833 35.31737, -116.1166 35.31737, -116.1166 32.35398, -122.6833 32.35398))")
 
@@ -276,7 +283,9 @@ if (params$spatial & !is.null(params$spatial_receptors)){
     filter(
       tag %in% params$spatial_receptors) %>% 
     arrange(tag, title)
+  # TODO: deal with multiple tags in spatial_receptors
   
+  # TODO: deal with single dataset matching multiple tags
   lapply(1:nrow(datasets), function(i_datasets) {
     knit_expand('_spatial-tag-dataset.Rmd') }) %>% 
     knit_child(text = unlist(.), quiet = T) %>% 

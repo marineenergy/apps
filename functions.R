@@ -337,6 +337,64 @@ tabulate_tethys_literature_from_tags <- function(tags){
 }
 
 tabulate_tethys_literature_from_tags_gen <- function(tags){
+  # drop Marine Energy since includes all
+  tags <- setdiff(tags, "Marine Energy")
+  
+  s_tags <- glue("'{paste(tags, collapse = \"', '\")}'")
+  
+  q_tags <- paste(
+    glue("
+        SELECT uri
+        FROM tethys_pub_tags
+        WHERE tag IN ({s_tags})"), collapse = "\n UNION \n")
+  # cat(q_tags)
+  q_pubs <- glue(
+    "
+      SELECT DISTINCT q.uri, p.title FROM (\n{q_tags}\n) q 
+      INNER JOIN (
+        SELECT 
+          uri,
+          data -> 'title' ->> 0  AS title 
+        FROM tethys_pubs) p ON q.uri = p.uri
+      ORDER BY p.title")
+  
+  res <- dbGetQuery(con, q_pubs)  %>% 
+    tibble() %>% 
+    mutate(
+      title = str_trim(title))
+  
+  caption_md <- glue("Literature from [Tethys Knowledge Base](https://tethys.pnnl.gov/knowledge-base-all).")
+  
+  if (knitr::is_html_output()){
+    caption_html <- HTML(markdownToHTML(
+      text = caption_md,
+      fragment.only = T))
+    
+    res %>%
+      mutate(
+        Title = map2_chr(
+          title, uri,
+          function(x, y)
+            glue("<a href={y} target='_blank'>{x}</a>"))) %>%
+      select(Title) %>%
+      arrange(Title) %>%
+      datatable(
+        caption = caption_html,
+        escape = F)
+  } else {
+    
+    glue("{caption_md}:\n\n", .trim=F) %>% cat()
+    
+    res %>%
+      mutate(
+        li_title = glue("1. [{title}]({uri})")) %>%
+      pull(li_title) %>% 
+      paste(collapse = "\n") %>% 
+      cat()
+  }
+}
+
+tabulate_tethys_literature_from_tags_gen_oldjson <- function(tags){
   
   # tags <- params$stressors[1]
   # tags <- "EMF"

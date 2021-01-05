@@ -4,7 +4,7 @@
 ```{r}
 # This document _docs_tethys.Rmd is called by knit_tethys_literature_from_tags(), which is invoked by report_template.Rmd
 tags <- str_split("{{tag}}", " AND ") %>% unlist()
-# tags <- str_split("Birds AND Changes in Flow AND Marine Energy (General)", " AND ") %>% unlist()
+# tags <- str_split("Cetaceans AND Entrapment AND Marine Energy", " AND ") %>% unlist()
 ```
 
 ```{r lit_tethys {{tag}} html, eval = knitr::is_html_output()}

@@ -1,5 +1,7 @@
 shinyServer(function(input, output, session) {
 
+  addClass(selector = "body", class = "sidebar-collapse")
+  
   set_logging_session()
   w <- Waiter$new()
     
@@ -16,6 +18,8 @@ shinyServer(function(input, output, session) {
       Technology = character(0))) 
 
   updateLitQueries <- function(technology, receptors, stressors){
+    
+    #browser()
     
     queries <- expand.grid(
       Receptors  = receptors, 
@@ -69,6 +73,7 @@ shinyServer(function(input, output, session) {
   # tblLitQueries ----
   output$tblLitQueries <- DT::renderDataTable({
 
+    #browser()
     vals$queries_lit
   })
   
@@ -109,24 +114,37 @@ shinyServer(function(input, output, session) {
           paste(keys, collapse = " AND ") })) %>% 
       pull(q) %>% 
       as.character()
+    # TODO: check multiple Receptors etc OK
     
-    technology <- vals$queries_lit %>% 
+    spatial_receptors <- vals$queries_lit %>% 
+      mutate(
+        q = pmap(., function(Receptors, ...){
+          keys <- c(Receptors) %>% 
+            str_replace_all('"', '') %>%
+            na_if("") %>% 
+            na.omit()
+          paste(keys, collapse = " AND ") })) %>% 
+      pull(q) %>% 
+      as.character()
+    
+    technologies <- vals$queries_lit %>% 
       distinct(Technology) %>% 
       pull(Technology)
+    # TODO: handle multiple technologies in report_template Configuration
     
-    if (length(technology) == 0)
+    if (length(technologies) == 0)
       technology = "Marine Energy"
       
     rmd_params <- list(
       title              = input$txtTitle,
       aoi_wkt            = aoi_wkt,
       
-      technology         = technology,
+      technology         = technologies,
       #stressors          = input$selStressors,
       #receptors          = input$selReceptors,
       #stressor_receptors = stressor_receptors,
       lit_queries        = lit_queries,
-      spatial_receptors  = input$selSpReceptors,
+      spatial_receptors  = spatial_receptors,
       
       lit_tethys         = input$ckboxLitTethys,
       lit_ferc           = input$ckboxLitFERC,
@@ -163,6 +181,7 @@ shinyServer(function(input, output, session) {
         waiter_show(html = waiting_screen, color = "black")
         
         render(input=input_rmd, output_format=out_fmt, output_file=file, params = rmd_params)
+        # TODO: hash rmd_params for filename and save params.yml and filename.out_fmt
         
         waiter_hide()
       })
@@ -299,14 +318,60 @@ output$tblSpatial <- renderDT({
       return(dt_empty)
     }
     
-    receptors <- vals$queries_lit %>% 
-      pull(Receptors) %>% 
-      unique() %>% 
-      sort()
+    # receptors <- vals$queries_lit %>% 
+    #   pull(Receptors) %>% 
+    #   unique() %>% 
+    #   sort()
+    
+    spatial_receptors <- vals$queries_lit %>% 
+      mutate(
+        q = pmap(., function(Receptors, ...){
+          keys <- c(Receptors) %>% 
+            str_replace_all('"', '') %>%
+            na_if("") %>% 
+            na.omit()
+          paste(keys, collapse = " AND ") })) %>% 
+      pull(q) %>% 
+      as.character()
     
     # receptors = c("Marine Mammals", "Fish")
     # aoi_wkt = "POLYGON ((-122.6833 32.35398, -122.6833 35.31737, -116.1166 35.31737, -116.1166 32.35398, -122.6833 32.35398))"
+    # 
+    # datasets <- tbl(con, "datasets") %>% 
+    #   collect() %>%
+    #   filter(ready) %>% 
+    #   replace_na(list(buffer_km = 0)) %>% 
+    #   select(-notes, -issues) %>% 
+    #   separate_rows(tags, sep = ";") %>% 
+    #   rename(tag = tags) %>% 
+    #   mutate(
+    #     tag = str_trim(tag)) %>% 
+    #   filter(
+    #     tag %in% receptors) %>% 
+    #   arrange(tag, title) %>% 
+    #   mutate(
+    #     data      = map(
+    #       code, 
+    #       tabulate_dataset_shp_within_aoi, 
+    #       aoi_wkt = aoi_wkt, output = "tibble"),
+    #     data_nrow = map_int(data, nrow),
+    #     Title     = map2_chr(
+    #       title, src_url,
+    #       function(x, y)
+    #         glue("<a href={y} target='_blank'>{x}</a>")),
+    #     Title     = ifelse(
+    #       buffer_nm > 0,
+    #       glue("{Title} [within {buffer_nm} nm of Location]"),
+    #       Title)) %>% 
+    #   select(
+    #     Title,
+    #     `Rows of Results` = data_nrow) %>% 
+    #   arrange(Title)
     
+    # spatial_receptors = c("Marine Mammals", "Fish")
+    # aoi_wkt = "POLYGON ((-122.6833 32.35398, -122.6833 35.31737, -116.1166 35.31737, -116.1166 32.35398, -122.6833 32.35398))"
+    #
+    #browser()
     datasets <- tbl(con, "datasets") %>% 
       collect() %>%
       filter(ready) %>% 
@@ -317,13 +382,16 @@ output$tblSpatial <- renderDT({
       mutate(
         tag = str_trim(tag)) %>% 
       filter(
-        tag %in% receptors) %>% 
+        tag %in% spatial_receptors) %>% 
       arrange(tag, title) %>% 
       mutate(
         data      = map(
           code, 
           tabulate_dataset_shp_within_aoi, 
           aoi_wkt = aoi_wkt, output = "tibble"),
+    # datasets1 <- datasets
+    # datasets2 <- datasets1 %>% 
+    #   mutate(
         data_nrow = map_int(data, nrow),
         Title     = map2_chr(
           title, src_url,
@@ -338,7 +406,42 @@ output$tblSpatial <- renderDT({
         `Rows of Results` = data_nrow) %>% 
       arrange(Title)
     
+    # TODO: nest spatial dataset results as sub-tables
+    #   https://stackoverflow.com/questions/55058126/multiple-child-tables-in-dt-datatable#answer-56486534
     datatable(datasets, escape = F)
+    
+  })
+  
+  
+  output$messageMenu <- renderMenu({
+    # # Code to generate each of the messageItems here, in a list. This assumes
+    # # that messageData is a data frame with two columns, 'from' and 'message'.
+    # msgs <- apply(messageData, 1, function(row) {
+    #   messageItem(from = row[["from"]], message = row[["message"]])
+    # })
+    # 
+    # # This is equivalent to calling:
+    # #   dropdownMenu(type="messages", msgs[[1]], msgs[[2]], ...)
+    # dropdownMenu(type = "messages", .list = msgs)
+    
+    # dropdownMenu(
+    #   type = "messages",
+    #   messageItem(
+    #     from = "Sales Dept",
+    #     message = "Sales are steady this month."
+    #   ),
+    #   messageItem(
+    #     from = "New User",
+    #     message = "How do I register?",
+    #     icon = icon("question"),
+    #     time = "13:45"
+    #   ),
+    #   messageItem(
+    #     from = "Support",
+    #     message = "The new server is ready.",
+    #     icon = icon("life-ring"),
+    #     time = "2014-12-01"
+    #   ))
     
   })
 })
