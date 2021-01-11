@@ -1,0 +1,77 @@
+---
+title: "MHK_Timeline_General_Timeframe"
+output:
+  html_document:
+    self_contained: false
+    mathjax: null
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Using [MHK Project Timeline Input - Google Sheets](https://docs.google.com/spreadsheets/d/1HC5hXyi2RQSHevnV7rvyk748U5-X3iUw70ewHEfrHm0/edit#gid=793817660)
+
+
+```{r}
+library(dplyr)
+#library(htmltools)
+#library(htmlwidgets)
+#library(jsonlite)
+#library(plotly)
+#library(ggplot2)
+#library(ggiraph)
+#library(RColorBrewer)
+
+#get the data
+csv_key <- "1HC5hXyi2RQSHevnV7rvyk748U5-X3iUw70ewHEfrHm0"
+csv_url <- glue::glue("https://docs.google.com/spreadsheets/d/{csv_key}/gviz/tq?tqx=out:csv&sheet=0")
+d <- readr::read_csv(csv_url) %>% 
+  select(-starts_with("X"))
+```
+
+
+
+Data Cleaning
+
+```{r}
+#sort data by permit type
+d$permit_type <- factor(d$permit_type, levels = c("Notice of Intent/Preliminary Permit Application", 'Draft Pilot License App', 'Final Pilot License App', "Draft License App", "Final License App", 'Environmental Assessment', 'Settlement Agreement', "Permit Issued"))
+
+d$technology_type <- factor(d$technology_type, levels = c('Riverine Energy', 'Tidal Energy', 'Wave Energy'))
+
+
+#data cleanup
+d_gen <- d %>% 
+  filter(!is.na(date_beg)) %>% 
+  tidyr::pivot_longer(c(date_beg, date_end), names_to = "proj_ev", values_to = "proj_ev_date") %>%
+  mutate(
+    proj_ev_date = as.Date(proj_ev_date, format = "%m/%d/%Y")) %>%
+  arrange(project_number, project_name) %>%
+  select(project_name, project_number, proj_ev, proj_ev_date, technology_type)
+  
+
+#data cleanup
+d_permits <- d %>% 
+  filter(!is.na(permit_type)) %>% 
+  rename(., proj_ev = permit_type,
+  proj_ev_date = license_date) %>%
+  mutate(
+    proj_ev_date = as.Date(proj_ev_date, format = "%m/%d/%Y")) %>%
+  arrange(proj_ev, project_number, project_name, proj_ev_date) %>% 
+  select(project_name, project_number, proj_ev, proj_ev_date, technology_type)
+
+#combine into single dataset
+d_all <- bind_rows(d_gen, d_permits)
+
+d_all_w<- d_all %>%
+  tidyr::pivot_wider(names_from = proj_ev, values_from = proj_ev_date) %>%
+  relocate(date_end, .after = last_col())
+
+#TO DO N SWANSON: calculate typical time intervals between project events/permits
+# How should the two WET environmental assessments with different dates be handled?
+# Are the settlement agreement and environmental assessment date markers important for calculating typical permitting time?
+
+
+```

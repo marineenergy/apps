@@ -1,72 +1,125 @@
-library(shiny)
-library(shinydashboard)
-library(shinydashboardPlus)
-library(shinyjs)
-library(markdown)
-library(leaflet)
-library(mapedit)
-library(sf)
-library(here)
-library(dplyr)
-library(tidyr)
-library(readr)
-library(glue)
-library(yaml)
-library(geojsonsf)
-library(rhandsontable)
-library(DBI)
-library(RPostgres)
-library(knitr)
-library(kableExtra)
-library(DT)
+source(here::here("functions.R")) # libraries, db connection object (con)
+shelf(
+  # shiny
+  rintrojs, shinydashboard, shinyEventLogger, shinyWidgets, shinyjs, waiter, yaml, # shinydashboardPlus, nutterb/shinydust,
+  # report
+  hadley/emo, rhandsontable,
+  # spatial
+  mapedit)
+set_logging(file = "/share/github/mhk-env_shiny-apps/logging_tmp.txt")
 
-#library(geosphere)
-#data(merc)
-
-# TODO: 
-# - handle login (see )
-# - Report as Rmd; download as html, docx, pdf, pptx
-# - Get report_map to work
-# - save to [session-id]/config.yml (with saved=T/F), study.geojson,...
-#   - session-id: glue("{date::now()}_{tools::md5sum(files)}")
-#   - bookmark state, save url, restore
-#   - remove old saved=F
-
-# setwd(here("draw-site"))
-
-# tech_choices: csv to list; for selTech
-tech <- read_csv("data/tech_choices.csv")
-d <- tech %>% 
-  group_by(tech1) %>% 
-  summarize(
-    tech2 = paste(sort(tech2), collapse = "|"))
-tech_choices <- pull(d, tech2) %>% strsplit("\\|")
-names(tech_choices) <- pull(d, tech1)
-
-m <- leaflet() %>%
-  addProviderTiles(providers$Esri.OceanBasemap) %>%
+map_default <- leaflet(
+  options = leafletOptions(
+    zoomControl = T,
+    attributionControl = F)) %>%
+  addProviderTiles(providers$Esri.OceanBasemap) %>% 
   setView(-93.4, 37.4, 4)
 
-s_r_csv       <- here("data/tethys_stressor_receptor.csv")
-# TODO: make per user session
-s_r_ckbox_csv <- here("data/shiny_stressor_receptor_ckbox.csv")
+nbsp <- "\u00A0" # Unicode (UTF-8) for non-breaking space
 
-if (!file.exists(s_r_ckbox_csv)){
-  read_csv(s_r_csv) %>% 
-    mutate(
-      ckbox = F) %>% 
-    select(stressor, receptor, ckbox) %>% 
-    pivot_wider(names_from = "stressor", values_from = ckbox) %>% 
-    write_csv(s_r_ckbox_csv) 
+# using "keys" instead of "tags", since tags is a Shiny / HTML thing
+# download.file(
+#   "https://raw.githubusercontent.com/mhk-env/mhk-env_shiny-apps/7a8db9e4e8c17a075f2dd229aa7719c6854b20ec/data/tags.csv",
+#   here("data/tags_extra.csv"))
+keys <- read_csv(here("data/tags_extra.csv")) %>% 
+  select(key_facet = facet, key = item_label, key_parent = tag_parent) %>% 
+  mutate(
+    key_order = ifelse(
+      is.na(key_parent),
+      key,
+      glue("{key_parent}:{key}")),
+    key_spaced = ifelse(
+      is.na(key_parent),
+      key,
+      glue("{nbsp %>% strrep(4)}{key}"))) %>% 
+  arrange(key_facet, key_order) # View(keys)
+
+# choices_tech <- keys %>% 
+#   filter(key_facet == "technology") %>% 
+#   {setNames(.$key, .$key_spaced)}
+# dbGetQuery(
+#   con,
+#   glue("
+#         SELECT json_array_elements(data->'technologyType') ->> 0 as tech_text
+#         FROM tethys_pubs")) %>%
+#   group_by(tech_text) %>%
+#   summarize(n = n())
+# 4 Wave                591
+# 1 Current             873 # Tidal
+# 2 OTEC                 57
+# 3 Salinity Gradient     8
+choices_tech <- c(
+  "Marine Energy"         = "Marine Energy",
+  "    OTEC"              = "OTEC",
+  "    Salinity Gradient" = "Salinity Gradient",
+  "    Tidal"             = "Current",
+  "    Wave"              = "Wave")
+names(choices_tech) <- str_replace(names(choices_tech), "    ", strrep(nbsp, 4))
+
+choices_stressors <- keys %>% 
+  filter(key_facet == "stressor") %>% 
+  {setNames(.$key, .$key_spaced)}
+choices_receptors <- keys %>% 
+  filter(key_facet == "receptor") %>% 
+  {setNames(.$key, .$key_spaced)}
+
+n_r <- length(choices_receptors)
+n_s <- length(choices_stressors)
+s_r <- matrix(
+  rep(F, n_r * n_s), 
+  nrow = n_r, ncol = n_s) %>% 
+  as.data.frame() %>% 
+  setNames(., choices_stressors) %>%  
+  mutate(
+    Receptor = names(choices_receptors)) %>% 
+  relocate(Receptor, .before = 1)
+
+tagLabel <- function(lbl){
+  tag("label", lbl) %>% 
+    tagAppendAttributes(class = "control-label")  
 }
-s_r_ckbox <- read_csv(s_r_ckbox_csv)
 
-# connect to database
-pass <- readLines("/share/.password_mhk-env.us")
-con  <- DBI::dbConnect(
-  RPostgres::Postgres(),
-  dbname   = "gis",
-  host     = "postgis",
-  port     = 5432,
-  user     = "admin",
-  password = pass)
+waiting_screen <- tagList(
+  spin_flower(),
+  h3("Generating custom report...")
+) 
+
+# TODO: pull from db: https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=936111013
+# datasets_gsheet2db()
+
+# choices_sp_receptors <- c(
+#   "Marine Mammals","Cetaceans", "Fish", 
+#   "Marine Spatial Planning", "Social & Economic Data")
+choices_sp_receptors <- dbGetQuery(con, "SELECT tags FROM datasets WHERE ready") %>% 
+  separate_rows(tags, sep = ";") %>% 
+  rename(tag = tags) %>% 
+  mutate(
+    tag = str_trim(tag)) %>% 
+  filter(!is.na(tag), tag != "") %>% 
+  distinct(tag) %>% 
+  arrange(tag)
+
+# tabdisable_js <- "
+# shinyjs.disableTab = function(name) {
+#   var tab = $('.nav li a[data-value=' + name + ']');
+#   tab.bind('click.tab', function(e) {
+#     e.preventDefault();
+#     return false;
+#   });
+#   tab.addClass('disabled');
+# }
+# 
+# shinyjs.enableTab = function(name) {
+#   var tab = $('.nav li a[data-value=' + name + ']');
+#   tab.unbind('click.tab');
+#   tab.removeClass('disabled');
+# }
+# "
+# 
+# tabdisable_css <- "
+# .nav li a.disabled {
+#   background-color: #aaa !important;
+#   color: #333 !important;
+#   cursor: not-allowed !important;
+#   border-color: #aaa !important;
+# }"

@@ -1,257 +1,447 @@
 shinyServer(function(input, output, session) {
-    
-    # config <- reactiveValues(
-    #     title  = input$txtTitle,
-    #     tech   = input$selTech,
-    #     env    = input$selEnv,
-    #     geom   = NULL
-    #     #seshid = 
-    # )
 
-    crud <- callModule(
-        editMod,
-        "mapEdit",
-        m,
-        "ply",
-        #editor = "leaflet.extras") # aka breweries91
-        editor = "leafpm") # aka breweries91
+  addClass(selector = "body", class = "sidebar-collapse")
+  
+  set_logging_session()
+  w <- Waiter$new()
     
-    # crud <- callModule(editMod, "test-edit", m, "breweries91")
-    output$side_map <- renderLeaflet({
-        req(crud()$finished)
-        
-        #browser()
-        if (any(st_geometry_type(crud()$finished) != "POLYGON")){
-            #browser()
-            #alert("Sorry, only polygons are currently supported.")
-            showModal(modalDialog ("Sorry, only polygons are currently supported."))
-            req(NULL)
+  crud <- callModule(
+    editMod, "mapEdit", map_default, "ply",
+    editorOptions = list(
+      polylineOptions = F, markerOptions = F, circleMarkerOptions = F,
+      singleFeature = T))
 
-        }
-        message(glue("st_geometry_type(crud()$finished): {st_geometry_type(crud()$finished)}"))
-        
-        #mapview(crud()$finished)@map
-        #browser()
-        
-        #mapview(crud()$finished)@map
-        
-        # nc = st_read(system.file("shape/nc.shp", package="sf"))
-        # summary(nc) # note that AREA was computed using Euclidian area on lon/lat degrees
-        
-        # sf_geojson()
-        # sf::read_sf()
-        # 
-        # config$geom <- st_geometry(crud()$finished) %>% 
-        #     
-        # 
-        # write_yaml()
-        
-        #browser()
-        #st_geometry(crud()$finished) %>% write_sf(here("data/aoi_tmp__crud_finished_geom.geojson"))
-        #crud()$finished %>% write_sf(here("data/aoi_tmp_crud_finished.geojson"))
-        
-        leaflet(
-            options = leafletOptions(
-                zoomControl = F,
-                attributionControl = F)) %>%
-            addProviderTiles(providers$Esri.OceanBasemap) %>%
-            addPolygons(data = crud()$finished) #%>% 
-            #setView(-93.4, 37.4, 4)
-        
-    })
+  vals <- reactiveValues(
+    queries_lit = tibble(
+      Receptors  = character(0),
+      Stressors  = character(0),
+      Technology = character(0))) 
+
+  updateLitQueries <- function(technology, receptors, stressors){
     
-    output$tbl_hab_spp <- function() {
-        req(crud()$finished)
-        
-        aoi_wkt <- st_as_text(st_geometry(crud()$finished), EWKT=T)
-        d_tbl <- "shp_CetMap_BIA_WGS84"
-        
-        dist_m  <- 10*1000
-        sql <- glue("
-            SELECT *
-            FROM \"{d_tbl}\" d
-            WHERE ST_DWithin(Geography(d.geometry), '{aoi_wkt}', {dist_m});")
-        d_win <- st_read(con, query = sql)
-        
-        d_title <- "Biologically Important Areas for Cetaceans%"
-        dbGetQuery(con, glue("SELECT * FROM dataset_shps WHERE title LIKE '{d_title}'"))
-        
-        message(glue("returning tagList with nrow(d_win): {nrow(d_win)}"))
-        
-        #glue("nrow(d_win): {nrow(d_win)}")
-        d_win %>% 
-            select(cmn_name, sci_name, stock_pop, bia_type, bia_time, bia_name, bia_id) %>% 
-            st_drop_geometry() %>% 
-            kable("html",
-                  caption = HTML(markdownToHTML(
-                      text = "[Cetacean Biologically Important Areas](https://cetsound.noaa.gov/important) within 10 kilometers of site."))) %>%
-            kable_styling("striped", full_width = F)
-        
-        # leaflet() %>% 
-        #     addProviderTiles(providers$Esri.OceanBasemap, group = "Esri Ocean") %>% 
-        #     addProviderTiles( providers$Stamen.TonerLite, group = "Toner Lite") %>%
-        #     addPolygons(data = aoi_ply, color =    "red", group = "AOI") %>% 
-        #     addPolygons(data =   d_win, color =  "green", group = "BIAs w/in 10km") %>% 
-        #     addPolygons(data =   d_ply, color =   "#03F", group = "BIAs") %>% 
-        #     addScaleBar() %>% 
-        #     fitBounds(bb[1], bb[2], bb[3], bb[4]) %>% 
-        #     addLayersControl(
-        #         baseGroups = c("Esri Ocean", "Toner Lite"),
-        #         overlayGroups = c("AOI", "BIAs w/in 10km", "BIAs"),
-        #         options = layersControlOptions(collapsed = FALSE)) %>% 
-        #     hideGroup("BIAs"),
-        # d_win %>% 
-        #     st_drop_geometry() %>% 
-        #     datatable())
+    #browser()
+    
+    queries <- expand.grid(
+      Receptors  = receptors, 
+      Stressors  = stressors,
+      Technology = technology,
+      stringsAsFactors = F)
+    
+    vals$queries_lit <- full_join(
+      vals$queries_lit,
+      queries,
+      by = c("Receptors", "Stressors", "Technology")) %>% 
+      distinct(Receptors, Stressors, Technology) %>% 
+      arrange(Receptors, Stressors, Technology)
+    
+  }
+  
+  # btnAddLitQ* ----
+  observeEvent(input$btnAddLitQuery, {
+    
+    updateLitQueries(
+      technology = input$selTech,
+      receptor   = input$selReceptors %>% paste(collapse = " AND "),
+      stressor   = input$selStressors %>% paste(collapse = " AND "))
+  })
+  
+  
+  observeEvent(input$btnAddAllLitQueries, {
+    
+    updateLitQueries(
+      technology = input$selTech,
+      receptor   = choices_receptors,
+      stressor   = choices_stressors)
+  })
+  
+  observeEvent(input$btnAddReceptorLitQueries, {
+    
+    updateLitQueries(
+      technology = input$selTech,
+      receptor   = input$selReceptors %>% paste(collapse = " AND "),
+      stressor   = choices_stressors)
+  })
+  
+  observeEvent(input$btnAddStressorLitQueries, {
+    
+    updateLitQueries(
+      technology = input$selTech,
+      receptor   = choices_receptors,
+      stressor   = input$selStressors %>% paste(collapse = " AND "))
+  })
+  
+  # tblLitQueries ----
+  output$tblLitQueries <- DT::renderDataTable({
+
+    #browser()
+    vals$queries_lit
+  })
+  
+  # btnRmLitQ* ----
+  observeEvent(input$btnRmLitQuery, {
+    
+    vals$queries_lit <- vals$queries_lit %>% 
+      slice(-input$tblLitQueries_rows_selected)
+
+  })
+
+  observeEvent(input$btnRmAllLitQuery, {
+    
+    vals$queries_lit <- tibble(
+      Receptors  = character(0),
+      Stressors  = character(0),
+      Technology = character(0))
+
+  })
+
+  get_rmd_params <- function(){
+    
+    if (is.null(crud()$finished)){
+      aoi_wkt <- NULL
+    } else {
+      aoi_wkt <- crud()$finished %>% pull(geometry) %>% st_as_text()
     }
     
-    # observeEvent(input$save, {
-    #     
-    #     geom <- edits()$finished
-    #     
-    #     if (!is.null(geom)) {
-    #         assign('new_geom', geom, envir = .GlobalEnv)
-    #         write_sf(geom, "data/geom.geojson", delete_layer = TRUE, delete_dsn = TRUE)
-    #         
-    #         #geom <- read_sf("data/geom.geojson")
-    #         b <- st_bbox(geom)
-    #         
-    #         leafletProxy("report_map", data = geom) %>%
-    #             clearShapes() %>%
-    #             addPolygons() %>% 
-    #             fitBounds(b[["xmin"]], b[["ymin"]], b[["xmax"]], b[["ymax"]])
-    #         
-    #         leafletProxy("side_map", data = geom) %>%
-    #             clearShapes() %>%
-    #             addPolygons() %>% 
-    #             fitBounds(b[["xmin"]], b[["ymin"]], b[["xmax"]], b[["ymax"]])
-    #     }
-    #     
-    # })
+    #browser()
     
-    output$report_map <- renderLeaflet({
-        
-        # leaflet(
-        #     options = leafletOptions(
-        #         zoomControl = F,
-        #         attributionControl = F)) %>%
-        #     addProviderTiles(providers$Esri.OceanBasemap) %>%
-        #     setView(-93.4, 37.4, 4)
-        
-        req(crud()$finished)
-        
-        #mapview(crud()$finished)@map
-        #browser()
-        
-        #mapview(crud()$finished)@map
-        
-        leaflet(
-            options = leafletOptions(
-                zoomControl = F,
-                attributionControl = F)) %>%
-            addProviderTiles(providers$Esri.OceanBasemap) %>%
-            addPolygons(data = crud()$finished)
-        
-        #req(crud()$finished)
-        
-        #mapview(crud()$finished)@map
-        
-        # leaflet() %>%
-        #     addProviderTiles(providers$Esri.OceanBasemap) %>%
-        #     addPolygons(ply) #%>% 
-        
-    })
+    lit_queries <- vals$queries_lit %>% 
+      mutate(
+        q = pmap(., function(Receptors, Stressors, Technology, ...){
+          keys <- c(Receptors, Stressors, Technology) %>% 
+            str_replace_all('"', '') %>%
+            na_if("") %>% 
+            na.omit()
+          paste(keys, collapse = " AND ") })) %>% 
+      pull(q) %>% 
+      as.character()
+    # TODO: check multiple Receptors etc OK
     
-    # output$side_map <- renderLeaflet({
-    #     
-    #     leaflet(
-    #         options = leafletOptions(
-    #             zoomControl = F,
-    #             attributionControl = F)) %>%
-    #         addProviderTiles(providers$Esri.OceanBasemap) %>% 
-    #         setView(-93.4, 37.4, 4)
-    # })
+    spatial_receptors <- vals$queries_lit %>% 
+      mutate(
+        q = pmap(., function(Receptors, ...){
+          keys <- c(Receptors) %>% 
+            str_replace_all('"', '') %>%
+            na_if("") %>% 
+            na.omit()
+          paste(keys, collapse = " AND ") })) %>% 
+      pull(q) %>% 
+      as.character()
     
-    output$tech_ui <- renderUI({
-        tech1 <- tech %>% 
-            filter(tech2 == input$selTech) %>% 
-            pull(tech1)
-        img_tech <- tech %>% 
-            filter(tech2 == input$selTech) %>% 
-            pull(gif)
-        
-        tagList(
-            h4("Technology"),
-            #h5(glue("{tech1}: {input$selTech} in {input$selEnv} environment")),
-            h5(glue("{tech1}: {input$selTech}")),
-            img(src=img_tech))
-    })
+    technologies <- vals$queries_lit %>% 
+      distinct(Technology) %>% 
+      pull(Technology)
+    # TODO: handle multiple technologies in report_template Configuration
     
-    output$txtTitle <- renderText({ input$txtTitle })
+    if (length(technologies) == 0)
+      technology = "Marine Energy"
+      
+    rmd_params <- list(
+      title              = input$txtTitle,
+      aoi_wkt            = aoi_wkt,
+      
+      technology         = technologies,
+      #stressors          = input$selStressors,
+      #receptors          = input$selReceptors,
+      #stressor_receptors = stressor_receptors,
+      lit_queries        = lit_queries,
+      spatial_receptors  = spatial_receptors,
+      
+      lit_tethys         = input$ckboxLitTethys,
+      lit_ferc           = input$ckboxLitFERC,
+      spatial            = input$ckboxSpatialReceptors,
+      mgt_tethys         = input$ckboxMgtTethys)
     
+    message(cat(as.yaml(list(params = rmd_params))))
     
-    output$dt_s_r_ckbox <- renderDT({
-        s_r_ckbox <- read_csv(s_r_ckbox_csv)
+    rmd_params
+  }
+  
+  # download report pdf/docx/htm ----
+  download_report = function(out_fmt, out_ext){
+    downloadHandler(
+      filename = function() {
+        paste0('mhk-env_report_', str_replace_all(format(Sys.time(), tz='GMT'), '[ ]', '.'), '-GMT.', out_ext)},
+      content = function(file) {
         
-        s_r_ckbox
-    }, 
-    editable  = T,
-    rownames  = F,
-    server    = F,
-    options   = list(
-        pageLength = Inf, 
-        #dom        = 't',
-        searching  = F, 
-        bPaginate  = F, 
-        info       = F))
-    
-    observeEvent(input$btnStressorReceptors, {
-        # http://stla.github.io/stlapblog/posts/shiny_editTable.html
+        #url = bkmark(session)
+        #plots = values$saved_plots
         
-        s_r_ckbox <- read_csv(s_r_ckbox_csv) 
-        #editTable(s_r_ckbox, outdir="~/Documents/", outfilename="newDF")
+        input_rmd <- here("report_template_gen.Rmd")
         
-        # TODO: maked checkbox table editable and save per user session
-        # * [Using DT in Shiny](https://rstudio.github.io/DT/shiny.html)
-        # * [Double-click to edit table cells](https://yihui.shinyapps.io/DT-edit/)
-        # * [Radio Buttons in Tables](https://rstudio.github.io/DT/011-radio.html)
-        # * [Saturn Elephant - Useful callbacks for DT (in Shiny)](https://laustep.github.io/stlahblog/posts/DTcallbacks.html)
-        # * [Edit a table with Shiny and rhandsontable](http://stla.github.io/stlapblog/posts/shiny_editTable.html)
+        rmd_params <- get_rmd_params()
+        # render(tmp_rmd, output_format=out_fmt, output_file=file, params = list(url=url))
+        # saveRDS(rmd_params, here("data/tmp_rmd_params.rds"))
+        # rmd_params <- readRDS(here("data/tmp_rmd_params.rds"))
+        # file <- here("data/tmp_rmd_params_report.html")
         
-        w_l_modal = 900
-        w_tbl = w_l_modal - (15 * 2)
-        w_col = w_tbl/ncol(s_r_ckbox)
-        
-        showModal(modalDialog(
-            size = "l",
-            title = "Select Stressor-Receptors",
-            #"Table with clickable elements here...",
-            #DTOutput('dt_s_r_ckbox'),
-            #rhandsontable(s_r_ckbox, width = 600, height = 300),
-            rhandsontable(
-                s_r_ckbox, 
-                rowHeaders = NULL, width = w_tbl) %>%
-                hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
-                hot_cols(colWidths = w_col),
-            easyClose = TRUE,
-            footer = tagList(
-                modalButton("Cancel"),
-                actionButton("ok", "OK"))))
-    })
-    
-    observeEvent(input$btnSelectProjects, {
+        log_event("download_report")
+        log_output(list(input_rmd=input_rmd, out_fmt=out_fmt, file=file) %>% as.yaml())
+        log_output(rmd_params %>% as.yaml())
 
-        showModal(modalDialog(
-            size = "l",
-            title = "Select Projects",
-            "TODO: Select: [ ] Tethys; [X] FERC eLibrary",
-            "Table of selectable Projects",
-            "(links to project mitigations from either Tethys or FERC e-Library documents. Ideally, it will search Tethys Project Site (Content Type) documents and manually downloaded FERC e-library documents according to user-specified geography, technology, and/or stressor-receptors.)",
-            easyClose = TRUE,
-            footer = tagList(
-                modalButton("Cancel"),
-                actionButton("ok", "OK"))))
-    })
+        waiter_show(html = waiting_screen, color = "black")
+        
+        render(input=input_rmd, output_format=out_fmt, output_file=file, params = rmd_params)
+        # TODO: hash rmd_params for filename and save params.yml and filename.out_fmt
+        
+        waiter_hide()
+      })
+  }
+  
+  # out btn_download_* ----
+  output$btn_download_pdf = download_report('pdf_document' ,'pdf')
+  output$btn_download_doc = download_report('word_document','docx')
+  output$btn_download_htm = download_report('html_document','html')
+  
+  # TODO: observe btn_download_url ----
+  observeEvent(input$btn_download_url, {
+    url = bkmark(session)
+    showModal(urlModal(url, title='Bookmarked application link'))
+    #browseURL(url)
+  })
+  
+  # TODO: bkmark() ----
+  bkmark = function(session){
+    # return url
     
+    # session$doBookmark() -- without showBookmarkUrlModal(url)
+    state <- shiny:::ShinySaveState$new(
+      input = session$input, exclude = session$getBookmarkExclude())
+    #state$values$saved_plots <- values$saved_plots
+    state$values$saved_time  <- Sys.time()
     
+    url <- shiny:::saveShinySaveState(state)
+    
+    clientData <- session$clientData
+    url <- paste0(
+      clientData$url_protocol, "//", clientData$url_hostname,
+      if (nzchar(clientData$url_port))
+        paste0(":", clientData$url_port), clientData$url_pathname,
+      "?", url)
+    
+    url
+  }
+  
+  # TODO: onRestored ----
+  onRestored(function(state) {
+    cat("Restoring from state bookmarked at", state$values$saved_time, "\n", file=stderr())
+    
+    #values$saved_plots <- state$values$saved_plots
+    
+    #load_plot(plot_titles()[1])
+  })
+  
+  # start introjs when button is pressed with custom options and events
+  observeEvent(
+    input$tour,
+    introjs(session, events = list(onbeforechange = readCallback("switchTabs"))))
+  
+  # js$disableTab("Projects")
+  # js$disableTab("Regulations")
+  # js$disableTab("Management")
+  # js$disableTab("Reports")
+  
+# tblLiterature() ----
+output$tblLiterature <- renderDT({
+    req(vals$queries_lit)
+    
+    message("output$tblLiterature")
+    
+    if (nrow(vals$queries_lit) == 0 ){
+      dt_empty <- tibble(
+        message = "Please Configure Tags to see results here") %>%
+        datatable(rownames = F, options = list(dom = 't'))
+      
+      return(dt_empty)
+    }
+    
+    q <- vals$queries_lit %>% 
+      add_rownames() %>% 
+      pivot_longer(-rowname, names_to = "type", values_to = "tag") %>% 
+      # drop Marine Energy since includes all
+      filter(tag != "Marine Energy") %>% 
+      group_by(rowname) %>% 
+      summarize(
+        tags = paste(tag, collapse = "', '"),
+        tags = glue("'{tags}'"))
+    
+    q_tags <- paste(
+      glue("
+        SELECT uri
+        FROM tethys_pub_tags
+        WHERE tag IN ({q$tags})"), collapse = "\n UNION \n")
+    q_pubs <- glue(
+      "
+      SELECT DISTINCT q.uri, p.title FROM (\n{q_tags}\n) q 
+      INNER JOIN (
+        SELECT 
+          uri,
+          data -> 'title' ->> 0  AS title 
+        FROM tethys_pubs) p ON q.uri = p.uri
+      ORDER BY p.title")
+    
+    res <- dbGetQuery(con, q_pubs)  %>% 
+      tibble() %>% 
+      mutate(
+        title = str_trim(title))
+      
+    res %>%
+      mutate(
+        Title = map2_chr(
+          title, uri,
+          function(x, y)
+            glue("<a href={y} target='_blank'>{x}</a>"))) %>%
+      select(Title) %>%
+      arrange(Title) %>%
+      datatable(
+        escape = F)
+    
+  })
+  
+# tblSpatial() ----
+output$tblSpatial <- renderDT({
+
+    req(vals$queries_lit)
+    
+    message("output$tblSpatial")
+    
+    if (is.null(crud()$finished)){
+      aoi_wkt <- NULL
+    } else {
+      aoi_wkt <- crud()$finished %>% pull(geometry) %>% st_as_text()
+    }
+    
+    if (nrow(vals$queries_lit) == 0 || is.null(aoi_wkt)){
+      dt_empty <- tibble(
+        message = "Please Configure Tags and Locations to see results here") %>%
+        datatable(rownames = F, options = list(dom = 't'))
+      
+      return(dt_empty)
+    }
+    
+    # receptors <- vals$queries_lit %>% 
+    #   pull(Receptors) %>% 
+    #   unique() %>% 
+    #   sort()
+    
+    spatial_receptors <- vals$queries_lit %>% 
+      mutate(
+        q = pmap(., function(Receptors, ...){
+          keys <- c(Receptors) %>% 
+            str_replace_all('"', '') %>%
+            na_if("") %>% 
+            na.omit()
+          paste(keys, collapse = " AND ") })) %>% 
+      pull(q) %>% 
+      as.character()
+    
+    # receptors = c("Marine Mammals", "Fish")
+    # aoi_wkt = "POLYGON ((-122.6833 32.35398, -122.6833 35.31737, -116.1166 35.31737, -116.1166 32.35398, -122.6833 32.35398))"
+    # 
+    # datasets <- tbl(con, "datasets") %>% 
+    #   collect() %>%
+    #   filter(ready) %>% 
+    #   replace_na(list(buffer_km = 0)) %>% 
+    #   select(-notes, -issues) %>% 
+    #   separate_rows(tags, sep = ";") %>% 
+    #   rename(tag = tags) %>% 
+    #   mutate(
+    #     tag = str_trim(tag)) %>% 
+    #   filter(
+    #     tag %in% receptors) %>% 
+    #   arrange(tag, title) %>% 
+    #   mutate(
+    #     data      = map(
+    #       code, 
+    #       tabulate_dataset_shp_within_aoi, 
+    #       aoi_wkt = aoi_wkt, output = "tibble"),
+    #     data_nrow = map_int(data, nrow),
+    #     Title     = map2_chr(
+    #       title, src_url,
+    #       function(x, y)
+    #         glue("<a href={y} target='_blank'>{x}</a>")),
+    #     Title     = ifelse(
+    #       buffer_nm > 0,
+    #       glue("{Title} [within {buffer_nm} nm of Location]"),
+    #       Title)) %>% 
+    #   select(
+    #     Title,
+    #     `Rows of Results` = data_nrow) %>% 
+    #   arrange(Title)
+    
+    # spatial_receptors = c("Marine Mammals", "Fish")
+    # aoi_wkt = "POLYGON ((-122.6833 32.35398, -122.6833 35.31737, -116.1166 35.31737, -116.1166 32.35398, -122.6833 32.35398))"
+    #
+    #browser()
+    datasets <- tbl(con, "datasets") %>% 
+      collect() %>%
+      filter(ready) %>% 
+      replace_na(list(buffer_km = 0)) %>% 
+      select(-notes, -issues) %>% 
+      separate_rows(tags, sep = ";") %>% 
+      rename(tag = tags) %>% 
+      mutate(
+        tag = str_trim(tag)) %>% 
+      filter(
+        tag %in% spatial_receptors) %>% 
+      arrange(tag, title) %>% 
+      mutate(
+        data      = map(
+          code, 
+          tabulate_dataset_shp_within_aoi, 
+          aoi_wkt = aoi_wkt, output = "tibble"),
+    # datasets1 <- datasets
+    # datasets2 <- datasets1 %>% 
+    #   mutate(
+        data_nrow = map_int(data, nrow),
+        Title     = map2_chr(
+          title, src_url,
+          function(x, y)
+            glue("<a href={y} target='_blank'>{x}</a>")),
+        Title     = ifelse(
+          buffer_nm > 0,
+          glue("{Title} [within {buffer_nm} nm of Location]"),
+          Title)) %>% 
+      select(
+        Title,
+        `Rows of Results` = data_nrow) %>% 
+      arrange(Title)
+    
+    # TODO: nest spatial dataset results as sub-tables
+    #   https://stackoverflow.com/questions/55058126/multiple-child-tables-in-dt-datatable#answer-56486534
+    datatable(datasets, escape = F)
+    
+  })
+  
+  
+  output$messageMenu <- renderMenu({
+    # # Code to generate each of the messageItems here, in a list. This assumes
+    # # that messageData is a data frame with two columns, 'from' and 'message'.
+    # msgs <- apply(messageData, 1, function(row) {
+    #   messageItem(from = row[["from"]], message = row[["message"]])
+    # })
+    # 
+    # # This is equivalent to calling:
+    # #   dropdownMenu(type="messages", msgs[[1]], msgs[[2]], ...)
+    # dropdownMenu(type = "messages", .list = msgs)
+    
+    # dropdownMenu(
+    #   type = "messages",
+    #   messageItem(
+    #     from = "Sales Dept",
+    #     message = "Sales are steady this month."
+    #   ),
+    #   messageItem(
+    #     from = "New User",
+    #     message = "How do I register?",
+    #     icon = icon("question"),
+    #     time = "13:45"
+    #   ),
+    #   messageItem(
+    #     from = "Support",
+    #     message = "The new server is ready.",
+    #     icon = icon("life-ring"),
+    #     time = "2014-12-01"
+    #   ))
+    
+  })
 })
