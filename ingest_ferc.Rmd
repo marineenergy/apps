@@ -1,0 +1,27 @@
+---
+title: "FERC doc tagging ingest"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Goals: 
+1. Read [FERC doc tagging spreadsheet 11721.xlsx - Google Sheets](https://docs.google.com/spreadsheets/d/1WuTqAOyvKK7n2BMYDsQpFc8xQg4qcsOv/edit#gid=951079264)
+1. Extract tag lists
+1. Compare with existing Tethys tags
+1. Fold into Shiny app
+
+```{r}
+if (!require(librarian)){
+  install.packages("librarian")
+}
+shelf(
+  googlesheets4)
+
+ferc <- read_sheet("1WuTqAOyvKK7n2BMYDsQpFc8xQg4qcsOv")
+```
+
