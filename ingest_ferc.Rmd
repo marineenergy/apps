@@ -20,8 +20,64 @@ if (!require(librarian)){
   install.packages("librarian")
 }
 shelf(
-  googlesheets4)
+  dplyr, glue, here, readr, readxl,
+  # googlesheets, googlesheets4
+  googledrive)
 
-ferc <- read_sheet("1WuTqAOyvKK7n2BMYDsQpFc8xQg4qcsOv")
+xlsx_id <- "1WuTqAOyvKK7n2BMYDsQpFc8xQg4qcsOv"
+dir_data <- here("data")
+
+g <- drive_get(as_id(xlsx_id))
+xlsx <- glue("{dir_data}/{g$name}")
+
+drive_download(
+  as_id(xlsx_id), 
+  path = xlsx,
+  overwrite = T)
+```
+
+* [How to extract a URL from a hyperlink on Excel](https://howtouseexcel.net/how-to-extract-a-url-from-a-hyperlink-on-excel)
+
+into *.xlsm
+
+```{r}
+# excel_sheets(xlsx)
+xlsm <- fs::path_ext_set(xlsx, "xlsm")
+d <- read_excel(xlsm, "CONSOLIDATED PROJECT MASTER")
+View(d)
+
+d %>% 
+  group_by(RECEPTOR) %>% 
+  summarize(n = n()) %>% 
+  write_csv(here("data/tags_ferc_receptors.csv"))
+d %>% 
+  group_by(`SUB RECEPTOR`) %>% 
+  summarize(n = n()) %>% 
+  write_csv(here("data/tags_ferc_subreceptors.csv"))
+d %>% 
+  group_by(STRESSOR) %>% 
+  summarize(n = n()) %>% 
+  write_csv(here("data/tags_ferc_stressors.csv"))
+
+nbsp <- " " # Unicode (UTF-8) for non-breaking space
+keys <- read_csv(here("data/tags_extra.csv")) %>% 
+  select(key_facet = facet, key = item_label, key_parent = tag_parent) %>% 
+  mutate(
+    key_order = ifelse(
+      is.na(key_parent),
+      key,
+      glue("{key_parent}:{key}")),
+    key_spaced = ifelse(
+      is.na(key_parent),
+      key,
+      glue("{nbsp %>% strrep(4)}{key}"))) %>% 
+  arrange(key_facet, key_order) # View(keys)
+
+keys %>% 
+  filter(key_facet == "receptor") %>% 
+  write_csv(here("data/tags_tethys_receptors.csv"))
+keys %>% 
+  filter(key_facet == "stressor") %>% 
+  write_csv(here("data/tags_tethys_stressors.csv"))
 ```
 

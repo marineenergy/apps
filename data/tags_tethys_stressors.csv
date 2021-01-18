@@ -1,0 +1,14 @@
+key_facet,key,key_parent,key_order,key_spaced
+stressor,Behavioral Interaction,NA,Behavioral Interaction,Behavioral Interaction
+stressor,Attraction,Behavioral Interaction,Behavioral Interaction:Attraction,    Attraction
+stressor,Avoidance,Behavioral Interaction,Behavioral Interaction:Avoidance,    Avoidance
+stressor,Displacement,Behavioral Interaction,Behavioral Interaction:Displacement,    Displacement
+stressor,EMF,NA,EMF,EMF
+stressor,Habitat Change,NA,Habitat Change,Habitat Change
+stressor,Lighting,NA,Lighting,Lighting
+stressor,Noise,NA,Noise,Noise
+stressor,Physical Interaction,NA,Physical Interaction,Physical Interaction
+stressor,Changes in Flow,Physical Interaction,Physical Interaction:Changes in Flow,    Changes in Flow
+stressor,Chemicals,Physical Interaction,Physical Interaction:Chemicals,    Chemicals
+stressor,Collision,Physical Interaction,Physical Interaction:Collision,    Collision
+stressor,Entrapment,Physical Interaction,Physical Interaction:Entrapment,    Entrapment
