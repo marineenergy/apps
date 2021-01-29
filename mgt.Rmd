@@ -1,0 +1,59 @@
+---
+title: "Management Measures"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning = F, message = F)
+```
+
+Source: <a href="https://tethys.pnnl.gov/management-measures" target="_blank">Management Measures Tool for Marine Renewable Energy | Tethys</a>
+
+```{r init}
+if (!require(librarian)){
+  install.packages("librarian")
+  library(librarian)
+}
+shelf(crosstalk, dplyr, DT, here, readr, rvest)
+
+mgt_url <- "https://tethys.pnnl.gov/management-measures"
+# see: scripts/scrape_all.R
+mgt_csv <- here("data/tethys_mgt.csv")
+
+d_mgt <- read_csv(mgt_csv) %>% 
+  rename(
+    Category = `Management Measure Category`,
+    Phase    = `Phase of Project`)
+```
+
+```{r explore, eval=F}
+d_mgt %>%
+  filter(Technology == "Tidal") %>%
+  datatable()
+
+table(d_mgt$Technology)
+table(d_mgt$Stressor)
+table(d_mgt$Receptor)
+table(d_mgt$`Specific Receptor`)
+
+datatable(d_mgt)
+
+d_mgt %>% 
+  group_by(Technology, `Management Measure Category`, `Phase of Project`, Stressor, Receptor) %>% 
+  summarize(n = n())
+names(d_mgt)
+```
+
+```{r}
+
+sd <- SharedData$new(d_mgt)
+
+bscols(widths = c(4,4,4,6,6),
+    filter_select("selTech"    , "Technology", sd, group=~Technology, multiple = T),
+    filter_select("selCategory", "Category"  , sd, group=~Category  , multiple = T),
+    filter_select("selPhase"   , "Phase"     , sd, group=~Phase     , multiple = T),
+    filter_select("selReceptor", "Receptor"  , sd, group=~Receptor  , multiple = T),
+    filter_select("selStressor", "Stressor"  , sd, group=~Stressor  , multiple = T))
+
+datatable(sd)
+```
