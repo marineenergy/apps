@@ -9,10 +9,12 @@ shelf(
   ggmap, leaflet, 
   r-spatial/mapview, # https://github.com/r-spatial/mapview/issues/324
   sf, sp,
+  # scrape
+  rvest, 
   # tidyverse
   dplyr, purrr, readr, tibble, tidyr,
-  # todo: use these
-  # googledrive,
+  # someday
+  # googledrive, zeallot,
   # report
   DT, gt, htmltools, htmlwidgets, kableExtra, knitr, markdown, rmarkdown, shiny, webshot,
   # utility
@@ -584,4 +586,223 @@ html_add <- function(content){
 
 html_out <- function(){
   html_tags
+}
+
+update_tethys_docs <- function(){
+  # update db tables: tethys_pubs, tethys_pub_tags; plus data/tethys_docs.[json|csv]
+  
+  tethys_url  <- glue("https://tethys.pnnl.gov/api/primre_export")
+  tethys_docs_json <- "data/tethys_docs.json" # TODO: rm data/tethys.json
+  tethys_docs_csv  <- "data/tethys_docs.csv"  # TODO: rm data/tethys.csv
+  
+  download.file(tethys_url, tethys_docs_json)
+  
+  tethys <- read_json(tethys_json)
+  tethys_content <- tethys[["..JSON"]][[1]]
+  
+  tethys_uris <- map_chr(tethys_content, "URI")
+  tethys_data <- map_chr(tethys_content, toJSON) %>% 
+    str_replace_all("'","''")
+  
+  tibble(
+    uri = tethys_uris,
+    data = tethys_data) %>% 
+    write_csv(tethys_docs_csv)
+  
+  # TODO: run once, so check if table exists
+  # TODO: rename table tethys_pubs -> tethys_docs and read fxns in Shiny report app
+  sql <- glue("
+  CREATE TABLE tethys_pubs (
+	  uri text NOT NULL PRIMARY KEY,
+	  data json NOT NULL
+  );")
+  dbExecute(con, sql)
+  
+  dbExecute(con, "DELETE FROM tethys_pubs;")
+  
+  # # run once in Terminal to install software and test connection to database:
+  # sudo apt-get update; sudo apt-get install postgresql-client
+  # psql -h postgis -p 5432 -U admin gis
+  # # use this password when prompted
+  # cat /share/.password_mhk-env.us
+  # path_csv='/share/github/mhk-env_shiny-apps/data/tethys.csv'
+  # TODO: check cmd works, providing password however possible
+  cmd <- glue('cat ${tethys_docs_csv} | psql -h postgis -p 5432 -U admin -c "COPY tethys_pubs (uri, data) FROM STDIN WITH (FORMAT CSV, HEADER TRUE);" gis')
+  system(cmd)
+  
+  # update tables for easier querying
+  docs <- dbGetQuery(
+    con, 
+    "SELECT 
+     uri, 
+     data -> 'title'         ->> 0  AS title, 
+     data -> 'tags'                 AS tags, 
+     data -> 'technologyType'       AS technologyType
+   FROM tethys_pubs") %>% 
+    arrange(uri) %>% 
+    tibble()
+  # docs # 6,484 rows
+  # docs %>% head(10) %>% View()
+  
+  # TODO: evaluate counts of tags, esp. "Environment"
+  
+  doc_tags <- dbGetQuery(
+    con, 
+    "SELECT 
+     uri, 
+     json_array_elements(data->'tags')           ->> 0 as tag
+   FROM tethys_pubs
+  UNION
+   SELECT
+     uri, 
+     json_array_elements(data->'technologyType') ->> 0 as tag
+   FROM tethys_pubs") %>% 
+    arrange(uri, tag) %>% 
+    tibble()
+  
+  # TODO: rename table tethys_pub_tags -> tethys_doc_tags and read fxns in Shiny report app
+  dbWriteTable(con, "tethys_pub_tags", doc_tags)
+  # doc_tags # 14,505 rows
+  # doc_tags # 16,034 rows after UNION
+  
+  # TODO: explore docs without tags
+  # docs_tech <- dbGetQuery(
+  #   con, 
+  #   "SELECT
+  #    uri, 
+  #    json_array_elements(data->'technologyType') ->> 0 as tag
+  #  FROM tethys_pubs") %>% 
+  #   arrange(uri, tag_tech) %>% 
+  #   tibble()
+  # docs_tech
+  #
+  # docs_without_tags <- setdiff(docs %>% select(uri), doc_tags %>% select(uri))
+  # docs_without_tags # 0 rows
+  # docs_without_tech <- setdiff(docs %>% select(uri), docs_tech %>% select(uri)) %>% 
+  #   left_join(
+  #     pubs %>% 
+  #       select(uri, title, tags)) %>% 
+  #   arrange(desc(title))
+  # docs_without_tech # 5,158 rows
+  # View(docs_without_tech)
+  
+  
+}
+
+update_tethys_mgt <- function(){
+  
+  mgt_url <- "https://tethys.pnnl.gov/management-measures"
+  mgt_csv <- here("data/tethys_mgt.csv")
+  
+  read_html(mgt_url) %>% 
+    html_table() %>% 
+    .[[1]] %>% 
+    write_csv(mgt_csv)
+}
+
+
+update_tethys_tags <- function(){
+  
+  url      <- "https://tethys.pnnl.gov/knowledge-base-marine-energy"
+  tags_csv <- here("data/tethys_tags.csv") # TODO: rm data/tags.csv (OLD)
+  
+  # helper functions ----
+  
+  get_facet_items <- function(facet_name){
+    # facet_name = "technology"
+    item_nodes <- facet_nodes[[which(facet_names == facet_name)]] %>% 
+      html_nodes(".facet-item")
+    
+    map_df(item_nodes, get_facet_item)
+  }
+  
+  get_facet_item <- function(item_node){
+    # item_node <- item_nodes[[1]]
+    
+    # keys <- c("category" = 1, "id" = 2)
+    # stopifnot(key %in% names(keys))
+    
+    label <- item_node  %>%
+      html_node("a span.facet-item__value") %>% 
+      html_text()
+    
+    keys <- item_node  %>%
+      html_node("a") %>%
+      html_attr("data-drupal-facet-item-id") %>% 
+      str_split("-") %>% 
+      .[[1]]
+    
+    tibble(facet = keys[1], item_id = keys[2], item_label = label)
+  }
+  
+  # scrape html ----
+  html <- read_html(url)
+  
+  facet_nodes <- html_nodes(html, ".js-facets-checkbox-links")
+  facet_names <- html_attr(facet_nodes, "data-drupal-facet-alias")
+  
+  # explore
+  #html_structure(facet_nodes[[1]])
+  #html_text(facet_nodes[[1]]) %>% cat()
+  #as_list(facet_nodes[[1]])
+  
+  d <- tibble(facet = facet_names) %>% 
+    group_by(facet) %>%
+    do(get_facet_items(.$facet)) %>% 
+    ungroup()
+  
+  write_csv(d, tags_csv)
+  
+}
+
+
+update_tethys_intxns <- function(){
+  
+  tethys_pfx <- "https://tethys.pnnl.gov/knowledge-base-marine-energy"
+  tags_csv   <- here("data/tethys_tags.csv")
+  s_r_csv    <- here("data/tethys_intxns.csv") # TODO: rm data/tethys_stressor_receptor.csv
+  
+  get_num_refs <- function(url){
+    # url = "https://tethys.pnnl.gov/knowledge-base-marine-energy?f[0]=receptor:280&f[1]=stressor:355"
+    
+    #if (url == "https://tethys.pnnl.gov/knowledge-base-marine-energy?f[0]=receptor:284&f[1]=stressor:531") browser()
+    message(glue("url: {url}"))
+    
+    tbls <- read_html(url) %>% 
+      html_table() 
+    
+    if (length(tbls) == 0){
+      num_refs <- 0 %>% as.integer()
+    } else{
+      num_refs <- nrow(tbls[[1]])
+    }
+    
+    num_refs
+  }
+  
+  d_tags <- read_csv(tags_csv)
+  
+  receptor <- d_tags %>% 
+    filter(facet == "receptor") %>% pull(item_label) %>% unique() %>% sort()
+  stressor <- d_tags %>% 
+    filter(facet == "stressor") %>% pull(item_label)
+  
+  d_s_r <- expand_grid(receptor, stressor) %>% 
+    left_join(
+      d_tags %>% 
+        filter(facet == "receptor") %>% 
+        select(receptor = item_label, receptor_id = item_id),
+      by = "receptor") %>% 
+    left_join(
+      d_tags %>% 
+        filter(facet == "stressor") %>% 
+        select(stressor = item_label, stressor_id = item_id),
+      by = "stressor") %>% 
+    mutate(
+      url      = glue("{tethys_pfx}?f[0]=receptor:{receptor_id}&f[1]=stressor:{stressor_id}"),
+      num_refs = map_int(url, get_num_refs),
+      link     = glue(
+        "<a href='{url}'>{receptor} x {stressor} ({num_refs})</a>"))
+  
+  write_csv(d_s_r, s_r_csv)
 }

@@ -1,131 +1,133 @@
-facet,item_id,item_label,tag_parent,tag_img
-attachment,1,Available on Tethys,,
-content,538,Book,,
-content,539,Book Chapter,,
-content,540,Conference Paper,,
-content,541,Guidance,,
-content,542,Journal Article,,
-content,543,Magazine Article,,
-content,544,Presentation,,
-content,550,Project Site,,
-content,545,Report,,
-content,551,Research Study,,
-content,552,Summary,,
-content,546,Thesis,,
-content,547,Video,,
-content,548,Website,,
-content,549,Workshop Article,,
-country,5,Angola,,
-country,6,Antigua & Barbuda,,
-country,9,Australia,,
-country,12,Bahamas,,
-country,17,Belgium,,
-country,24,Brazil,,
-country,25,Brunei,,
-country,31,Canada,,
-country,35,Chile,,
-country,36,China,,
-country,37,Colombia,,
-country,41,Costa Rica,,
-country,47,Denmark,,
-country,60,Finland,,
-country,61,France,,
-country,65,Germany,,
-country,66,Ghana,,
-country,67,Greece,,
-country,75,Hungary,,
-country,77,India,,
-country,78,Indonesia,,
-country,79,International,,
-country,80,Iran,,
-country,82,Ireland,,
-country,83,Israel,,
-country,84,Italy,,
-country,86,Japan,,
-country,92,Korea South,,
-country,96,Laos,,
-country,103,Lithuania,,
-country,106,Madagascar,,
-country,108,Malaysia,,
-country,115,Mexico,,
-country,116,Micronesia,,
-country,121,Morocco,,
-country,122,Mozambique,,
-country,127,Netherlands,,
-country,128,New Zealand,,
-country,132,Norway,,
-country,137,Panama,,
-country,140,Peru,,
-country,141,Philippines,,
-country,142,Poland,,
-country,143,Portugal,,
-country,144,Puerto Rico,,
-country,145,Qatar,,
-country,146,Romania,,
-country,147,Russia,,
-country,152,Saudi Arabia,,
-country,159,Slovenia,,
-country,162,South Africa,,
-country,164,Spain,,
-country,172,Sweden,,
-country,175,Taiwan,,
-country,180,Tonga,,
-country,181,Trinidad & Tobago,,
-country,189,United Kingdom,,
-country,190,United States of America,,
-receptor,272,Ground-Nesting Birds,Birds,
-receptor,273,Passerines,Birds,
-receptor,274,Raptors,Birds,
-receptor,275,Seabirds,Birds,
-receptor,276,Shorebirds,Birds,
-receptor,277,Waterfowl,Birds,
-receptor,525,Demersal Fish,Fish,
-receptor,526,Pelagic Fish,Fish,
-receptor,286,Climate Change,Human Dimensions,
-receptor,527,Environmental Impact Assessment,Human Dimensions,
-receptor,287,Fisheries,Human Dimensions,
-receptor,288,Legal & Policy,Human Dimensions,
-receptor,289,Life Cycle Assessment,Human Dimensions,
-receptor,528,Marine Spatial Planning,Human Dimensions,
-receptor,290,Navigation,Human Dimensions,
-receptor,291,Recreation & Tourism,Human Dimensions,
-receptor,529,Social & Economic Data,Human Dimensions,
-receptor,292,Stakeholder Engagement,Human Dimensions,
-receptor,285,Visual Impacts,Human Dimensions,
-receptor,496,Cetaceans,Marine Mammals,
-receptor,497,Pinnipeds,Marine Mammals,
-receptor,534,Sediment Transport,Physical Environment,
-receptor,535,Water Quality,Physical Environment,
-receptor,269,Bats,,
-receptor,271,Birds,,
-receptor,278,Ecosystem Processes,,
-receptor,280,Fish,,
-receptor,284,Human Dimensions,,
-receptor,270,Invertebrates,,
-receptor,281,Marine Mammals,,
-receptor,279,Physical Environment,,
-receptor,283,Reptiles,,
-receptor,293,Terrestrial Mammals,,
-stressor,530,Attraction,Behavioral Interaction,
-stressor,531,Avoidance,Behavioral Interaction,
-stressor,532,Displacement,Behavioral Interaction,
-stressor,353,Changes in Flow,Physical Interaction,
-stressor,350,Chemicals,Physical Interaction,
-stressor,351,Collision,Physical Interaction,
-stressor,533,Entrapment,Physical Interaction,
-stressor,,Behavioral Interaction,,
-stressor,352,EMF,,
-stressor,356,Habitat Change,,
-stressor,354,Lighting,,
-stressor,355,Noise,,
-stressor,,Physical Interaction,,
-technology,423,Marine Energy,,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/Marine%20Renewable%20Energy%20general.jpg?itok=dYD6EN4G
-technology,424,Current,Marine Energy,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/OceanBased%20Perpetual%20Energy%20-%20Ocean%20Current%20Energy%20Converter%204.jpg?itok=9vD56YZ3
-technology,425,OTEC,Marine Energy,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/OTEC%20-%20Courtesy%20of%20Okinawa%20Prefecture%20Industrial%20Policy%20Division.jpg?itok=AFxP00wb
-technology,426,Riverine,Marine Energy,https://tethys.pnnl.gov/sites/default/files/inline-images/Riverine%20-%20Courtesy%20of%20ORPC.jpeg
-technology,427,Salinity Gradient,Marine Energy,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/SalinityGradient.jpg?itok=yUVK-3rk
-technology,428,Tidal,Marine Energy,https://tethys.pnnl.gov/sites/default/files/inline-images/Axial%20Flow%20-%20Courtesy%20of%20BALAO-SABELLA.jpg
-technology,429,Wave,Marine Energy,https://tethys.pnnl.gov/sites/default/files/inline-images/Point%20Absorber%20-%20Courtesy%20of%20Ocean%20Power%20Technologies.jpg
-technology,430,Wind Energy,,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/Wind%20Energy%20General.png?itok=82o8305u
-technology,431,Land-Based Wind,Wind Energy,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/Land-Based%20Wind.png?itok=QZK3C9xN
-technology,432,Offshore Wind,Wind Energy,https://tethys.pnnl.gov/sites/default/files/inline-images/Monopile-Foundation.jpg
+facet,item_id,item_label,tag_parent,tag_img,src
+attachment,1,Available on Tethys,,,tethys_lit
+content,538,Book,,,tethys_lit
+content,539,Book Chapter,,,tethys_lit
+content,540,Conference Paper,,,tethys_lit
+content,541,Guidance,,,tethys_lit
+content,542,Journal Article,,,tethys_lit
+content,543,Magazine Article,,,tethys_lit
+content,544,Presentation,,,tethys_lit
+content,550,Project Site,,,tethys_lit
+content,545,Report,,,tethys_lit
+content,551,Research Study,,,tethys_lit
+content,552,Summary,,,tethys_lit
+content,546,Thesis,,,tethys_lit
+content,547,Video,,,tethys_lit
+content,548,Website,,,tethys_lit
+content,549,Workshop Article,,,tethys_lit
+country,5,Angola,,,tethys_lit
+country,6,Antigua & Barbuda,,,tethys_lit
+country,9,Australia,,,tethys_lit
+country,12,Bahamas,,,tethys_lit
+country,17,Belgium,,,tethys_lit
+country,24,Brazil,,,tethys_lit
+country,25,Brunei,,,tethys_lit
+country,31,Canada,,,tethys_lit
+country,35,Chile,,,tethys_lit
+country,36,China,,,tethys_lit
+country,37,Colombia,,,tethys_lit
+country,41,Costa Rica,,,tethys_lit
+country,47,Denmark,,,tethys_lit
+country,60,Finland,,,tethys_lit
+country,61,France,,,tethys_lit
+country,65,Germany,,,tethys_lit
+country,66,Ghana,,,tethys_lit
+country,67,Greece,,,tethys_lit
+country,75,Hungary,,,tethys_lit
+country,77,India,,,tethys_lit
+country,78,Indonesia,,,tethys_lit
+country,79,International,,,tethys_lit
+country,80,Iran,,,tethys_lit
+country,82,Ireland,,,tethys_lit
+country,83,Israel,,,tethys_lit
+country,84,Italy,,,tethys_lit
+country,86,Japan,,,tethys_lit
+country,92,Korea South,,,tethys_lit
+country,96,Laos,,,tethys_lit
+country,103,Lithuania,,,tethys_lit
+country,106,Madagascar,,,tethys_lit
+country,108,Malaysia,,,tethys_lit
+country,115,Mexico,,,tethys_lit
+country,116,Micronesia,,,tethys_lit
+country,121,Morocco,,,tethys_lit
+country,122,Mozambique,,,tethys_lit
+country,127,Netherlands,,,tethys_lit
+country,128,New Zealand,,,tethys_lit
+country,132,Norway,,,tethys_lit
+country,137,Panama,,,tethys_lit
+country,140,Peru,,,tethys_lit
+country,141,Philippines,,,tethys_lit
+country,142,Poland,,,tethys_lit
+country,143,Portugal,,,tethys_lit
+country,144,Puerto Rico,,,tethys_lit
+country,145,Qatar,,,tethys_lit
+country,146,Romania,,,tethys_lit
+country,147,Russia,,,tethys_lit
+country,152,Saudi Arabia,,,tethys_lit
+country,159,Slovenia,,,tethys_lit
+country,162,South Africa,,,tethys_lit
+country,164,Spain,,,tethys_lit
+country,172,Sweden,,,tethys_lit
+country,175,Taiwan,,,tethys_lit
+country,180,Tonga,,,tethys_lit
+country,181,Trinidad & Tobago,,,tethys_lit
+country,189,United Kingdom,,,tethys_lit
+country,190,United States of America,,,tethys_lit
+receptor,272,Ground-Nesting Birds,Birds,,tethys_lit
+receptor,273,Passerines,Birds,,tethys_lit
+receptor,274,Raptors,Birds,,tethys_lit
+receptor,275,Seabirds,Birds,,tethys_lit
+receptor,276,Shorebirds,Birds,,tethys_lit
+receptor,277,Waterfowl,Birds,,tethys_lit
+receptor,525,Demersal Fish,Fish,,tethys_lit
+receptor,526,Pelagic Fish,Fish,,tethys_lit
+receptor,286,Climate Change,Human Dimensions,,tethys_lit
+receptor,527,Environmental Impact Assessment,Human Dimensions,,tethys_lit
+receptor,287,Fisheries,Human Dimensions,,tethys_lit
+receptor,288,Legal & Policy,Human Dimensions,,tethys_lit
+receptor,289,Life Cycle Assessment,Human Dimensions,,tethys_lit
+receptor,528,Marine Spatial Planning,Human Dimensions,,tethys_lit
+receptor,290,Navigation,Human Dimensions,,tethys_lit
+receptor,291,Recreation & Tourism,Human Dimensions,,tethys_lit
+receptor,529,Social & Economic Data,Human Dimensions,,tethys_lit
+receptor,292,Stakeholder Engagement,Human Dimensions,,tethys_lit
+receptor,285,Visual Impacts,Human Dimensions,,tethys_lit
+receptor,496,Cetaceans,Marine Mammals,,tethys_lit
+receptor,497,Pinnipeds,Marine Mammals,,tethys_lit
+receptor,534,Sediment Transport,Physical Environment,,tethys_lit
+receptor,535,Water Quality,Physical Environment,,tethys_lit
+receptor,269,Bats,,,tethys_lit
+receptor,271,Birds,,,tethys_lit
+receptor,278,Ecosystem Processes,,,tethys_lit
+receptor,280,Fish,,,tethys_lit
+receptor,284,Human Dimensions,,,tethys_lit
+receptor,270,Invertebrates,,,tethys_lit
+receptor,281,Marine Mammals,,,tethys_lit
+receptor,279,Physical Environment,,,tethys_lit
+receptor,283,Reptiles,,,tethys_lit
+receptor,293,Terrestrial Mammals,,,tethys_lit
+stressor,530,Attraction,Behavioral Interaction,,tethys_lit
+stressor,531,Avoidance,Behavioral Interaction,,tethys_lit
+stressor,532,Displacement,Behavioral Interaction,,tethys_lit
+stressor,353,Changes in Flow,Physical Interaction,,tethys_lit
+stressor,350,Chemicals,Physical Interaction,,tethys_lit
+stressor,351,Collision,Physical Interaction,,tethys_lit
+stressor,533,Entrapment,Physical Interaction,,tethys_lit
+stressor,,Behavioral Interaction,,,tethys_lit
+stressor,352,EMF,,,tethys_lit
+stressor,356,Habitat Change,,,tethys_lit
+stressor,354,Lighting,,,tethys_lit
+stressor,355,Noise,,,tethys_lit
+stressor,,Physical Interaction,,,tethys_lit
+technology,423,Marine Energy,,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/Marine%20Renewable%20Energy%20general.jpg?itok=dYD6EN4G,tethys_lit
+technology,424,Current,Marine Energy,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/OceanBased%20Perpetual%20Energy%20-%20Ocean%20Current%20Energy%20Converter%204.jpg?itok=9vD56YZ3,tethys_lit
+technology,425,OTEC,Marine Energy,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/OTEC%20-%20Courtesy%20of%20Okinawa%20Prefecture%20Industrial%20Policy%20Division.jpg?itok=AFxP00wb,tethys_lit
+technology,426,Riverine,Marine Energy,https://tethys.pnnl.gov/sites/default/files/inline-images/Riverine%20-%20Courtesy%20of%20ORPC.jpeg,tethys_lit
+technology,427,Salinity Gradient,Marine Energy,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/SalinityGradient.jpg?itok=yUVK-3rk,tethys_lit
+technology,428,Tidal,Marine Energy,https://tethys.pnnl.gov/sites/default/files/inline-images/Axial%20Flow%20-%20Courtesy%20of%20BALAO-SABELLA.jpg,tethys_lit
+technology,429,Wave,Marine Energy,https://tethys.pnnl.gov/sites/default/files/inline-images/Point%20Absorber%20-%20Courtesy%20of%20Ocean%20Power%20Technologies.jpg,tethys_lit
+technology,430,Wind Energy,,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/Wind%20Energy%20General.png?itok=82o8305u,tethys_lit
+technology,431,Land-Based Wind,Wind Energy,https://tethys.pnnl.gov/sites/default/files/styles/captioned_400xauto/public/taxonomy-images/Land-Based%20Wind.png?itok=QZK3C9xN,tethys_lit
+technology,432,Offshore Wind,Wind Energy,https://tethys.pnnl.gov/sites/default/files/inline-images/Monopile-Foundation.jpg,tethys_lit
+receptor,,Benthic,Physical Environment,,tethys_mgt
+receptor,,Habitat,Physical Environment,,tethys_mgt

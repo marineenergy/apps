@@ -8,60 +8,32 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+## Goals
 
-Goals: 
 1. Read [FERC doc tagging spreadsheet 11721.xlsx - Google Sheets](https://docs.google.com/spreadsheets/d/1WuTqAOyvKK7n2BMYDsQpFc8xQg4qcsOv/edit#gid=951079264)
 1. Extract tag lists
 1. Compare with existing Tethys tags
 1. Fold into Shiny app
 
+## Setup
 ```{r}
 if (!require(librarian)){
   install.packages("librarian")
 }
 shelf(
-  dplyr, glue, here, readr, readxl,
-  # googlesheets, googlesheets4
-  googledrive)
-
-xlsx_id <- "1WuTqAOyvKK7n2BMYDsQpFc8xQg4qcsOv"
-dir_data <- here("data")
-
-g <- drive_get(as_id(xlsx_id))
-xlsx <- glue("{dir_data}/{g$name}")
-
-drive_download(
-  as_id(xlsx_id), 
-  path = xlsx,
-  overwrite = T)
+  dplyr, glue, here, readr, readxl, stringr, tidyr)
 ```
 
 * [How to extract a URL from a hyperlink on Excel](https://howtouseexcel.net/how-to-extract-a-url-from-a-hyperlink-on-excel)
 
-into *.xlsm
+## Prep `data/tags_extra_indented.csv`
 
 ```{r}
-# excel_sheets(xlsx)
-xlsm <- fs::path_ext_set(xlsx, "xlsm")
-d <- read_excel(xlsm, "CONSOLIDATED PROJECT MASTER")
-View(d)
+keys_csv <- here("data/tags_extra_indented.csv")
 
-d %>% 
-  group_by(RECEPTOR) %>% 
-  summarize(n = n()) %>% 
-  write_csv(here("data/tags_ferc_receptors.csv"))
-d %>% 
-  group_by(`SUB RECEPTOR`) %>% 
-  summarize(n = n()) %>% 
-  write_csv(here("data/tags_ferc_subreceptors.csv"))
-d %>% 
-  group_by(STRESSOR) %>% 
-  summarize(n = n()) %>% 
-  write_csv(here("data/tags_ferc_stressors.csv"))
-
-nbsp <- " " # Unicode (UTF-8) for non-breaking space
-keys <- read_csv(here("data/tags_extra.csv")) %>% 
+d_keys <- read_csv(here("data/tags_extra.csv")) %>% 
   select(key_facet = facet, key = item_label, key_parent = tag_parent) %>% 
+  filter(key_facet %in% c("stressor","receptor","technology")) %>% 
   mutate(
     key_order = ifelse(
       is.na(key_parent),
@@ -70,14 +42,129 @@ keys <- read_csv(here("data/tags_extra.csv")) %>%
     key_spaced = ifelse(
       is.na(key_parent),
       key,
-      glue("{nbsp %>% strrep(4)}{key}"))) %>% 
+      glue("    {key}", .trim = F))) %>% 
   arrange(key_facet, key_order) # View(keys)
+write_csv(d_keys, keys_csv)
 
-keys %>% 
-  filter(key_facet == "receptor") %>% 
-  write_csv(here("data/tags_tethys_receptors.csv"))
-keys %>% 
-  filter(key_facet == "stressor") %>% 
-  write_csv(here("data/tags_tethys_stressors.csv"))
+<- read_csv(keys_csv)
 ```
+
+## Prep `data/tethys_mgt_*.csv`
+
+```{r}
+mgt_csv <- here("data/tethys_mgt.csv")
+
+d_mgt <- read_csv(mgt_csv) %>% 
+  rename(
+    Category = `Management Measure Category`,
+    Phase    = `Phase of Project`) # View(d_mgt)
+
+paste(names(d_mgt), collapse = '", "') %>% cat()
+
+flds_tags <- list(
+  "Technology", "Category", "Phase", "Stressor", 
+  c("Receptor", "Specific Receptor"), 
+  "Interaction")
+
+keys2flds  <- list(
+  technology  = "Technology", 
+  category    = "Category",
+  phase       = "Phase",
+  stressor    = "Stressor",
+  receptor    = c("Receptor", "Specific Receptor"),
+  interaction = "Interaction")
+
+for (key in names(keys2flds)){ # key = "technology" # key = "receptor"
+  key_csv <- here(glue("data/tethys_mgt_tags_{key}.csv"))
+  flds    <- keys2flds[[key]]
+  
+  d_fld <- d_mgt %>% 
+    count(across(all_of(flds))) %>%
+    mutate(
+      across(
+        all_of(flds), ~{str_to_title(.x)}, 
+        .names = "{str_to_lower(str_replace_all(.col, ' ', '_'))}_titlecase")) %>% 
+    separate_rows(all_of(flds), sep = ";") %>% 
+    mutate(across(all_of(flds), ~{str_trim(.x)}))
+  
+  if (key %in% d_keys$key_facet)){
+    d_fld <- d_fld %>% 
+      full_join(
+        keys %>% 
+          filter(key_facet == !!key), 
+        by = setNames("key", fld_s))
+  }
+  
+  write_csv(d_fld, key_csv)
+}
+
+d_mgt %>%
+  filter(`Specific Receptor` == "All receptors") %>%
+  write_csv(here(glue("data/tethys_mgt_tags_specific_receptor.is.All.csv")))
+  select(Receptor, `Specific Receptor`, Interaction) %>%
+  View()
+
+# TODO: fold new Physical Environment: ALL, Benthic, Physical Environment:Habitat from tags_extra_indented into Shiny report tags
+```
+
+## Read xlsx, create short lists for lookup tables (`*_lut.csv`)
+
+```{r}
+xlsx <- here("data/FERC doc tagging spreadsheet 11721.xlsx")
+# excel_sheets(xlsx)
+d <- read_excel(xlsx, "CONSOLIDATED PROJECT MASTER")
+paste(names(d), collapse = '", "') %>% cat()
+# View(d)
+
+flds_doc    <- c("DOCUMENT", "URL")
+flds_tags  <- c("DEVICE TYPE", "PHASE", "ACTIVITY", "STRESSOR", "RECEPTOR", "SUB RECEPTOR", "KEY EFFECTS", "KEY INTERACTION DETAIL")
+flds_bln   <- c("PRESENTED AS POTENTIAL INTERACTION?", "DECRIBED FROM OBSERVATIONS AT THE PROJECT SITE?", "MONITORING PLAN (MP)", "ADAPTIVE MANAGEMENT PLAN (AMP)", "PROTECTION, MITIGATION AND ENHANCEMENT", "BMPs APPLIED")
+flds_notes <- c("MP NOTES", "AMP NOTES", "GENERAL NOTES")
+
+keys2tags  <- c(
+  # TODO: PHASE, ACTIVITY with Management Measures
+  "DEVICE TYPE"  = "technology", 
+  "STRESSOR"     = "stressor", 
+  "RECEPTOR"     = "receptor", 
+  "SUB RECEPTOR" = "receptor")
+
+# check that all fields accounted for
+stopifnot(all(names(d) %in% c(flds_doc, flds_tags, flds_bln, flds_notes)))
+
+for (fld in flds_tags){ # fld = flds_tags[1]
+  fld_s   <- str_to_lower(fld) %>% str_replace_all(" ", "_")
+  fld_csv <- here(glue("data/ferc_tags_{fld_s}.csv"))
+  
+  d_fld <- d %>% 
+    count(across(all_of(fld))) %>%
+    mutate(across(all_of(fld), ~{str_to_title(.x)}, .names = fld_s)) 
+  
+  key <- tags2keys[fld]
+  if (!is.na(key)){
+    d_fld <- d_fld %>% 
+      full_join(
+        keys %>% 
+          filter(key_facet == !!key), 
+        by = setNames("key", fld_s))
+  }
+  
+  write_csv(d_fld, fld_csv)
+}
+
+# TODO: 
+# - stressor/receptor="ALL"
+# - Maria to check matches / missing:
+#   RECEPTOR:
+#   - DISTURBANCE (n=1) = Behavioral Interaction
+#   - SCOUR	      (n=3) = Habitat Change
+#   - missing: Physical Interaction:Chemicals
+#   DEVICE TYPE:
+#   - missing: Current, OTEC, Riverine, Salinity Gradient, Wind Energy, Land-Based Wind, Offshore Wind
+#   RECEPTOR, SUB RECEPTOR:
+#   - "Same as for EA except ONLY ESA-listed species" (n=1) = [skipped]
+#   - missing: Birds:Ground-Nesting Birds, Birds:Passerines, Birds:Waterfowl, Human Dimensions:Climate Change, Human Dimensions:Environmental Impact Assessment, Human Dimensions:Legal & Policy, Human Dimensions:Life Cycle Assessment, Human Dimensions:Marine Spatial Planning, Human Dimensions:Stakeholder Engagement, Terrestrial Mammals
+#   
+```
+
+
 

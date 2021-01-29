@@ -1,0 +1,42 @@
+RECEPTOR,SUB RECEPTOR,n,receptor,key_facet,key_parent,key_order,key_spaced
+ALL,,4,ALL,,,,
+ANY,,1,ALL,,,,
+BATS,,9,Bats,receptor,,Bats,Bats
+BIRD,,7,Birds,receptor,,Birds,Birds
+BIRDS,,42,Birds,receptor,,Birds,Birds
+ECOSYSTEM PROCESSES,,7,Ecosystem Processes,receptor,,Ecosystem Processes,Ecosystem Processes
+FISH,,137,Fish,receptor,,Fish,Fish
+FISH DEMERSAL,,1,Demersal Fish,receptor,Fish,Fish:Demersal Fish,    Demersal Fish
+HUMAN DIMENSIONS,,40,Human Dimensions,receptor,,Human Dimensions,Human Dimensions
+INVERTEBRATES,,59,Invertebrates,receptor,,Invertebrates,Invertebrates
+INVERTENRATES,,1,Invertebrates,receptor,,Invertebrates,Invertebrates
+MARIINE MAMMALS,,6,Marine Mammals,receptor,,Marine Mammals,Marine Mammals
+MARINE MAMMAL,,1,Marine Mammals,receptor,,Marine Mammals,Marine Mammals
+MARINE MAMMALS,,141,Marine Mammals,receptor,,Marine Mammals,Marine Mammals
+PHYSICAL ENVIRONMENT,,88,Physical Environment,receptor,,Physical Environment,Physical Environment
+REPTILES,,28,Reptiles,receptor,,Reptiles,Reptiles
+Same as for EA except ONLY ESA-listed species,,1,,,,,
+SEABIRDS,,3,Seabirds,receptor,Birds,Birds:Seabirds,    Seabirds
+WATER QUALITY,,2,Water Quality,receptor,Physical Environment,Physical Environment:Water Quality,    Water Quality
+,CETACEANS,70,Cetaceans,receptor,Marine Mammals,Marine Mammals:Cetaceans,    Cetaceans
+,CETATCEANS,2,Cetaceans,receptor,Marine Mammals,Marine Mammals:Cetaceans,    Cetaceans
+,DEMERSAL FISH,21,Demersal Fish,receptor,Fish,Fish:Demersal Fish,    Demersal Fish
+,DERMERSAL FISH,2,Demersal Fish,receptor,Fish,Fish:Demersal Fish,    Demersal Fish
+,FISH DEMERSAL,1,Demersal Fish,receptor,Fish,Fish:Demersal Fish,    Demersal Fish
+,FISH PELAGIC,1,Pelagic Fish,receptor,Fish,Fish:Pelagic Fish,    Pelagic Fish
+,FISHERIES,9,Fisheries,receptor,Human Dimensions,Human Dimensions:Fisheries,    Fisheries
+,NAVIGATION,9,Navigation,receptor,Human Dimensions,Human Dimensions:Navigation,    Navigation
+,PELAGIC FISH,26,Pelagic Fish,receptor,Fish,Fish:Pelagic Fish,    Pelagic Fish
+,PINNEPEDS,3,Pinnipeds,receptor,Marine Mammals,Marine Mammals:Pinnipeds,    Pinnipeds
+,PINNIPEDS,55,Pinnipeds,receptor,Marine Mammals,Marine Mammals:Pinnipeds,    Pinnipeds
+,RAPTORS,1,Raptors,receptor,Birds,Birds:Raptors,    Raptors
+,RECREATION AND TOURISM,14,Recreation & Tourism,receptor,Human Dimensions,Human Dimensions:Recreation & Tourism,    Recreation & Tourism
+,SEABIRD,7,Seabirds,receptor,Birds,Birds:Seabirds,    Seabirds
+,SEABIRDS,27,Seabirds,receptor,Birds,Birds:Seabirds,    Seabirds
+,SEDIMENT TRANSPORT,42,Sediment Transport,receptor,Physical Environment,Physical Environment:Sediment Transport,    Sediment Transport
+,SHOREBIRDS,6,Shorebirds,receptor,Birds,Birds:Shorebirds,    Shorebirds
+,SOCIAL & ECONOMIC DATA,1,Social & Economic Data,receptor,Human Dimensions,Human Dimensions:Social & Economic Data,    Social & Economic Data
+,VISUAL IMPACTS,6,Visual Impacts,receptor,Human Dimensions,Human Dimensions:Visual Impacts,    Visual Impacts
+,VISUAL RESOURCES,1,Visual Impacts,receptor,Human Dimensions,Human Dimensions:Visual Impacts,    Visual Impacts
+,WATER QUALITY,28,Water Quality,receptor,Physical Environment,Physical Environment:Water Quality,    Water Quality
+,WATERFOUL,1,Waterfowl,receptor,Birds,Birds:Waterfowl,    Waterfowl

@@ -1,0 +1,30 @@
+---
+title: "FERC doc tags"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(librarian)
+shelf(dplyr, glue, googledrive, googlesheets, here, readr)
+
+xlsx_id <- "1oDaTyfKaF9l0n-omWXguNqeU2audiUAi"
+d <- drive_get(as_id(xlsx_id))
+
+drive_download(as_id(xlsx_id), overwrite = T)
+
+gs_ls()
+
+ans <- drive_find(pattern = "FERC doc tagging spreadsheet.*")
+#, type = "spreadsheet")
+
+#get the data
+csv_key <- "1oDaTyfKaF9l0n-omWXguNqeU2audiUAi"
+csv_url <- glue::glue("https://docs.google.com/spreadsheets/d/{csv_key}/gviz/tq?tqx=out:csv&sheet=0")
+
+
+```
+

@@ -1,0 +1,59 @@
+key_facet,key,key_parent,key_order,key_spaced
+receptor,Bats,NA,Bats,Bats
+receptor,Birds,NA,Birds,Birds
+receptor,Ground-Nesting Birds,Birds,Birds:Ground-Nesting Birds,    Ground-Nesting Birds
+receptor,Passerines,Birds,Birds:Passerines,    Passerines
+receptor,Raptors,Birds,Birds:Raptors,    Raptors
+receptor,Seabirds,Birds,Birds:Seabirds,    Seabirds
+receptor,Shorebirds,Birds,Birds:Shorebirds,    Shorebirds
+receptor,Waterfowl,Birds,Birds:Waterfowl,    Waterfowl
+receptor,Ecosystem Processes,NA,Ecosystem Processes,Ecosystem Processes
+receptor,Fish,NA,Fish,Fish
+receptor,Demersal Fish,Fish,Fish:Demersal Fish,    Demersal Fish
+receptor,Pelagic Fish,Fish,Fish:Pelagic Fish,    Pelagic Fish
+receptor,Human Dimensions,NA,Human Dimensions,Human Dimensions
+receptor,Climate Change,Human Dimensions,Human Dimensions:Climate Change,    Climate Change
+receptor,Environmental Impact Assessment,Human Dimensions,Human Dimensions:Environmental Impact Assessment,    Environmental Impact Assessment
+receptor,Fisheries,Human Dimensions,Human Dimensions:Fisheries,    Fisheries
+receptor,Legal & Policy,Human Dimensions,Human Dimensions:Legal & Policy,    Legal & Policy
+receptor,Life Cycle Assessment,Human Dimensions,Human Dimensions:Life Cycle Assessment,    Life Cycle Assessment
+receptor,Marine Spatial Planning,Human Dimensions,Human Dimensions:Marine Spatial Planning,    Marine Spatial Planning
+receptor,Navigation,Human Dimensions,Human Dimensions:Navigation,    Navigation
+receptor,Recreation & Tourism,Human Dimensions,Human Dimensions:Recreation & Tourism,    Recreation & Tourism
+receptor,Social & Economic Data,Human Dimensions,Human Dimensions:Social & Economic Data,    Social & Economic Data
+receptor,Stakeholder Engagement,Human Dimensions,Human Dimensions:Stakeholder Engagement,    Stakeholder Engagement
+receptor,Visual Impacts,Human Dimensions,Human Dimensions:Visual Impacts,    Visual Impacts
+receptor,Invertebrates,NA,Invertebrates,Invertebrates
+receptor,Marine Mammals,NA,Marine Mammals,Marine Mammals
+receptor,Cetaceans,Marine Mammals,Marine Mammals:Cetaceans,    Cetaceans
+receptor,Pinnipeds,Marine Mammals,Marine Mammals:Pinnipeds,    Pinnipeds
+receptor,Physical Environment,NA,Physical Environment,Physical Environment
+receptor,Benthic,Physical Environment,Physical Environment:Benthic,    Benthic
+receptor,Habitat,Physical Environment,Physical Environment:Habitat,    Habitat
+receptor,Sediment Transport,Physical Environment,Physical Environment:Sediment Transport,    Sediment Transport
+receptor,Water Quality,Physical Environment,Physical Environment:Water Quality,    Water Quality
+receptor,Reptiles,NA,Reptiles,Reptiles
+receptor,Terrestrial Mammals,NA,Terrestrial Mammals,Terrestrial Mammals
+stressor,Behavioral Interaction,NA,Behavioral Interaction,Behavioral Interaction
+stressor,Attraction,Behavioral Interaction,Behavioral Interaction:Attraction,    Attraction
+stressor,Avoidance,Behavioral Interaction,Behavioral Interaction:Avoidance,    Avoidance
+stressor,Displacement,Behavioral Interaction,Behavioral Interaction:Displacement,    Displacement
+stressor,EMF,NA,EMF,EMF
+stressor,Habitat Change,NA,Habitat Change,Habitat Change
+stressor,Lighting,NA,Lighting,Lighting
+stressor,Noise,NA,Noise,Noise
+stressor,Physical Interaction,NA,Physical Interaction,Physical Interaction
+stressor,Changes in Flow,Physical Interaction,Physical Interaction:Changes in Flow,    Changes in Flow
+stressor,Chemicals,Physical Interaction,Physical Interaction:Chemicals,    Chemicals
+stressor,Collision,Physical Interaction,Physical Interaction:Collision,    Collision
+stressor,Entrapment,Physical Interaction,Physical Interaction:Entrapment,    Entrapment
+technology,Marine Energy,NA,Marine Energy,Marine Energy
+technology,Current,Marine Energy,Marine Energy:Current,    Current
+technology,OTEC,Marine Energy,Marine Energy:OTEC,    OTEC
+technology,Riverine,Marine Energy,Marine Energy:Riverine,    Riverine
+technology,Salinity Gradient,Marine Energy,Marine Energy:Salinity Gradient,    Salinity Gradient
+technology,Tidal,Marine Energy,Marine Energy:Tidal,    Tidal
+technology,Wave,Marine Energy,Marine Energy:Wave,    Wave
+technology,Wind Energy,NA,Wind Energy,Wind Energy
+technology,Land-Based Wind,Wind Energy,Wind Energy:Land-Based Wind,    Land-Based Wind
+technology,Offshore Wind,Wind Energy,Wind Energy:Offshore Wind,    Offshore Wind

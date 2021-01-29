@@ -1,0 +1,22 @@
+STRESSOR,n,stressor,key_facet,key_parent,key_order,key_spaced
+ALL,16,ALL,,,,
+ATTRACTION,46,Attraction,stressor,Behavioral Interaction,Behavioral Interaction:Attraction,    Attraction
+AVOIDANCE,26,Avoidance,stressor,Behavioral Interaction,Behavioral Interaction:Avoidance,    Avoidance
+CHANGE IN FLOW,5,Changes in Flow,stressor,Physical Interaction,Physical Interaction:Changes in Flow,    Changes in Flow
+CHANGE IN HABITAT,5,Habitat Change,stressor,,Habitat Change,Habitat Change
+CHANGES IN FLOW,11,Changes in Flow,stressor,Physical Interaction,Physical Interaction:Changes in Flow,    Changes in Flow
+COLLISION,61,Collision,stressor,Physical Interaction,Physical Interaction:Collision,    Collision
+COLLSION,5,Collision,stressor,Physical Interaction,Physical Interaction:Collision,    Collision
+DISPLACEMENT,22,Displacement,stressor,Behavioral Interaction,Behavioral Interaction:Displacement,    Displacement
+DISPLACMENT,6,Displacement,stressor,Behavioral Interaction,Behavioral Interaction:Displacement,    Displacement
+DISTURBANCE,1,Behavioral Interaction,stressor,,Behavioral Interaction,Behavioral Interaction
+ELECTROMAGNETIC FIELD,5,EMF,stressor,,EMF,EMF
+ELECTROMAGNETIC FIELDS,45,EMF,stressor,,EMF,EMF
+EMF,4,EMF,stressor,,EMF,EMF
+ENTRAPMENT,53,Entrapment,stressor,Physical Interaction,Physical Interaction:Entrapment,    Entrapment
+HABITAT  CHANGE,9,Habitat Change,stressor,,Habitat Change,Habitat Change
+HABITAT CHANGE,113,Habitat Change,stressor,,Habitat Change,Habitat Change
+LIGHTING,13,Lighting,stressor,,Lighting,Lighting
+NOISE,3,Noise,stressor,,Noise,Noise
+SCOUR,3,Habitat Change,stressor,,Habitat Change,Habitat Change
+UNDERWATER NOISE,90,Noise,stressor,,Noise,Noise
