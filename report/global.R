@@ -1,3 +1,4 @@
+message(paste("user:", Sys.info()[["user"]]))
 source(here::here("functions.R")) # libraries, db connection object (con)
 shelf(
   # shiny
