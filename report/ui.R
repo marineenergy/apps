@@ -22,6 +22,15 @@ tagList(
     
     tabPanel(
       a("Projects", href = glue("{web_url}/projects.html"))),
+
+    tabPanel(
+      a("Regulations", href = glue("{web_url}/regs.html"))),
+      
+    tabPanel(
+      a("Interactions", href = glue("{web_url}/env.html"))),
+      
+    tabPanel(
+      a("Management", href = glue("{web_url}/mgt.html"))),
       
     tabPanel(
       "Configure",
@@ -153,7 +162,11 @@ tagList(
           downloadButton('btn_download_doc', 'Word (*.docx)', icon=icon('file-word-o')),
           downloadButton('btn_download_htm', 'Web (*.html)', icon=icon('file-text-o'))),
         data.step  = 11,
-        data.intro = "Finally, generate report based on your desired output format: Word document, Adobe PDF or web page."))
+        data.intro = "Finally, generate report based on your desired output format: Word document, Adobe PDF or web page.")),
+    
+    div(
+      class = "footer",
+      includeHTML("www/components/footer.html"))
     
     # tabPanel(
     #   "Projects",
