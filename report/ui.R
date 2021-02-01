@@ -164,6 +164,12 @@ tagList(
         data.step  = 11,
         data.intro = "Finally, generate report based on your desired output format: Word document, Adobe PDF or web page.")),
     
+    tabPanel(
+      a("About", href = glue("{web_url}/about.html"))),
+    
+    tabPanel(
+      a("Help", href = glue("{web_url}/help.html"))),
+    
     div(
       class = "footer",
       includeHTML("www/components/footer.html"))
