@@ -1,6 +1,6 @@
 RECEPTOR,SUB RECEPTOR,n,receptor,key_facet,key_parent,key_order,key_spaced
-ALL,,4,ALL,,,,
-ANY,,1,ALL,,,,
+ALL,,4,ALL,receptor,,ALL,ALL
+ANY,,1,ALL,receptor,,ALL,ALL
 BATS,,9,Bats,receptor,,Bats,Bats
 BIRD,,7,Birds,receptor,,Birds,Birds
 BIRDS,,42,Birds,receptor,,Birds,Birds

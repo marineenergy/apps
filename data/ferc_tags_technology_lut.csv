@@ -1,3 +1,3 @@
-DEVICE TYPE,n,device_type,key_facet,key_parent,key_order,key_spaced
+DEVICE TYPE,n,technology,key_facet,key_parent,key_order,key_spaced
 TIDE,252,Tidal,technology,Marine Energy,Marine Energy:Tidal,    Tidal
 WAVE,390,Wave,technology,Marine Energy,Marine Energy:Wave,    Wave

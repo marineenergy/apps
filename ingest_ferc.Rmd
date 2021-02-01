@@ -87,7 +87,7 @@ for (key in names(keys2flds)){ # key = "technology" # key = "receptor"
     separate_rows(all_of(flds), sep = ";") %>% 
     mutate(across(all_of(flds), ~{str_trim(.x)}))
   
-  if (key %in% d_keys$key_facet)){
+  if (key %in% d_keys$key_facet){
     d_fld <- d_fld %>% 
       full_join(
         keys %>% 
@@ -165,6 +165,85 @@ for (fld in flds_tags){ # fld = flds_tags[1]
 #   - missing: Birds:Ground-Nesting Birds, Birds:Passerines, Birds:Waterfowl, Human Dimensions:Climate Change, Human Dimensions:Environmental Impact Assessment, Human Dimensions:Legal & Policy, Human Dimensions:Life Cycle Assessment, Human Dimensions:Marine Spatial Planning, Human Dimensions:Stakeholder Engagement, Terrestrial Mammals
 #   
 ```
+
+## Update data from lookup tables (`*_lut.csv`)
+
+```{r}
+xlsx <- here("data/FERC doc tagging spreadsheet 11721.xlsx")
+csv  <- here("data/ferc_docs.csv")
+# excel_sheets(xlsx)
+d <- read_excel(xlsx, "CONSOLIDATED PROJECT MASTER")
+paste(names(d), collapse = '", "') %>% cat()
+
+
+# list.files("data", ".*_lut\\.csv$") %>% paste(collapse = ", ")
+
+receptor_lut   <- read_csv("data/ferc_tags_receptors_lut.csv")
+stressor_lut   <- read_csv("data/ferc_tags_stressors_lut.csv")
+technology_lut <- read_csv("data/ferc_tags_technology_lut.csv")
+phase_lut      <- read_csv("data/ferc_tags_phase_lut.csv")
+
+d_lut <- d %>% 
+  rename(doc = DOCUMENT, url = URL) %>% 
+  # receptor
+  left_join(
+    receptor_lut %>% 
+      select(RECEPTOR, receptor, receptor_parent = key_parent) %>% 
+      filter(!is.na(RECEPTOR)), 
+    by = c("RECEPTOR" = "RECEPTOR")) %>% 
+  left_join(
+    receptor_lut %>% 
+      select(`SUB RECEPTOR`, receptor_sub = receptor, receptor_sub_parent = key_parent) %>% 
+      filter(!is.na(`SUB RECEPTOR`)), 
+    by = c("SUB RECEPTOR" = "SUB RECEPTOR")) %>% 
+  mutate(
+    receptor = ifelse(
+      !is.na(receptor_sub_parent),
+      receptor_sub,
+      receptor)) %>% 
+  select(-RECEPTOR, -`SUB RECEPTOR`, -receptor_parent, -receptor_sub, -receptor_sub_parent) %>% 
+  # stressor
+  left_join(
+    stressor_lut %>% 
+      select(STRESSOR, stressor) %>% 
+      filter(!is.na(STRESSOR)), 
+    by = c("STRESSOR" = "STRESSOR")) %>% 
+  select(-STRESSOR) %>% 
+  # technology
+  left_join(
+    technology_lut %>% 
+      select(`DEVICE TYPE`, technology) %>% 
+      filter(!is.na(`DEVICE TYPE`)), 
+    by = c("DEVICE TYPE" = "DEVICE TYPE")) %>% 
+  select(-`DEVICE TYPE`) %>% 
+  # phase
+  left_join(
+    phase_lut %>% 
+      select(PHASE, phase) %>% 
+      filter(!is.na(PHASE)), 
+    by = c("PHASE" = "PHASE")) %>% 
+  select(-PHASE) %>% 
+  # booleans
+  mutate(
+   `PROTECTION, MITIGATION AND ENHANCEMENT` = na_if(`PROTECTION, MITIGATION AND ENHANCEMENT`, "N")) %>% 
+  mutate(across(
+    all_of(flds_bln), 
+    ~{!is.na(.x)}, 
+    .names = "{str_to_lower(flds_bln) %>% 
+    str_replace_all(' ', '_') %>% 
+    str_replace_all('[?,]', '')}")) %>% 
+  select(-all_of(flds_bln)) %>% 
+  select(-ACTIVITY) %>% 
+  rename(
+    key_effects            = `KEY EFFECTS`,
+    key_interaction_detail = `KEY INTERACTION DETAIL`,
+    notes_mp               = `MP NOTES`,
+    notes_amp              = `AMP NOTES`,
+    notes_general          = `GENERAL NOTES`)
+  
+write_csv(d_lut, csv)
+```
+
 
 
 

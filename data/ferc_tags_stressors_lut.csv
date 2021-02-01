@@ -1,5 +1,5 @@
 STRESSOR,n,stressor,key_facet,key_parent,key_order,key_spaced
-ALL,16,ALL,,,,
+ALL,16,ALL,stressor,ALL,ALL,ALL
 ATTRACTION,46,Attraction,stressor,Behavioral Interaction,Behavioral Interaction:Attraction,    Attraction
 AVOIDANCE,26,Avoidance,stressor,Behavioral Interaction,Behavioral Interaction:Avoidance,    Avoidance
 CHANGE IN FLOW,5,Changes in Flow,stressor,Physical Interaction,Physical Interaction:Changes in Flow,    Changes in Flow
