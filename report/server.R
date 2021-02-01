@@ -1,6 +1,14 @@
 shinyServer(function(input, output, session) {
-
-  addClass(selector = "body", class = "sidebar-collapse")
+  
+  observe({
+    query <- parseQueryString(session$clientData$url_search)
+    if(!is.null(query$nav)) {
+      nav <- strsplit(query$nav,"/")[[1]]
+      updateTabsetPanel(session, 'nav', nav)
+    }
+  })
+  
+  #addClass(selector = "body", class = "sidebar-collapse")
   
   set_logging_session()
   w <- Waiter$new()
