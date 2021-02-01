@@ -20,5 +20,6 @@ update_tethys_intxns()
 
 # dev cron for updating: tethys_docs, tethys_mgt, tethys_tags, tethys_intxns, ferc_docs
 
+# TODO: rmarkdown::render(mgt.Rmd, env.Rmd), 
 
 # TODO: git commit & push

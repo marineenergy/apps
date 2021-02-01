@@ -1,0 +1,12 @@
+DEVICE TYPE,n,device_type,key_facet,key_parent,key_order,key_spaced
+TIDE,252,Tide,NA,NA,NA,NA
+WAVE,390,Wave,technology,Marine Energy,Marine Energy:Wave,    Wave
+NA,NA,Marine Energy,technology,NA,Marine Energy,Marine Energy
+NA,NA,Current,technology,Marine Energy,Marine Energy:Current,    Current
+NA,NA,OTEC,technology,Marine Energy,Marine Energy:OTEC,    OTEC
+NA,NA,Riverine,technology,Marine Energy,Marine Energy:Riverine,    Riverine
+NA,NA,Salinity Gradient,technology,Marine Energy,Marine Energy:Salinity Gradient,    Salinity Gradient
+NA,NA,Tidal,technology,Marine Energy,Marine Energy:Tidal,    Tidal
+NA,NA,Wind Energy,technology,NA,Wind Energy,Wind Energy
+NA,NA,Land-Based Wind,technology,Wind Energy,Wind Energy:Land-Based Wind,    Land-Based Wind
+NA,NA,Offshore Wind,technology,Wind Energy,Wind Energy:Offshore Wind,    Offshore Wind

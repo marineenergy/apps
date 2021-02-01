@@ -1,0 +1,30 @@
+Stressor,n,stressor,key_facet,key_parent,key_order,key_spaced
+Airborne noise,8,Airborne Noise,NA,NA,NA,NA
+Barrier to movement,12,Barrier To Movement,NA,NA,NA,NA
+Changes in sediment dynamics,58,Changes In Sediment Dynamics,NA,NA,NA,NA
+Changes in water flow,4,Changes In Water Flow,NA,NA,NA,NA
+Collision risk,18,Collision Risk,NA,NA,NA,NA
+Contamination,168,Contamination,NA,NA,NA,NA
+Displacement,6,Displacement,stressor,Behavioral Interaction,Behavioral Interaction:Displacement,    Displacement
+Dissipation of wave energy,2,Dissipation Of Wave Energy,NA,NA,NA,NA
+EMF and thermal pressure,56,Emf And Thermal Pressure,NA,NA,NA,NA
+Entanglement,60,Entanglement,NA,NA,NA,NA
+Entrapment,4,Entrapment,stressor,Physical Interaction,Physical Interaction:Entrapment,    Entrapment
+Habitat creation,16,Habitat Creation,NA,NA,NA,NA
+Lighting,6,Lighting,stressor,NA,Lighting,Lighting
+Loss of habitat,32,Loss Of Habitat,NA,NA,NA,NA
+Loss of seabed habitat,4,Loss Of Seabed Habitat,NA,NA,NA,NA
+Marine Non-Native Species (MNNS),214,Marine Non-Native Species (Mnns),NA,NA,NA,NA
+Underwater noise,16,Underwater Noise,NA,NA,NA,NA
+Vessel collision,6,Vessel Collision,NA,NA,NA,NA
+Vessel disturbance,52,Vessel Disturbance,NA,NA,NA,NA
+NA,NA,Behavioral Interaction,stressor,NA,Behavioral Interaction,Behavioral Interaction
+NA,NA,Attraction,stressor,Behavioral Interaction,Behavioral Interaction:Attraction,    Attraction
+NA,NA,Avoidance,stressor,Behavioral Interaction,Behavioral Interaction:Avoidance,    Avoidance
+NA,NA,EMF,stressor,NA,EMF,EMF
+NA,NA,Habitat Change,stressor,NA,Habitat Change,Habitat Change
+NA,NA,Noise,stressor,NA,Noise,Noise
+NA,NA,Physical Interaction,stressor,NA,Physical Interaction,Physical Interaction
+NA,NA,Changes in Flow,stressor,Physical Interaction,Physical Interaction:Changes in Flow,    Changes in Flow
+NA,NA,Chemicals,stressor,Physical Interaction,Physical Interaction:Chemicals,    Chemicals
+NA,NA,Collision,stressor,Physical Interaction,Physical Interaction:Collision,    Collision

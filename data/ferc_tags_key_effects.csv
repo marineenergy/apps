@@ -1,0 +1,88 @@
+KEY EFFECTS,n,key_effects
+ARTIFICIAL REEF,2,Artificial Reef
+ATTRACTION,7,Attraction
+"ATTRACTION, AVOIDANCE",2,"Attraction, Avoidance"
+"ATTRACTION, BIOFOULING",5,"Attraction, Biofouling"
+"ATTRACTION, CHANGE IN BEHAVIOR, FOOD WEB IMPLICATIONS",2,"Attraction, Change In Behavior, Food Web Implications"
+"ATTRACTION, FISH AGGREGATION",1,"Attraction, Fish Aggregation"
+"ATTRACTION, POTENTIAL HARM",3,"Attraction, Potential Harm"
+ATTRACTION/BIOFOULING,5,Attraction/Biofouling
+AVOIDANCE,11,Avoidance
+"AVOIDANCE, ATTRACTION",1,"Avoidance, Attraction"
+"AVOIDANCE, BEHAVIOR CHANGE",2,"Avoidance, Behavior Change"
+"AVOIDANCE, CHANGE IN BEHAVIOR",3,"Avoidance, Change In Behavior"
+"AVOIDANCE, DISRUPTION OF BEHAVIOR",3,"Avoidance, Disruption Of Behavior"
+"AVOIDANCE, INJURY",3,"Avoidance, Injury"
+"AVOIDANCE, POTENTIAL HARM",1,"Avoidance, Potential Harm"
+BEHAVIOR CHANGE,1,Behavior Change
+BIODIVERSITY CHANGE,1,Biodiversity Change
+BIODIVERSITY SHIFT,7,Biodiversity Shift
+BIODIVERSITY SHIFT/FOOD WEB IMPLICATIONS,2,Biodiversity Shift/Food Web Implications
+BIOFOULING,1,Biofouling
+CHANGE IN BEHAVIOR,1,Change In Behavior
+"CHANGE IN BEHAVIOR, AVOIDANCE",3,"Change In Behavior, Avoidance"
+"CHANGE IN BEHAVIOR, FOOD WEB IMPLICATIONS",1,"Change In Behavior, Food Web Implications"
+"CHANGE IN BEHAVIOR, INJURY",1,"Change In Behavior, Injury"
+"CHANGE IN BEHAVIOR, POTENTIAL HARM",2,"Change In Behavior, Potential Harm"
+COLLISION,4,Collision
+"COLLISION, INDIRECT MORTALITY/INJURY",1,"Collision, Indirect Mortality/Injury"
+"COLLISION, INJURY, MORTALITY",1,"Collision, Injury, Mortality"
+"COLLISION, INJURY/MORTALITY",14,"Collision, Injury/Mortality"
+"COLLISION, POSSIBLE INJURY",7,"Collision, Possible Injury"
+"COLLISION, POTENTIAL INJURY",1,"Collision, Potential Injury"
+DISRUPTION OF BEHAVIOR,11,Disruption Of Behavior
+"DISRUPTION OF BEHAVIOR, AVOIDANCE",31,"Disruption Of Behavior, Avoidance"
+"DISRUPTION OF BEHAVIOR, AVOIDANCE, POTENTIAL HARM",9,"Disruption Of Behavior, Avoidance, Potential Harm"
+"DISRUPTION OF BEHAVIOR, BIODIVERSITY CHANGE",14,"Disruption Of Behavior, Biodiversity Change"
+"DISRUPTION OF BEHAVIOR, FOOD WEB IMPLICATIONS",3,"Disruption Of Behavior, Food Web Implications"
+"DISRUPTION OF BEHAVIOR, FOOD WEB IMPLICATIONS, AVOIDANCE",1,"Disruption Of Behavior, Food Web Implications, Avoidance"
+"DISRUPTION OF BEHAVIOR, POTENTIAL HARM",4,"Disruption Of Behavior, Potential Harm"
+"DISTURANCE, DISRUPTION OF BEHAVIOR, BIODIVERSITY SHIFT",1,"Disturance, Disruption Of Behavior, Biodiversity Shift"
+DISTURBANCE,13,Disturbance
+"DISTURBANCE, BIODIVERSITY SHIFT",1,"Disturbance, Biodiversity Shift"
+"DISTURBANCE, FOOD WEB IMPLICATIONS",3,"Disturbance, Food Web Implications"
+"DISTURBANCE, RISK OF COLLISION, INJURY/MORTALITY",1,"Disturbance, Risk Of Collision, Injury/Mortality"
+"DISTURBANCE, SCOUR, FOOD WEB IMPLICATIONS",1,"Disturbance, Scour, Food Web Implications"
+"DISTURBANCE, SCOUR, SEDIMENT TRANSPORT",1,"Disturbance, Scour, Sediment Transport"
+DITURBANCE,1,Diturbance
+EMPLOYMENT AND ECONOMIC GAINS,1,Employment And Economic Gains
+ENTRAPMENT,1,Entrapment
+"ENTRAPMENT, POTENTIAL HARM",5,"Entrapment, Potential Harm"
+FISH AGGREGATE DEVICE,6,Fish Aggregate Device
+FISH AGGREGATION,1,Fish Aggregation
+"FOOD WEB IMPLICATIONS, BIOFOULING,",1,"Food Web Implications, Biofouling,"
+HABITAT CHANGE,1,Habitat Change
+INDIRECT BIODIVERSITY SHIFT,1,Indirect Biodiversity Shift
+INDIRECT MORTALITY/INJURY,1,Indirect Mortality/Injury
+INDIRECT TURBIDITY,5,Indirect Turbidity
+"INJURY, DISRUPTION OF BEHAVIOR, FOOD WEB IMPLICATIONS",7,"Injury, Disruption Of Behavior, Food Web Implications"
+"INJURY, MORTALITY",2,"Injury, Mortality"
+"INJURY, RISK",1,"Injury, Risk"
+INJURY/MORTALITY,13,Injury/Mortality
+"INJURY/MORTALITY, POTENTIAL HARM",3,"Injury/Mortality, Potential Harm"
+LOSS OF BIODIVERSITY,1,Loss Of Biodiversity
+POSSIBLE TOXIC RESPONSE,1,Possible Toxic Response
+"POSSIBLE TOXIC RESPONSE, BIOFOULING",1,"Possible Toxic Response, Biofouling"
+POTENTIAL AVOIDANCE,1,Potential Avoidance
+POTENTIAL BIODIVERSITY SHIFT,1,Potential Biodiversity Shift
+POTENTIAL HARM,2,Potential Harm
+"POTENTIAL HARM, DISRUPTION OF BEHAVIOR",9,"Potential Harm, Disruption Of Behavior"
+"POTENTIAL HARM, INJURY",1,"Potential Harm, Injury"
+"POTENTIAL INJURY, MORTALITY",7,"Potential Injury, Mortality"
+POTENTIAL TOXIC RESPONSE,14,Potential Toxic Response
+RISK OF COLLISION,3,Risk Of Collision
+"RISK OF COLLISION, INJURY",3,"Risk Of Collision, Injury"
+"RISK OF COLLISION, INJURY/MORTALITY",2,"Risk Of Collision, Injury/Mortality"
+"RISK OF COLLISION, MORTALITY/INJURY",4,"Risk Of Collision, Mortality/Injury"
+"RISK OF COLLISION, POTENTIAL HARM",1,"Risk Of Collision, Potential Harm"
+"RISK OF COLLISION, POTENTIAL HARM, INJURY",3,"Risk Of Collision, Potential Harm, Injury"
+RISK OF COLLSIION,2,Risk Of Collsiion
+"RISK OF COLLSION, POTENTIAL HARM",3,"Risk Of Collsion, Potential Harm"
+SCOUR,2,Scour
+"SCOUR, SEDIMENT TRANSPORT",9,"Scour, Sediment Transport"
+"SCOUR, SEDIMENT TRANSPORT, DISTURBANCE",2,"Scour, Sediment Transport, Disturbance"
+"SEDIMEND TRANSPORT, STTRACTION",1,"Sedimend Transport, Sttraction"
+SEDIMENT TRANSPORT,23,Sediment Transport
+"SEDIMENT TRANSPORT, ATTRACTION",1,"Sediment Transport, Attraction"
+"SEDIMENT TRANSPOT, SCOUR",1,"Sediment Transpot, Scour"
+NA,301,NA

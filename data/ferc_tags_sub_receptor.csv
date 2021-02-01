@@ -1,0 +1,44 @@
+SUB RECEPTOR,n,sub_receptor,key_facet,key_parent,key_order,key_spaced
+CETACEANS,70,Cetaceans,receptor,Marine Mammals,Marine Mammals:Cetaceans,    Cetaceans
+CETATCEANS,2,Cetatceans,NA,NA,NA,NA
+DEMERSAL FISH,21,Demersal Fish,receptor,Fish,Fish:Demersal Fish,    Demersal Fish
+DERMERSAL FISH,2,Dermersal Fish,NA,NA,NA,NA
+FISH DEMERSAL,1,Fish Demersal,NA,NA,NA,NA
+FISH PELAGIC,1,Fish Pelagic,NA,NA,NA,NA
+FISHERIES,9,Fisheries,receptor,Human Dimensions,Human Dimensions:Fisheries,    Fisheries
+NAVIGATION,9,Navigation,receptor,Human Dimensions,Human Dimensions:Navigation,    Navigation
+PELAGIC FISH,26,Pelagic Fish,receptor,Fish,Fish:Pelagic Fish,    Pelagic Fish
+PINNEPEDS,3,Pinnepeds,NA,NA,NA,NA
+PINNIPEDS,55,Pinnipeds,receptor,Marine Mammals,Marine Mammals:Pinnipeds,    Pinnipeds
+RAPTORS,1,Raptors,receptor,Birds,Birds:Raptors,    Raptors
+RECREATION AND TOURISM,14,Recreation And Tourism,NA,NA,NA,NA
+SEABIRD,7,Seabird,NA,NA,NA,NA
+SEABIRDS,27,Seabirds,receptor,Birds,Birds:Seabirds,    Seabirds
+SEDIMENT TRANSPORT,42,Sediment Transport,receptor,Physical Environment,Physical Environment:Sediment Transport,    Sediment Transport
+SHOREBIRDS,6,Shorebirds,receptor,Birds,Birds:Shorebirds,    Shorebirds
+SOCIAL & ECONOMIC DATA,1,Social & Economic Data,receptor,Human Dimensions,Human Dimensions:Social & Economic Data,    Social & Economic Data
+VISUAL IMPACTS,6,Visual Impacts,receptor,Human Dimensions,Human Dimensions:Visual Impacts,    Visual Impacts
+VISUAL RESOURCES,1,Visual Resources,NA,NA,NA,NA
+WATER QUALITY,28,Water Quality,receptor,Physical Environment,Physical Environment:Water Quality,    Water Quality
+WATERFOUL,1,Waterfoul,NA,NA,NA,NA
+NA,309,NA,NA,NA,NA,NA
+NA,NA,Bats,receptor,NA,Bats,Bats
+NA,NA,Birds,receptor,NA,Birds,Birds
+NA,NA,Ground-Nesting Birds,receptor,Birds,Birds:Ground-Nesting Birds,    Ground-Nesting Birds
+NA,NA,Passerines,receptor,Birds,Birds:Passerines,    Passerines
+NA,NA,Waterfowl,receptor,Birds,Birds:Waterfowl,    Waterfowl
+NA,NA,Ecosystem Processes,receptor,NA,Ecosystem Processes,Ecosystem Processes
+NA,NA,Fish,receptor,NA,Fish,Fish
+NA,NA,Human Dimensions,receptor,NA,Human Dimensions,Human Dimensions
+NA,NA,Climate Change,receptor,Human Dimensions,Human Dimensions:Climate Change,    Climate Change
+NA,NA,Environmental Impact Assessment,receptor,Human Dimensions,Human Dimensions:Environmental Impact Assessment,    Environmental Impact Assessment
+NA,NA,Legal & Policy,receptor,Human Dimensions,Human Dimensions:Legal & Policy,    Legal & Policy
+NA,NA,Life Cycle Assessment,receptor,Human Dimensions,Human Dimensions:Life Cycle Assessment,    Life Cycle Assessment
+NA,NA,Marine Spatial Planning,receptor,Human Dimensions,Human Dimensions:Marine Spatial Planning,    Marine Spatial Planning
+NA,NA,Recreation & Tourism,receptor,Human Dimensions,Human Dimensions:Recreation & Tourism,    Recreation & Tourism
+NA,NA,Stakeholder Engagement,receptor,Human Dimensions,Human Dimensions:Stakeholder Engagement,    Stakeholder Engagement
+NA,NA,Invertebrates,receptor,NA,Invertebrates,Invertebrates
+NA,NA,Marine Mammals,receptor,NA,Marine Mammals,Marine Mammals
+NA,NA,Physical Environment,receptor,NA,Physical Environment,Physical Environment
+NA,NA,Reptiles,receptor,NA,Reptiles,Reptiles
+NA,NA,Terrestrial Mammals,receptor,NA,Terrestrial Mammals,Terrestrial Mammals

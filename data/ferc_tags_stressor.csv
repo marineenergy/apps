@@ -1,0 +1,28 @@
+STRESSOR,n,stressor,key_facet,key_parent,key_order,key_spaced
+ALL,16,All,NA,NA,NA,NA
+ATTRACTION,46,Attraction,stressor,Behavioral Interaction,Behavioral Interaction:Attraction,    Attraction
+AVOIDANCE,26,Avoidance,stressor,Behavioral Interaction,Behavioral Interaction:Avoidance,    Avoidance
+CHANGE IN FLOW,5,Change In Flow,NA,NA,NA,NA
+CHANGE IN HABITAT,5,Change In Habitat,NA,NA,NA,NA
+CHANGES IN FLOW,11,Changes In Flow,NA,NA,NA,NA
+COLLISION,61,Collision,stressor,Physical Interaction,Physical Interaction:Collision,    Collision
+COLLSION,5,Collsion,NA,NA,NA,NA
+DISPLACEMENT,22,Displacement,stressor,Behavioral Interaction,Behavioral Interaction:Displacement,    Displacement
+DISPLACMENT,6,Displacment,NA,NA,NA,NA
+DISTURBANCE,1,Disturbance,NA,NA,NA,NA
+ELECTROMAGNETIC FIELD,5,Electromagnetic Field,NA,NA,NA,NA
+ELECTROMAGNETIC FIELDS,45,Electromagnetic Fields,NA,NA,NA,NA
+EMF,4,Emf,NA,NA,NA,NA
+ENTRAPMENT,53,Entrapment,stressor,Physical Interaction,Physical Interaction:Entrapment,    Entrapment
+HABITAT  CHANGE,9,Habitat  Change,NA,NA,NA,NA
+HABITAT CHANGE,113,Habitat Change,stressor,NA,Habitat Change,Habitat Change
+LIGHTING,13,Lighting,stressor,NA,Lighting,Lighting
+NOISE,3,Noise,stressor,NA,Noise,Noise
+SCOUR,3,Scour,NA,NA,NA,NA
+UNDERWATER NOISE,90,Underwater Noise,NA,NA,NA,NA
+NA,100,NA,NA,NA,NA,NA
+NA,NA,Behavioral Interaction,stressor,NA,Behavioral Interaction,Behavioral Interaction
+NA,NA,EMF,stressor,NA,EMF,EMF
+NA,NA,Physical Interaction,stressor,NA,Physical Interaction,Physical Interaction
+NA,NA,Changes in Flow,stressor,Physical Interaction,Physical Interaction:Changes in Flow,    Changes in Flow
+NA,NA,Chemicals,stressor,Physical Interaction,Physical Interaction:Chemicals,    Chemicals
