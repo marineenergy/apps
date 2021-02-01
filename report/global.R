@@ -9,7 +9,7 @@ shelf(
   mapedit)
 set_logging(file = "/share/github/mhk-env_shiny-apps/logging_tmp.txt")
 
-web_url = "https://www-dev.marineenergy.app"
+web_url = "https://marineenergy.app"
 
 map_default <- leaflet(
   options = leafletOptions(
