@@ -28,6 +28,9 @@ tagList(
       
     tabPanel(
       a("Interactions", href = glue("{web_url}/env.html"))),
+    
+    tabPanel(
+      a("Documents", href = glue("{web_url}/ferc.html"))),
       
     tabPanel(
       a("Management", href = glue("{web_url}/mgt.html"))),
