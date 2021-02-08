@@ -806,3 +806,157 @@ update_tethys_intxns <- function(){
   
   write_csv(d_s_r, s_r_csv)
 }
+
+
+update_project_sites <- function(){
+  
+  shelf(
+    dplyr, glue, here, htmltools, markdown, purrr, readr, sf, stringr)
+  
+  
+  #get the data
+  sites_csv <- here("data/project_sites.csv")
+  # [MHK Project Timeline Input - Google Sheets](https://docs.google.com/spreadsheets/d/1HC5hXyi2RQSHevnV7rvyk748U5-X3iUw70ewHEfrHm0/edit#gid=793817660)
+  csv_key <- "1HC5hXyi2RQSHevnV7rvyk748U5-X3iUw70ewHEfrHm0"
+  csv_url <- glue::glue("https://docs.google.com/spreadsheets/d/{csv_key}/gviz/tq?tqx=out:csv&sheet=0")
+  
+  permit_types <- c(
+    "Notice of Intent/Preliminary Permit Application",
+    "Draft Pilot License App",
+    "Final Pilot License App",
+    "Pilot License Issued",
+    "Draft License App",
+    "Draft Re-License App",
+    "Final License App",
+    "Final Re-License App",
+    "Environmental Assessment",
+    "Settlement Agreement",
+    "Permit Issued",
+    "Re-License Issued")
+  
+  md2html <- function(x){
+    markdownToHTML(text = x, fragment.only = T)}
+  
+  d <- readr::read_csv(csv_url) %>% 
+    select(-starts_with("X"))
+  
+  d_xy <- d %>% 
+    filter(!is.na(longitude), !is.na(latitude)) %>% 
+    select(
+      project_name, 
+      technology_type, 
+      date_beg, date_end,
+      longitude, latitude)
+  
+  d_permits <- d %>% 
+    select(
+      project_name, 
+      permit_type, license_date, link) %>% 
+    filter(!is.na(permit_type)) %>% 
+    mutate(
+      permit_type  = factor(
+        permit_type, levels = permit_types, ordered = T)) %>% 
+    arrange(project_name, permit_type) %>% 
+    mutate(
+      permit_md = ifelse(
+        is.na(link),
+        glue("- {permit_type}: {license_date}"),
+        glue("- <a href='{link}' target='_blank'>{permit_type}</a>: {license_date}"))) %>% 
+    group_by(project_name) %>% 
+    summarize(
+      permits_md = paste(permit_md, collapse = "\n"),
+      .groups = "drop")
+  
+  sites <- d_xy %>% 
+    left_join(
+      d_permits, by = "project_name") %>% 
+    mutate(
+      label_md = glue(
+        "**{project_name}** (_{technology_type}_)"),
+      popup_md = glue(
+        "**{project_name}** (_{technology_type}_)<br>
+      Dates: {date_beg} to {ifelse(date_end == format(Sys.Date(), '%m/%d/%Y') %>% str_replace('^0',''), 'ongoing', date_end)}<br>
+      Location (lon, lat): {longitude}, {latitude}<br>
+      {permits_md}"),
+      label_html = map_chr(label_md, md2html),
+      popup_html = map_chr(popup_md, md2html)) %>% 
+    st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = F) %>% 
+    arrange(project_name)
+  
+  write_csv(sites, sites_csv)
+}
+
+update_project_timelines <- function(){
+  library(dplyr)
+  library(htmltools)
+  library(htmlwidgets)
+  library(jsonlite)
+  library(plotly)
+  library(ggplot2)
+  #library(ggiraph)
+  library(RColorBrewer)
+  
+  prj_times_csv   <- here("data/project_times.csv")
+  prj_permits_csv <- here("data/project_permits.csv")
+  
+  # Using [MHK Project Timeline Input - Google Sheets](https://docs.google.com/spreadsheets/d/1HC5hXyi2RQSHevnV7rvyk748U5-X3iUw70ewHEfrHm0/edit#gid=793817660)
+  
+  #get the data
+  csv_key <- "1HC5hXyi2RQSHevnV7rvyk748U5-X3iUw70ewHEfrHm0"
+  csv_url <- glue::glue("https://docs.google.com/spreadsheets/d/{csv_key}/gviz/tq?tqx=out:csv&sheet=0")
+  d <- readr::read_csv(csv_url) %>% 
+    select(-starts_with("X"))
+  
+  #sort data by permit type
+  d$permit_type <- factor(
+    d$permit_type, 
+    levels = c(
+      "Notice of Intent/Preliminary Permit Application",
+      "Draft Pilot License App",
+      "Final Pilot License App",
+      "Pilot License Issued",
+      "Draft License App",
+      "Draft Re-License App",
+      "Final License App",
+      "Final Re-License App",
+      "Environmental Assessment",
+      "Settlement Agreement",
+      "Permit Issued",
+      "Re-License Issued"))
+  
+  d$technology_type <- factor(
+    d$technology_type, 
+    levels = c(
+      'Riverine Energy', 
+      'Tidal Energy', 
+      'Wave Energy'))
+  
+  
+  #d %>% transform(d, technology_type = as.character(technology_type))
+  
+  #data cleanup
+  d_times <- d %>% 
+    filter(!is.na(date_beg)) %>% 
+    mutate(
+      date_beg = as.Date(date_beg, format = "%m/%d/%Y"),
+      date_end = as.Date(date_end, format = "%m/%d/%Y")) %>% 
+    arrange(project_number, project_name)
+  
+  #data cleanup
+  d_permits <- d %>% 
+    filter(!is.na(permit_type)) %>% 
+    select(project_name, project_number, permit_type, license_date, link, technology_type) %>% 
+    mutate(license_date = as.Date(license_date, format = "%m/%d/%Y")) %>% 
+    arrange(project_number, project_name, license_date) %>% 
+    arrange(permit_type, project_number) %>% 
+    # previously: d_permits_2
+    rename(urls = link) %>% 
+    arrange(technology_type, permit_type, project_name, .by_group = F)
+  
+  d_times <- d_times %>% 
+    arrange(technology_type, project_name, .by_group = F)
+  
+  write_csv(d_times, prj_times_csv)
+  write_csv(d_permits, prj_permits_csv)
+}
+
