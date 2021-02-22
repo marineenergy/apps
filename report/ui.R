@@ -39,12 +39,14 @@ tagList(
       "Configure",
       tabsetPanel(
         id = "tabConfigure",
-        
         # introBox(),
         # data.step  = 3,
         # data.intro = "Select."),
         tabPanel(
           "Location",
+          'This tab lets users develop queries for their report. To develop a query based on geographic area of interest,  select the "polygon" or "rectangle" icon in the menu bar to the left of the map. Using either tool, create a boundary around the location of interest. If there are multiple locations of interest, complete the boundaries of one location before starting the next. To adjust the shape of the boundary, select the "layer" icon and edit points as necessary. To delete a shape, select the "delete" icon, followed by the shape.<br>
+          <br>
+          Once the desired shape has been created, navigate to the "Tags" tab to choose the receptors, stressors, and technology of interest.',
           fluidRow(
             box(
               width = 12,
