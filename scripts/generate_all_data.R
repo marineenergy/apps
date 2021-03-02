@@ -18,6 +18,12 @@ update_tethys_tags()
 # update data/tethys_intxns.csv
 update_tethys_intxns()
 
+# update data/project_sites.csv
+update_project_sites()
+
+# update data/project_permits.csv, data/project_times.csv
+update_project_timelines
+
 # dev cron for updating: tethys_docs, tethys_mgt, tethys_tags, tethys_intxns, ferc_docs
 
 # TODO: rmarkdown::render(mgt.Rmd, env.Rmd), 

@@ -1,0 +1,20 @@
+project_name,project_number,env_study,date_beg,date_end,permit_type,license_date,link,technology_type,longitude,latitude,project_status
+Igiugig,18,Project Length,2008-11-10,2021-02-08,NA,NA,NA,Riverine Energy,-155.9151,59.3247,Active Project
+Mississippi River,20,Project Length,2009-04-01,2013-06-28,NA,NA,NA,Riverine Energy,-91.20356,30.52028,Inactive Project
+Admiralty Inlet,2,Project Length,2007-03-09,2016-03-21,NA,NA,NA,Tidal Energy,-122.732,48.182972,Inactive Project
+Bourne,17,Project Length,2016-09-26,2021-02-08,NA,NA,NA,Tidal Energy,-70.5748959,41.7681603,Active Project
+Cobscook Bay,3,Project Length,2007-07-23,2021-02-08,NA,NA,NA,Tidal Energy,-67.04563,44.9098,Active Project
+Muskeget,5,Project Length,2008-03-01,2016-07-01,NA,NA,NA,Tidal Energy,-70.3158,41.3069,Inactive Project
+RITE,1,Project Length,2002-09-09,2021-02-08,NA,NA,NA,Tidal Energy,-73.94,40.77056,Active Project
+Western Passage,21,Project Length,2006-05-30,2021-02-08,NA,NA,NA,Tidal Energy,-66.98717,44.92047,Active Project
+CalWave,14,Project Length,2014-12-01,2016-12-01,NA,NA,NA,Wave Energy,-120.4285,34.38064,Inactive Project
+Camp Rilea,13,Project Length,2015-01-01,2016-01-01,NA,NA,NA,Wave Energy,-123.9678,46.11705,Inactive Project
+Duck,9,Project Length,2012-12-01,2013-01-31,NA,NA,NA,Wave Energy,-75.74979,36.18202,Inactive Project
+Jeanette's Pier,8,Project Length,2011-01-01,2021-02-08,NA,NA,NA,Wave Energy,-75.5933,35.9119,Active Project
+OPT Reedsport,19,Project Length,2006-07-14,2012-08-13,NA,NA,NA,Wave Energy,-124.23806,43.7825,Inactive Project
+PacWave-N,10,Project Length,2012-07-01,2021-02-08,NA,NA,NA,Wave Energy,-124.134,44.69,Active Project
+PacWave-S,12,Project Length,2014-04-15,2021-02-08,NA,NA,NA,Wave Energy,-124.22935,44.566394,Active Project
+SeaRay,6,Project Length,2010-03-15,2012-12-01,NA,NA,NA,Wave Energy,-122.446007,47.661889,Inactive Project
+WaveConnect,4,Project Length,2008-03-13,2011-04-29,NA,NA,NA,Wave Energy,-124.2304534,40.7929942,Inactive Project
+WETS,7,Project Length,2003-01-01,2021-02-08,NA,NA,NA,Wave Energy,-157.75418,21.465886,Active Project
+Yakutat,11,Project Length,2009-12-01,2017-07-01,NA,NA,NA,Wave Energy,-139.763713,59.470604,Inactive Project
