@@ -22,6 +22,18 @@ params:
   # - Birds AND Physical Interaction AND Marine Energy
   #   26.67814, -82.84218 26.44127))
   
+  # - POLYGON ((-115.9245 32.26236, -115.9245 32.26565, -115.9206 32.26565, -115.9206
+  #             32.26236, -115.9245 32.26236))
+  # - Bats AND Birds AND Avoidance AND Current
+  # - Bats AND Birds AND Avoidance AND Marine Energy
+  # - Marine Mammals AND Noise AND Current
+  # - Marine Mammals
+  # - Fish
+  # - POLYGON ((-121.9503 33.01519, -121.9503 35.51658, -115.8711 35.51658, -115.8711
+  #             33.01519, -121.9503 33.01519))
+  # - Marine Energy
+  # - Cetaceans AND Entrapment AND Marine Energy
+  # - Cetaceans
   # title: 'Test Gen'
   # aoi_wkt: POLYGON ((-122.6833 32.35398, -122.6833 35.31737, -116.1166 35.31737, -116.1166 32.35398, -122.6833 32.35398))
   # technology: Marine Energy
@@ -31,27 +43,15 @@ params:
   # lit_ferc: no
   # spatial: yes
   # mgt_tethys: no  
-  title: test
-  aoi_wkt: 
-  # - POLYGON ((-115.9245 32.26236, -115.9245 32.26565, -115.9206 32.26565, -115.9206
-  #             32.26236, -115.9245 32.26236))
-  - POLYGON ((-121.9503 33.01519, -121.9503 35.51658, -115.8711 35.51658, -115.8711
-              33.01519, -121.9503 33.01519))
-  technology:
-  - Marine Energy
-  lit_queries:
-  # - Bats AND Birds AND Avoidance AND Current
-  # - Bats AND Birds AND Avoidance AND Marine Energy
-  # - Marine Mammals AND Noise AND Current
-  - Cetaceans AND Entrapment AND Marine Energy
-  spatial_receptors:
-  # - Marine Mammals
-  # - Fish
-  - Cetaceans
-  lit_tethys: yes
-  lit_ferc: no
-  spatial: yes
-  mgt_tethys: no 
+  # title: test
+  # aoi_wkt: 
+  # technology:
+  # lit_queries:
+  # spatial_receptors:
+  # lit_tethys: yes
+  # lit_ferc: no
+  # spatial: yes
+  # mgt_tethys: no 
   # technology: Marine Energy (General)
   # aoi_wkt: POLYGON ((-82.84218 26.44127, -81.89644 24.29934, -78.92945 24.86505, -78.89557
   # lit_queries: null
@@ -71,19 +71,33 @@ params:
   # lit_ferc: false
   # spatial: true
   # mgt_tethys: false
+  title: Kerry's NY/MA Home Tidal Zone
+  aoi_wkt: POLYGON ((-72.33398 41.01307, -70.5542 43.96119, -65.78613 43.69171, -70.68604
+    40.43022, -72.33398 41.01307))
+  technology: Current
+  lit_queries:
+  - Fish AND Collision AND Current
+  - Fish AND Habitat Change AND Current
+  spatial_receptors:
+  - Fish
+  - Fish
+  lit_tethys: yes
+  lit_ferc: null
+  spatial: yes
+  mgt_tethys: ~  
 output:
-  html_document:
-    toc: true
-    toc_depth: 4
-    toc_float: true
-    number_sections: true
-    mathjax: null
   pdf_document:
     toc: true
     toc_depth: 4
     number_sections: true
     #keep_md: yes
     latex_engine: xelatex
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float: true
+    number_sections: true
+    mathjax: null
   word_document:
     toc: true
     toc_depth: 4
