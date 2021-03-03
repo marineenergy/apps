@@ -139,14 +139,18 @@ shp2db <- function(shp, tbl, redo = F){
 
 datasets_gsheet2db <- function(tbl = "datasets", redo = T){
   # tbl = "datasets" OR "datasets_mc"
+  # tbl = "datasets"; redo = T
   
   # datasets_marinecadastre.gov.csv - Google Sheet
   #   edit online: https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=0
   gid <- "1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ"
   csv <- glue("https://docs.google.com/spreadsheets/d/{gid}/gviz/tq?tqx=out:csv&sheet={tbl}")
   
-  d <- read_csv(csv) %>% 
-    select(-starts_with("X"))
+  d <- read_csv(csv, col_types = cols()) %>% 
+    select(-starts_with("X")) %>% 
+    filter(!is.na(code)) %>% 
+    mutate(across(is.logical, replace_na, F))
+  d
   
   if (!tbl %in% dbListTables(con) | redo)
     dbWriteTable(con, tbl, d, overwrite=T)
@@ -162,6 +166,7 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kab
   # dataset_code = "cetacean-bia"; aoi_wkt = params$aoi_wkt
   # dataset_code = "efh"; aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
   # dataset_code = "cetacean-bia";
+  # dataset_code = "cetacean-pacific-summer"; aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
   # params <- yaml::yaml.load("
   # title: Testing
   # aoi_wkt:
@@ -177,6 +182,7 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kab
   
   # dataset_code='monuments'
   # aoi_wkt='POLYGON ((-180.0668 16.98081, -180.0668 29.87807, -153.4797 29.87807, -153.4797 16.98081, -180.0668 16.98081))'
+  
   
   message(glue("tab..._shp_within_aoi(dataset_code='{dataset_code}', aoi_wkt='{paste(aoi_wkt, collapse=';')}')"))
   
@@ -201,6 +207,12 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kab
   # TODO
   #    Add conditional to check if ds$summarize_r
   #    Drop geometry column in x_df?
+  
+  # DEBUG, TODO: turn off this manual override for https://github.com/mhk-env/mhk-env_api/issues/4
+  if (dataset_code == "cetacean-pacific-summer")
+    ds$st_intersection = F
+  sql_intersection <- ifelse(ds$st_intersection,'ST_INTERSECTION','ST_INTERSECTS')
+  
   if (!is.na(ds$summarize_sql)){
     x_df <- dbGetQuery(
       con,
@@ -210,7 +222,7 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kab
             select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom ),
           tmp_aoi as (
             {ds$select_sql} as ds
-            inner join tmp_selarea on ST_INTERSECTS(ds.geometry, tmp_selarea.geom) )
+            inner join tmp_selarea on {sql_intersection}(ds.geometry, tmp_selarea.geom) )
          {ds$summarize_sql}
          "))
   } else {
@@ -220,7 +232,7 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kab
           tmp_selarea as (
             select ST_BUFFER({aoi_sql}, {ds$buffer_nm} * 1852) as geom)
           {ds$select_sql} as ds
-          inner join tmp_selarea on ST_INTERSECTS(ds.geometry, tmp_selarea.geom )
+          inner join tmp_selarea on {sql_intersection}(ds.geometry, tmp_selarea.geom )
           "))
     x_df <- st_drop_geometry(x_sf)
     
