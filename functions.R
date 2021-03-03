@@ -151,19 +151,16 @@ datasets_gsheet2db <- function(tbl = "datasets", redo = T){
   if (!tbl %in% dbListTables(con) | redo)
     dbWriteTable(con, tbl, d, overwrite=T)
 }
-# datasets_gsheet2db()
-
+# datasets_gsheet2db(redo=T)
 
 tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kable"){
-  # summarize shapefile dataset from area of interest
+  # summarize shapefile dataset from area of interest, with temporary in-memory query (Common Table Expressions; vs on disk temp tables)
   
   # TODO: pull from db: https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=936111013
-  # datasets_gsheet2db()
+  # datasets_gsheet2db(redo = T)
   
   # dataset_code = "cetacean-bia"; aoi_wkt = params$aoi_wkt
   # dataset_code = "efh"; aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
-  message(glue("tab..._shp_within_aoi(dataset_code='{dataset_code}', aoi_wkt='{paste(aoi_wkt, collapse=';')}')"))
-
   # dataset_code = "cetacean-bia";
   # params <- yaml::yaml.load("
   # title: Testing
@@ -181,12 +178,11 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kab
   # dataset_code='monuments'
   # aoi_wkt='POLYGON ((-180.0668 16.98081, -180.0668 29.87807, -153.4797 29.87807, -153.4797 16.98081, -180.0668 16.98081))'
   
+  message(glue("tab..._shp_within_aoi(dataset_code='{dataset_code}', aoi_wkt='{paste(aoi_wkt, collapse=';')}')"))
+  
   if (is.null(aoi_wkt))
     return("Please draw a Location to get a summary of the intersecting features for this dataset.")
-
-  # if (length(aoi_wkt) > 1)
-  #   return("Please draw only ONE polygon to get a summary of the intersecting features for this dataset.")
-    
+  
   ds <- tbl(con, "datasets") %>% 
     filter(code == !!dataset_code) %>% 
     replace_na(list(buffer_nm = 0)) %>% 
@@ -194,36 +190,43 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kab
   
   if (length(aoi_wkt) > 1){
     aoi_wkts <- glue("'SRID=4326;{aoi_wkt}'::geometry")
-    #aoi_sql  <- glue("ST_COLLECT(\n{paste(aoi_wkts, collapse=',\n')})")
-    aoi_sql  <- glue("ST_COLLECT(\n{paste(aoi_wkts, collapse=',\n')})")
-    # cat(aoi_sql)
+    aoi_sql  <- glue("ST_COLLECT(\n{paste(aoi_wkts, collapse=',\n')})") # Is this recreating the ST_COLLECT statement
+    # for every item in <aoi_wkt> array?
   } else {
-    aoi_sql <- glue("'SRID=4326;{aoi_wkt}'")
-    # aoi_sql <- glue("'SRID=4326;{aoi_wkt[2]}'")
+    # aoi_sql <- glue("'SRID=4326;{aoi_wkt}'")
+    aoi_sql <- glue("'SRID=4326;{aoi_wkt}'::geometry")
   }
-
   
-  dbSendQuery(con, glue("DROP TABLE IF EXISTS tmp_aoi CASCADE;"))
+  # Use CTE instead of temporary tables
+  # TODO
+  #    Add conditional to check if ds$summarize_r
+  #    Drop geometry column in x_df?
   if (!is.na(ds$summarize_sql)){
-    sql_intersection <- glue("
-      {ds$select_sql} AS ds
-      WHERE ST_DWithin(Geography(ds.geometry), {aoi_sql}, {ds$buffer_nm} * 1852);")
-    dbExecute(con, glue("CREATE TEMPORARY TABLE tmp_aoi AS {sql_intersection};"))
-    # sql_summarize <- "SELECT sitename_l AS Species, string_agg(lifestage, ', ') AS Lifestage FROM tmp_aoi GROUP BY sitename_l"
-    # sql_summarize <- "SELECT * FROM tmp_aoi"
-    #cat(ds$summarize_sql)
-    x_df <- dbGetQuery(con, ds$summarize_sql)
+    x_df <- dbGetQuery(
+      con,
+      glue("
+        with 
+          tmp_selarea as (
+            select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom ),
+          tmp_aoi as (
+            {ds$select_sql} as ds
+            inner join tmp_selarea on ST_INTERSECTS(ds.geometry, tmp_selarea.geom) )
+         {ds$summarize_sql}
+         "))
   } else {
-    x_sql <- glue("
-      {ds$select_sql} AS ds
-      WHERE ST_DWithin(Geography(ds.geometry), {aoi_sql}, {ds$buffer_nm} * 1852);")
-    x_sf <- st_read(con, query = x_sql)
+    x_sf <- st_read(
+      con, query = glue("
+        with 
+          tmp_selarea as (
+            select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom)
+          {ds$select_sql} as ds
+          inner join tmp_selarea on ST_INTERSECTS(ds.geometry, tmp_selarea.geom )
+          "))
     x_df <- st_drop_geometry(x_sf)
     
     if (!is.na(ds$summarize_r))
       eval(parse(text=ds$summarize_r))
   }
-  
   if (output == "tibble"){
     return(x_df)
   }
@@ -232,7 +235,7 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kab
     ds$buffer_nm == 0,
     glue("\n\nSpatial: within site", .trim = F),
     glue("\n\nSpatial: within {ds$buffer_nm} nautical miles of site", .trim = F))
-
+  
   if (knitr::is_html_output()){
     x_caption <- HTML(markdownToHTML(
       text = glue("Source: [{ds$src_name}]({ds$src_url}){x_spatial}"),
@@ -253,7 +256,6 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kab
   
   tbl
 }
-
 tabulate_tethys_literature_from_tags <- function(tags){
   
   # tags <- params$stressors[1]

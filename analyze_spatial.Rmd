@@ -4,6 +4,8 @@ output:
   html_document:
     toc: true
     number_sections: true
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=F}
@@ -379,3 +381,65 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kab
   tbl
 }
 ```
+
+
+# Speed Testing
+
+Gathered from `/share/github/mhk-env_shiny-apps/logging_tmp.txt`:
+
+```yaml
+title: Spatial Speed Test
+aoi_wkt: POLYGON ((-122.0821 33.74988, -118.3637 32.54795, -117.1548 34.66526, -120.5
+  35.57111, -122.0821 33.74988))
+technology: Marine Energy
+lit_queries:
+- Fish AND Marine Energy
+- Marine Mammals AND Marine Energy
+spatial_receptors:
+- Fish
+- Marine Mammals
+lit_tethys: yes
+lit_ferc: ~
+spatial: yes
+mgt_tethys: ~
+```
+
+```{r}
+source("functions.R")
+
+params <- list(
+  spatial_receptors = c("Fish", "Marine Mammals"),
+  aoi_wkt           = "POLYGON ((-122.0821 33.74988, -118.3637 32.54795, -117.1548 34.66526, -120.5
+  35.57111, -122.0821 33.74988))")
+
+datasets <- tbl(con, "datasets") %>% 
+  collect() %>%
+  filter(ready) %>% 
+  replace_na(list(buffer_km = 0)) %>% 
+  select(-notes, -issues) %>% 
+  separate_rows(tags, sep = ";") %>% 
+  rename(tag = tags) %>% 
+  mutate(
+    tag = str_trim(tag)) %>% 
+  filter(
+    tag %in% params$spatial_receptors) %>% 
+  arrange(tag, title)
+
+datasets
+
+source("functions.R")
+system.time({
+  for (i in 1:nrow(datasets)){
+    message(glue("dataset: {datasets$code[i]}"))
+    res <- tabulate_dataset_shp_within_aoi2(datasets$code[i], params$aoi_wkt)
+  }
+})
+# before adding datasets: hapc, cetacean-pacific-summer
+#   tabulate_dataset_shp_within_aoi: 10.498 12.029 10.846 
+#   tabulate_dataset_shp_within_aoi2: 0.551 0.555
+# after adding datasets: hapc, cetacean-pacific-summer
+#   tabulate_dataset_shp_within_aoi: 36.069 35.531
+#   tabulate_dataset_shp_within_aoi2: 2.849 2.236
+```
+
+20x improvement!
