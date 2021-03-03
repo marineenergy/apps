@@ -156,7 +156,7 @@ datasets_gsheet2db <- function(tbl = "datasets", redo = T){
 tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kable"){
   # summarize shapefile dataset from area of interest, with temporary in-memory query (Common Table Expressions; vs on disk temp tables)
   
-  # TODO: pull from db: https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=936111013
+  # TODO: pull latest datasets: https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=936111013
   # datasets_gsheet2db(redo = T)
   
   # dataset_code = "cetacean-bia"; aoi_wkt = params$aoi_wkt
@@ -218,7 +218,7 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kab
       con, query = glue("
         with 
           tmp_selarea as (
-            select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom)
+            select ST_BUFFER({aoi_sql}, {ds$buffer_nm} * 1852) as geom)
           {ds$select_sql} as ds
           inner join tmp_selarea on ST_INTERSECTS(ds.geometry, tmp_selarea.geom )
           "))
