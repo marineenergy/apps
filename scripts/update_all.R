@@ -2,9 +2,17 @@ if (!require(librarian)){
   install.packages("librarian")
   library(librarian)
 }
-shelf(crosstalk, dplyr, DT, here, jsonlite, listviewer, purrr, timelyportfolio/reactR, readr, rvest, tibble, tidyjson)
+shelf(
+  dplyr, 
+  DT, 
+  here, 
+  jsonlite, 
+  purrr, 
+  rvest, 
+  tibble, 
+  tidyjson)
 
-source("functions.R") # connection object
+source(here("functions.R")) # connection object
 
 # update db tables tethys_pubs, tethys_pub_tags; data/tethys_docs.[json|csv]
 update_tethys_docs()
@@ -22,7 +30,7 @@ update_tethys_intxns()
 update_project_sites()
 
 # update data/project_permits.csv, data/project_times.csv
-update_project_timelines
+update_project_timelines()
 
 # dev cron for updating: tethys_docs, tethys_mgt, tethys_tags, tethys_intxns, ferc_docs
 

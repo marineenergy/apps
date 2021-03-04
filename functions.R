@@ -38,6 +38,7 @@ csv_mc       <- file.path(dir_mc, '_datasets.csv')
 csv_mc_paths <- file.path(dir_mc, '_datasets_paths.csv')
 
 pass <- readLines("/share/.password_mhk-env.us")
+Sys.setenv(PGPASSWORD=pass) # for psql command line
 con  <<- DBI::dbConnect(
   RPostgres::Postgres(),
   dbname   = "gis",
@@ -605,13 +606,13 @@ html_out <- function(){
 update_tethys_docs <- function(){
   # update db tables: tethys_pubs, tethys_pub_tags; plus data/tethys_docs.[json|csv]
   
-  tethys_url  <- glue("https://tethys.pnnl.gov/api/primre_export")
-  tethys_docs_json <- "data/tethys_docs.json" # TODO: rm data/tethys.json
-  tethys_docs_csv  <- "data/tethys_docs.csv"  # TODO: rm data/tethys.csv
+  tethys_docs_url  <- glue("https://tethys.pnnl.gov/api/primre_export")
+  tethys_docs_json <- here("data/tethys_docs.json") # TODO: rm data/tethys.json
+  tethys_docs_csv  <- here("data/tethys_docs.csv")  # TODO: rm data/tethys.csv
   
-  download.file(tethys_url, tethys_docs_json)
+  #download.file(tethys_docs_url, tethys_docs_json)
   
-  tethys <- read_json(tethys_json)
+  tethys <- read_json(tethys_docs_json)
   tethys_content <- tethys[["..JSON"]][[1]]
   
   tethys_uris <- map_chr(tethys_content, "URI")
@@ -625,23 +626,21 @@ update_tethys_docs <- function(){
   
   # TODO: run once, so check if table exists
   # TODO: rename table tethys_pubs -> tethys_docs and read fxns in Shiny report app
-  sql <- glue("
-  CREATE TABLE tethys_pubs (
-	  uri text NOT NULL PRIMARY KEY,
-	  data json NOT NULL
-  );")
-  dbExecute(con, sql)
+#   sql <- glue("
+#   CREATE TABLE tethys_pubs (
+# 	  uri text NOT NULL PRIMARY KEY,
+# 	  data json NOT NULL
+#   );")
+#   dbExecute(con, sql)
   
   dbExecute(con, "DELETE FROM tethys_pubs;")
   
-  # # run once in Terminal to install software and test connection to database:
-  # sudo apt-get update; sudo apt-get install postgresql-client
-  # psql -h postgis -p 5432 -U admin gis
-  # # use this password when prompted
-  # cat /share/.password_mhk-env.us
-  # path_csv='/share/github/mhk-env_shiny-apps/data/tethys.csv'
-  # TODO: check cmd works, providing password however possible
-  cmd <- glue('cat ${tethys_docs_csv} | psql -h postgis -p 5432 -U admin -c "COPY tethys_pubs (uri, data) FROM STDIN WITH (FORMAT CSV, HEADER TRUE);" gis')
+  # run once in Terminal to install software and test connection to database:
+  #   sudo apt-get update; sudo apt-get install postgresql-client
+  # pgpassword set at top:
+  #   pass <- readLines("/share/.password_mhk-env.us")
+  #   Sys.setenv(PGPASSWORD=pass) # for psql command line
+  cmd <- glue('cat {tethys_docs_csv} | psql -h postgis -p 5432 -U admin -c "COPY tethys_pubs (uri, data) FROM STDIN WITH (FORMAT CSV, HEADER TRUE);" gis')
   system(cmd)
   
   # update tables for easier querying
@@ -659,7 +658,6 @@ update_tethys_docs <- function(){
   # docs %>% head(10) %>% View()
   
   # TODO: evaluate counts of tags, esp. "Environment"
-  
   doc_tags <- dbGetQuery(
     con, 
     "SELECT 
@@ -675,7 +673,7 @@ update_tethys_docs <- function(){
     tibble()
   
   # TODO: rename table tethys_pub_tags -> tethys_doc_tags and read fxns in Shiny report app
-  dbWriteTable(con, "tethys_pub_tags", doc_tags)
+  dbWriteTable(con, "tethys_pub_tags", doc_tags, overwrite=T)
   # doc_tags # 14,505 rows
   # doc_tags # 16,034 rows after UNION
   
@@ -770,7 +768,7 @@ update_tethys_tags <- function(){
 }
 
 
-update_tethys_intxns <- function(){
+update_tethys_intxns <- function(verbose=F){
   
   tethys_pfx <- "https://tethys.pnnl.gov/knowledge-base-marine-energy"
   tags_csv   <- here("data/tethys_tags.csv")
@@ -780,7 +778,8 @@ update_tethys_intxns <- function(){
     # url = "https://tethys.pnnl.gov/knowledge-base-marine-energy?f[0]=receptor:280&f[1]=stressor:355"
     
     #if (url == "https://tethys.pnnl.gov/knowledge-base-marine-energy?f[0]=receptor:284&f[1]=stressor:531") browser()
-    message(glue("url: {url}"))
+    if (verbose)
+      message(glue("url: {url}"))
     
     tbls <- read_html(url) %>% 
       html_table() 
@@ -851,7 +850,7 @@ update_project_sites <- function(){
   md2html <- function(x){
     markdownToHTML(text = x, fragment.only = T)}
   
-  d <- readr::read_csv(csv_url) %>% 
+  d <- readr::read_csv(csv_url, col_types = cols()) %>% 
     select(-starts_with("X"))
   
   d_xy <- d %>% 
@@ -918,7 +917,7 @@ update_project_timelines <- function(){
   #get the data
   csv_key <- "1HC5hXyi2RQSHevnV7rvyk748U5-X3iUw70ewHEfrHm0"
   csv_url <- glue::glue("https://docs.google.com/spreadsheets/d/{csv_key}/gviz/tq?tqx=out:csv&sheet=0")
-  d <- readr::read_csv(csv_url) %>% 
+  d <- readr::read_csv(csv_url, col_types = cols()) %>% 
     select(-starts_with("X"))
   
   #sort data by permit type
