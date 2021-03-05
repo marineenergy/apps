@@ -443,3 +443,125 @@ system.time({
 ```
 
 20x improvement!
+
+
+
+# Intersects vs Intersection
+
+This was a pain to figure out.
+
+ST_Area(geometry) for SRID:4326 returns area in square meters.
+
+```{r intersection_intersects}
+if (!require(librarian)){
+  remotes::install_github("DesiQuintans/librarian")
+  library(librarian)
+}
+shelf(
+  # database
+  DBI, RPostgres,
+  # spatial
+  ggmap, leaflet,
+  r-spatial/mapview, # https://github.com/r-spatial/mapview/issues/324
+  sf, sp,
+  # scrape
+  rvest,
+  # tidyverse
+  dplyr, purrr, readr, tibble, tidyr,
+  # someday
+  # googledrive, zeallot,
+  # report
+  DT, gt, htmltools, htmlwidgets, kableExtra, knitr, markdown, rmarkdown, shiny, webshot,
+  # utility
+  fs, glue, here, png, scales, stringr, urltools)
+here <- here::here
+
+
+pass <- readLines("/share/.password_mhk-env.us")
+con = dbConnect(
+  RPostgres::Postgres(),
+  dbname   = "gis",
+  host     = "marineenergy.app",
+  port     = 5432,
+  user     = "admin",
+  password = pass
+)
+
+
+x_df <- dbGetQuery(con,
+          glue("with 
+  tmp_selarea as (
+  select ST_BUFFER(
+    st_collect(
+  	'SRID=4326;
+  	 POLYGON ((-123.99169921875 43.89789239125797, 
+  		-124.91455078125 43.18114705939968, 
+  		-125.52978515625001 43.46886761482925, 
+  		-125.44189453125 42.84375132629021, 
+  		-125.96923828125 42.5530802889558, 
+  		-125.88134765625 42.09822241118974, 
+  		-125.0244140625 42.24478535602799, 
+  		-124.91455078125 42.65012181368022, 
+  		-124.47509765625 42.5530802889558, 
+  		-124.07958984375001 42.84375132629021, 
+  		-123.99169921875 43.89789239125797))'::geometry),
+  	0) as geom ),
+  
+  
+  tmp_seldata as (
+    select
+      unnest(
+        array['Blue whale', 'Fin whale', 'Berardius', 'Short-beaked common dolphin',
+                  'Rissos dolphin', 'Pacific white-sidded dolphin', 'Northern right whale dolphin', 'Humpback whale',
+                  'Dalls porpoise', 'Sperm whale', 'Striped dolphin', 'Small beaked whale']
+        ) as common_name,
+      unnest(
+        array['Balaenoptera musculus', 'Balaenoptera physalus', 'Berardius', 'Delphinus delphis',
+                  'Grampus griseus', 'Lagenorhynchus obliquidens', 'Lissodelphis borealis', 'Megaptera novaeangliae',
+                  'Phocoenoides dalli', 'Physeter macrocephalus', 'Stenella coeruleoalba', 'Ziphius and Mesoplodon']
+        ) as taxon,
+      unnest(
+        array[bmu_i_u_d, bph_r_u_d, bba_r_u_d, dde_i_u_d, 
+                  ggr_r_u_d, lob_i_u_d, lbo_i_u_d, mno_r_u_d, 
+                  pda_i_u_d, pma_i_u_d, sco_r_u_d, zsm_r_u_d]
+        ) as avg_density,
+    	geometry,
+    	st_intersection(ds.geometry, tmp_selarea.geom) as area_int
+    from 
+      shp_serdp_swfsc_cce as ds, tmp_selarea
+    where 
+      st_intersects(ds.geometry, tmp_selarea.geom)
+  ),
+  
+  
+  tmp_aoi as (
+    select
+    	common_name,
+    	taxon,
+    	ds.geometry,
+    	ds.area_int,
+    	st_area(ds.geometry::geography) as intersects_area_sq_m, -- whole features
+    	st_area(ds.area_int::geography) as intersection_area_sq_m, -- clipped features
+    	st_area(tmp_selarea.geom::geography) as aoi_area_sq_m, -- area of interest
+    	100 * (st_area(ds.area_int::geography) / st_area(ds.geometry::geography)) as pct_overlap, -- percent of feature that remains after intersection
+    	avg_density, -- feature density value
+    	avg_density * (st_area(ds.area_int::geography) / st_area(ds.geometry::geography)) as new_avg_density -- area weighted density
+    from 
+      tmp_seldata as ds, tmp_selarea
+  )
+  
+  
+  select 
+    common_name, taxon, sum(avg_density) as avg_density, sum(new_avg_density) as area_weighted_avg_density
+  from
+    tmp_aoi
+  group by 
+    common_name, taxon
+  order by
+    common_name, taxon
+  "))
+
+x_df
+```
+
+# Next stop - simplify and generalize in R
