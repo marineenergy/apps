@@ -10,6 +10,7 @@ editor_options:
 
 ```{r setup, include=F}
 library(DBI)
+pass <- readLines("/share/.password_mhk-env.us")
 db = dbConnect(
   RPostgres::Postgres(),
   dbname   = "gis",
@@ -526,7 +527,7 @@ x_df <- dbGetQuery(con,
                   pda_i_u_d, pma_i_u_d, sco_r_u_d, zsm_r_u_d]
         ) as avg_density,
     	geometry,
-    	st_intersection(ds.geometry, tmp_selarea.geom) as area_int
+    	st_intersection(ds.geometry, tmp_selarea.geom) as ixn_msq
     from 
       shp_serdp_swfsc_cce as ds, tmp_selarea
     where 
@@ -534,15 +535,15 @@ x_df <- dbGetQuery(con,
   ),
   
   
-  tmp_aoi as (
+  tmp_ixn as (
     select
     	common_name,
     	taxon,
     	ds.geometry,
     	ds.area_int,
-    	st_area(ds.geometry::geography) as intersects_area_sq_m, -- whole features
-    	st_area(ds.area_int::geography) as intersection_area_sq_m, -- clipped features
-    	st_area(tmp_selarea.geom::geography) as aoi_area_sq_m, -- area of interest
+    	st_area(ds.geometry::geography) as ixs_msq,   -- whole features
+    	st_area(ds.area_int::geography) as ixn_msq, -- clipped features
+    	st_area(tmp_selarea.geom::geography) as aoi_msq,     -- area of interest
     	100 * (st_area(ds.area_int::geography) / st_area(ds.geometry::geography)) as pct_overlap, -- percent of feature that remains after intersection
     	avg_density, -- feature density value
     	avg_density * (st_area(ds.area_int::geography) / st_area(ds.geometry::geography)) as new_avg_density -- area weighted density
@@ -554,7 +555,7 @@ x_df <- dbGetQuery(con,
   select 
     common_name, taxon, sum(avg_density) as avg_density, sum(new_avg_density) as area_weighted_avg_density
   from
-    tmp_aoi
+    tmp_ixn
   group by 
     common_name, taxon
   order by
