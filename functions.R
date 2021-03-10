@@ -823,7 +823,7 @@ update_tethys_intxns <- function(verbose=F){
 
 update_project_sites <- function(){
   
-  shelf(
+  librarian::shelf(
     dplyr, glue, here, htmltools, markdown, purrr, readr, sf, stringr)
   
   
@@ -848,10 +848,13 @@ update_project_sites <- function(){
     "Re-License Issued")
   
   md2html <- function(x){
-    markdownToHTML(text = x, fragment.only = T)}
+    markdownToHTML(text = x, fragment.only = T, options = c())}
   
   d <- readr::read_csv(csv_url, col_types = cols()) %>% 
     select(-starts_with("X"))
+  
+  # d <- d %>%
+  #   mutate(date_end = ifelse(date_end == "3/10/2021", "3/4/2021", date_end))
   
   d_xy <- d %>% 
     filter(!is.na(longitude), !is.na(latitude)) %>% 
@@ -895,6 +898,10 @@ update_project_sites <- function(){
       popup_html = map_chr(popup_md, md2html)) %>% 
     st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = F) %>% 
     arrange(project_name)
+  
+  # sites %>%
+  #   filter(project_name == "WETS") %>%
+  #   select(project_name, popup_md, popup_html)
   
   write_csv(sites, sites_csv)
 }
