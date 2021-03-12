@@ -5,7 +5,7 @@ tagList(
   useShinyjs(),
   use_waiter(),
   # TODO: place Tour bttn
-  # actionButton("tour", "Tour the app", icon = icon("question-circle")),
+  actionButton("tour", "Tour the app", icon = icon("question-circle")),
   
   navbarPage(
     windowTitle = "MarineEnergy.app",
@@ -37,7 +37,7 @@ tagList(
       
     tabPanel(
       "Configure",
-      tags$p('The Report tool allows users to search Marine Energy literature and spatial information by geography, and generate a report of your search. The tool is separated into functional tabs described below.'),
+      helpText('The Report tool allows users to search Marine Energy literature and spatial information by geography, and generate a report of your search. The tool is separated into functional tabs described below.'),
       tabsetPanel(
         id = "tabConfigure",
         # introBox(),
@@ -45,8 +45,8 @@ tagList(
         # data.intro = "Select."),
         tabPanel(
           "Location",
-          tags$p('This tab lets users develop queries for their report. To develop a query based on geographic area of interest,  select the "polygon" or "rectangle" icon in the menu bar to the left of the map. Using either tool, create a boundary around the location of interest. If there are multiple locations of interest, complete the boundaries of one location before starting the next. To adjust the shape of the boundary, select the "layer" icon and edit points as necessary. To delete a shape, select the "delete" icon, followed by the shape.'),
-          tags$p('Once the desired shape has been created, navigate to the "Tags" tab to choose the receptors, stressors, and technology of interest.')
+          helpText('This tab lets users develop queries for their report. To develop a query based on geographic area of interest,  select the "polygon" or "rectangle" icon in the menu bar to the left of the map. Using either tool, create a boundary around the location of interest. If there are multiple locations of interest, complete the boundaries of one location before starting the next. To adjust the shape of the boundary, select the "layer" icon and edit points as necessary. To delete a shape, select the "delete" icon, followed by the shape.'),
+          helpText('Once the desired shape has been created, navigate to the "Tags" tab to choose the receptors, stressors, and technology of interest.')
           ,
           fluidRow(
             box(
@@ -62,8 +62,8 @@ tagList(
         
         tabPanel(
           "Tags",
-          tags$p('Select the receptors, stressors, and technology that you would like to query for the geography selected. Note that only one option can be selected in the "Technology" form field at a time. Once the desired combination of receptors, stressors, and technology have been chosen, select the "Add Stressor/Receptor" button to add that tag combination to the list of queries. You may add as many queries to the list as you like. If there\'s interest to query additional combinations, clear the form fields using the "Backspace" or "Delete" keys on the keyboard, and repeat the steps above. To query all stressor-receptor interactions in the geographic range, click the "Add ALL Stressor-Receptor Interactions" button located above the "Stressor" form field.'),
-          tags$p('Once all queries have been added, navigate to the "Literature" or "Spatial" tab to see a summary of the literature and spatial results. A more detailed compilation of that information will be provided in the report.')
+          helpText('Select the receptors, stressors, and technology that you would like to query for the geography selected. Note that only one option can be selected in the "Technology" form field at a time. Once the desired combination of receptors, stressors, and technology have been chosen, select the "Add Stressor/Receptor" button to add that tag combination to the list of queries. You may add as many queries to the list as you like. If there\'s interest to query additional combinations, clear the form fields using the "Backspace" or "Delete" keys on the keyboard, and repeat the steps above. To query all stressor-receptor interactions in the geographic range, click the "Add ALL Stressor-Receptor Interactions" button located above the "Stressor" form field.'),
+          helpText('Once all queries have been added, navigate to the "Literature" or "Spatial" tab to see a summary of the literature and spatial results. A more detailed compilation of that information will be provided in the report.')
           ,
           
           fluidRow(
@@ -121,12 +121,12 @@ tagList(
     
     tabPanel(
       "Literature",
-      tags$p('Below is the available literature based on the selected tags for stressor, receptor, and technology. Click a link to access the literature.'),
+      helpText('Below is the available literature based on the selected tags for stressor, receptor, and technology. Click a link to access the literature.'),
       DTOutput("tblLiterature")),
     
     tabPanel(
       "Spatial",
-      tags$p('Below is a summary of the available spatial information for the selected geography, and receptor, stressor, and technology tags.'),
+      helpText('Below is a summary of the available spatial information for the selected geography, and receptor, stressor, and technology tags.'),
       
       DTOutput("tblSpatial"),
       
@@ -139,13 +139,13 @@ tagList(
     
     tabPanel(
       "Reports",
-      tags$p('Generate a Report of the selected geography, and receptor, stressor, and technology tags.'),
+      helpText('Generate a Report of the selected geography, and receptor, stressor, and technology tags.'),
       introBox(
         textInput(
           "txtTitle", "Report Title: create a title for your report and enter it here."),
         data.step  = 8,
         data.intro = "Enter title of your custom report."),
-      tags$p("Select whether you would like literature or spatial information included in the report, or both:"),
+      helpText("Select whether you would like literature or spatial information included in the report, or both:"),
       introBox(
         checkboxInput("ckboxLitTethys"       , "Literature"             , value = T),
         data.step  = 9,
@@ -159,7 +159,7 @@ tagList(
       #   checkboxInput("ckboxLitFERC"       , "Literature from FERC")),
       # disabled(
       #   checkboxInput("ckboxMgtTethys"     , "Management measures from Tethys")),
-      tags$p('Select the download file type here:'),
+      helpText('Select the download file type here:'),
       introBox(
         dropdownButton(
           label = 'Download Report', icon=icon('file-o'), circle=F, size='sm',
