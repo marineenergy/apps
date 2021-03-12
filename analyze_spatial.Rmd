@@ -565,4 +565,203 @@ x_df <- dbGetQuery(con,
 x_df
 ```
 
-# Next stop - simplify and generalize in R
+
+---
+
+
+# Generalize CTE
+```{r generalize_cte, eval=F, class.source='fold-show'}
+
+  if (ds$st_intersection = T){
+    # Add st_intersection() to data selection query by finding the "geometry"
+    #  column and appending st_intersection()
+    selsql <- str_replace({ds$select_sql}, 'geometry', 'geometry, st_intersection(ds.geometry, tmp_selarea.geom) as ixn ')
+    
+    x_df <- dbGetQuery(con,
+              glue("with
+                      tmp_selarea as (
+                        select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom
+                      ),
+                      tmp_aoi as (
+                        {selsql} as ds, tmp_selarea
+                        where st_intersects(ds.geometry, tmp_selarea.geom)
+                      )
+                    {ds$summarize_sql}
+                    "))
+  } else {
+    if (!is.na(ds$sumarize_sql)){
+      x_df <- dbGetQuery(con,
+                glue("with 
+                      tmp_selarea as (
+                        select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom
+                      )
+                      {ds$select_sql} as ds
+                      inner join tmp_selarea on ST_INTERSECTS(ds.geometry, tmp_selarea.geom)
+                      "))
+    } else {
+      x_df <- dbGetQuery(con,
+                glue("with 
+                      tmp_selarea as (
+                        select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom
+                      ),
+                      tmp_aoi as (
+                        {ds$select_sql} as ds
+                        inner join tmp_selarea on ST_INTERSECTS(ds.geometry, tmp_selarea.geom)
+                      )
+                     {ds$summarize_sql}
+                     "))
+    }
+  }
+
+```
+
+
+# Test Generalize CTE
+```{r test_generalized_cte, eval=F, class.source='fold-show'}
+tabulate_dataset_shp_within_aoi3 <- function(dataset_code, aoi_wkt, output = "kable"){
+  # summarize shapefile dataset from area of interest
+
+  message(glue("tab..._shp_within_aoi(dataset_code='{dataset_code}', aoi_wkt='{paste(aoi_wkt, collapse=';')}')"))
+
+  if (is.null(aoi_wkt))
+    return("Please draw a Location to get a summary of the intersecting features for this dataset.")
+
+  ds <- tbl(con, "datasets") %>% 
+    filter(code == !!dataset_code) %>% 
+    replace_na(list(buffer_nm = 0)) %>% 
+    collect()
+  
+  if (length(aoi_wkt) > 1){
+    aoi_wkts <- glue("'SRID=4326;{aoi_wkt}'::geometry")
+    aoi_sql  <- glue("ST_COLLECT(\n{paste(aoi_wkts, collapse=',\n')})") # Is this recreating the ST_COLLECT statement
+                                                                        # for every item in <aoi_wkt> array?
+  } else {
+    # aoi_sql <- glue("'SRID=4326;{aoi_wkt}'")
+    aoi_sql <- glue("'SRID=4326;{aoi_wkt}'::geometry")
+  }
+
+  # Use CTE instead of temporary tables
+  # TODO
+  #    Add conditional to check if ds$summarize_r
+  #    Drop geometry column in x_df?
+  
+  if (isTRUE(ds$st_intersection)){
+    # Add st_intersection() to data selection query by finding the "geometry"
+    #  column and appending st_intersection()
+    selsql <- str_replace({ds$select_sql}, 'geometry', 'geometry, st_intersection(ds.geometry, tmp_selarea.geom) as ixn ')
+    
+    x_df <- dbGetQuery(con,
+              glue("with
+                      tmp_selarea as (
+                        select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom
+                      ),
+                      tmp_aoi as (
+                        {selsql} as ds, tmp_selarea
+                        where st_intersects(ds.geometry, tmp_selarea.geom)
+                      )
+                    {ds$summarize_sql}
+                    "))
+  } else {
+    if (!is.na(ds$summarize_sql)){
+      x_df <- dbGetQuery(
+        con,
+        glue("
+          with 
+            tmp_selarea as (
+              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom ),
+            tmp_aoi as (
+              {ds$select_sql} as ds
+              inner join tmp_selarea on st_intersects(ds.geometry, tmp_selarea.geom) )
+           {ds$summarize_sql}
+           "))
+    } else {
+      x_sf <- st_read(
+        con, query = glue("
+          with 
+            tmp_selarea as (
+              select ST_BUFFER({aoi_sql}, {ds$buffer_nm} * 1852) as geom)
+            {ds$select_sql} as ds
+            inner join tmp_selarea on st_intersects(ds.geometry, tmp_selarea.geom )
+            "))
+      x_df <- st_drop_geometry(x_sf)
+      
+      if (!is.na(ds$summarize_r))
+        eval(parse(text=ds$summarize_r))
+    }
+  }
+  if (output == "tibble"){
+    return(x_df)
+  }
+
+  x_spatial <- ifelse(
+    ds$buffer_nm == 0,
+    glue("\n\nSpatial: within site", .trim = F),
+    glue("\n\nSpatial: within {ds$buffer_nm} nautical miles of site", .trim = F))
+
+  if (knitr::is_html_output()){
+    x_caption <- HTML(markdownToHTML(
+      text = glue("Source: [{ds$src_name}]({ds$src_url}){x_spatial}"),
+      fragment.only = T))
+    
+    tbl <- x_df %>% 
+      kbl(caption = x_caption) %>%
+      kable_styling(
+        # full_width = F, position = "left", # position = "float_right"
+        bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+    
+  } else {
+    x_caption <- glue("Source: [{ds$src_name}]({ds$src_url}){x_spatial}")
+    
+    tbl <- x_df %>% 
+      kable(caption = x_caption, format = "pipe")
+  }
+  
+  tbl
+}
+```
+
+```{r testing_func}
+# source("functions.R")
+
+params <- list(
+  spatial_receptors = c("Cetaceans"),
+  aoi_wkt           = "POLYGON ((-123.99169921875 43.89789239125797, 
+  		-124.91455078125 43.18114705939968, 
+  		-125.52978515625001 43.46886761482925, 
+  		-125.44189453125 42.84375132629021, 
+  		-125.96923828125 42.5530802889558, 
+  		-125.88134765625 42.09822241118974, 
+  		-125.0244140625 42.24478535602799, 
+  		-124.91455078125 42.65012181368022, 
+  		-124.47509765625 42.5530802889558, 
+  		-124.07958984375001 42.84375132629021, 
+  		-123.99169921875 43.89789239125797))")
+
+datasets <- tbl(con, "datasets") %>% 
+  collect() %>%
+  filter(ready) %>% 
+  replace_na(list(buffer_km = 0)) %>% 
+  select(-notes, -issues) %>% 
+  separate_rows(tags, sep = ";") %>% 
+  rename(tag = tags) %>% 
+  mutate(
+    tag = str_trim(tag)) %>% 
+  filter(
+    tag %in% params$spatial_receptors) %>% 
+  arrange(tag, title)
+
+
+source("functions.R")
+
+# All datasets matching tags
+for (i in 1:nrow(datasets)){
+  message(glue("dataset: {datasets$code[i]}"))
+  res <- tabulate_dataset_shp_within_aoi3(datasets$code[i], params$aoi_wkt)
+  res
+}
+
+# First dataset matching tags
+message(glue("dataset: {datasets$code[i]}"))
+res <- tabulate_dataset_shp_within_aoi3(datasets$code[i], params$aoi_wkt)
+res
+```
