@@ -616,8 +616,8 @@ x_df
 ```
 
 
-# Test Generalize CTE
-```{r test_generalized_cte, eval=F, class.source='fold-show'}
+# tabulate_dataset_shp_within_aoi3
+```{r tabulate_dataset_shp_within_aoi3, eval=F, class.source='fold-show'}
 tabulate_dataset_shp_within_aoi3 <- function(dataset_code, aoi_wkt, output = "kable"){
   # summarize shapefile dataset from area of interest
 
