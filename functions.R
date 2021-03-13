@@ -151,14 +151,14 @@ datasets_gsheet2db <- function(tbl = "datasets", redo = T){
     select(-starts_with("X")) %>% 
     filter(!is.na(code)) %>% 
     mutate(across(is.logical, replace_na, F))
-  d
+  #d
   
   if (!tbl %in% dbListTables(con) | redo)
     dbWriteTable(con, tbl, d, overwrite=T)
 }
 # datasets_gsheet2db(redo=T)
 
-tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kable"){
+tabulate_dataset_shp_within_aoi_old <- function(dataset_code, aoi_wkt, output = "kable"){
   # summarize shapefile dataset from area of interest, with temporary in-memory query (Common Table Expressions; vs on disk temp tables)
   
   # TODO: pull latest datasets: https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=936111013
@@ -239,6 +239,123 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kab
     
     if (!is.na(ds$summarize_r))
       eval(parse(text=ds$summarize_r))
+  }
+  if (output == "tibble"){
+    return(x_df)
+  }
+  
+  x_spatial <- ifelse(
+    ds$buffer_nm == 0,
+    glue("\n\nSpatial: within site", .trim = F),
+    glue("\n\nSpatial: within {ds$buffer_nm} nautical miles of site", .trim = F))
+  
+  if (knitr::is_html_output()){
+    x_caption <- HTML(markdownToHTML(
+      text = glue("Source: [{ds$src_name}]({ds$src_url}){x_spatial}"),
+      fragment.only = T))
+    
+    tbl <- x_df %>% 
+      kbl(caption = x_caption) %>%
+      kable_styling(
+        # full_width = F, position = "left", # position = "float_right"
+        bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+    
+  } else {
+    x_caption <- glue("Source: [{ds$src_name}]({ds$src_url}){x_spatial}")
+    
+    tbl <- x_df %>% 
+      kable(caption = x_caption, format = "pipe")
+  }
+  
+  tbl
+}
+
+tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kable"){
+  # summarize shapefile dataset from area of interest
+  
+  # dataset_code = "cetacean-bia"; aoi_wkt = params$aoi_wkt; output = "kable"
+  # dataset_code = "cetacean-pacific-summer"; aoi_wkt = params$aoi_wkt; output = "kable"
+  
+  message(glue("tab..._shp_within_aoi(dataset_code='{dataset_code}', aoi_wkt='{paste(aoi_wkt, collapse=';')}')"))
+  
+  if (is.null(aoi_wkt))
+    return("Please draw a Location to get a summary of the intersecting features for this dataset.")
+  
+  ds <- tbl(con, "datasets") %>% 
+    filter(code == !!dataset_code) %>% 
+    replace_na(list(buffer_nm = 0)) %>% 
+    collect()
+  
+  if (length(aoi_wkt) > 1){
+    aoi_wkts <- glue("'SRID=4326;{aoi_wkt}'::geometry")
+    aoi_sql  <- glue("ST_COLLECT(\n{paste(aoi_wkts, collapse=',\n')})") # Is this recreating the ST_COLLECT statement
+    # for every item in <aoi_wkt> array?
+  } else {
+    # aoi_sql <- glue("'SRID=4326;{aoi_wkt}'")
+    aoi_sql <- glue("'SRID=4326;{aoi_wkt}'::geometry")
+  }
+  
+  # Different set of queries required for data sets that do or
+  #   do not need area weighted statistics 
+  if (ds$st_intersection){
+    # Area weighted statistics ARE required
+    ixn_sql <- str_replace({ds$select_sql}, 'geometry', 'geometry, st_intersection(ds.geometry, buf_aoi.geom) as ixn ')
+    
+    if (!is.na(ds$summarize_sql)){
+      x_df <- dbGetQuery(
+        con,
+        glue("
+          with
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom),
+            tmp_aoi as (
+              {ixn_sql} as ds, buf_aoi
+              where st_intersects(ds.geometry, buf_aoi.geom))
+            {ds$summarize_sql}
+          "))
+    } else {
+      x_sf <- st_read(
+        con, 
+        glue("
+          with
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom)
+            {ixn_sql} as ds, buf_aoi
+            where st_intersects(ds.geometry, buf_aoi.geom)
+          "))
+      x_df <- st_drop_geometry(x_sf)
+      
+      if (!is.na(ds$summarize_r))
+        eval(parse(text=ds$summarize_r))
+    }
+    
+  } else {
+    # Area weighted statistics NOT required
+    if (!is.na(ds$summarize_sql)){
+      x_df <- dbGetQuery(
+        con, glue("
+          with 
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom ),
+            tmp_aoi as (
+              {ds$select_sql} as ds
+              inner join buf_aoi on st_intersects(ds.geometry, buf_aoi.geom) )
+           {ds$summarize_sql}
+           "))
+    } else {
+      x_sf <- st_read(
+        con, query = glue("
+          with 
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {ds$buffer_nm} * 1852) as geom)
+            {ds$select_sql} as ds
+            inner join buf_aoi on st_intersects(ds.geometry, buf_aoi.geom )
+            "))
+      x_df <- st_drop_geometry(x_sf)
+      
+      if (!is.na(ds$summarize_r))
+        eval(parse(text=ds$summarize_r))
+    }
   }
   if (output == "tibble"){
     return(x_df)

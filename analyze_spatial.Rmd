@@ -10,7 +10,6 @@ editor_options:
 
 ```{r setup, include=F}
 library(DBI)
-pass <- readLines("/share/.password_mhk-env.us")
 db = dbConnect(
   RPostgres::Postgres(),
   dbname   = "gis",
@@ -620,6 +619,9 @@ x_df
 ```{r tabulate_dataset_shp_within_aoi3, eval=F, class.source='fold-show'}
 tabulate_dataset_shp_within_aoi3 <- function(dataset_code, aoi_wkt, output = "kable"){
   # summarize shapefile dataset from area of interest
+  
+  # dataset_code = "cetacean-bia"; aoi_wkt = params$aoi_wkt; output = "kable"
+  # dataset_code = "cetacean-pacific-summer"; aoi_wkt = params$aoi_wkt; output = "kable"
 
   message(glue("tab..._shp_within_aoi(dataset_code='{dataset_code}', aoi_wkt='{paste(aoi_wkt, collapse=';')}')"))
 
@@ -642,30 +644,32 @@ tabulate_dataset_shp_within_aoi3 <- function(dataset_code, aoi_wkt, output = "ka
 
   # Different set of queries required for data sets that do or
   #   do not need area weighted statistics 
-  if (isTRUE(ds$st_intersection)){
+  if (ds$st_intersection){
     # Area weighted statistics ARE required
-    selsql <- str_replace({ds$select_sql}, 'geometry', 'geometry, st_intersection(ds.geometry, tmp_selarea.geom) as ixn ')
+    ixn_sql <- str_replace({ds$select_sql}, 'geometry', 'geometry, st_intersection(ds.geometry, buf_aoi.geom) as ixn ')
 
     if (!is.na(ds$summarize_sql)){
-      x_df <- dbGetQuery(con,
-                glue("
-                  with
-                    tmp_selarea as (
-                      select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom),
-                    tmp_aoi as (
-                      {selsql} as ds, tmp_selarea
-                      where st_intersects(ds.geometry, tmp_selarea.geom))
-                    {ds$summarize_sql}
-                  "))
+      x_df <- dbGetQuery(
+        con,
+        glue("
+          with
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom),
+            tmp_aoi as (
+              {ixn_sql} as ds, buf_aoi
+              where st_intersects(ds.geometry, buf_aoi.geom))
+            {ds$summarize_sql}
+          "))
     } else {
       x_sf <- st_read(
-        con, query = glue("
-                with
-                  tmp_selarea as (
-                    select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom)
-                  {selsql} as ds, tmp_selarea
-                  where st_intersects(ds.geometry, tmp_selarea.geom)
-                "))
+        con, 
+        glue("
+          with
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom)
+            {ixn_sql} as ds, buf_aoi
+            where st_intersects(ds.geometry, buf_aoi.geom)
+          "))
       x_df <- st_drop_geometry(x_sf)
       
       if (!is.na(ds$summarize_r))
@@ -678,21 +682,21 @@ tabulate_dataset_shp_within_aoi3 <- function(dataset_code, aoi_wkt, output = "ka
       x_df <- dbGetQuery(
         con, glue("
           with 
-            tmp_selarea as (
+            buf_aoi as (
               select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom ),
             tmp_aoi as (
               {ds$select_sql} as ds
-              inner join tmp_selarea on st_intersects(ds.geometry, tmp_selarea.geom) )
+              inner join buf_aoi on st_intersects(ds.geometry, buf_aoi.geom) )
            {ds$summarize_sql}
            "))
     } else {
       x_sf <- st_read(
         con, query = glue("
           with 
-            tmp_selarea as (
+            buf_aoi as (
               select ST_BUFFER({aoi_sql}, {ds$buffer_nm} * 1852) as geom)
             {ds$select_sql} as ds
-            inner join tmp_selarea on st_intersects(ds.geometry, tmp_selarea.geom )
+            inner join buf_aoi on st_intersects(ds.geometry, buf_aoi.geom )
             "))
       x_df <- st_drop_geometry(x_sf)
       
@@ -733,6 +737,7 @@ tabulate_dataset_shp_within_aoi3 <- function(dataset_code, aoi_wkt, output = "ka
 
 ```{r testing_func}
 # source("functions.R")
+# datasets_gsheet2db() # update datasets table from spatial Google Sheet
 
 params <- list(
   spatial_receptors = c("Cetaceans"),
