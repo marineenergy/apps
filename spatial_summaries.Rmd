@@ -1,0 +1,427 @@
+---
+title: "Spatial Summaries"
+output: 
+  html_document:
+    toc: true
+    number_sections: true
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r setup, include=F}
+if (!require(librarian)){
+  remotes::install_github("DesiQuintans/librarian")
+  library(librarian)
+}
+shelf(
+  # database
+  DBI, RPostgres,
+  # spatial
+  ggmap, leaflet,
+  r-spatial/mapview, # https://github.com/r-spatial/mapview/issues/324
+  sf, sp,
+  # scrape
+  # rvest, 
+  # tidyverse
+  dplyr, purrr, readr, tibble, tidyr,
+  # someday
+  # googledrive, zeallot,
+  # report
+  DT, gt, htmltools, htmlwidgets, kableExtra, knitr, markdown, rmarkdown, shiny, webshot,
+  # utility
+  fs, glue, here, png, scales, stringr, urltools
+)
+here <- here::here
+
+pass <- readLines("../password_mhk-env.us")
+con = dbConnect(
+  RPostgres::Postgres(),
+  dbname   = "gis",
+  host     = "marineenergy.app",
+  port     = 5432,
+  user     = "admin",
+  password = pass
+)
+
+knitr::opts_chunk$set(echo = T, warning = F, message = F) #, connection = "db")
+```
+
+
+# Data Summary Function
+
+Function used for tabulating and summarizing spatial data.
+
+```{r tabulate_dataset_shp_within_aoi, class.source='fold-show'}
+# Function takes in 2 parameters:
+#   dataset_code : List of tags selected by the user which are used to select relevant datasets
+#        aoi_wkt : User drawn polygon (area of interest) as Well Known Text
+tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kable"){
+  # Console message for current dataset summary
+  message(glue("tab..._shp_within_aoi(dataset_code='{dataset_code}', aoi_wkt='{paste(aoi_wkt, collapse=';')}')"))
+  
+  # Check to see if user has drawn a polygon, which will be used as a bounding box to intersect with available data.
+  if (is.null(aoi_wkt))
+    return("Please draw a Location to get a summary of the intersecting features for this dataset.")
+  
+  # Create table of datasets to intersect against the users area of interest
+  ds <- tbl(con, "datasets") %>% 
+    filter(code == !!dataset_code) %>% 
+    replace_na(list(buffer_nm = 0)) %>% 
+    collect()
+  
+  # Check to see if user drew multiple polygons
+  if (length(aoi_wkt) > 1){
+    aoi_wkts <- glue("'SRID=4326;{aoi_wkt}'::geometry")
+    aoi_sql  <- glue("ST_COLLECT(\n{paste(aoi_wkts, collapse=',\n')})") # Is this recreating the ST_COLLECT statement
+  } else {
+    aoi_sql <- glue("'SRID=4326;{aoi_wkt}'::geometry")
+  }
+  
+  # Different set of queries required for data sets that do or
+  #   do not need area weighted statistics. 
+  # This is controlled by the "st_intersection" field in the "datasets" table
+  if (ds$st_intersection){
+    # Area weighted statistics ARE required
+    ixn_sql <- str_replace({ds$select_sql}, 'geometry', 'geometry, st_intersection(ds.geometry, buf_aoi.geom) as ixn ')
+    
+    # Check if there is a sql summary statement for this dataset
+    if (!is.na(ds$summarize_sql)){
+      x_df <- dbGetQuery(
+        con,
+        glue("
+          with
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom),
+            tmp_aoi as (
+              {ixn_sql} as ds, buf_aoi
+              where st_intersects(ds.geometry, buf_aoi.geom))
+            {ds$summarize_sql}
+          "))
+    } else {
+      x_sf <- st_read(
+        con, 
+        glue("
+          with
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom)
+            {ixn_sql} as ds, buf_aoi
+            where st_intersects(ds.geometry, buf_aoi.geom)
+          "))
+      x_df <- st_drop_geometry(x_sf)
+      
+      if (!is.na(ds$summarize_r))
+        eval(parse(text=ds$summarize_r))
+    }
+    
+  } else {
+    # Area weighted statistics NOT required
+    if (!is.na(ds$summarize_sql)){
+      x_df <- dbGetQuery(
+        con, glue("
+          with 
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom ),
+            tmp_aoi as (
+              {ds$select_sql} as ds
+              inner join buf_aoi on st_intersects(ds.geometry, buf_aoi.geom) )
+           {ds$summarize_sql}
+           "))
+    } else {
+      x_sf <- st_read(
+        con, query = glue("
+          with 
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {ds$buffer_nm} * 1852) as geom)
+            {ds$select_sql} as ds
+            inner join buf_aoi on st_intersects(ds.geometry, buf_aoi.geom )
+            "))
+      x_df <- st_drop_geometry(x_sf)
+      
+      if (!is.na(ds$summarize_r))
+        eval(parse(text=ds$summarize_r))
+    }
+  }
+  # Return results
+  if (output == "tibble"){
+    return(x_df)
+  }
+  
+  # Descriptive text for buffer applied to area of interest
+  x_spatial <- ifelse(
+    ds$buffer_nm == 0,
+    glue("\n\nSpatial: within site", .trim = F),
+    glue("\n\nSpatial: within {ds$buffer_nm} nautical miles of site", .trim = F))
+  
+  # Descriptive text for data sources
+  if (knitr::is_html_output()){
+    x_caption <- HTML(markdownToHTML(
+      text = glue("Source: [{ds$src_name}]({ds$src_url}){x_spatial}"),
+      fragment.only = T))
+    
+    tbl <- x_df %>% 
+      kbl(caption = x_caption) %>%
+      kable_styling(
+        # full_width = F, position = "left", # position = "float_right"
+        bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+    
+  } else {
+    x_caption <- glue("Source: [{ds$src_name}]({ds$src_url}){x_spatial}")
+    
+    tbl <- x_df %>% 
+      kable(caption = x_caption, format = "pipe")
+  }
+  
+  tbl
+}
+```
+
+---
+
+# SQL Summary Testing
+
+## Loaded Data
+
+Usage: `test_tabulate_dataset_shp_within_aoi(<dataset code>, <aoi size>, <optional: coast>)`
+
+Example: `test_tabulate_dataset_shp_within_aoi("ocs-lease-blk", "S", "W")`
+
+or: `test_tabulate_dataset_shp_within_aoi("ocs-lease-blk", "L")`
+
+```{r test_existing_sql, class.source='fold-show'}
+# source("functions.R")
+
+test_tabulate_dataset_shp_within_aoi <- function(ds_code, aoi_size, coast){
+  # AOI covering most of North America
+  if (aoi_size == "L") {
+    aoi_wkt = "POLYGON ((
+      -149.765625 9.795677582829743, 
+      -37.96875 9.795677582829743, 
+      -37.96875 56.9449741808516, 
+      -149.765625 56.9449741808516, 
+      -149.765625 9.795677582829743))"
+  # AOI covering the United States
+  } else if (aoi_size == "M") {
+    aoi_wkt = "POLYGON ((
+      -131.484375 26.43122806450644, 
+      -66.796875 26.43122806450644, 
+      -66.796875 49.83798245308484, 
+      -131.484375 49.83798245308484, 
+      -131.484375 26.43122806450644))"
+  # AOI covering the U.S. east or west coast
+  } else {
+    if (missing(coast)) {
+      aoi_wkt = "POLYGON ((
+        -83.3203125 30.90222470517144, 
+        -80.33203125 25.64152637306577, 
+        -61.52343749999999 44.96479793033101, 
+        -72.94921875 45.213003555993964, 
+        -83.3203125 30.90222470517144))"
+    } else {
+      if (coast == "W") {
+        aoi_wkt = "POLYGON ((
+          -128.84765625 32.99023555965106, 
+          -118.30078125 32.99023555965106, 
+          -118.30078125 45.460130637921004, 
+          -128.84765625 45.460130637921004, 
+          -128.84765625 32.99023555965106))"
+      } else {
+        aoi_wkt = "POLYGON ((
+          -83.3203125 30.90222470517144, 
+          -80.33203125 25.64152637306577, 
+          -61.52343749999999 44.96479793033101, 
+          -72.94921875 45.213003555993964, 
+          -83.3203125 30.90222470517144))"
+      }
+    }
+  }
+  
+  dataset_code = ds_code; aoi_wkt = aoi_wkt; output = "kable"
+  res <- tabulate_dataset_shp_within_aoi(ds_code, aoi_wkt)
+  return(res)
+}
+```
+
+
+## New Data
+
+Usage: `test_new_summary(select_sql, summarize_sql, buffer_nm, intersection, aoi_size)`
+```{r test_new_sql, class.source='fold-show'}
+test_new_summary <- function(select_sql, summarize_sql, buffer_nm, intersection, aoi_size) {
+  if (aoi_size == "L") {
+    aoi_wkt = "POLYGON ((
+      -149.765625 9.795677582829743, 
+      -37.96875 9.795677582829743, 
+      -37.96875 56.9449741808516, 
+      -149.765625 56.9449741808516, 
+      -149.765625 9.795677582829743))"
+  # AOI covering the United States
+  } else {
+    aoi_wkt = "POLYGON ((
+      -131.484375 26.43122806450644, 
+      -66.796875 26.43122806450644, 
+      -66.796875 49.83798245308484, 
+      -131.484375 49.83798245308484, 
+      -131.484375 26.43122806450644))"
+  } 
+  
+  
+  if (length(aoi_wkt) > 1){
+    aoi_wkts <- glue("'SRID=4326;{aoi_wkt}'::geometry")
+    aoi_sql  <- glue("ST_COLLECT(\n{paste(aoi_wkts, collapse=',\n')})") # Is this recreating the ST_COLLECT statement
+  } else {
+    aoi_sql <- glue("'SRID=4326;{aoi_wkt}'::geometry")
+  }
+  
+  # Different set of queries required for data sets that do or
+  #   do not need area weighted statistics. 
+  # This is controlled by the "st_intersection" field in the "datasets" table
+  if (intersection){
+    # Area weighted statistics ARE required
+    ixn_sql <- str_replace(select_sql, 'geometry', 'geometry, st_intersection(ds.geometry, buf_aoi.geom) as ixn ')
+    
+    # Check if there is a sql summary statement for this dataset
+    if (!is.na(summarize_sql)){
+      x_df <- dbGetQuery(
+        con,
+        glue("
+          with
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {buffer_nm} * 1852) as geom),
+            tmp_aoi as (
+              {ixn_sql} as ds, buf_aoi
+              where st_intersects(ds.geometry, buf_aoi.geom))
+            {summarize_sql}
+          "))
+    } else {
+      x_sf <- st_read(
+        con, 
+        glue("
+          with
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {buffer_nm} * 1852) as geom)
+            {ixn_sql} as ds, buf_aoi
+            where st_intersects(ds.geometry, buf_aoi.geom)
+          "))
+      x_df <- st_drop_geometry(x_sf)
+    }
+    
+  } else {
+    # Area weighted statistics NOT required
+    if (!is.na(summarize_sql)){
+      x_df <- dbGetQuery(
+        con, glue("
+          with 
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {buffer_nm} * 1852) as geom ),
+            tmp_aoi as (
+              {select_sql} as ds
+              inner join buf_aoi on st_intersects(ds.geometry, buf_aoi.geom) )
+           {summarize_sql}
+           "))
+    } else {
+      x_sf <- st_read(
+        con, query = glue("
+          with 
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {buffer_nm} * 1852) as geom)
+            {select_sql} as ds
+            inner join buf_aoi on st_intersects(ds.geometry, buf_aoi.geom )
+            "))
+      x_df <- st_drop_geometry(x_sf)
+    }
+  }
+  
+  return(datatable(x_df, rownames=F))
+}
+```
+
+---
+
+# Data Summaries
+
+## Selected Pipelines
+```{r}
+select_sql <- glue('
+  select
+    fed_seg_len_ft,
+    status_code,
+    outer_diameter,
+    product_code,
+    aprv_code,
+    operator,
+    geometry
+  from (
+    select
+      seg_length as fed_seg_len_ft,
+      status_cod as status_code,
+      ppl_size_c as outer_diameter,
+      prod_code as product_code,
+      aprv_code,
+      sde_compan as operator,
+      geometry
+    from shp_ppl_arcs
+    UNION
+    select
+      seg_length as fed_seg_len_ft,
+      status_cod as status_code,
+      ppl_size_c as outer_diameter,
+      prod_code as product_code,
+      aprv_code,
+      sde_compan as operator,
+      geometry
+    from "shp_BOEM_Pacific_Pipelines_2011-08_nad83")')
+
+summarize_sql <- glue("
+  select
+    status_code as ", '"Status Code"', ",
+    product_code as ", '"Product Code"', ",
+    operator as ", '"Operator"', ",
+    to_char(round(st_length(ixn::geography) * 3.281), 'FM999,999,999') as ", '"Segment Length (ft)"', "
+  from 
+    tmp_aoi
+  order by
+    status_code, product_code, operator")
+
+intersection = T
+buffer_nm = 0
+
+test_new_summary(select_sql, summarize_sql, buffer_nm, intersection, "M")
+```
+
+
+## Outer Continental Shelf Proposed Final Program Areas 2017-2022
+```{r}
+select_sql <- glue('
+  select
+  	notes, geometry
+  from (
+  	select 
+  	  notes, geometry
+  	from 
+  	  "shp_GOMR_Proposed_FInal_Program_Area"
+  	UNION
+  	select 
+  	  notes, geometry 
+  	from 
+      "shp_Alaska_Region_2017-2022_Proposed_Final_Program_Area")')
+
+summarize_sql <- glue("
+  select
+    replace(notes, 'FInal', 'Final') as ", '"Note"' ,",
+    round(100 * sum(st_area(ixn::geography) / st_area(geometry::geography))) || ' %' as ", '"AOI Overlap"', "
+  from
+    tmp_aoi
+  group by
+    notes
+  order by
+    notes
+")
+
+intersection = T
+buffer_nm = 0
+
+test_new_summary(select_sql, summarize_sql, buffer_nm, intersection, "M")
+```
+
+
