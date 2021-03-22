@@ -245,5 +245,63 @@ write_csv(d_lut, csv)
 ```
 
 
+```{r}
+ferc_docs      <- read_csv("data/ferc_docs.csv")
+ferc_docs2_csv <- "data/ferc_docs2.csv"
+technology_lut <- read_csv("data/ferc_tags_technology_lut.csv")
+receptor_lut   <- read_csv("data/ferc_tags_receptors_lut.csv")
+stressor_lut   <- read_csv("data/ferc_tags_stressors_lut.csv")
+phase_lut      <- read_csv("data/ferc_tags_phase_lut.csv")
+
+for (tag in c("receptor","stressor","technology")){ # tag <- "receptor"
+  
+  message(glue("tag: {tag}"))
+  
+  lut <- get(glue("{tag}_lut"))
+  lookup_csv <- glue("data/ferc_lookup_{tag}.csv")
+  
+  x <- lut %>% 
+    filter(!is.na(key_order)) %>% 
+    mutate(
+      key_dot = str_replace_all(key_order, ":", "."))
+  tag_recode <- setNames(x$key_dot, x[[tag]])
+  
+  table(ferc_docs[[tag]])
+  ferc_docs <- ferc_docs %>% 
+    mutate(
+      !!tag := recode(!!as.name(tag), !!!tag_recode))
+  table(ferc_docs[[tag]])
+  
+  lut %>% 
+    group_by(key_order) %>% 
+    summarize(n=1) %>% 
+    filter(!is.na(key_order)) %>% 
+    rename_with(function(x) ifelse(x=="key_order", tag, x)) %>%
+    select(-n) %>% 
+    write_csv(lookup_csv)
+}
+
+ferc_docs <- ferc_docs %>% 
+  mutate(
+    phase = recode(
+      phase, 
+       `1. Site Characteriation and Assessment` = "1. Site Characterization and Assessment"))
+table(ferc_docs$phase)
+
+read_csv("data/tags_tethys_receptors.csv") %>% 
+  distinct(key_order) %>% 
+  transmute(
+    receptor = str_replace_all(key_order, ":", ".")) %>% 
+  write_csv("data/ferc_lookup_receptor.csv")
+
+read_csv("data/tags_tethys_stressors.csv") %>% 
+  distinct(key_order) %>% 
+  transmute(
+    stressor = str_replace_all(key_order, ":", ".")) %>% 
+  write_csv("data/ferc_lookup_stressor.csv")
+
+write_csv(ferc_docs, ferc_docs2_csv)
+```
+
 
 
