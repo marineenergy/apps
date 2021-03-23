@@ -307,7 +307,7 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kab
         glue("
           with
             buf_aoi as (
-              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom),
+              select ST_BUFFER(({aoi_sql})::geography, {ds$buffer_nm} * 1852) as geom),
             tmp_aoi as (
               {ixn_sql} as ds, buf_aoi
               where st_intersects(ds.geometry, buf_aoi.geom))
@@ -319,7 +319,7 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kab
         glue("
           with
             buf_aoi as (
-              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom)
+              select ST_BUFFER(({aoi_sql})::geography, {ds$buffer_nm} * 1852) as geom)
             {ixn_sql} as ds, buf_aoi
             where st_intersects(ds.geometry, buf_aoi.geom)
           "))
@@ -336,7 +336,7 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kab
         con, glue("
           with 
             buf_aoi as (
-              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom ),
+              select ST_BUFFER(({aoi_sql})::geography, {ds$buffer_nm} * 1852) as geom ),
             tmp_aoi as (
               {ds$select_sql} as ds
               inner join buf_aoi on st_intersects(ds.geometry, buf_aoi.geom) )
@@ -347,7 +347,7 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kab
         con, query = glue("
           with 
             buf_aoi as (
-              select ST_BUFFER({aoi_sql}, {ds$buffer_nm} * 1852) as geom)
+              select ST_BUFFER(({aoi_sql})::geography, {ds$buffer_nm} * 1852) as geom)
             {ds$select_sql} as ds
             inner join buf_aoi on st_intersects(ds.geometry, buf_aoi.geom )
             "))
