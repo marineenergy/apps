@@ -1,0 +1,166 @@
+---
+title: "Management Measures using ltree"
+output: 
+  html_document:
+    toc: true
+    # number_sections: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=F}
+if (!require(librarian)){
+  remotes::install_github("DesiQuintans/librarian")
+  library(librarian)
+}
+shelf(
+  # database
+  DBI, RPostgres,
+  # tidyverse
+  dplyr, purrr, readr, tibble, tidyr,
+  # report
+  DT, gt, htmltools, htmlwidgets, kableExtra, knitr, markdown, rmarkdown,
+  # utility
+  fs, glue, here, png, scales, stringr, urltools
+)
+here <- here::here
+
+# Local
+pass <- readLines("../../pwd.txt")
+db = dbConnect(
+  RPostgres::Postgres(),
+  dbname   = "dev",
+  host     = "localhost",
+  port     = 5432,
+  user     = "cgrant",
+  password = pass
+)
+
+# CAREFUL - THIS SCRIPT WILL DROP AND RECREATE TABLES 
+# Server
+# pass <- readLines("/share/.password_mhk-env.us")
+# db = dbConnect(
+#   RPostgres::Postgres(),
+#   dbname   = "gis",
+#   host     = "postgis",
+#   port     = 5432,
+#   user     = "admin",
+#   password = pass
+# )
+
+knitr::opts_chunk$set(echo = T, warning = F, message = F, connection = "db")
+```
+
+
+
+## Initialize ltree extension
+```{r initialize_ltree}
+dbExecute(db, glue("create extension if not exists ltree"))
+```
+
+
+
+## Notes
+
+[PostgreSQL ltree documentation](https://www.postgresql.org/docs/current/ltree.html)
+
+Each element in the ltree path is called a _label_.
+
+> A label is a sequence of alphanumeric characters and underscores (for example, in C locale the characters A-Za-z0-9_ are allowed). Labels must be less than 256 characters long.
+
+Examples: `42`, `Personal_Services`
+
+> A _label path_ is a sequence of zero or more labels separated by dots, for example L1.L2.L3, representing a path from the root of a hierarchical tree to a particular node. The length of a label path cannot exceed 65535 labels.
+
+Example: `Top.Countries.Europe.Russia`
+
+
+
+---
+
+
+
+## Caleb's hack way of ingesting a CSV and doing string replacement
+
+Cant use the following characters for ltree data type:
+
+- " "
+- "-"
+- "&"
+- ":"
+
+```{r preprocess_csv}
+receptor <- read.csv('https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_lookup_receptor.csv') %>%
+  lapply(gsub, pattern=" ", replacement="_", fixed=T) %>%
+  lapply(gsub, pattern="-", replacement="_", fixed=T) %>%
+  lapply(gsub, pattern="&", replacement="_", fixed=T) %>%
+  data.frame()
+
+stressor <- read.csv('https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_lookup_stressor.csv') %>%
+  lapply(gsub, pattern=" ", replacement="_", fixed=T) %>%
+  data.frame()
+  
+technology <- read.csv('https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_lookup_technology.csv') %>%
+  lapply(gsub, pattern=" ", replacement="_", fixed=T) %>%
+  lapply(gsub, pattern=":", replacement=".", fixed=T) %>%
+  data.frame()
+  
+phase <- read.csv('https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_tags_phase_lut.csv') %>%
+  lapply(gsub, pattern=" ", replacement="_", fixed=T) %>%
+  data.frame()
+```
+
+
+
+## Create table with ltree data type
+
+Why the heck do list indexes start at 1???
+```{r create_tbl}
+tbls <- list(
+  list("receptor", receptor), 
+  list("stressor", stressor), 
+  list("technology", technology)) #, 
+  # Dont think this is ready to ingest yet
+  # list("phase", phase))
+  
+for (tbl in tbls) {
+  dbExecute(db, glue("drop table if exists {tbl[1]} cascade"))
+  dbExecute(db, glue("create table {tbl[1]} ({tbl[1]} ltree)"))
+  dbWriteTable(db, glue("{tbl[1]}"), data.frame({tbl[2]}), overwrite = F, append = T, row.names = F)
+  }
+```
+
+
+
+## Check out one of the ltree tables
+```{r check_tbl}
+dt <- dbGetQuery(db, glue("select * from receptor")) %>%
+  datatable()
+dt
+```
+
+
+
+## Query ltree
+
+`@  Match case-insensitively, for example a@ matches A`
+
+`*  Match any label with this prefix, for example foo* matches foobar`
+
+`%  Match initial underscore-separated words`
+
+
+### Inheritance
+```{r ltree_inheritance}
+dt <- dbGetQuery(db, glue("select * from receptor where receptor <@ 'Birds'")) %>%
+  datatable()
+dt
+```
+
+
+### Path matching
+```{r ltree_path_matching, eval=F}
+dt <- dbGetQuery(db, glue("select * from receptor where receptor ~ 'Birds.*'")) %>%
+  datatable()
+dt
+```
