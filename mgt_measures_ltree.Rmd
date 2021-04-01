@@ -21,7 +21,7 @@ shelf(
   # report
   DT, gt, htmltools, htmlwidgets, kableExtra, knitr, markdown, rmarkdown,
   # utility
-  fs, glue, here, png, scales, stringr, urltools
+  fs, glue, here, png, scales, stringr, urltools, rlist
 )
 here <- here::here
 
@@ -89,50 +89,47 @@ Cant use the following characters for ltree data type:
 - "&"
 - ":"
 
-```{r preprocess_csv}
-receptor <- read.csv('https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_lookup_receptor.csv') %>%
-  lapply(gsub, pattern=" ", replacement="_", fixed=T) %>%
-  lapply(gsub, pattern="-", replacement="_", fixed=T) %>%
-  lapply(gsub, pattern="&", replacement="_", fixed=T) %>%
-  data.frame()
+```{r}
+# List of source CSVs that contain management measure categories
+data <- list("receptor" = "https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_lookup_receptor.csv",
+          "stressor" = "https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_lookup_stressor.csv",
+          "technology" = "https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_lookup_technology.csv")
+          # ,"phase" = "https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_tags_phase_lut.csv"
 
-stressor <- read.csv('https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_lookup_stressor.csv') %>%
-  lapply(gsub, pattern=" ", replacement="_", fixed=T) %>%
-  data.frame()
+# Iterate over data sets
+for (i in seq(length(data))) {
+  # URL of source
+  ds <- data[i]
+  # Name of source
+  tbl <- names(data[i])
   
-technology <- read.csv('https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_lookup_technology.csv') %>%
-  lapply(gsub, pattern=" ", replacement="_", fixed=T) %>%
-  lapply(gsub, pattern=":", replacement=".", fixed=T) %>%
-  data.frame()
-  
-phase <- read.csv('https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_tags_phase_lut.csv') %>%
-  lapply(gsub, pattern=" ", replacement="_", fixed=T) %>%
-  data.frame()
+  # Read in the CSV without manipulation
+  raw <- read.csv(glue("{ds}")) %>%
+    data.frame()
+
+  # Read in the CSV with string manipulation
+  cleaned <- read.csv(glue("{ds}")) %>%
+    lapply(gsub, pattern=" ", replacement="_", fixed=T) %>%
+    lapply(gsub, pattern="-", replacement="_", fixed=T) %>%
+    lapply(gsub, pattern="&", replacement="_", fixed=T) %>%
+    lapply(gsub, pattern=":", replacement=".", fixed=T) %>%
+    data.frame()
+
+  # Join the raw and cleaned tables
+  df <- data.frame(raw, cleaned)
+  colnames(df) <- c("display", glue(tbl))
+
+  # Create database table
+  dbExecute(db, glue("drop table if exists {tbl} cascade"))
+  dbExecute(db, glue("create table {tbl} (id serial not null, display character varying primary key, {tbl} ltree)"))
+  # Write to database table
+  dbWriteTable(db, glue("{tbl}"), data.frame(df), overwrite = F, append = T, row.names = F)
+}
 ```
 
 
 
-## Create table with ltree data type
-
-Why the heck do list indexes start at 1???
-```{r create_tbl}
-tbls <- list(
-  list("receptor", receptor), 
-  list("stressor", stressor), 
-  list("technology", technology)) #, 
-  # Dont think this is ready to ingest yet
-  # list("phase", phase))
-  
-for (tbl in tbls) {
-  dbExecute(db, glue("drop table if exists {tbl[1]} cascade"))
-  dbExecute(db, glue("create table {tbl[1]} ({tbl[1]} ltree)"))
-  dbWriteTable(db, glue("{tbl[1]}"), data.frame({tbl[2]}), overwrite = F, append = T, row.names = F)
-  }
-```
-
-
-
-## Check out one of the ltree tables
+## Check out one of the tables
 ```{r check_tbl}
 dt <- dbGetQuery(db, glue("select * from receptor")) %>%
   datatable()
@@ -151,16 +148,30 @@ dt
 
 
 ### Inheritance
-```{r ltree_inheritance}
+
+#### Example 1
+```{r ltree_inheritance1}
 dt <- dbGetQuery(db, glue("select * from receptor where receptor <@ 'Birds'")) %>%
   datatable()
 dt
 ```
 
-
-### Path matching
-```{r ltree_path_matching, eval=F}
-dt <- dbGetQuery(db, glue("select * from receptor where receptor ~ 'Birds.*'")) %>%
+#### Example 2
+```{r ltree_inheritance2}
+dt <- dbGetQuery(db, glue("select display from receptor where receptor <@ 'Birds'")) %>%
   datatable()
 dt
 ```
+
+#### Example 3
+```{r ltree_inheritance3}
+dt <- dbGetQuery(db, glue("select display, receptor from receptor where receptor @ 'Ground_Nesting_Birds'")) %>%
+  datatable()
+dt
+```
+
+## Conclusion
+
+Unfortunately, we cant query ltree without doing string replacement of the selected management measure.
+
+For example, if we are looking for receptor `Ground-Nesting Birds`, we will need to do something like this: `... where receptor @ Ground_Nesting_Birds` 
