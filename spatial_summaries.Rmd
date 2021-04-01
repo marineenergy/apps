@@ -54,6 +54,7 @@ Raw data sources have been loaded into a PostgreSQL database and our task is to 
 
 Once tested, data queries and metadata get compiled into a [master table](https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=936111013), which are then ingested by `tabulate_dataset_shp_within_aoi` in [marineenergy/apps/functions.R](https://github.com/marineenergy/apps/blob/c98a3bacfa06370e823863f52b6633036cd228dc/functions.R).
 
+Some notes related to this effort [here](https://docs.google.com/document/d/109KwZ2PsKkD_ohRZI5F3IkIEOmYKXLl-qVf_ZxHIoyo).
 
 ---
 
@@ -127,7 +128,7 @@ test_tabulate_dataset_shp_within_aoi <- function(ds_code, aoi_size, coast){
 
 Usage: `test_new_summary(select_sql, summarize_sql, buffer_nm, intersection, aoi_size)`
 ```{r test_new_sql, class.source='fold-show'}
-test_new_summary <- function(select_sql, summarize_sql, buffer_nm, intersection, aoi_size) {
+test_new_summary <- function(select_sql, summarize_sql, buffer_nm, intersection, aoi_size, coast) {
   if (aoi_size == "L") {
     aoi_wkt = "POLYGON ((
       -149.765625 9.795677582829743, 
@@ -136,14 +137,40 @@ test_new_summary <- function(select_sql, summarize_sql, buffer_nm, intersection,
       -149.765625 56.9449741808516, 
       -149.765625 9.795677582829743))"
   # AOI covering the United States
-  } else {
+  } else if (aoi_size == "M") {
     aoi_wkt = "POLYGON ((
       -131.484375 26.43122806450644, 
       -66.796875 26.43122806450644, 
       -66.796875 49.83798245308484, 
       -131.484375 49.83798245308484, 
       -131.484375 26.43122806450644))"
-  } 
+  # AOI covering the U.S. east or west coast
+  } else {
+    if (missing(coast)) {
+      aoi_wkt = "POLYGON ((
+        -83.3203125 30.90222470517144,
+        -80.33203125 25.64152637306577,
+        -61.52343749999999 44.96479793033101,
+        -72.94921875 45.213003555993964,
+        -83.3203125 30.90222470517144))"
+    } else {
+      if (coast == "W") {
+        aoi_wkt = "POLYGON ((
+          -128.84765625 32.99023555965106, 
+          -118.30078125 32.99023555965106, 
+          -118.30078125 45.460130637921004, 
+          -128.84765625 45.460130637921004, 
+          -128.84765625 32.99023555965106))"
+      } else {
+        aoi_wkt = "POLYGON ((
+          -83.3203125 30.90222470517144, 
+          -80.33203125 25.64152637306577, 
+          -61.52343749999999 44.96479793033101, 
+          -72.94921875 45.213003555993964, 
+          -83.3203125 30.90222470517144))"
+      }
+    }
+  }
   
   
   if (length(aoi_wkt) > 1){
@@ -220,8 +247,24 @@ test_new_summary <- function(select_sql, summarize_sql, buffer_nm, intersection,
 
 # Data Summaries
 
+## Template
+```{r template, eval=F, class.source='fold-show'}
+select_sql <- glue('')
+
+summarize_sql <- glue("")
+
+intersection = F
+buffer_nm = 0
+aoi_size = "M"
+coast = "E"
+
+test_new_summary(select_sql, summarize_sql, buffer_nm, intersection, aoi_size, coast)
+```
+
+---
+
 ## Selected Pipelines
-```{r}
+```{r pipelines, class.source='fold-show'}
 select_sql <- glue('
   select
     fed_seg_len_ft,
@@ -254,12 +297,14 @@ select_sql <- glue('
 
 summarize_sql <- glue("
   select
-    status_code as ", '"Status Code"', ",
-    product_code as ", '"Product Code"', ",
-    operator as ", '"Operator"', ",
-    to_char(round(st_length(ixn::geography) * 3.281), 'FM999,999,999') as ", '"Segment Length (ft)"', "
+    status_code as \"Status Code\",
+    product_code as \"Product Code\",
+    operator as \"Operator\",
+    to_char(round(sum(st_length(ixn::geography)) * 3.281), 'FM999,999,999') as \"Segment Length (ft)\"
   from 
     tmp_aoi
+  group by
+    status_code, product_code, operator
   order by
     status_code, product_code, operator")
 
@@ -271,7 +316,7 @@ test_new_summary(select_sql, summarize_sql, buffer_nm, intersection, "M")
 
 
 ## Outer Continental Shelf Proposed Final Program Areas 2017-2022
-```{r}
+```{r ocs-programs, class.source='fold-show'}
 select_sql <- glue('
   select
   	notes, geometry
@@ -288,8 +333,8 @@ select_sql <- glue('
 
 summarize_sql <- glue("
   select
-    replace(notes, 'FInal', 'Final') as ", '"Note"' ,",
-    round(100 * sum(st_area(ixn::geography) / st_area(geometry::geography))) || ' %' as ", '"AOI Overlap"', "
+    replace(notes, 'FInal', 'Final') as \"Note\",
+    round(100 * sum(st_area(ixn::geography) / st_area(geometry::geography))) || ' %' as \"AOI Overlap\"
   from
     tmp_aoi
   group by
@@ -305,3 +350,83 @@ test_new_summary(select_sql, summarize_sql, buffer_nm, intersection, "M")
 ```
 
 
+## Federal Outer Continental Shelf (OCS) Sand and Gravel Borrow Areas (Lease Areas)
+```{r fed-ocs-lease, class.source='fold-show'}
+select_sql <- glue('
+  select
+    state,
+    leaseno,
+    projectid,
+    projectcou,
+    totalsanda,
+    fiscalyear,
+    effectived,
+    expiration,
+    originalvo,
+    borrowarea,
+    amendmentd,
+    amendmentn,
+    additional,
+    acres,
+    leasestatu,
+    geometry
+  from "shp_Leases_200203"
+')
+
+summarize_sql <- glue("
+  select
+    state as \"State\",
+    leaseno as \"Lease\",
+    projectid as \"Project\",
+    leasestatu as \"Status\",
+    expiration as \"Expiration\",
+    totalsanda as \"Allocated Sand Volume (yd^3)\"
+  from
+    tmp_aoi
+  order by
+    state, leasestatu, expiration, leaseno, projectid
+")
+
+intersection = F
+buffer_nm = 0
+
+test_new_summary(select_sql, summarize_sql, buffer_nm, intersection, "M")
+```
+
+
+## Coastal Barrier Resources System
+```{r cbrs, class.source='fold-show'}
+select_sql <- glue('
+  select
+    unit,
+    name,
+    unit_type,
+    fast_acres,
+    wet_acres,
+    shore_mile,
+    geometry
+  from "shp_CBRS_Polygons_03122019"
+')
+
+summarize_sql <- glue("
+  select
+    unit as \"CBRS Unit\",
+    name as \"Unit Name\",
+    unit_type as \"Unit Type\",
+    round(fast_acres * sum(st_area(ixn::geography) / st_area(geometry::geography))) as \"Upland Area (acres)\",
+    round(wet_acres * sum(st_area(ixn::geography) / st_area(geometry::geography))) as \"Wetland Area (acres)\"
+  from
+    tmp_aoi
+  group by
+    unit, name, unit_type, fast_acres, wet_acres
+  order by
+    unit, name, unit_type
+")
+
+intersection = T
+buffer_nm = 0.00329158
+aoi_size = "S"
+coast = "E"
+  
+test_new_summary(select_sql, summarize_sql, buffer_nm, intersection, aoi_size, coast)
+```
