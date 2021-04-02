@@ -1,0 +1,177 @@
+---
+title: "Management Measures using ltree"
+output: 
+  html_document:
+    toc: true
+    # number_sections: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=F}
+if (!require(librarian)){
+  remotes::install_github("DesiQuintans/librarian")
+  library(librarian)
+}
+shelf(
+  # database
+  DBI, RPostgres,
+  # tidyverse
+  dplyr, purrr, readr, tibble, tidyr,
+  # report
+  DT, gt, htmltools, htmlwidgets, kableExtra, knitr, markdown, rmarkdown,
+  # utility
+  fs, glue, here, png, scales, stringr, urltools, rlist
+)
+here <- here::here
+
+# Local
+pass <- readLines("../../pwd.txt")
+db = dbConnect(
+  RPostgres::Postgres(),
+  dbname   = "dev",
+  host     = "localhost",
+  port     = 5432,
+  user     = "cgrant",
+  password = pass
+)
+
+# CAREFUL - THIS SCRIPT WILL DROP AND RECREATE TABLES 
+# Server
+# pass <- readLines("/share/.password_mhk-env.us")
+# db = dbConnect(
+#   RPostgres::Postgres(),
+#   dbname   = "gis",
+#   host     = "postgis",
+#   port     = 5432,
+#   user     = "admin",
+#   password = pass
+# )
+
+knitr::opts_chunk$set(echo = T, warning = F, message = F, connection = "db")
+```
+
+
+
+## Initialize ltree extension
+```{r initialize_ltree}
+dbExecute(db, glue("create extension if not exists ltree"))
+```
+
+
+
+## Notes
+
+[PostgreSQL ltree documentation](https://www.postgresql.org/docs/current/ltree.html)
+
+Each element in the ltree path is called a _label_.
+
+> A label is a sequence of alphanumeric characters and underscores (for example, in C locale the characters A-Za-z0-9_ are allowed). Labels must be less than 256 characters long.
+
+Examples: `42`, `Personal_Services`
+
+> A _label path_ is a sequence of zero or more labels separated by dots, for example L1.L2.L3, representing a path from the root of a hierarchical tree to a particular node. The length of a label path cannot exceed 65535 labels.
+
+Example: `Top.Countries.Europe.Russia`
+
+
+
+---
+
+
+
+## Caleb's hack way of ingesting a CSV and doing string replacement
+
+Cant use the following characters for ltree data type:
+
+- " "
+- "-"
+- "&"
+- ":"
+
+```{r}
+# List of source CSVs that contain management measure categories
+data <- list("receptor" = "https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_lookup_receptor.csv",
+          "stressor" = "https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_lookup_stressor.csv",
+          "technology" = "https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_lookup_technology.csv")
+          # ,"phase" = "https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_tags_phase_lut.csv"
+
+# Iterate over data sets
+for (i in seq(length(data))) {
+  # URL of source
+  ds <- data[i]
+  # Name of source
+  tbl <- names(data[i])
+  
+  # Read in the CSV without manipulation
+  raw <- read.csv(glue("{ds}")) %>%
+    data.frame()
+
+  # Read in the CSV with string manipulation
+  cleaned <- read.csv(glue("{ds}")) %>%
+    lapply(gsub, pattern=" ", replacement="_", fixed=T) %>%
+    lapply(gsub, pattern="-", replacement="_", fixed=T) %>%
+    lapply(gsub, pattern="&", replacement="_", fixed=T) %>%
+    lapply(gsub, pattern=":", replacement=".", fixed=T) %>%
+    data.frame()
+
+  # Join the raw and cleaned tables
+  df <- data.frame(raw, cleaned)
+  colnames(df) <- c("display", glue(tbl))
+
+  # Create database table
+  dbExecute(db, glue("drop table if exists {tbl} cascade"))
+  dbExecute(db, glue("create table {tbl} (id serial not null, display character varying primary key, {tbl} ltree)"))
+  # Write to database table
+  dbWriteTable(db, glue("{tbl}"), data.frame(df), overwrite = F, append = T, row.names = F)
+}
+```
+
+
+
+## Check out one of the tables
+```{r check_tbl}
+dt <- dbGetQuery(db, glue("select * from receptor")) %>%
+  datatable()
+dt
+```
+
+
+
+## Query ltree
+
+`@  Match case-insensitively, for example a@ matches A`
+
+`*  Match any label with this prefix, for example foo* matches foobar`
+
+`%  Match initial underscore-separated words`
+
+
+### Inheritance
+
+#### Example 1
+```{r ltree_inheritance1}
+dt <- dbGetQuery(db, glue("select * from receptor where receptor <@ 'Birds'")) %>%
+  datatable()
+dt
+```
+
+#### Example 2
+```{r ltree_inheritance2}
+dt <- dbGetQuery(db, glue("select display from receptor where receptor <@ 'Birds'")) %>%
+  datatable()
+dt
+```
+
+#### Example 3
+```{r ltree_inheritance3}
+dt <- dbGetQuery(db, glue("select display, receptor from receptor where receptor @ 'Ground_Nesting_Birds'")) %>%
+  datatable()
+dt
+```
+
+## Conclusion
+
+Unfortunately, we cant query ltree without doing string replacement of the selected management measure.
+
+For example, if we are looking for receptor `Ground-Nesting Birds`, we will need to do something like this: `... where receptor @ Ground_Nesting_Birds` 
