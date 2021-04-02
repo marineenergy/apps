@@ -385,7 +385,7 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kab
 
 # Speed Testing
 
-Gathered from `/share/github/mhk-env_shiny-apps/logging_tmp.txt`:
+Gathered from `/share/github/apps/logging_tmp.txt`:
 
 ```yaml
 title: Spatial Speed Test

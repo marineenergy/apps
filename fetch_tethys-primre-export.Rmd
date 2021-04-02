@@ -78,7 +78,7 @@ psql -h postgis -p 5432 -U admin gis
 ```bash
 # use this password when prompted
 cat /share/.password_mhk-env.us
-path_csv='/share/github/mhk-env_shiny-apps/data/tethys.csv'
+path_csv='/share/github/apps/data/tethys.csv'
 cat $path_csv | psql -h postgis -p 5432 -U admin -c "COPY tethys_pubs (uri, data) FROM STDIN WITH (FORMAT CSV, HEADER TRUE);" gis
 ```
 

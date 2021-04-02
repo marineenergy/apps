@@ -14,6 +14,8 @@ shelf(
 
 source(here("functions.R")) # connection object
 
+# datasets_gsheet2db()
+
 # update db tables tethys_pubs, tethys_pub_tags; data/tethys_docs.[json|csv]
 update_tethys_docs()
 

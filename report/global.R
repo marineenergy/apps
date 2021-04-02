@@ -7,7 +7,7 @@ shelf(
   hadley/emo, rhandsontable,
   # spatial
   mapedit)
-set_logging(file = "/share/github/mhk-env_shiny-apps/logging_tmp.txt")
+set_logging(file = "/share/github/apps/logging_tmp.txt")
 
 web_url = "https://marineenergy.app"
 
@@ -22,7 +22,7 @@ nbsp <- "\u00A0" # Unicode (UTF-8) for non-breaking space
 
 # using "keys" instead of "tags", since tags is a Shiny / HTML thing
 # download.file(
-#   "https://raw.githubusercontent.com/mhk-env/mhk-env_shiny-apps/7a8db9e4e8c17a075f2dd229aa7719c6854b20ec/data/tags.csv",
+#   "https://raw.githubusercontent.com/marineenergy/apps/7a8db9e4e8c17a075f2dd229aa7719c6854b20ec/data/tags.csv",
 #   here("data/tags_extra.csv"))
 keys <- read_csv(here("data/tags_extra.csv")) %>% 
   select(key_facet = facet, key = item_label, key_parent = tag_parent) %>% 

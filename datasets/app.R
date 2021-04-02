@@ -101,4 +101,4 @@ shinyApp(ui = ui, server = server)
 
 # To get working at http://shiny.marinenergy.app/datasets,
 #   in rstudio.marinenergy.app Terminal:
-#     sudo ln -s /share/github/mhk-env_shiny-apps/datasets /srv/shiny-server/datasets
+#     sudo ln -s /share/github/apps/datasets /srv/shiny-server/datasets

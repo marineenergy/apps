@@ -3,7 +3,7 @@
 Normally, on command line, get this repo:
 
 ```bash
-git clone https://github.com/mhk-env/mhk-env_shiny-apps
+git clone https://github.com/mareineenergy/apps
 ```
 
 Or in Rstudio, File -> New Project... -> Version Control -> git ...

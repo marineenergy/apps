@@ -13,3 +13,6 @@ report_template.pdf
 logging_tmp.txt
 report_template_gen.html
 .httr-oauth
+report_template_gen.docx
+report_template_gen.pdf
+reports/

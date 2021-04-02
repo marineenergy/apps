@@ -68,7 +68,7 @@ url_mc       <- 'https://marinecadastre.gov/data/'
 dir_mc       <- '/share/data/marinecadastre.gov'
 csv_mc       <- file.path(dir_mc, '_datasets.csv')
 csv_mc_paths <- file.path(dir_mc, '_datasets_paths.csv')
-csv_mc_gh    <- "/share/github/mhk-env_shiny-apps/data/datasets_marinecadastre.gov.csv"
+csv_mc_gh    <- "/share/github/apps/data/datasets_marinecadastre.gov.csv"
 
 dir.create(dir_mc, showWarnings = F)
 
@@ -91,7 +91,7 @@ get_page = function(url, js='scrape.js', html='scraped.html'){
   }
   "), js)
   #bin_phantom <- webshot:::find_phantom(quiet = T)
-  # cd /share/github/mhk-env_shiny-apps; /usr/local/bin/phantomjs scrape.js
+  # cd /share/github/apps; /usr/local/bin/phantomjs scrape.js
   #system("./phantomjs scrape_dow_30.js") ## apply scraping 
   #webshot:::phantom_run(js)
   
