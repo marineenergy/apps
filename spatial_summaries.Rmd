@@ -430,3 +430,47 @@ coast = "E"
   
 test_new_summary(select_sql, summarize_sql, buffer_nm, intersection, aoi_size, coast)
 ```
+
+
+## National Seafloor Geology (GLORIA)
+
+> to_char(round(sum(st_area(geometry::geography) * (st_area(ixn::geography) / st_area(geometry::geography))) / 1000), 'FM999,999,999,999') as "Area (km^2)"
+    
+```{r gloria, eval=T, class.source='fold-show'}
+select_sql <- glue('
+  select
+    unit, 
+    description, 
+    geometry 
+  from (
+    select area, unit, null as description, geometry from shp_interp
+    union
+    select area, unit, descriptio as description, geometry from shp_west
+    union
+    select st_area(geometry) as area, tunits as unit, null as description, geometry from shp_geo_poly
+    union
+    select area, geoabrv as unit, descriptio as description, geometry from shp_geology
+  )
+')
+
+summarize_sql <- glue("
+  select
+    unit as \"Unit\",
+    case when description is null then 'No description' when description = 'No Data' then 'No description' else description end as \"Description\"
+  from 
+    tmp_aoi
+  where
+    unit is not null and unit != 'nodat'
+  group by
+    unit, description
+  order by
+    unit, description
+")
+
+intersection = F
+buffer_nm = 0
+aoi_size = "M"
+coast = "E"
+
+test_new_summary(select_sql, summarize_sql, buffer_nm, intersection, aoi_size, coast)
+```
