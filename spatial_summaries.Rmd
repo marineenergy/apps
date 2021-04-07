@@ -434,6 +434,8 @@ test_new_summary(select_sql, summarize_sql, buffer_nm, intersection, aoi_size, c
 
 ## National Seafloor Geology (GLORIA)
 
+Overkill?
+
 > to_char(round(sum(st_area(geometry::geography) * (st_area(ixn::geography) / st_area(geometry::geography))) / 1000), 'FM999,999,999,999') as "Area (km^2)"
     
 ```{r gloria, eval=T, class.source='fold-show'}
@@ -471,6 +473,136 @@ intersection = F
 buffer_nm = 0
 aoi_size = "M"
 coast = "E"
+
+test_new_summary(select_sql, summarize_sql, buffer_nm, intersection, aoi_size, coast)
+```
+
+
+## EFH Areas Protected from Fishing
+```{r nationwide-efha, eval=T, class.source='fold-show'}
+select_sql <- glue('
+  select 
+  	fmc_report,
+  	sitename_l,
+  	instatewat,
+  	lifestage,
+  	lttdt_link,
+  	acres,
+  	geometry
+  from shp_nationwide_efha
+')
+
+summarize_sql <- glue("
+  select
+    fmc_report as \"FMC Region\",
+    sitename_l as \"Site\",
+    case when instatewat = 'Y' then 'Yes' else 'No' end as \"State Waters\",
+    lifestage as \"Lifestage\",
+    to_char(round(sum(st_area(geometry::geography) * (st_area(ixn::geography) / st_area(geometry::geography))) / 4047), 'FM999,999,999,999') as \"Acres\"
+  from
+    tmp_aoi
+  group by
+    fmc_report, sitename_l, instatewat, lifestage, lttdt_link
+  order by
+    fmc_report, sitename_l, instatewat, lifestage, lttdt_link
+")
+
+intersection = T
+buffer_nm = 0
+aoi_size = "S"
+coast = "W"
+
+test_new_summary(select_sql, summarize_sql, buffer_nm, intersection, aoi_size, coast)
+```
+
+
+## Ocean Wave Resource Potential
+
+wef = wave energy flux (kilowatts per meter of wave crest)
+
+depth = meters
+
+Could go about summarizing this in a few different ways. Lots of points.
+
+```{r wave-power, eval=F, class.source='fold-show'}
+select_sql <- glue('
+  select
+    depth_wef,
+    ann_wef,
+    geometry
+  from
+    shp_wave_power_density
+')
+
+summarize_sql <- glue("
+  select
+    depth_wef,
+    avg(ann_wef) as avg_ann_wef
+  from
+    tmp_aoi
+  group by
+    depth_wef
+  order by
+    depth_wef
+")
+
+intersection = F
+buffer_nm = 0
+aoi_size = "S"
+coast = "E"
+
+test_new_summary(select_sql, summarize_sql, buffer_nm, intersection, aoi_size, coast)
+```
+
+
+## Coastal Maintained Channels
+
+Native geometry is in 3D (MultiPolygon Z)
+
+Interesting problem when forcing geometry to 2D:
+
+- Using `ST_Force2D(geometry)` and `intersection = Y` causes query function to fail.
+- Query function looks for `geometry` in the `select_sql` string and replaces it with `geometry, st_intersection(...)`
+- Workaround was to use `ST_Force2D(geom)`, which I assume is just shorthand for `geometry`. Not sure why it works, but it does.
+
+Sparse metadata for this dataset. Not sure what columns mean.
+
+```{r coastal-channels, eval=T, class.source='fold-show'}
+select_sql <- glue('
+  select
+  	objnam,
+  	themelayer,
+  	inform,
+  	drval1,
+  	quasou,
+  	quasou_txt,
+  	sordat,
+  	fairway,
+  	dsnm,
+  	dataaccess,
+  	datatype,
+  	st_force2d(geom) as geometry
+  from shp_maintainedchannels
+')
+
+summarize_sql <- glue("
+  select
+    themelayer as \"Category\",
+    fairway as \"Fairway\",
+    quasou_txt \"Quality\",
+    inform as \"Notes\"
+  from
+    tmp_aoi
+  where 
+    fairway is not null
+  group by
+    themelayer, fairway, inform, quasou_txt
+")
+
+intersection = T
+buffer_nm = 0
+aoi_size = "S"
+coast = "W"
 
 test_new_summary(select_sql, summarize_sql, buffer_nm, intersection, aoi_size, coast)
 ```
