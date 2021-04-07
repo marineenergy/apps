@@ -16,3 +16,6 @@ report_template_gen.html
 report_template_gen.docx
 report_template_gen.pdf
 reports/
+_pages
+.jekyll-metadata
+_site
