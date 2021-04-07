@@ -17,7 +17,7 @@ shelf(
   # database
   DBI, RPostgres,
   # tidyverse
-  dplyr, purrr, readr, tibble, tidyr,
+  dplyr, purrr, readr, stringr, tibble, tidyr,
   # report
   DT, gt, htmltools, htmlwidgets, kableExtra, knitr, markdown, rmarkdown,
   # utility
@@ -25,28 +25,33 @@ shelf(
 )
 here <- here::here
 
-# Local
-pass <- readLines("../../pwd.txt")
+# CAREFUL - THIS SCRIPT WILL DROP AND RECREATE TABLES 
+
+not_linux <- Sys.info()[["sysname"]] != "Linux"
+
+if (not_linux){
+  # presumably Caleb's machine
+  db_params <- list(
+    dbname  = "dev",
+    host    = "localhost",
+    user    = "cgrant",
+    pwd_txt = "../../pwd.txt")
+} else {
+  # presumably server
+  db_params <- list(
+    dbname  = "gis",
+    host    = "postgis",
+    user    = "admin",
+    pwd_txt = "/share/.password_mhk-env.us")
+}
+
 db = dbConnect(
   RPostgres::Postgres(),
-  dbname   = "dev",
-  host     = "localhost",
+  dbname   = db_params$dbname,
+  host     = db_params$host,
   port     = 5432,
-  user     = "cgrant",
-  password = pass
-)
-
-# CAREFUL - THIS SCRIPT WILL DROP AND RECREATE TABLES 
-# Server
-# pass <- readLines("/share/.password_mhk-env.us")
-# db = dbConnect(
-#   RPostgres::Postgres(),
-#   dbname   = "gis",
-#   host     = "postgis",
-#   port     = 5432,
-#   user     = "admin",
-#   password = pass
-# )
+  user     = db_params$user,
+  password = readLines(db_params$pwd_txt))
 
 knitr::opts_chunk$set(echo = T, warning = F, message = F, connection = "db")
 ```
@@ -57,8 +62,6 @@ knitr::opts_chunk$set(echo = T, warning = F, message = F, connection = "db")
 ```{r initialize_ltree}
 dbExecute(db, glue("create extension if not exists ltree"))
 ```
-
-
 
 ## Notes
 
@@ -91,51 +94,42 @@ Cant use the following characters for ltree data type:
 
 ```{r}
 # List of source CSVs that contain management measure categories
-data <- list("receptor" = "https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_lookup_receptor.csv",
-          "stressor" = "https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_lookup_stressor.csv",
-          "technology" = "https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_lookup_technology.csv")
-          # ,"phase" = "https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_tags_phase_lut.csv"
+data <- list(
+  "receptor"   = "https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_lookup_receptor.csv",
+  "stressor"   = "https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_lookup_stressor.csv",
+  "technology" = "https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_lookup_technology.csv")
+# ,"phase" = "https://raw.githubusercontent.com/marineenergy/apps/master/data/ferc_tags_phase_lut.csv"
 
-# Iterate over data sets
-for (i in seq(length(data))) {
-  # URL of source
-  ds <- data[i]
-  # Name of source
-  tbl <- names(data[i])
-  
-  # Read in the CSV without manipulation
-  raw <- read.csv(glue("{ds}")) %>%
-    data.frame()
+d <- tibble(
+  category = names(data),
+  csv      = unlist(data)) %>% 
+  mutate(
+    data = purrr::map(
+      csv, 
+      function(x){
+        read_csv(x, col_types = cols()) %>% 
+          select(tag0 = 1)})) %>% 
+  unnest(data) %>% 
+  mutate(
+    tag = glue("{str_to_title(category)}.{tag0}") %>% 
+      str_replace_all("[^A-Za-z0-9_.]", ""),
+    label = tag0 %>% 
+      str_replace(".*\\.(.+)$", "\\1"),
+    level = tag %>% 
+      str_count("\\.")) %>% 
+  select(
+    tag, label, level) 
+#    x_cat = category, x_tag = tag0, x_csv = csv)
 
-  # Read in the CSV with string manipulation
-  cleaned <- read.csv(glue("{ds}")) %>%
-    lapply(gsub, pattern=" ", replacement="_", fixed=T) %>%
-    lapply(gsub, pattern="-", replacement="_", fixed=T) %>%
-    lapply(gsub, pattern="&", replacement="_", fixed=T) %>%
-    lapply(gsub, pattern=":", replacement=".", fixed=T) %>%
-    data.frame()
+# Create database table
+dbExecute(db, glue("DROP TABLE IF EXISTS tags CASCADE"))
+dbExecute(db, glue("CREATE TABLE tags (tag LTREE PRIMARY KEY, label VARCHAR, level INT4)"))
+dbWriteTable(db, "tags", d, overwrite = F, append = T, row.names = F)
 
-  # Join the raw and cleaned tables
-  df <- data.frame(raw, cleaned)
-  colnames(df) <- c("display", glue(tbl))
-
-  # Create database table
-  dbExecute(db, glue("drop table if exists {tbl} cascade"))
-  dbExecute(db, glue("create table {tbl} (id serial not null, display character varying primary key, {tbl} ltree)"))
-  # Write to database table
-  dbWriteTable(db, glue("{tbl}"), data.frame(df), overwrite = F, append = T, row.names = F)
-}
-```
-
-
-
-## Check out one of the tables
-```{r check_tbl}
-dt <- dbGetQuery(db, glue("select * from receptor")) %>%
+tbl(db, "tags") %>% 
+  collect() %>% 
   datatable()
-dt
 ```
-
 
 
 ## Query ltree
@@ -151,23 +145,27 @@ dt
 
 #### Example 1
 ```{r ltree_inheritance1}
-dt <- dbGetQuery(db, glue("select * from receptor where receptor <@ 'Birds'")) %>%
+dbGetQuery(db, glue("SELECT * FROM tags WHERE tag ~ '*.Birds.*'")) %>%
+# dbGetQuery(db, glue("SELECT * FROM tags WHERE tag @ '*Birds*'")) %>%
   datatable()
-dt
 ```
 
 #### Example 2
 ```{r ltree_inheritance2}
-dt <- dbGetQuery(db, glue("select display from receptor where receptor <@ 'Birds'")) %>%
+dbGetQuery(db, glue("SELECT * FROM tags WHERE tag <@ 'Receptor.Birds'")) %>%
   datatable()
-dt
 ```
 
 #### Example 3
 ```{r ltree_inheritance3}
-dt <- dbGetQuery(db, glue("select display, receptor from receptor where receptor @ 'Ground_Nesting_Birds'")) %>%
+dbGetQuery(db, glue("SELECT * FROM tags WHERE tag @ 'GroundNestingBirds'")) %>%
   datatable()
-dt
+```
+
+#### Example 4
+```{r ltree_inheritance4}
+dbGetQuery(db, glue("SELECT * FROM tags WHERE tag = 'Receptor.Birds'")) %>%
+  datatable()
 ```
 
 ## Conclusion
