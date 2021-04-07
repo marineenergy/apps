@@ -37,15 +37,31 @@ dir_mc       <- '/share/data/marinecadastre.gov'
 csv_mc       <- file.path(dir_mc, '_datasets.csv')
 csv_mc_paths <- file.path(dir_mc, '_datasets_paths.csv')
 
-pass <- readLines("/share/.password_mhk-env.us")
-Sys.setenv(PGPASSWORD=pass) # for psql command line
-con  <<- DBI::dbConnect(
+not_linux <- Sys.info()[["sysname"]] != "Linux"
+
+if (not_linux){
+  # presumably Caleb's machine
+  db_params <- list(
+    dbname  = "dev",
+    host    = "localhost",
+    user    = "cgrant",
+    pwd_txt = "../../pwd.txt")
+} else {
+  # presumably server
+  db_params <- list(
+    dbname  = "gis",
+    host    = "postgis",
+    user    = "admin",
+    pwd_txt = "/share/.password_mhk-env.us")
+}
+
+con <<- dbConnect(
   RPostgres::Postgres(),
-  dbname   = "gis",
-  host     = "postgis",
+  dbname   = db_params$dbname,
+  host     = db_params$host,
   port     = 5432,
-  user     = "admin",
-  password = pass)
+  user     = db_params$user,
+  password = readLines(db_params$pwd_txt))
 
 # tbls <- dbListTables(con); tbls
 
@@ -270,7 +286,7 @@ tabulate_dataset_shp_within_aoi_old <- function(dataset_code, aoi_wkt, output = 
   tbl
 }
 
-tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kable"){
+tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kable", debug = T){
   # summarize shapefile dataset from area of interest
   
   # dataset_code = "cetacean-bia"; aoi_wkt = params$aoi_wkt; output = "kable"
@@ -278,7 +294,8 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kab
   
   # dataset_code = "pipelines"; aoi_wkt='POLYGON ((-124.316 35.95711, -119.627 31.65049, -116.5146 35.0183, -120.8413 37.45895, -124.316 35.95711))'
   
-  message(glue("tab..._shp_within_aoi(dataset_code='{dataset_code}', aoi_wkt='{paste(aoi_wkt, collapse=';')}')"))
+  if (debug)
+    message(glue("tab..._shp_within_aoi(dataset_code='{dataset_code}', aoi_wkt='{paste(aoi_wkt, collapse=';')}')"))
   
   if (is.null(aoi_wkt))
     return("Please draw a Location to get a summary of the intersecting features for this dataset.")
