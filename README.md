@@ -1,4 +1,16 @@
-# shiny-apps
+# apps
+
+## html
+
+These web pages (\*.html) are typically rendered from Rmarkdown (\*.Rmd):
+
+{% for file in site.static_files %}
+  {% if file.extname == '.html' %}
+* [{{ file.path }}]({{ site.baseurl }}{{ file.path }})
+  {% endif %}
+{% endfor %}
+
+## development
 
 Normally, on command line, get this repo:
 
