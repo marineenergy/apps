@@ -1,8 +1,8 @@
 # apps
 
-Main Shiny app: https://shiny.marineenergy.app/report
+Main Shiny app: [shiny.marineenergy.app/report](https://shiny.marineenergy.app/report)
 
-This README with html listing: https://marineenergy.github.io/apps
+This README with html listing: [https://marineenergy.github.io/apps](https://marineenergy.github.io/apps)
 
 ## html
 

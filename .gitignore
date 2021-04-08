@@ -19,3 +19,4 @@ reports/
 _pages
 .jekyll-metadata
 _site
+Gemfile.lock
