@@ -34,6 +34,11 @@ params:
   # - Marine Energy
   # - Cetaceans AND Entrapment AND Marine Energy
   # - Cetaceans
+  # - POLYGON ((-121.9503 33.01519, -121.9503 35.51658, -115.8711 35.51658, -115.8711
+  #             33.01519, -121.9503 33.01519))
+  # - Marine Energy
+  # - Cetaceans AND Entrapment AND Marine Energy
+  # - Cetaceans
   # title: 'Test Gen'
   # aoi_wkt: POLYGON ((-122.6833 32.35398, -122.6833 35.31737, -116.1166 35.31737, -116.1166 32.35398, -122.6833 32.35398))
   # technology: Marine Energy
@@ -54,14 +59,9 @@ params:
   # mgt_tethys: no 
   # title: test
   # aoi_wkt: 
-  # - POLYGON ((-121.9503 33.01519, -121.9503 35.51658, -115.8711 35.51658, -115.8711
-  #             33.01519, -121.9503 33.01519))
   # technology:
-  # - Marine Energy
   # lit_queries:
-  # - Cetaceans AND Entrapment AND Marine Energy
   # spatial_receptors:
-  # - Cetaceans
   # lit_tethys: yes
   # lit_ferc: no
   # spatial: yes

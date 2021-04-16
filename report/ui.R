@@ -121,6 +121,10 @@ tagList(
     
     tabPanel(
       "Literature",
+      strong("Option"), ": Limit Literature to those tagged with a location and within", 
+      tags$ul(
+        tags$li(textInput("txtDistance", "distance of drawn Location")),
+        tags$li(selectInput("selDistanceUnits", "distance units", c("mi","nmi","km")))),
       helpText('Below is the available literature based on the selected tags for stressor, receptor, and technology. Click a link to access the literature.'),
       DTOutput("tblLiterature")),
     

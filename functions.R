@@ -286,6 +286,22 @@ tabulate_dataset_shp_within_aoi_old <- function(dataset_code, aoi_wkt, output = 
   tbl
 }
 
+get_aoi_sql <- function(aoi_wkt){
+  
+  if (is.null(aoi_wkt))
+    return(null)
+  
+  if (length(aoi_wkt) > 1){
+    aoi_wkts <- glue("'SRID=4326;{aoi_wkt}'::geometry")
+    aoi_sql  <- glue("ST_COLLECT(\n{paste(aoi_wkts, collapse=',\n')})") # Is this recreating the ST_COLLECT statement
+    # for every item in <aoi_wkt> array?
+  } else {
+    # aoi_sql <- glue("'SRID=4326;{aoi_wkt}'")
+    aoi_sql <- glue("'SRID=4326;{aoi_wkt}'::geometry")
+  }
+  aoi_sql
+}
+
 tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kable", debug = T){
   # summarize shapefile dataset from area of interest
   
@@ -305,14 +321,7 @@ tabulate_dataset_shp_within_aoi <- function(dataset_code, aoi_wkt, output = "kab
     replace_na(list(buffer_nm = 0)) %>% 
     collect()
   
-  if (length(aoi_wkt) > 1){
-    aoi_wkts <- glue("'SRID=4326;{aoi_wkt}'::geometry")
-    aoi_sql  <- glue("ST_COLLECT(\n{paste(aoi_wkts, collapse=',\n')})") # Is this recreating the ST_COLLECT statement
-    # for every item in <aoi_wkt> array?
-  } else {
-    # aoi_sql <- glue("'SRID=4326;{aoi_wkt}'")
-    aoi_sql <- glue("'SRID=4326;{aoi_wkt}'::geometry")
-  }
+  aoi_sql <- get_aoi_sql(aoi_wkt)
   
   # Different set of queries required for data sets that do or
   #   do not need area weighted statistics 
@@ -742,14 +751,24 @@ html_out <- function(){
 update_tethys_docs <- function(){
   # update db tables: tethys_pubs, tethys_pub_tags; plus data/tethys_docs.[json|csv]
   
+  shelf(jsonlite)
+  
   tethys_docs_url  <- glue("https://tethys.pnnl.gov/api/primre_export")
   tethys_docs_json <- here("data/tethys_docs.json") # TODO: rm data/tethys.json
   tethys_docs_csv  <- here("data/tethys_docs.csv")  # TODO: rm data/tethys.csv
   
-  #download.file(tethys_docs_url, tethys_docs_json)
+  download.file(tethys_docs_url, tethys_docs_json)
   
   tethys <- read_json(tethys_docs_json)
-  tethys_content <- tethys[["..JSON"]][[1]]
+  #tethys_content <- tethys[["..JSON"]][[1]]
+  tethys_content <- tethys
+  # tethys_content[[1]]
+  # names(tethys_content[[1]])
+  #  [1] "URI"              "type"             "landingPage"      "sourceURL"        "title"           
+  #  [6] "description"      "author"           "organization"     "originationDate"  "spatial"         
+  # [11] "technologyType"   "tags"             "modifiedDate"     "signatureProject"
+  # names(tethys_content[[1]]) %>% paste(collapse = " TEXT, ")
+  # URI TEXT, type TEXT, landingPage TEXT, sourceURL TEXT, title TEXT, description TEXT, author TEXT, organization TEXT, originationDate TEXT, spatial TEXT, technologyType TEXT, tags TEXT, modifiedDate TEXT, signatureProject TEXT
   
   tethys_uris <- map_chr(tethys_content, "URI")
   tethys_data <- map_chr(tethys_content, toJSON) %>% 
@@ -760,24 +779,26 @@ update_tethys_docs <- function(){
     data = tethys_data) %>% 
     write_csv(tethys_docs_csv)
   
-  # TODO: run once, so check if table exists
   # TODO: rename table tethys_pubs -> tethys_docs and read fxns in Shiny report app
-#   sql <- glue("
-#   CREATE TABLE tethys_pubs (
-# 	  uri text NOT NULL PRIMARY KEY,
-# 	  data json NOT NULL
-#   );")
-#   dbExecute(con, sql)
-  
+  # dbRemoveTable(con, "tethys_pubs")
+  sql <- glue("
+    CREATE TABLE IF NOT EXISTS tethys_pubs (
+  	  uri TEXT NOT NULL PRIMARY KEY,
+  	  data JSON NOT NULL);")
+  dbExecute(con, sql)
   dbExecute(con, "DELETE FROM tethys_pubs;")
   
   # run once in Terminal to install software and test connection to database:
   #   sudo apt-get update; sudo apt-get install postgresql-client
   # pgpassword set at top:
-  #   pass <- readLines("/share/.password_mhk-env.us")
-  #   Sys.setenv(PGPASSWORD=pass) # for psql command line
+  pass <- readLines("/share/.password_mhk-env.us")
+  Sys.setenv(PGPASSWORD=pass) # for psql command line
   cmd <- glue('cat {tethys_docs_csv} | psql -h postgis -p 5432 -U admin -c "COPY tethys_pubs (uri, data) FROM STDIN WITH (FORMAT CSV, HEADER TRUE);" gis')
   system(cmd)
+  
+  #  [1] "URI"              "type"             "landingPage"      "sourceURL"        "title"           
+  #  [6] "description"      "author"           "organization"     "originationDate"  "spatial"         
+  # [11] "technologyType"   "tags"             "modifiedDate"     "signatureProject"
   
   # update tables for easier querying
   docs <- dbGetQuery(
@@ -833,8 +854,6 @@ update_tethys_docs <- function(){
   #   arrange(desc(title))
   # docs_without_tech # 5,158 rows
   # View(docs_without_tech)
-  
-  
 }
 
 update_tethys_mgt <- function(){

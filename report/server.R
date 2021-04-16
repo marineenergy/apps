@@ -287,6 +287,20 @@ output$tblLiterature <- renderDT({
         FROM tethys_pubs) p ON q.uri = p.uri
       ORDER BY p.title")
     
+    # TODO: spatial
+    # doc_locs <- dbGetQuery(
+    #   con, 
+    #   "SELECT 
+    #    uri, 
+    #    CAST(data->'spatial'->'coordinates'->0->>0 AS DOUBLE PRECISION) AS lon,
+    #    CAST(data->'spatial'->'coordinates'->1->>0 AS DOUBLE PRECISION) AS lat,
+    #    data->'spatial'->'extent'->>0 AS extent
+    #  FROM tethys_pubs
+    #  WHERE data->'spatial'->'extent'->> 0 = 'point' -- 3778 of 6,633 rows
+    # ") %>% 
+    #   tibble()
+    # doc_locs
+    
     res <- dbGetQuery(con, q_pubs)  %>% 
       tibble() %>% 
       mutate(
