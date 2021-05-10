@@ -1,4 +1,6 @@
 ## app.R ##
+library(DT)
+library(shiny)
 library(shinydashboard)
 
 ui <- dashboardPage(
@@ -13,11 +15,13 @@ ui <- dashboardPage(
               "Phase/1.Siting", "Phase/2.Permitting"),
             multiple = T),
         submitButton("+Interaction"),
-        HTML("TODO: table of interactions"),
+        DTOutput('tbl_tags'),
         HTML("TODO: [Map]<br>(open to modal<br> for zoom)")
     ),
     dashboardBody(
         # Boxes need to be put in a row (or column)
+        fluidRow(
+            uiOutput("frame")),
         fluidRow(
             box(plotOutput("plot1", height = 250)),
             
@@ -33,9 +37,22 @@ server <- function(input, output) {
     set.seed(122)
     histdata <- rnorm(500)
     
+    output$frame <- renderUI({
+        tags$iframe(
+            src = "https://api.marineenergy.app/highchart?spec", 
+            width = "100%", height="500", style="border:none;")
+    })
+    
     output$plot1 <- renderPlot({
         data <- histdata[seq_len(input$slider)]
         hist(data)
+    })
+    
+    output$tbl_tags = renderDT({
+        req(input$tags)
+        #browser()
+        tibble(
+            Tags = paste(input$tags, collapse="; "))
     })
 }
 

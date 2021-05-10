@@ -27,6 +27,8 @@ ui <- fluidPage(
         dt("Image"), dd(uiOutput("g_image")) )),
       textInput(
         "txtTitle", "Report Title"), 
+      textInput(
+        "txtTags", "Tags"), 
       actionButton(
         "btnGenerate",
         "Generate Report"),
