@@ -1,7 +1,7 @@
 ## app.R ##
 library(librarian)
 shelf(
-  DT, here, shiny, shinydashboard)
+  DT, here, mapedit, shiny, shinydashboard, sf)
 
 source(here("functions.R"))
 
@@ -26,6 +26,13 @@ for (cat in unique(df_tags$category)){ # (cat = df_tags$category[1])
       cat))
 }
 
+map_default <- leaflet(
+  options = leafletOptions(
+    zoomControl = T,
+    attributionControl = F)) %>%
+  addProviderTiles(providers$Esri.OceanBasemap) %>% 
+  setView(-93.4, 37.4, 4)
+
 ui <- dashboardPage(
   dashboardHeader(
     title = "MarineEnergy.app",
@@ -39,9 +46,11 @@ ui <- dashboardPage(
       uiOutput("ixn_btns")),
     wellPanel(
       h4("Location"),
-      leafletOutput("map_side", height=200, width="100%"),
+      div(
+        class="shiny-input-container",
+        leafletOutput("map_side", height=200)),
       actionButton(
-        "btn_mod_map", "Modify", icon=icon("gear"), width="50%"))),
+        "btn_mod_map", "Add", icon=icon("plus")))),
   
   dashboardBody(
     tags$head(
@@ -73,40 +82,88 @@ server <- function(input, output, session) {
   #         src = "https://api.marineenergy.app/highchart?spec", 
   #         width = "100%", height="500", style="border:none;")
   # })
+
+  
+  # map ----
+  
+  output$map_side <- renderLeaflet({
+    map_default %>% 
+      setView(-93.4, 37.4, 2)
+  })
+  
+  crud <- callModule(
+    editMod, "mapEdit", map_default, "ply",
+    editorOptions = list(
+      polylineOptions = F, markerOptions = F, circleMarkerOptions = F,
+      singleFeature = T))
+  
+  observeEvent(input$btn_mod_map, {
+    showModal(modalDialog(
+      title = "Modify Location",
+      editModUI("mapEdit"),
+      easyClose = T))
+  })
+  
+  observe({
+    ply <- crud()$finished
+    
+    leafletProxy("map_side") %>%
+      clearShapes()
+    
+    if (is.null(ply)){
+      actionButton(
+        "btn_mod_map", "Add", icon=icon("plus"))
+    } else {
+      bb <- st_bbox(ply)
+      
+      leafletProxy("map_side") %>%
+        addPolygons(data = ply) %>% 
+        flyToBounds(bb[['xmin']], bb[['ymin']], bb[['xmax']], bb[['ymax']])
+      
+      updateActionButton(
+        session,
+        "btn_mod_map", "Modify", icon=icon("gear"))
+    }
+  })
+  
+  # ixns ----
   
   output$ixn_btns <- renderUI({
-    btn_add <- div(
-      style="display:inline-block",
-      actionButton(
-        "btn_add_ixn", "Add", icon=icon("plus")), width=6)
-    btn_mod <- div(
-      style="display:inline-block;float:right",
-      actionButton(
-        "btn_mod_ixns", "Modify (n=0)", icon=icon("gear")), width=6)    
+    
+    # btn_add <- div(
+    #   style="display:inline-block;",
+    #   actionButton(
+    #     "btn_add_ixn", "Add", icon=icon("plus")), width=6)
+    # 
+    # btn_mod <- div(
+    #   style="display:inline-block;float:right",
+    #   actionButton(
+    #     "btn_mod_ixns", "Modify (n=0)", icon=icon("gear"), style="margin-right:15px"), width=6)    
+    
+    btn_add <- actionButton(
+      "btn_add_ixn", "Add", icon=icon("plus"), style="display:inline-block;", width=250/2)
+    
+    btn_mod <- actionButton(
+      "btn_mod_ixns", "Modify (n=0)", icon=icon("gear"), style="display:inline-block;margin-right:15px;float:right", width=250/2)
+    
     if (length(values$ixns) == 0)
-      return(btn_add)
+      return(
+        btn_add)
+    
     tagList(
-      btn_add,
-      btn_mod)
+        btn_add,
+        btn_mod)
   })
   
   observeEvent(input$btn_add_ixn, {
     req(input$sel_ixn_tags)
-
+    
     values$ixns <- append(values$ixns, list(input$sel_ixn_tags))
     
     updateSelectInput(
       session, 
       "sel_ixn_tags",
       selected = "")
-  })
-  
-  output$map_side <- renderLeaflet({
-    leaflet(
-      options = leafletOptions(
-        attributionControl = F,
-        zoomControl = F)) %>% 
-      addProviderTiles(providers$Esri.OceanBasemap)
   })
   
   observeEvent(input$btn_mod_ixns, {
@@ -121,10 +178,11 @@ server <- function(input, output, session) {
   output$tbl_ixns <- renderDataTable({
     req(values$ixns)
     
+    # TODO: improve table in phases:
+    #   1) replace df_tags.sql with prettier shorter df_tags.tag
+    #   2) break into columns: technology | stressor | receptor
     tibble(
-      ixns = values$ixns) %>% 
-      mutate(
-        ixns = map_chr(ixns, paste, collapse = "; "))
+      Interaction = map_chr(values$ixns, paste, collapse = "; "))
   })
   
   observeEvent(input$btn_del_ixns, {
@@ -142,6 +200,7 @@ server <- function(input, output, session) {
       label = glue("Modify (n={ n_ixns })"))
   })
   
+  # temp plot ----
   output$plot1 <- renderPlot({
     data <- histdata[seq_len(input$slider)]
     hist(data)
