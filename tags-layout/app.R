@@ -48,9 +48,9 @@ ui <- dashboardPage(
       h4("Location"),
       div(
         class="shiny-input-container",
-        leafletOutput("map_side", height=200)),
+        leafletOutput("map_side", height = 200)),
       actionButton(
-        "btn_mod_map", "Add", icon=icon("plus")))),
+        "btn_mod_map", "Add", icon = icon("plus"), width = "270px"))),
   
   dashboardBody(
     tags$head(
@@ -139,20 +139,17 @@ server <- function(input, output, session) {
     #   style="display:inline-block;float:right",
     #   actionButton(
     #     "btn_mod_ixns", "Modify (n=0)", icon=icon("gear"), style="margin-right:15px"), width=6)    
-    
-    btn_add <- actionButton(
-      "btn_add_ixn", "Add", icon=icon("plus"), style="display:inline-block;", width=250/2)
-    
-    btn_mod <- actionButton(
-      "btn_mod_ixns", "Modify (n=0)", icon=icon("gear"), style="display:inline-block;margin-right:15px;float:right", width=250/2)
-    
+  
     if (length(values$ixns) == 0)
       return(
-        btn_add)
+        actionButton(
+          "btn_add_ixn", "Add", icon=icon("plus"), width="270px"))
     
     tagList(
-        btn_add,
-        btn_mod)
+      actionButton(
+        "btn_add_ixn" , "Add"         , icon=icon("plus"), width="120px", style="display:inline-block;"),
+      actionButton(
+        "btn_mod_ixns", "Modify (n=0)", icon=icon("gear"), width="120px", style="display:inline-block;margin-right:15px;float:right"))
   })
   
   observeEvent(input$btn_add_ixn, {
