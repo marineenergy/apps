@@ -1,10 +1,13 @@
-## app.R ##
+# libraries ----
 library(librarian)
+# shelf(r-lib/ellipsis, RinteRface/shinydashboardPlus, r-lib/vctrs)
 shelf(
-  DT, here, mapedit, shiny, shinydashboard, sf)
+  DT, googleAuthR, here, mapedit, shiny, shinydashboard, shinyjs, shinyWidgets, sf)
+library(shinydashboardPlus) # overwrites shinydashboard
 
 source(here("functions.R"))
 
+# tag_choices ----
 df_tags <- tbl(con, "tags") %>% 
   collect() %>% 
   filter(tag != category) %>% 
@@ -26,19 +29,66 @@ for (cat in unique(df_tags$category)){ # (cat = df_tags$category[1])
       cat))
 }
 
-map_default <- leaflet(
+
+# googleAuthR ----
+
+# * [Client ID for Web application – APIs & Services – iea-uploader – Google API Console](https://console.developers.google.com/apis/credentials/oauthclient/596429062120-lsgv9f8pbas11o7ub9b9cm0earf1dpu5.apps.googleusercontent.com?authuser=3&project=iea-uploader)
+options(googleAuthR.webapp.client_id = "596429062120-lsgv9f8pbas11o7ub9b9cm0earf1dpu5.apps.googleusercontent.com")
+
+googleSignInUI_btn_signin <- function(id, logout_name = "Sign Out", logout_class = "btn-danger"){
+  ns <- shiny::NS(id)
+  
+  shiny::tagList(
+    div(id=ns("signin"), class="g-signin2", "data-onsuccess"="onSignIn"))
+}
+
+googleSignInUI_btn_signout <- function(id, logout_name = "Sign Out", logout_class = "btn-danger"){
+  ns <- shiny::NS(id)
+  
+  shiny::tagList(
+    tags$button(id = ns("signout"), logout_name, onclick = "signOut();", class = logout_class))
+}
+
+googleSignInUI_head <- function(id, logout_name = "Sign Out", logout_class = "btn-danger"){
+  
+  ns <- shiny::NS(id)
+  
+  tagList(
+    tags$head(
+      tags$meta(name="google-signin-scope", content="profile email"),
+      tags$meta(name="google-signin-client_id", content=getOption("googleAuthR.webapp.client_id")),
+      HTML('<script src="https://apis.google.com/js/platform.js?onload=init"></script>')),
+    googleAuthR:::load_js_template(
+      "js/signin-top.js", 
+      ns("signin"), ns("signout") ,ns("g_id"), ns("g_name"), ns("g_image"), ns("g_email")),
+    googleAuthR:::load_js_template(
+      "js/signin-bottom.js",
+      ns("g_id"), ns("g_name"), ns("g_image"), ns("g_email"), ns("signed_in")))
+}
+
+## map_edit ----
+
+map_edit <- leaflet(
   options = leafletOptions(
     zoomControl = T,
     attributionControl = F)) %>%
   addProviderTiles(providers$Esri.OceanBasemap) %>% 
   setView(-93.4, 37.4, 4)
 
+# ui ----
 ui <- dashboardPage(
   dashboardHeader(
     title = "MarineEnergy.app",
-    titleWidth = 310),
+    titleWidth = 310,
+    tags$li(
+      class = "dropdown",
+      tags$li(
+        googleSignInUI_btn_signin("login"), class = "dropdown"),
+      userOutput("user"))),
+    
   dashboardSidebar(
     width = 310,
+    googleSignInUI_head("login"),
     wellPanel(
       h4("Interactions"),
       selectInput(
@@ -55,44 +105,46 @@ ui <- dashboardPage(
   dashboardBody(
     tags$head(
       tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")),
-    # Boxes need to be put in a row (or column)
-    fluidRow(
-      uiOutput("frame")),
+    # boxes need to be put in a row (or column)
     fluidRow(
       box(plotOutput("plot1", height = 250)),
-      
       box(
         title = "Controls",
         sliderInput("slider", "Number of observations:", 1, 100, 50)
-      )
-    )
-  )
+      )))
 )
 
+# server ----
 server <- function(input, output, session) {
   set.seed(122)
   histdata <- rnorm(500)
-  
+
   values <- reactiveValues(
     ixns   = list())
   
-  # TODO: use API to display htmlwidget results
-  # output$frame <- renderUI({
-  #     tags$iframe(
-  #         src = "https://api.marineenergy.app/highchart?spec", 
-  #         width = "100%", height="500", style="border:none;")
-  # })
-
+  # login ----
+  glogin <- shiny::callModule(googleSignIn, "login")
+  
+  output$user <- renderUser({
+    dashboardUser(
+      name     = glogin()$name,
+      image    = glogin()$image,
+      subtitle = glogin()$email,
+      footer   = googleSignInUI_btn_signout("login"))
+  })
   
   # map ----
-  
   output$map_side <- renderLeaflet({
-    map_default %>% 
+    leaflet(
+      options = leafletOptions(
+        zoomControl        = F,
+        attributionControl = F)) %>%
+      addProviderTiles(providers$Esri.OceanBasemap) %>% 
       setView(-93.4, 37.4, 2)
   })
   
   crud <- callModule(
-    editMod, "mapEdit", map_default, "ply",
+    editMod, "mapEdit", map_edit, "ply",
     editorOptions = list(
       polylineOptions = F, markerOptions = F, circleMarkerOptions = F,
       singleFeature = T))
@@ -130,16 +182,6 @@ server <- function(input, output, session) {
   
   output$ixn_btns <- renderUI({
     
-    # btn_add <- div(
-    #   style="display:inline-block;",
-    #   actionButton(
-    #     "btn_add_ixn", "Add", icon=icon("plus")), width=6)
-    # 
-    # btn_mod <- div(
-    #   style="display:inline-block;float:right",
-    #   actionButton(
-    #     "btn_mod_ixns", "Modify (n=0)", icon=icon("gear"), style="margin-right:15px"), width=6)    
-  
     if (length(values$ixns) == 0)
       return(
         actionButton(
@@ -167,12 +209,12 @@ server <- function(input, output, session) {
     showModal(modalDialog(
       title = "Modify Interactions",
       tagList(
-        dataTableOutput("tbl_ixns"),
+        DTOutput("tbl_ixns"),
         actionButton("btn_del_ixns", "Delete selected interaction(s)")),
       easyClose = T))
   })
   
-  output$tbl_ixns <- renderDataTable({
+  output$tbl_ixns <- renderDT({
     req(values$ixns)
     
     # TODO: improve table in phases:
