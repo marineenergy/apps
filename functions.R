@@ -3,26 +3,16 @@ if (!require(librarian)){
   library(librarian)
 }
 shelf(
-  # database
-  DBI, RPostgres,
-  # spatial
-  ggmap, leaflet, 
-  r-spatial/mapview, # https://github.com/r-spatial/mapview/issues/324
-  sf, sp,
-  # scrape
-  rvest, 
-  # tidyverse
-  dplyr, purrr, readr, tibble, tidyr,
-  # someday
-  # googledrive, zeallot,
-  # report
-  DT, gt, htmltools, htmlwidgets, kableExtra, knitr, markdown, rmarkdown, shiny, webshot,
-  # utility
-  fs, glue, here, png, scales, stringr, urltools)
+  DBI, dplyr, DT, fs, glue, here, htmltools, htmlwidgets, kableExtra, knitr, 
+  leaflet, markdown, r-spatial/mapview, # https://github.com/r-spatial/mapview/issues/324
+  purrr, readr,  RPostgres, rmarkdown, rvest, tibble, tidyr,
+  scales, sf, shiny, sp, stringr, urltools)
+# ggmap, gt, webshot, png
+
 here <- here::here
 
-if (!is_phantomjs_installed())
-  install_phantomjs()
+# if (!webshot::is_phantomjs_installed())
+#   webshot::install_phantomjs()
 
 # webshot::install_phantomjs()
 # webshot.js returned failure value: 1
@@ -53,6 +43,15 @@ if (not_linux){
     host    = "postgis",
     user    = "admin",
     pwd_txt = "/share/.password_mhk-env.us")
+}
+
+# Ben's laptop
+if (Sys.info()[["user"]] == "bbest" & Sys.info()[["sysname"]] == "Darwin"){
+  db_params <- list(
+    dbname  = "gis",
+    host    = "marineenergy.app",
+    user    = "admin",
+    pwd_txt = "~/private/dbpass_marineenergy.app.txt") 
 }
 
 con <<- dbConnect(

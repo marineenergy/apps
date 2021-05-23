@@ -1,0 +1,62 @@
+category,tag_mgt,ReceptorSpecifics
+Management,Compliance,NA
+Management,Design feature,NA
+Management,Mitigation,NA
+Management,Monitoring,NA
+Management,None identified,NA
+Phase,Decommissioning,NA
+Phase,Installation,NA
+Phase,Operation & Maintenance,NA
+Receptor,Benthic,All receptors
+Receptor,Benthic,Benthic
+Receptor,Benthic,Benthic invertebrates
+Receptor,Benthic,"Fish, Benthic invertebrates"
+Receptor,Birds,All receptors
+Receptor,Birds,Birds
+Receptor,Birds,Birds on water
+Receptor,Birds,Diving birds
+Receptor,Birds,Roosting birds
+Receptor,Birds,Seabirds
+Receptor,Birds,Shore-nesting birds
+Receptor,Fish,All receptors
+Receptor,Fish,Basking shark
+Receptor,Fish,Basking shark; Large fish
+Receptor,Fish,Basking shark; Whale shark; Fish
+Receptor,Fish,Demersal fish
+Receptor,Fish,Elasmobranchs
+Receptor,Fish,Fish
+Receptor,Fish,Large fish
+Receptor,Fish,Migratory fish
+Receptor,Fish,Migratory fish; Elasmobranchs
+Receptor,Habitat,All receptors
+Receptor,Habitat,Benthic invertebrates
+Receptor,Habitat,Benthic species
+Receptor,Habitat,Intertidal ecology
+Receptor,Marine Mammals,All receptors
+Receptor,Marine Mammals,Cetaceans
+Receptor,Marine Mammals,Marine Mammals
+Receptor,Marine Mammals,Seals
+Receptor,Marine Mammals,Seals; Cetaceans
+Receptor,Reptiles,All receptors
+Receptor,Reptiles,Sea turtles
+Stressor,Airborne noise,NA
+Stressor,Barrier to movement,NA
+Stressor,Changes in sediment dynamics,NA
+Stressor,Changes in water flow,NA
+Stressor,Collision risk,NA
+Stressor,Contamination,NA
+Stressor,Displacement,NA
+Stressor,Dissipation of wave energy,NA
+Stressor,EMF and thermal pressure,NA
+Stressor,Entanglement,NA
+Stressor,Entrapment,NA
+Stressor,Habitat creation,NA
+Stressor,Lighting,NA
+Stressor,Loss of habitat,NA
+Stressor,Loss of seabed habitat,NA
+Stressor,Marine Non-Native Species (MNNS),NA
+Stressor,Underwater noise,NA
+Stressor,Vessel collision,NA
+Stressor,Vessel disturbance,NA
+Technology,Tidal,NA
+Technology,Wave,NA
