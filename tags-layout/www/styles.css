@@ -27,3 +27,29 @@
   background-color: #255774 !important; 
 }
 
+/* colors for Tags from https://getbootstrap.com/docs/4.0/components/buttons/#examples */
+.selectize-control.multi .selectize-input > div[data-value^='Technology.'] { 
+  /* .btn-primary */
+  color: #fff;
+  background-color: #007bff;
+  border-color: #007bff;
+}
+.selectize-control.multi .selectize-input > div[data-value^='Receptor.'] { 
+  /* .btn-success  */
+  color: #fff;
+  background-color: #28a745;
+  border-color: #28a745;
+}
+.selectize-control.multi .selectize-input > div[data-value^='Stressor.'] { 
+  /* .btn-danger  */
+  color: #fff;
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+.selectize-control.multi .selectize-input > div[data-value^='Phase.'] { 
+  /* .btn-secondary */
+  color: #fff;
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
