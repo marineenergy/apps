@@ -27,6 +27,10 @@
   background-color: #255774 !important; 
 }
 
+.sidebar-menu>li>a {
+  padding: 10px 5px 10px 15px;
+}
+
 /* colors for Tags from https://getbootstrap.com/docs/4.0/components/buttons/#examples */
 .selectize-control.multi .selectize-input > div[data-value^='Technology.'] { 
   /* .btn-primary */
