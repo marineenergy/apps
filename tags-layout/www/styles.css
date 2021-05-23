@@ -8,22 +8,22 @@
 .logo {
     padding-left: 5px !important;
 }
+
 .navbar-brand {
-    padding-left: 0px;
+    padding-left: 0;
     padding-bottom: 5px;
     padding-top: 5px;
 }
 
-.nav-item {
-  /*color: #333;*/
-  /* background-color:#3c8dbc */
-  background: #bec5cb;
+.nav-item > .nav-link {
+  color: #fff;
 }
 
-/*
-.skin-blue .sidebar-menu>li.active>a,.skin-blue .sidebar-menu>li.menu-open>a,.skin-blue .sidebar-menu>li:hover>a {
-    color: #fff;
-    background: #1e282c
+.nav-item.active > a {
+  background-color: #255774 !important;
 }
-*/
+
+.nav-item a:hover { 
+  background-color: #255774 !important; 
+}
 

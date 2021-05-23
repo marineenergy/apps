@@ -7,7 +7,7 @@ ui <- dashboardPage(
     titleWidth = 310,
     leftUi = navbarMenu(
       navbarTab(tabName = "tab_prj", "Projects"),
-      navbarTab(tabName = "Tab2", "Tab 2")),
+      navbarTab(tabName = "tab_mgt", "Management")),
     tags$li(
       googleSignInUI_btn_signin("login"), class = "dropdown"),
     userOutput("user")),
@@ -65,7 +65,7 @@ ui <- dashboardPage(
         
         fluidRow(
           box(
-            width=12,
+            title = "Map of Projects", width = 12,
             leafletOutput("prj_map"))),
         
         helpText(
@@ -77,20 +77,32 @@ ui <- dashboardPage(
         
         fluidRow(
           box(
-            width=12, height="100%",
+            title = "Timeline of Projects", width = 12,
             plotlyOutput("prj_p")))),
         
         #verbatimTextOutput("click")),
     
-  
+      # tab_mgt ----
       tabItem(
-        tabName = "Tab2",
-        "Tab 2",
+        tabName = "tab_mgt",
+        helpText(
+          HTML("The Management Measures tool allows users to search and query the Tethys 
+          Management Measures Tool for Marine Renewable Energy - a robust compilation 
+          of marine energy management measures identified by international Marine 
+          Renewable Energy regulators and researchers.
+          <br>
+          To search for management measures, select the type of technology, category 
+          of measure, project phase, receptor and stressor of interest from the drop 
+          down menu. Note that it is possible to select multiple options for each 
+          field. As you select different technologies, categories, phases, receptors, 
+          and stressors, the table will begin to filter options as choices are selected. 
+          The total number of available entries can be found below the table. 
+          <br>
+          Source: <a href='https://tethys.pnnl.gov/management-measures' target='_blank'>
+            Management Measures Tool for Marine Renewable Energy | Tethys</a>")),
         fluidRow(
-          # boxes need to be put in a row (or column)
-          box(plotOutput("plot1", height = 250)),
           box(
-            title = "Controls",
-            sliderInput("slider", "Number of observations:", 1, 100, 50)
-          )))))
-)
+            title = "Management Measures", width = 12,
+            dataTableOutput("tbl_mgt"))))
+      
+)))

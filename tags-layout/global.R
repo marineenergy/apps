@@ -3,7 +3,7 @@ library(librarian)
 shelf(
   dplyr, DT, glue, googleAuthR, here, htmltools, leaflet, mapedit, 
   plotly, RColorBrewer, readr,
-  shiny, shinydashboard, shinyjs, shinyWidgets, sf)
+  readr, shiny, shinydashboard, shinyjs, shinyWidgets, sf)
 
 library(shinydashboardPlus) # overwrites shinydashboard functions
 
@@ -296,3 +296,11 @@ n_tech <- d_times %>%
 n_riv <- n_tech %>% filter(technology_type == "Riverine Energy") %>% pull(n)
 n_tid <- n_tech %>% filter(technology_type == "Tidal Energy")    %>% pull(n)
 n_wav <- n_tech %>% filter(technology_type == "Wave Energy")     %>% pull(n)
+
+# management
+mgt_csv <- "/share/github/apps/data/tethys_mgt.csv"
+
+df_mgt <- read_csv(mgt_csv) %>% 
+  rename(
+    Category = `Management Measure Category`,
+    Phase    = `Phase of Project`)

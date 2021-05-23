@@ -302,10 +302,17 @@ server <- function(input, output, session) {
     
   })
   
-  # temp plot ----
-  output$plot1 <- renderPlot({
-    data <- histdata[seq_len(input$slider)]
-    hist(data)
+  # management ----
+  output$tbl_mgt <- renderDataTable({
+    df_mgt %>% 
+      filter(
+        Technology %in% c("Wave") & Receptor %in% c("Birds"))
   })
   
+  
+  # keep alive ----
+  # prevent gray outs of session
+  #  * [r - How to prevent a shiny app from being grayed out? - Stack Overflow](https://stackoverflow.com/questions/54594781/how-to-prevent-a-shiny-app-from-being-grayed-out)
+  #observe({     invalidateLater(10000)     cat(".")   })
+
 }
