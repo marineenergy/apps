@@ -4,3 +4,26 @@
    background-color: #393839;
    border: 0;
 }
+
+.logo {
+    padding-left: 5px !important;
+}
+.navbar-brand {
+    padding-left: 0px;
+    padding-bottom: 5px;
+    padding-top: 5px;
+}
+
+.nav-item {
+  /*color: #333;*/
+  /* background-color:#3c8dbc */
+  background: #bec5cb;
+}
+
+/*
+.skin-blue .sidebar-menu>li.active>a,.skin-blue .sidebar-menu>li.menu-open>a,.skin-blue .sidebar-menu>li:hover>a {
+    color: #fff;
+    background: #1e282c
+}
+*/
+
