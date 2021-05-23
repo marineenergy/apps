@@ -1,7 +1,10 @@
 # libraries ----
 library(librarian)
 shelf(
-  DT, googleAuthR, here, mapedit, shiny, shinydashboard, shinyjs, shinyWidgets, sf)
+  dplyr, DT, glue, googleAuthR, here, htmltools, leaflet, mapedit, 
+  plotly, RColorBrewer, readr,
+  shiny, shinydashboard, shinyjs, shinyWidgets, sf)
+
 library(shinydashboardPlus) # overwrites shinydashboard functions
 
 source(here("functions.R"))
@@ -217,7 +220,7 @@ googleSignInUI_btn_signout <- function(id, logout_name = "Sign Out", logout_clas
 }
 
 
-## map_edit ----
+# map_edit ----
 
 map_edit <- leaflet(
   options = leafletOptions(
@@ -226,194 +229,70 @@ map_edit <- leaflet(
   addProviderTiles(providers$Esri.OceanBasemap) %>% 
   setView(-93.4, 37.4, 4)
 
-# ui ----
-ui <- dashboardPage(
-  
-  #* header ----
-  dashboardHeader(
-    title = HTML("<a class='navbar-brand' href='#'><img alt='Brand' src='./images/logo-horizontal-square.svg' width='40px'></a>MarineEnergy.app"),
-    titleWidth = 310,
-    leftUi = navbarMenu(
-      navbarTab(tabName = "Tab1", "Tab 1"),
-      navbarTab(tabName = "Tab2", "Tab 2")),
-    tags$li(
-      googleSignInUI_btn_signin("login"), class = "dropdown"),
-    userOutput("user")),
+# projects ----
+# p_csvs <- list.files("/share/github/apps/data", "project_.*")
+# file.copy(file.path("/share/github/apps/data", p_csvs), file.path("/share/github/apps_dev/data", p_csvs), overwrite = T)
+prj_sites_csv        <- here("data/project_sites.csv")
+prj_times_csv        <- here("data/project_times.csv")
+prj_permits_csv      <- here("data/project_permits.csv")
+prj_permit_types_csv <- here("data/project_permit_types.csv")
 
-  #* sidebar ----
-  dashboardSidebar(
-    width = 310,
-    googleSignInUI_head("login"),
-    sidebarMenu(
-      menuItem(
-        "Configure", 
-        tabName = "configure",icon = icon("gear"),
-        startExpanded = T,
-        wellPanel(
-          h4("Interactions"),
-          selectInput(
-            "sel_ixn_tags", "Tags", tag_choices, multiple = T),
-          uiOutput("ixn_btns")),
-        wellPanel(
-          h4("Location"),
-          div(
-            class="shiny-input-container",
-            leafletOutput("map_side", height = 200)),
-          actionButton(
-            "btn_mod_map", "Add", icon = icon("plus"), width = "263px"))))),
-  
-  #* body ----
-  dashboardBody(
-    tags$head(
-      tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")),
-    
-    tabItems(
-      tabItem(
-        tabName = "Tab1",
-        "Tab 1"),
-      tabItem(
-        tabName = "Tab2",
-        "Tab 2",
-        fluidRow(
-          # boxes need to be put in a row (or column)
-          box(plotOutput("plot1", height = 250)),
-          box(
-            title = "Controls",
-            sliderInput("slider", "Number of observations:", 1, 100, 50)
-          )))))
-)
+prj_sites <- read_csv(prj_sites_csv, col_types = cols()) %>% 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = F)
 
-# server ----
-server <- function(input, output, session) {
-  set.seed(122)
-  histdata <- rnorm(500)
+d_times <- read_csv(prj_times_csv, col_types = cols())  %>% 
+  arrange(technology_type, project) %>% 
+  mutate(
+    technology_type = factor(technology_type))
+d_times <- d_times %>% 
+  mutate(
+    # order projects by technology_type, then project
+    project = factor(project, levels = d_times$project))
+# levels(d_times$project) # Igiugig,...,Yakutat
 
-  values <- reactiveValues(
-    ixns   = list())
-  
-  # login ----
-  glogin <- shiny::callModule(googleSignIn, "login")
-  
-  output$user <- renderUser({
-    dashboardUser(
-      name     = glogin()$name,
-      image    = glogin()$image,
-      subtitle = glogin()$email,
-      footer   = googleSignInUI_btn_signout("login"))
-  })
-  
-  # map ----
-  output$map_side <- renderLeaflet({
-    leaflet(
-      options = leafletOptions(
-        zoomControl        = F,
-        attributionControl = F)) %>%
-      addProviderTiles(providers$Esri.OceanBasemap) %>% 
-      setView(-93.4, 37.4, 2)
-  })
-  
-  crud <- callModule(
-    editMod, "mapEdit", map_edit, "ply",
-    editorOptions = list(
-      polylineOptions = F, markerOptions = F, circleMarkerOptions = F,
-      singleFeature = T))
-  
-  observeEvent(input$btn_mod_map, {
-    showModal(modalDialog(
-      title = "Modify Location",
-      editModUI("mapEdit"),
-      easyClose = T))
-  })
-  
-  observe({
-    ply <- crud()$finished
-    
-    leafletProxy("map_side") %>%
-      clearShapes()
-    
-    if (is.null(ply)){
-      actionButton(
-        "btn_mod_map", "Add", icon=icon("plus"))
-    } else {
-      bb <- st_bbox(ply)
-      
-      leafletProxy("map_side") %>%
-        addPolygons(data = ply) %>% 
-        flyToBounds(bb[['xmin']], bb[['ymin']], bb[['xmax']], bb[['ymax']])
-      
-      updateActionButton(
-        session,
-        "btn_mod_map", "Modify", icon=icon("gear"))
-    }
-  })
-  
-  # ixns ----
-  
-  output$ixn_btns <- renderUI({
-    
-    if (length(values$ixns) == 0)
-      return(
-        actionButton(
-          "btn_add_ixn", "Add", icon=icon("plus"), width="263px"))
-    
-    tagList(
-      actionButton(
-        "btn_add_ixn" , "Add"         , icon=icon("plus"), width="120px", style="display:inline-block;"),
-      actionButton(
-        "btn_mod_ixns", "Modify (n=0)", icon=icon("gear"), width="120px", style="display:inline-block;margin-right:15px;float:right"))
-  })
-  
-  observeEvent(input$btn_add_ixn, {
-    req(input$sel_ixn_tags)
-    
-    values$ixns <- append(values$ixns, list(input$sel_ixn_tags))
-    
-    updateSelectInput(
-      session, 
-      "sel_ixn_tags",
-      selected = "")
-  })
-  
-  observeEvent(input$btn_mod_ixns, {
-    showModal(modalDialog(
-      title = "Modify Interactions",
-      tagList(
-        DTOutput("tbl_ixns"),
-        actionButton("btn_del_ixns", "Delete selected interaction(s)")),
-      easyClose = T))
-  })
-  
-  output$tbl_ixns <- renderDT({
-    req(values$ixns)
-    
-    # TODO: improve table in phases:
-    #   1) replace df_tags.sql with prettier shorter df_tags.tag
-    #   2) break into columns: technology | stressor | receptor
-    tibble(
-      Interaction = map_chr(values$ixns, paste, collapse = "; "))
-  })
-  
-  observeEvent(input$btn_del_ixns, {
-    req(values$ixns, input$tbl_ixns_rows_selected)
-    
-    values$ixns <- values$ixns[-input$tbl_ixns_rows_selected]
-  })
-  
-  observe({
-    n_ixns <- length(values$ixns)
-    
-    updateActionButton(
-      session, 
-      "btn_mod_ixns", 
-      label = glue("Modify (n={ n_ixns })"))
-  })
-  
-  # temp plot ----
-  output$plot1 <- renderPlot({
-    data <- histdata[seq_len(input$slider)]
-    hist(data)
-  })
-  
-}
+d_permits <- read_csv(prj_permits_csv, col_types = cols()) %>% 
+  left_join(
+    d_times %>% 
+      select(project, technology_type), 
+    by = "project") %>% 
+  arrange(technology_type, project)
+d_permits <- d_permits %>% 
+  mutate(
+    # order projects by technology_type, then project
+    project = factor(project, levels = distinct(d_permits, project) %>% pull(project)))
+# levels(d_permits$project) # Igiugig,...,Yakutat
 
-shinyApp(ui, server)
+# order permit_types
+permit_types <- read_csv(prj_permit_types_csv, col_types = cols()) %>% 
+  pull(permit_types)
+permit_types <- permit_types %>% 
+  intersect(d_permits$permit_type)
+d_permits <- d_permits %>% 
+  mutate(
+    # order by permit_types
+    permit_type = factor(permit_type, levels = permit_types))
+
+prj_sites$label_html <- prj_sites$label_html %>% lapply(HTML)
+prj_sites$popup_html <- prj_sites$popup_html %>% lapply(HTML)
+
+# colors & symbols
+project_statuses <- unique(d_times$project_status)
+cols_type  <- colorRampPalette(brewer.pal(n=11, name = 'PiYG'))(length(permit_types))
+cols_status <- c("#30A4E1", "#999999") # Active/Inactive Projects
+cols <- setNames(
+  c(cols_type, cols_status), 
+  c(permit_types, project_statuses))
+syms_type  <- c(rep('triangle-up', 3), 'triangle-down', 'triangle-up', 'triangle-down', 'triangle-up', 'triangle-down', rep('triangle-up', 3))
+syms_status <- rep(NA, 2)
+syms <- setNames(
+  c(syms_type, syms_status), 
+  c(permit_types, project_statuses))
+
+# technology_type numbers for horizontal line and label placement along y axis
+n_tech <- d_times %>% 
+  group_by(technology_type) %>% 
+  summarize(
+    n = n())
+n_riv <- n_tech %>% filter(technology_type == "Riverine Energy") %>% pull(n)
+n_tid <- n_tech %>% filter(technology_type == "Tidal Energy")    %>% pull(n)
+n_wav <- n_tech %>% filter(technology_type == "Wave Energy")     %>% pull(n)
