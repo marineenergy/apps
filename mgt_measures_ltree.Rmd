@@ -42,7 +42,16 @@ if (not_linux){
     dbname  = "gis",
     host    = "postgis",
     user    = "admin",
-    pwd_txt = "/share/.password_mhk-env.us")
+    pwd_txt = "/share/.password_mhk-env.us") 
+}
+
+# Ben's laptop
+if (Sys.info()[["user"]] == "bbest" & Sys.info()[["user"]] == "Darwin"){
+  db_params <- list(
+    dbname  = "gis",
+    host    = "marineenergy.app",
+    user    = "admin",
+    pwd_txt = "~/private/dbpass_marineenergy.app.txt") 
 }
 
 db = dbConnect(
@@ -52,11 +61,74 @@ db = dbConnect(
   port     = 5432,
   user     = db_params$user,
   password = readLines(db_params$pwd_txt))
-
+con <- db
 knitr::opts_chunk$set(echo = T, warning = F, message = F, connection = "db")
 ```
 
+## redo
 
+```{r}
+d_mgt <- read_csv("data/tethys_mgt.csv")
+
+dbWriteTable(con, "tethys_mgt", d_mgt)
+```
+
+```{r}
+d_mgt_tags <- d_mgt %>% 
+  select(
+    Technology, Stressor, 
+    Management = `Management Measure Category`,
+    Phase = `Phase of Project`) %>% 
+  pivot_longer(everything(), names_to="category", values_to="tag_mgt") %>% 
+  group_by(category, tag_mgt) %>% 
+  summarise(.groups="drop") %>% 
+  bind_rows(
+    d_mgt %>% 
+      select(
+        Receptor, ReceptorSpecifics = `Specific Receptor`) %>% 
+      group_by(Receptor, ReceptorSpecifics) %>% 
+      summarise(.groups="drop") %>% 
+      mutate(
+        category = "Receptor") %>% 
+      select(category, tag_mgt = Receptor, ReceptorSpecifics)) %>% 
+  arrange(category, tag_mgt, ReceptorSpecifics)
+
+write_csv(d_mgt_tags, "data/tethys_mgt_tags.csv")
+View(d_mgt_tags)
+```
+
+
+tbl(con, "tethys_mgt") %>% 
+  arrange(id)
+
+dbSendStatement(con, "ALTER TABLE tethys_mgt ADD COLUMN tags LTREE[];")
+dbSendStatement(con, "ALTER TABLE tethys_mgt DROP COLUMN tags;")
+dbSendStatement(con, '
+  UPDATE tethys_mgt
+   SET tags = \'{"Technology.Tidal", "Management.Mitigation", "Receptor.Habitat"}\'
+   WHERE id = 1;')
+dbSendStatement(con, '
+  UPDATE tethys_mgt
+   SET tags = \'{"Technology.Tidal", "Management.DesignFeature", "Receptor.Benthic"}\'
+   WHERE id = 2;')
+
+
+dbGetQuery(con, "SELECT * from tethys_mgt WHERE 'Technology.Tidal' = ANY(tags);")
+dbGetQuery(con, "SELECT * from tethys_mgt WHERE tags @> {\"Technology.Tidal\", \"Receptor.Habitat\"};")
+
+x <- tbl(con, "tethys_mgt") %>% 
+  filter(id==1) %>% 
+  collect()
+as.character(x$tags)
+
+
+tbl(con, "mgt")
+DBI::dbListTables(con) %>% sort()
+```
+
+
+
+# Caleb's original...
 
 ## Initialize ltree extension
 ```{r initialize_ltree}

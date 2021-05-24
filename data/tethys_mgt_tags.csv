@@ -967,7 +967,6 @@ rowid,tag_category,content_tag,content_tag_extra,content,tag_sql
 184,Technology,Tidal,NA,tethys_mgt,Technology.Tidal
 185,Management,Monitoring,NA,tethys_mgt,Management.Monitoring
 185,Phase,Operation & Maintenance,NA,tethys_mgt,Phase.3OperationsandMaintenance
-185,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Habitat.Benthos
 185,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Fish
 185,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Invertebrates
 185,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Habitat.Benthos
@@ -1459,7 +1458,6 @@ rowid,tag_category,content_tag,content_tag_extra,content,tag_sql
 277,Technology,Wave,NA,tethys_mgt,Technology.Wave
 278,Management,Monitoring,NA,tethys_mgt,Management.Monitoring
 278,Phase,Operation & Maintenance,NA,tethys_mgt,Phase.3OperationsandMaintenance
-278,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Habitat.Benthos
 278,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Fish
 278,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Invertebrates
 278,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Habitat.Benthos
@@ -1952,7 +1950,6 @@ rowid,tag_category,content_tag,content_tag_extra,content,tag_sql
 370,Technology,Wave,NA,tethys_mgt,Technology.Wave
 371,Management,Design feature,NA,tethys_mgt,Management.DesignFeature
 371,Phase,Installation,NA,tethys_mgt,Phase.2Construction
-371,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Habitat.Benthos
 371,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Fish
 371,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Invertebrates
 371,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Habitat.Benthos
@@ -2442,7 +2439,6 @@ rowid,tag_category,content_tag,content_tag_extra,content,tag_sql
 463,Technology,Wave,NA,tethys_mgt,Technology.Wave
 464,Management,Design feature,NA,tethys_mgt,Management.DesignFeature
 464,Phase,Operation & Maintenance,NA,tethys_mgt,Phase.3OperationsandMaintenance
-464,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Habitat.Benthos
 464,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Fish
 464,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Invertebrates
 464,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Habitat.Benthos
@@ -2931,7 +2927,6 @@ rowid,tag_category,content_tag,content_tag_extra,content,tag_sql
 556,Technology,Tidal,NA,tethys_mgt,Technology.Tidal
 557,Management,Design feature,NA,tethys_mgt,Management.DesignFeature
 557,Phase,Installation,NA,tethys_mgt,Phase.2Construction
-557,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Habitat.Benthos
 557,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Fish
 557,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Invertebrates
 557,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Habitat.Benthos
@@ -3423,7 +3418,6 @@ rowid,tag_category,content_tag,content_tag_extra,content,tag_sql
 649,Technology,Tidal,NA,tethys_mgt,Technology.Tidal
 650,Management,Design feature,NA,tethys_mgt,Management.DesignFeature
 650,Phase,Operation & Maintenance,NA,tethys_mgt,Phase.3OperationsandMaintenance
-650,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Habitat.Benthos
 650,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Fish
 650,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Invertebrates
 650,Receptor,Benthic,"Fish, Benthic invertebrates",tethys_mgt,Receptor.Habitat.Benthos
