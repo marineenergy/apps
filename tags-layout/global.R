@@ -225,7 +225,7 @@ googleSignInUI_btn_signout <- function(id, logout_name = "Sign Out", logout_clas
 map_edit <- leaflet(
   options = leafletOptions(
     zoomControl = T,
-    attributionControl = F)) %>%
+    attributionControl = F)) %>% 
   addProviderTiles(providers$Esri.OceanBasemap) %>% 
   setView(-93.4, 37.4, 4)
 
@@ -275,6 +275,11 @@ d_permits <- d_permits %>%
 prj_sites$label_html <- prj_sites$label_html %>% lapply(HTML)
 prj_sites$popup_html <- prj_sites$popup_html %>% lapply(HTML)
 
+# prj_sites %>%
+#   filter(project == "WETS") %>%
+#   pull(popup_md)
+
+
 # colors & symbols
 project_statuses <- unique(d_times$project_status)
 cols_type  <- colorRampPalette(brewer.pal(n=11, name = 'PiYG'))(length(permit_types))
@@ -297,10 +302,10 @@ n_riv <- n_tech %>% filter(technology_type == "Riverine Energy") %>% pull(n)
 n_tid <- n_tech %>% filter(technology_type == "Tidal Energy")    %>% pull(n)
 n_wav <- n_tech %>% filter(technology_type == "Wave Energy")     %>% pull(n)
 
-# management
+# management ----
 mgt_csv <- "/share/github/apps/data/tethys_mgt.csv"
 
-df_mgt <- read_csv(mgt_csv) %>% 
+df_mgt <- tbl(con, "tethys_mgt") %>% 
   rename(
     Category = `Management Measure Category`,
     Phase    = `Phase of Project`)

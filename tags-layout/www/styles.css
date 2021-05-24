@@ -31,29 +31,38 @@
   padding: 10px 5px 10px 15px;
 }
 
-/* colors for Tags from https://getbootstrap.com/docs/4.0/components/buttons/#examples */
+.sidebar-mini:not(.sidebar-mini-expand-feature).sidebar-collapse .sidebar-menu>li:hover>.treeview-menu,.sidebar-mini:not(.sidebar-mini-expand-feature).sidebar-collapse .sidebar-menu>li:hover>a>span:not(.pull-right) {
+  width: 310px;
+}
+
+/* colors for Tags from https://getbootstrap.com/docs/4.0/components/buttons/#examples
+   colors for Stressor - Receptor; color-blind safe purple-green from https://colorbrewer2.org/#type=diverging&scheme=PiYG&n=11 */
 .selectize-control.multi .selectize-input > div[data-value^='Technology.'] { 
-  /* .btn-primary */
-  color: #fff;
-  background-color: #007bff;
-  border-color: #007bff;
+  color: #333333;
+  background-color: #d1e5f0; /*light blue*/
+  border-color: transparent;
 }
 .selectize-control.multi .selectize-input > div[data-value^='Receptor.'] { 
-  /* .btn-success  */
-  color: #fff;
-  background-color: #28a745;
-  border-color: #28a745;
+  color: #333333;
+  background-color: #e6f5d0; /*light green*/
+  border-color: transparent;
 }
 .selectize-control.multi .selectize-input > div[data-value^='Stressor.'] { 
   /* .btn-danger  */
-  color: #fff;
-  background-color: #dc3545;
-  border-color: #dc3545;
+  color: #333333;
+  background-color: #fde0ef; /*light pink*/
+  border-color: transparent;
+}
+.selectize-control.multi .selectize-input > div[data-value^='Management.'] { 
+  /* .btn-secondary */
+  color: #333333;
+  background-color: #d8daeb; /*light purple*/
+  border-color: transparent;
 }
 .selectize-control.multi .selectize-input > div[data-value^='Phase.'] { 
   /* .btn-secondary */
-  color: #fff;
-  background-color: #6c757d;
-  border-color: #6c757d;
+  color: #333333;
+  background-color: #efefef; /*light gray*/
+  border-color: transparent;
 }
 

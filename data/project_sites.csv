@@ -1,21 +1,42 @@
 project,technology_type,date_beg,date_end,project_status,longitude,latitude,permits_md,label_md,popup_md,label_html,popup_html
-Admiralty Inlet,Tidal Energy,2007-03-09,2016-03-21,Inactive Project,-122.732,48.182972,NA,**Admiralty Inlet** (_Tidal Energy_),"**Admiralty Inlet** (_Tidal Energy_)<br>
+Admiralty Inlet,Tidal Energy,2007-03-09,2016-03-21,Inactive Project,-122.732,48.182972,"- <a href='https://tethys.pnnl.gov/project-sites/admiralty-inlet-pilot-tidal-project' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2007-03-09
+- <a href='https://drive.google.com/file/d/10Ak6VlBA9oYbOswaH-O3eOFOLrbY2xJF/view?usp=sharing' target='_blank'>Draft Pilot License App</a>: 2009-12-28
+- <a href='https://drive.google.com/file/d/1LqrOcOCylyBoyAwSaRjFadW-h40uBfYa/view?usp=sharing' target='_blank'>Final Pilot License App</a>: 2012-02-29
+- Final License App: 2012-03-01
+- <a href='https://drive.google.com/file/d/1HDs3rW09XWr8n_iIQNENtt5qHPo8D5Gm/view?usp=sharing' target='_blank'>Permit Issued</a>: 2014-03-20",**Admiralty Inlet** (_Tidal Energy_),"**Admiralty Inlet** (_Tidal Energy_)<br>
 Dates: 2007-03-09 to 2016-03-21<br>
 Location (lon, lat): -122.732, 48.182972<br>
-NA","<p><strong>Admiralty Inlet</strong> (<em>Tidal Energy</em>)</p>
+- <a href='https://tethys.pnnl.gov/project-sites/admiralty-inlet-pilot-tidal-project' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2007-03-09
+- <a href='https://drive.google.com/file/d/10Ak6VlBA9oYbOswaH-O3eOFOLrbY2xJF/view?usp=sharing' target='_blank'>Draft Pilot License App</a>: 2009-12-28
+- <a href='https://drive.google.com/file/d/1LqrOcOCylyBoyAwSaRjFadW-h40uBfYa/view?usp=sharing' target='_blank'>Final Pilot License App</a>: 2012-02-29
+- Final License App: 2012-03-01
+- <a href='https://drive.google.com/file/d/1HDs3rW09XWr8n_iIQNENtt5qHPo8D5Gm/view?usp=sharing' target='_blank'>Permit Issued</a>: 2014-03-20","<p><strong>Admiralty Inlet</strong> (<em>Tidal Energy</em>)</p>
 ","<p><strong>Admiralty Inlet</strong> (<em>Tidal Energy</em>)<br>
 Dates: 2007-03-09 to 2016-03-21<br>
-Location (lon, lat): -122.732, 48.182972<br>
-NA</p>
+Location (lon, lat): -122.732, 48.182972<br></p>
+
+<ul>
+<li><a href='https://tethys.pnnl.gov/project-sites/admiralty-inlet-pilot-tidal-project' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2007-03-09</li>
+<li><a href='https://drive.google.com/file/d/10Ak6VlBA9oYbOswaH-O3eOFOLrbY2xJF/view?usp=sharing' target='_blank'>Draft Pilot License App</a>: 2009-12-28</li>
+<li><a href='https://drive.google.com/file/d/1LqrOcOCylyBoyAwSaRjFadW-h40uBfYa/view?usp=sharing' target='_blank'>Final Pilot License App</a>: 2012-02-29</li>
+<li>Final License App: 2012-03-01</li>
+<li><a href='https://drive.google.com/file/d/1HDs3rW09XWr8n_iIQNENtt5qHPo8D5Gm/view?usp=sharing' target='_blank'>Permit Issued</a>: 2014-03-20</li>
+</ul>
 "
-Bourne,Tidal Energy,2016-09-26,2021-05-19,Active Project,-70.5748959,41.7681603,NA,**Bourne** (_Tidal Energy_),"**Bourne** (_Tidal Energy_)<br>
+Bourne,Tidal Energy,2016-09-26,2021-05-24,Active Project,-70.5748959,41.7681603,"- Notice of Intent/Preliminary Permit Application: 2016-04-20
+- <a href='https://drive.google.com/file/d/19bnkGeEJgO26nv6TWMtjeSRmRlt1SefY/view?usp=sharing' target='_blank'>Draft Pilot License App</a>: 2018-11-05",**Bourne** (_Tidal Energy_),"**Bourne** (_Tidal Energy_)<br>
 Dates: 2016-09-26 to ongoing<br>
 Location (lon, lat): -70.5748959, 41.7681603<br>
-NA","<p><strong>Bourne</strong> (<em>Tidal Energy</em>)</p>
+- Notice of Intent/Preliminary Permit Application: 2016-04-20
+- <a href='https://drive.google.com/file/d/19bnkGeEJgO26nv6TWMtjeSRmRlt1SefY/view?usp=sharing' target='_blank'>Draft Pilot License App</a>: 2018-11-05","<p><strong>Bourne</strong> (<em>Tidal Energy</em>)</p>
 ","<p><strong>Bourne</strong> (<em>Tidal Energy</em>)<br>
 Dates: 2016-09-26 to ongoing<br>
-Location (lon, lat): -70.5748959, 41.7681603<br>
-NA</p>
+Location (lon, lat): -70.5748959, 41.7681603<br></p>
+
+<ul>
+<li>Notice of Intent/Preliminary Permit Application: 2016-04-20</li>
+<li><a href='https://drive.google.com/file/d/19bnkGeEJgO26nv6TWMtjeSRmRlt1SefY/view?usp=sharing' target='_blank'>Draft Pilot License App</a>: 2018-11-05</li>
+</ul>
 "
 CalWave,Wave Energy,2014-12-01,2016-12-01,Inactive Project,-120.4285,34.38064,NA,**CalWave** (_Wave Energy_),"**CalWave** (_Wave Energy_)<br>
 Dates: 2014-12-01 to 2016-12-01<br>
@@ -35,14 +56,26 @@ Dates: 2015-01-01 to 2016-01-01<br>
 Location (lon, lat): -123.9678, 46.11705<br>
 NA</p>
 "
-Cobscook Bay,Tidal Energy,2007-07-23,2021-05-19,Active Project,-67.04563,44.9098,NA,**Cobscook Bay** (_Tidal Energy_),"**Cobscook Bay** (_Tidal Energy_)<br>
+Cobscook Bay,Tidal Energy,2007-07-23,2021-05-24,Active Project,-67.04563,44.9098,"- <a href='https://tethys.pnnl.gov/project-sites/cobscook-bay-tidal-energy-project' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2007-07-23
+- <a href='https://drive.google.com/file/d/1aJgY1ZhDEWFxBcYtDzhdiGevZUwawWs0/view?usp=sharing' target='_blank'>Draft Pilot License App</a>: 2009-07-23
+- <a href='https://drive.google.com/file/d/1w3nUFQVaf432a4WeOknkLSj4YOgN53PW/view?usp=sharing' target='_blank'>Final Pilot License App</a>: 2011-09-01
+- <a href='https://drive.google.com/file/d/1yFGkh8z-y6EfmLSJuEvf23OsXOrB6dGa/view?usp=sharing' target='_blank'>Permit Issued</a>: 2012-02-27",**Cobscook Bay** (_Tidal Energy_),"**Cobscook Bay** (_Tidal Energy_)<br>
 Dates: 2007-07-23 to ongoing<br>
 Location (lon, lat): -67.04563, 44.9098<br>
-NA","<p><strong>Cobscook Bay</strong> (<em>Tidal Energy</em>)</p>
+- <a href='https://tethys.pnnl.gov/project-sites/cobscook-bay-tidal-energy-project' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2007-07-23
+- <a href='https://drive.google.com/file/d/1aJgY1ZhDEWFxBcYtDzhdiGevZUwawWs0/view?usp=sharing' target='_blank'>Draft Pilot License App</a>: 2009-07-23
+- <a href='https://drive.google.com/file/d/1w3nUFQVaf432a4WeOknkLSj4YOgN53PW/view?usp=sharing' target='_blank'>Final Pilot License App</a>: 2011-09-01
+- <a href='https://drive.google.com/file/d/1yFGkh8z-y6EfmLSJuEvf23OsXOrB6dGa/view?usp=sharing' target='_blank'>Permit Issued</a>: 2012-02-27","<p><strong>Cobscook Bay</strong> (<em>Tidal Energy</em>)</p>
 ","<p><strong>Cobscook Bay</strong> (<em>Tidal Energy</em>)<br>
 Dates: 2007-07-23 to ongoing<br>
-Location (lon, lat): -67.04563, 44.9098<br>
-NA</p>
+Location (lon, lat): -67.04563, 44.9098<br></p>
+
+<ul>
+<li><a href='https://tethys.pnnl.gov/project-sites/cobscook-bay-tidal-energy-project' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2007-07-23</li>
+<li><a href='https://drive.google.com/file/d/1aJgY1ZhDEWFxBcYtDzhdiGevZUwawWs0/view?usp=sharing' target='_blank'>Draft Pilot License App</a>: 2009-07-23</li>
+<li><a href='https://drive.google.com/file/d/1w3nUFQVaf432a4WeOknkLSj4YOgN53PW/view?usp=sharing' target='_blank'>Final Pilot License App</a>: 2011-09-01</li>
+<li><a href='https://drive.google.com/file/d/1yFGkh8z-y6EfmLSJuEvf23OsXOrB6dGa/view?usp=sharing' target='_blank'>Permit Issued</a>: 2012-02-27</li>
+</ul>
 "
 Duck,Wave Energy,2012-12-01,2013-01-31,Inactive Project,-75.74979,36.18202,NA,**Duck** (_Wave Energy_),"**Duck** (_Wave Energy_)<br>
 Dates: 2012-12-01 to 2013-01-31<br>
@@ -53,16 +86,34 @@ Dates: 2012-12-01 to 2013-01-31<br>
 Location (lon, lat): -75.74979, 36.18202<br>
 NA</p>
 "
-Igiugig,Riverine Energy,2008-11-10,2021-05-19,Active Project,-155.9151,59.3247,NA,**Igiugig** (_Riverine Energy_),"**Igiugig** (_Riverine Energy_)<br>
+Igiugig,Riverine Energy,2008-11-10,2021-05-24,Active Project,-155.9151,59.3247,"- <a href='https://www.orpc.co/our-solutions/scalable-grid-integrated-systems/rivgen-power-system' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2009-06-08
+- <a href='https://drive.google.com/file/d/1A6iCiZa-PYlu9jn9NCEfFDGPNEDzgIL9/view?usp=sharing' target='_blank'>Draft Pilot License App</a>: 2015-04-01
+- Draft License App: 2015-05-01
+- <a href='https://drive.google.com/file/d/1at3pn1cf_nMNmj4qksFWIK3FRd1NsPQ_/view?usp=sharing' target='_blank'>Final Pilot License App</a>: 2018-11-15
+- Final License App: 2018-11-15
+- <a href='https://drive.google.com/file/d/1RFnkTk6Yf68eVu9i0DZ4gdrxn8uef4dO/view?usp=sharing' target='_blank'>Permit Issued</a>: 2019-05-23",**Igiugig** (_Riverine Energy_),"**Igiugig** (_Riverine Energy_)<br>
 Dates: 2008-11-10 to ongoing<br>
 Location (lon, lat): -155.9151, 59.3247<br>
-NA","<p><strong>Igiugig</strong> (<em>Riverine Energy</em>)</p>
+- <a href='https://www.orpc.co/our-solutions/scalable-grid-integrated-systems/rivgen-power-system' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2009-06-08
+- <a href='https://drive.google.com/file/d/1A6iCiZa-PYlu9jn9NCEfFDGPNEDzgIL9/view?usp=sharing' target='_blank'>Draft Pilot License App</a>: 2015-04-01
+- Draft License App: 2015-05-01
+- <a href='https://drive.google.com/file/d/1at3pn1cf_nMNmj4qksFWIK3FRd1NsPQ_/view?usp=sharing' target='_blank'>Final Pilot License App</a>: 2018-11-15
+- Final License App: 2018-11-15
+- <a href='https://drive.google.com/file/d/1RFnkTk6Yf68eVu9i0DZ4gdrxn8uef4dO/view?usp=sharing' target='_blank'>Permit Issued</a>: 2019-05-23","<p><strong>Igiugig</strong> (<em>Riverine Energy</em>)</p>
 ","<p><strong>Igiugig</strong> (<em>Riverine Energy</em>)<br>
 Dates: 2008-11-10 to ongoing<br>
-Location (lon, lat): -155.9151, 59.3247<br>
-NA</p>
+Location (lon, lat): -155.9151, 59.3247<br></p>
+
+<ul>
+<li><a href='https://www.orpc.co/our-solutions/scalable-grid-integrated-systems/rivgen-power-system' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2009-06-08</li>
+<li><a href='https://drive.google.com/file/d/1A6iCiZa-PYlu9jn9NCEfFDGPNEDzgIL9/view?usp=sharing' target='_blank'>Draft Pilot License App</a>: 2015-04-01</li>
+<li>Draft License App: 2015-05-01</li>
+<li><a href='https://drive.google.com/file/d/1at3pn1cf_nMNmj4qksFWIK3FRd1NsPQ_/view?usp=sharing' target='_blank'>Final Pilot License App</a>: 2018-11-15</li>
+<li>Final License App: 2018-11-15</li>
+<li><a href='https://drive.google.com/file/d/1RFnkTk6Yf68eVu9i0DZ4gdrxn8uef4dO/view?usp=sharing' target='_blank'>Permit Issued</a>: 2019-05-23</li>
+</ul>
 "
-Jeanette's Pier,Wave Energy,2011-01-01,2021-05-19,Active Project,-75.5933,35.9119,NA,**Jeanette's Pier** (_Wave Energy_),"**Jeanette's Pier** (_Wave Energy_)<br>
+Jeanette's Pier,Wave Energy,2011-01-01,2021-05-24,Active Project,-75.5933,35.9119,NA,**Jeanette's Pier** (_Wave Energy_),"**Jeanette's Pier** (_Wave Energy_)<br>
 Dates: 2011-01-01 to ongoing<br>
 Location (lon, lat): -75.5933, 35.9119<br>
 NA","<p><strong>Jeanette&#39;s Pier</strong> (<em>Wave Energy</em>)</p>
@@ -71,52 +122,94 @@ Dates: 2011-01-01 to ongoing<br>
 Location (lon, lat): -75.5933, 35.9119<br>
 NA</p>
 "
-Mississippi River,Riverine Energy,2009-04-01,2013-06-28,Inactive Project,-91.20356,30.52028,NA,**Mississippi River** (_Riverine Energy_),"**Mississippi River** (_Riverine Energy_)<br>
+Mississippi River,Riverine Energy,2009-04-01,2013-06-28,Inactive Project,-91.20356,30.52028,- <a href='https://tethys.pnnl.gov/project-sites/mississippi-river-projects' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2009-04-01,**Mississippi River** (_Riverine Energy_),"**Mississippi River** (_Riverine Energy_)<br>
 Dates: 2009-04-01 to 2013-06-28<br>
 Location (lon, lat): -91.20356, 30.52028<br>
-NA","<p><strong>Mississippi River</strong> (<em>Riverine Energy</em>)</p>
+- <a href='https://tethys.pnnl.gov/project-sites/mississippi-river-projects' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2009-04-01","<p><strong>Mississippi River</strong> (<em>Riverine Energy</em>)</p>
 ","<p><strong>Mississippi River</strong> (<em>Riverine Energy</em>)<br>
 Dates: 2009-04-01 to 2013-06-28<br>
-Location (lon, lat): -91.20356, 30.52028<br>
-NA</p>
+Location (lon, lat): -91.20356, 30.52028<br></p>
+
+<ul>
+<li><a href='https://tethys.pnnl.gov/project-sites/mississippi-river-projects' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2009-04-01</li>
+</ul>
 "
-Muskeget,Tidal Energy,2008-03-01,2016-07-01,Inactive Project,-70.3158,41.3069,NA,**Muskeget** (_Tidal Energy_),"**Muskeget** (_Tidal Energy_)<br>
+Muskeget,Tidal Energy,2008-03-01,2016-07-01,Inactive Project,-70.3158,41.3069,"- <a href='https://tethys.pnnl.gov/publications/muskeget-channel-tidal-energy-project-unique-case-study-licensing-permitting-tidal' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2008-03-01
+- <a href='https://drive.google.com/file/d/18ARr3biaEl_Kpm4OuSnUwhTnnmmYY2-N/view?usp=sharing' target='_blank'>Draft Pilot License App</a>: 2011-01-31",**Muskeget** (_Tidal Energy_),"**Muskeget** (_Tidal Energy_)<br>
 Dates: 2008-03-01 to 2016-07-01<br>
 Location (lon, lat): -70.3158, 41.3069<br>
-NA","<p><strong>Muskeget</strong> (<em>Tidal Energy</em>)</p>
+- <a href='https://tethys.pnnl.gov/publications/muskeget-channel-tidal-energy-project-unique-case-study-licensing-permitting-tidal' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2008-03-01
+- <a href='https://drive.google.com/file/d/18ARr3biaEl_Kpm4OuSnUwhTnnmmYY2-N/view?usp=sharing' target='_blank'>Draft Pilot License App</a>: 2011-01-31","<p><strong>Muskeget</strong> (<em>Tidal Energy</em>)</p>
 ","<p><strong>Muskeget</strong> (<em>Tidal Energy</em>)<br>
 Dates: 2008-03-01 to 2016-07-01<br>
-Location (lon, lat): -70.3158, 41.3069<br>
-NA</p>
+Location (lon, lat): -70.3158, 41.3069<br></p>
+
+<ul>
+<li><a href='https://tethys.pnnl.gov/publications/muskeget-channel-tidal-energy-project-unique-case-study-licensing-permitting-tidal' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2008-03-01</li>
+<li><a href='https://drive.google.com/file/d/18ARr3biaEl_Kpm4OuSnUwhTnnmmYY2-N/view?usp=sharing' target='_blank'>Draft Pilot License App</a>: 2011-01-31</li>
+</ul>
 "
-OPT Reedsport,Wave Energy,2006-07-14,2012-08-13,Inactive Project,-124.23806,43.7825,NA,**OPT Reedsport** (_Wave Energy_),"**OPT Reedsport** (_Wave Energy_)<br>
+OPT Reedsport,Wave Energy,2006-07-14,2012-08-13,Inactive Project,-124.23806,43.7825,"- <a href='https://tethys.pnnl.gov/publications/reedsport-opt-environmental-assessment' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2006-07-14
+- <a href='https://drive.google.com/file/d/1U1bcs0MnpfNiMGSgpcTO2sHd6bVc8KLB/view?usp=sharing' target='_blank'>Draft License App</a>: 2010-02-01
+- <a href='https://drive.google.com/file/d/1L9oFPgnUe3bzF-j6y1zgYqd9QXx66fRS/view?usp=sharing' target='_blank'>Final License App</a>: 2010-02-10
+- <a href='https://drive.google.com/file/d/1QRyyZ6bPxmvrL-AiLtwmXUv8uMGbYrsA/view?usp=sharing' target='_blank'>Settlement Agreement</a>: 2010-07-30
+- <a href='https://drive.google.com/file/d/1L9oFPgnUe3bzF-j6y1zgYqd9QXx66fRS/view?usp=sharingg' target='_blank'>Permit Issued</a>: 2012-08-13",**OPT Reedsport** (_Wave Energy_),"**OPT Reedsport** (_Wave Energy_)<br>
 Dates: 2006-07-14 to 2012-08-13<br>
 Location (lon, lat): -124.23806, 43.7825<br>
-NA","<p><strong>OPT Reedsport</strong> (<em>Wave Energy</em>)</p>
+- <a href='https://tethys.pnnl.gov/publications/reedsport-opt-environmental-assessment' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2006-07-14
+- <a href='https://drive.google.com/file/d/1U1bcs0MnpfNiMGSgpcTO2sHd6bVc8KLB/view?usp=sharing' target='_blank'>Draft License App</a>: 2010-02-01
+- <a href='https://drive.google.com/file/d/1L9oFPgnUe3bzF-j6y1zgYqd9QXx66fRS/view?usp=sharing' target='_blank'>Final License App</a>: 2010-02-10
+- <a href='https://drive.google.com/file/d/1QRyyZ6bPxmvrL-AiLtwmXUv8uMGbYrsA/view?usp=sharing' target='_blank'>Settlement Agreement</a>: 2010-07-30
+- <a href='https://drive.google.com/file/d/1L9oFPgnUe3bzF-j6y1zgYqd9QXx66fRS/view?usp=sharingg' target='_blank'>Permit Issued</a>: 2012-08-13","<p><strong>OPT Reedsport</strong> (<em>Wave Energy</em>)</p>
 ","<p><strong>OPT Reedsport</strong> (<em>Wave Energy</em>)<br>
 Dates: 2006-07-14 to 2012-08-13<br>
-Location (lon, lat): -124.23806, 43.7825<br>
-NA</p>
+Location (lon, lat): -124.23806, 43.7825<br></p>
+
+<ul>
+<li><a href='https://tethys.pnnl.gov/publications/reedsport-opt-environmental-assessment' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2006-07-14</li>
+<li><a href='https://drive.google.com/file/d/1U1bcs0MnpfNiMGSgpcTO2sHd6bVc8KLB/view?usp=sharing' target='_blank'>Draft License App</a>: 2010-02-01</li>
+<li><a href='https://drive.google.com/file/d/1L9oFPgnUe3bzF-j6y1zgYqd9QXx66fRS/view?usp=sharing' target='_blank'>Final License App</a>: 2010-02-10</li>
+<li><a href='https://drive.google.com/file/d/1QRyyZ6bPxmvrL-AiLtwmXUv8uMGbYrsA/view?usp=sharing' target='_blank'>Settlement Agreement</a>: 2010-07-30</li>
+<li><a href='https://drive.google.com/file/d/1L9oFPgnUe3bzF-j6y1zgYqd9QXx66fRS/view?usp=sharingg' target='_blank'>Permit Issued</a>: 2012-08-13</li>
+</ul>
 "
-PacWave-N,Wave Energy,2012-07-01,2021-05-19,Active Project,-124.134,44.69,NA,**PacWave-N** (_Wave Energy_),"**PacWave-N** (_Wave Energy_)<br>
+PacWave-N,Wave Energy,2012-07-01,2021-05-24,Active Project,-124.134,44.69,"- <a href='https://tethys.pnnl.gov/project-sites/pacwave-north-test-site' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2012-07-01
+- <a href='https://drive.google.com/file/d/1rcZjwTec_hTLCAsjCMACib8gMcE6bq9w/view?usp=sharing' target='_blank'>Environmental Assessment</a>: 2012-08-01",**PacWave-N** (_Wave Energy_),"**PacWave-N** (_Wave Energy_)<br>
 Dates: 2012-07-01 to ongoing<br>
 Location (lon, lat): -124.134, 44.69<br>
-NA","<p><strong>PacWave-N</strong> (<em>Wave Energy</em>)</p>
+- <a href='https://tethys.pnnl.gov/project-sites/pacwave-north-test-site' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2012-07-01
+- <a href='https://drive.google.com/file/d/1rcZjwTec_hTLCAsjCMACib8gMcE6bq9w/view?usp=sharing' target='_blank'>Environmental Assessment</a>: 2012-08-01","<p><strong>PacWave-N</strong> (<em>Wave Energy</em>)</p>
 ","<p><strong>PacWave-N</strong> (<em>Wave Energy</em>)<br>
 Dates: 2012-07-01 to ongoing<br>
-Location (lon, lat): -124.134, 44.69<br>
-NA</p>
+Location (lon, lat): -124.134, 44.69<br></p>
+
+<ul>
+<li><a href='https://tethys.pnnl.gov/project-sites/pacwave-north-test-site' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2012-07-01</li>
+<li><a href='https://drive.google.com/file/d/1rcZjwTec_hTLCAsjCMACib8gMcE6bq9w/view?usp=sharing' target='_blank'>Environmental Assessment</a>: 2012-08-01</li>
+</ul>
 "
-PacWave-S,Wave Energy,2014-04-15,2021-05-19,Active Project,-124.22935,44.566394,NA,**PacWave-S** (_Wave Energy_),"**PacWave-S** (_Wave Energy_)<br>
+PacWave-S,Wave Energy,2014-04-15,2021-05-24,Active Project,-124.22935,44.566394,"- <a href='https://tethys.pnnl.gov/project-sites/pacwave-south-test-site' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2014-04-15
+- <a href='https://drive.google.com/file/d/1lGh81tnKyoaG9DjE9wepV5HeLWOsXW16/view?usp=sharing' target='_blank'>Draft License App</a>: 2018-04-20
+- <a href='https://drive.google.com/file/d/1cS_n-uodSZauXnkz4F9YecYBTCqtEB8h/view?usp=sharing' target='_blank'>Final License App</a>: 2019-05-31
+- <a href='https://drive.google.com/drive/folders/1oAKHcLhjdekHDFFi9BXJ_muR1DuJOCCY?usp=sharing' target='_blank'>Permit Issued</a>: 2021-03-01",**PacWave-S** (_Wave Energy_),"**PacWave-S** (_Wave Energy_)<br>
 Dates: 2014-04-15 to ongoing<br>
 Location (lon, lat): -124.22935, 44.566394<br>
-NA","<p><strong>PacWave-S</strong> (<em>Wave Energy</em>)</p>
+- <a href='https://tethys.pnnl.gov/project-sites/pacwave-south-test-site' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2014-04-15
+- <a href='https://drive.google.com/file/d/1lGh81tnKyoaG9DjE9wepV5HeLWOsXW16/view?usp=sharing' target='_blank'>Draft License App</a>: 2018-04-20
+- <a href='https://drive.google.com/file/d/1cS_n-uodSZauXnkz4F9YecYBTCqtEB8h/view?usp=sharing' target='_blank'>Final License App</a>: 2019-05-31
+- <a href='https://drive.google.com/drive/folders/1oAKHcLhjdekHDFFi9BXJ_muR1DuJOCCY?usp=sharing' target='_blank'>Permit Issued</a>: 2021-03-01","<p><strong>PacWave-S</strong> (<em>Wave Energy</em>)</p>
 ","<p><strong>PacWave-S</strong> (<em>Wave Energy</em>)<br>
 Dates: 2014-04-15 to ongoing<br>
-Location (lon, lat): -124.22935, 44.566394<br>
-NA</p>
+Location (lon, lat): -124.22935, 44.566394<br></p>
+
+<ul>
+<li><a href='https://tethys.pnnl.gov/project-sites/pacwave-south-test-site' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2014-04-15</li>
+<li><a href='https://drive.google.com/file/d/1lGh81tnKyoaG9DjE9wepV5HeLWOsXW16/view?usp=sharing' target='_blank'>Draft License App</a>: 2018-04-20</li>
+<li><a href='https://drive.google.com/file/d/1cS_n-uodSZauXnkz4F9YecYBTCqtEB8h/view?usp=sharing' target='_blank'>Final License App</a>: 2019-05-31</li>
+<li><a href='https://drive.google.com/drive/folders/1oAKHcLhjdekHDFFi9BXJ_muR1DuJOCCY?usp=sharing' target='_blank'>Permit Issued</a>: 2021-03-01</li>
+</ul>
 "
-Portsmouth Memorial Bridge,Tidal Energy,2014-08-15,2021-05-19,Active Project,-70.7530428,43.078206,NA,**Portsmouth Memorial Bridge** (_Tidal Energy_),"**Portsmouth Memorial Bridge** (_Tidal Energy_)<br>
+Portsmouth Memorial Bridge,Tidal Energy,2014-08-15,2021-05-24,Active Project,-70.7530428,43.078206,NA,**Portsmouth Memorial Bridge** (_Tidal Energy_),"**Portsmouth Memorial Bridge** (_Tidal Energy_)<br>
 Dates: 2014-08-15 to ongoing<br>
 Location (lon, lat): -70.7530428, 43.078206<br>
 NA","<p><strong>Portsmouth Memorial Bridge</strong> (<em>Tidal Energy</em>)</p>
@@ -125,57 +218,99 @@ Dates: 2014-08-15 to ongoing<br>
 Location (lon, lat): -70.7530428, 43.078206<br>
 NA</p>
 "
-RITE,Tidal Energy,2002-09-09,2021-05-19,Active Project,-73.94,40.77056,NA,**RITE** (_Tidal Energy_),"**RITE** (_Tidal Energy_)<br>
+RITE,Tidal Energy,2002-09-09,2021-05-24,Active Project,-73.94,40.77056,"- <a href='https://tethys.pnnl.gov/project-sites/roosevelt-island-tidal-energy-rite-project-pilot' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2002-09-09
+- <a href='https://drive.google.com/file/d/1GeTfaCBDBHdei15ZrOCq61YWv4Wk9mca/view' target='_blank'>Draft Pilot License App</a>: 2008-11-25
+- <a href='https://drive.google.com/file/d/1vzVSeZ4YV7l7tNswzBinqoj9cLYHnHwh/view?usp=sharing' target='_blank'>Final Pilot License App</a>: 2010-12-29
+- Pilot License Issued: 2012-01-23
+- <a href='https://drive.google.com/file/d/1Xg6yBIg8ejzm6NqsRgGGyEg4du7tguWC/view?usp=sharing' target='_blank'>Draft Re-License App</a>: 2018-08-31
+- <a href='https://drive.google.com/file/d/1mVzdZsY_1F2NFyL9hKrzpEn4LJeWcP0S/view?usp=sharing' target='_blank'>Final Re-License App</a>: 2019-12-30",**RITE** (_Tidal Energy_),"**RITE** (_Tidal Energy_)<br>
 Dates: 2002-09-09 to ongoing<br>
 Location (lon, lat): -73.94, 40.77056<br>
-NA","<p><strong>RITE</strong> (<em>Tidal Energy</em>)</p>
+- <a href='https://tethys.pnnl.gov/project-sites/roosevelt-island-tidal-energy-rite-project-pilot' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2002-09-09
+- <a href='https://drive.google.com/file/d/1GeTfaCBDBHdei15ZrOCq61YWv4Wk9mca/view' target='_blank'>Draft Pilot License App</a>: 2008-11-25
+- <a href='https://drive.google.com/file/d/1vzVSeZ4YV7l7tNswzBinqoj9cLYHnHwh/view?usp=sharing' target='_blank'>Final Pilot License App</a>: 2010-12-29
+- Pilot License Issued: 2012-01-23
+- <a href='https://drive.google.com/file/d/1Xg6yBIg8ejzm6NqsRgGGyEg4du7tguWC/view?usp=sharing' target='_blank'>Draft Re-License App</a>: 2018-08-31
+- <a href='https://drive.google.com/file/d/1mVzdZsY_1F2NFyL9hKrzpEn4LJeWcP0S/view?usp=sharing' target='_blank'>Final Re-License App</a>: 2019-12-30","<p><strong>RITE</strong> (<em>Tidal Energy</em>)</p>
 ","<p><strong>RITE</strong> (<em>Tidal Energy</em>)<br>
 Dates: 2002-09-09 to ongoing<br>
-Location (lon, lat): -73.94, 40.77056<br>
-NA</p>
+Location (lon, lat): -73.94, 40.77056<br></p>
+
+<ul>
+<li><a href='https://tethys.pnnl.gov/project-sites/roosevelt-island-tidal-energy-rite-project-pilot' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2002-09-09</li>
+<li><a href='https://drive.google.com/file/d/1GeTfaCBDBHdei15ZrOCq61YWv4Wk9mca/view' target='_blank'>Draft Pilot License App</a>: 2008-11-25</li>
+<li><a href='https://drive.google.com/file/d/1vzVSeZ4YV7l7tNswzBinqoj9cLYHnHwh/view?usp=sharing' target='_blank'>Final Pilot License App</a>: 2010-12-29</li>
+<li>Pilot License Issued: 2012-01-23</li>
+<li><a href='https://drive.google.com/file/d/1Xg6yBIg8ejzm6NqsRgGGyEg4du7tguWC/view?usp=sharing' target='_blank'>Draft Re-License App</a>: 2018-08-31</li>
+<li><a href='https://drive.google.com/file/d/1mVzdZsY_1F2NFyL9hKrzpEn4LJeWcP0S/view?usp=sharing' target='_blank'>Final Re-License App</a>: 2019-12-30</li>
+</ul>
 "
-SeaRay,Wave Energy,2010-03-15,2012-12-01,Inactive Project,-122.446007,47.661889,NA,**SeaRay** (_Wave Energy_),"**SeaRay** (_Wave Energy_)<br>
+SeaRay,Wave Energy,2010-03-15,2012-12-01,Inactive Project,-122.446007,47.661889,- <a href='https://drive.google.com/file/d/1fGAfF6xqqjj2xAin4l8_tAVNTmnG2p58/view?usp=sharing' target='_blank'>Environmental Assessment</a>: 2010-03-23,**SeaRay** (_Wave Energy_),"**SeaRay** (_Wave Energy_)<br>
 Dates: 2010-03-15 to 2012-12-01<br>
 Location (lon, lat): -122.446007, 47.661889<br>
-NA","<p><strong>SeaRay</strong> (<em>Wave Energy</em>)</p>
+- <a href='https://drive.google.com/file/d/1fGAfF6xqqjj2xAin4l8_tAVNTmnG2p58/view?usp=sharing' target='_blank'>Environmental Assessment</a>: 2010-03-23","<p><strong>SeaRay</strong> (<em>Wave Energy</em>)</p>
 ","<p><strong>SeaRay</strong> (<em>Wave Energy</em>)<br>
 Dates: 2010-03-15 to 2012-12-01<br>
-Location (lon, lat): -122.446007, 47.661889<br>
-NA</p>
+Location (lon, lat): -122.446007, 47.661889<br></p>
+
+<ul>
+<li><a href='https://drive.google.com/file/d/1fGAfF6xqqjj2xAin4l8_tAVNTmnG2p58/view?usp=sharing' target='_blank'>Environmental Assessment</a>: 2010-03-23</li>
+</ul>
 "
-WaveConnect,Wave Energy,2008-03-13,2011-04-29,Inactive Project,-124.2304534,40.7929942,NA,**WaveConnect** (_Wave Energy_),"**WaveConnect** (_Wave Energy_)<br>
+WaveConnect,Wave Energy,2008-03-13,2011-04-29,Inactive Project,-124.2304534,40.7929942,"- <a href='https://www.pge.com/about/environment/pge/cleanenergy/waveconnect/relateddocuments.shtml' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2008-03-13
+- <a href='https://drive.google.com/file/d/1qpHn729qpCc0GRdRDypzBLrw7fIXZlZ1/view?usp=sharing' target='_blank'>Draft Pilot License App</a>: 2010-02-26
+- Draft License App: 2010-03-01",**WaveConnect** (_Wave Energy_),"**WaveConnect** (_Wave Energy_)<br>
 Dates: 2008-03-13 to 2011-04-29<br>
 Location (lon, lat): -124.2304534, 40.7929942<br>
-NA","<p><strong>WaveConnect</strong> (<em>Wave Energy</em>)</p>
+- <a href='https://www.pge.com/about/environment/pge/cleanenergy/waveconnect/relateddocuments.shtml' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2008-03-13
+- <a href='https://drive.google.com/file/d/1qpHn729qpCc0GRdRDypzBLrw7fIXZlZ1/view?usp=sharing' target='_blank'>Draft Pilot License App</a>: 2010-02-26
+- Draft License App: 2010-03-01","<p><strong>WaveConnect</strong> (<em>Wave Energy</em>)</p>
 ","<p><strong>WaveConnect</strong> (<em>Wave Energy</em>)<br>
 Dates: 2008-03-13 to 2011-04-29<br>
-Location (lon, lat): -124.2304534, 40.7929942<br>
-NA</p>
+Location (lon, lat): -124.2304534, 40.7929942<br></p>
+
+<ul>
+<li><a href='https://www.pge.com/about/environment/pge/cleanenergy/waveconnect/relateddocuments.shtml' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2008-03-13</li>
+<li><a href='https://drive.google.com/file/d/1qpHn729qpCc0GRdRDypzBLrw7fIXZlZ1/view?usp=sharing' target='_blank'>Draft Pilot License App</a>: 2010-02-26</li>
+<li>Draft License App: 2010-03-01</li>
+</ul>
 "
-Western Passage,Tidal Energy,2006-05-30,2021-05-19,Active Project,-66.98717,44.92047,NA,**Western Passage** (_Tidal Energy_),"**Western Passage** (_Tidal Energy_)<br>
+Western Passage,Tidal Energy,2006-05-30,2021-05-24,Active Project,-66.98717,44.92047,- <a href='https://drive.google.com/file/d/1quk5I81CySWfdyw7dHkHi4UlMRwxTOIW/view?usp=sharing' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2015-12-04,**Western Passage** (_Tidal Energy_),"**Western Passage** (_Tidal Energy_)<br>
 Dates: 2006-05-30 to ongoing<br>
 Location (lon, lat): -66.98717, 44.92047<br>
-NA","<p><strong>Western Passage</strong> (<em>Tidal Energy</em>)</p>
+- <a href='https://drive.google.com/file/d/1quk5I81CySWfdyw7dHkHi4UlMRwxTOIW/view?usp=sharing' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2015-12-04","<p><strong>Western Passage</strong> (<em>Tidal Energy</em>)</p>
 ","<p><strong>Western Passage</strong> (<em>Tidal Energy</em>)<br>
 Dates: 2006-05-30 to ongoing<br>
-Location (lon, lat): -66.98717, 44.92047<br>
-NA</p>
+Location (lon, lat): -66.98717, 44.92047<br></p>
+
+<ul>
+<li><a href='https://drive.google.com/file/d/1quk5I81CySWfdyw7dHkHi4UlMRwxTOIW/view?usp=sharing' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2015-12-04</li>
+</ul>
 "
-WETS,Wave Energy,2003-01-01,2021-05-19,Active Project,-157.75418,21.465886,NA,**WETS** (_Wave Energy_),"**WETS** (_Wave Energy_)<br>
+WETS,Wave Energy,2003-01-01,2021-05-24,Active Project,-157.75418,21.465886,"- <a href='https://drive.google.com/file/d/19xCyjgBCAXYGVCitDi6zEeMjtN_bnDa8/view?usp=sharing' target='_blank'>Environmental Assessment</a>: 2003-04-10
+- <a href='https://drive.google.com/file/d/1sIPvQCinvsEEUTLZlDfqDgMmkfaL0Ko7/view?usp=sharing' target='_blank'>Environmental Assessment</a>: 2014-02-25",**WETS** (_Wave Energy_),"**WETS** (_Wave Energy_)<br>
 Dates: 2003-01-01 to ongoing<br>
 Location (lon, lat): -157.75418, 21.465886<br>
-NA","<p><strong>WETS</strong> (<em>Wave Energy</em>)</p>
+- <a href='https://drive.google.com/file/d/19xCyjgBCAXYGVCitDi6zEeMjtN_bnDa8/view?usp=sharing' target='_blank'>Environmental Assessment</a>: 2003-04-10
+- <a href='https://drive.google.com/file/d/1sIPvQCinvsEEUTLZlDfqDgMmkfaL0Ko7/view?usp=sharing' target='_blank'>Environmental Assessment</a>: 2014-02-25","<p><strong>WETS</strong> (<em>Wave Energy</em>)</p>
 ","<p><strong>WETS</strong> (<em>Wave Energy</em>)<br>
 Dates: 2003-01-01 to ongoing<br>
-Location (lon, lat): -157.75418, 21.465886<br>
-NA</p>
+Location (lon, lat): -157.75418, 21.465886<br></p>
+
+<ul>
+<li><a href='https://drive.google.com/file/d/19xCyjgBCAXYGVCitDi6zEeMjtN_bnDa8/view?usp=sharing' target='_blank'>Environmental Assessment</a>: 2003-04-10</li>
+<li><a href='https://drive.google.com/file/d/1sIPvQCinvsEEUTLZlDfqDgMmkfaL0Ko7/view?usp=sharing' target='_blank'>Environmental Assessment</a>: 2014-02-25</li>
+</ul>
 "
-Yakutat,Wave Energy,2009-12-01,2017-07-01,Inactive Project,-139.763713,59.470604,NA,**Yakutat** (_Wave Energy_),"**Yakutat** (_Wave Energy_)<br>
+Yakutat,Wave Energy,2009-12-01,2017-07-01,Inactive Project,-139.763713,59.470604,- <a href='https://drive.google.com/file/d/1i__sZ6cbB6zZRKlh96hNRWqnO80tFb9_/view?usp=sharing' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2012-05-25,**Yakutat** (_Wave Energy_),"**Yakutat** (_Wave Energy_)<br>
 Dates: 2009-12-01 to 2017-07-01<br>
 Location (lon, lat): -139.763713, 59.470604<br>
-NA","<p><strong>Yakutat</strong> (<em>Wave Energy</em>)</p>
+- <a href='https://drive.google.com/file/d/1i__sZ6cbB6zZRKlh96hNRWqnO80tFb9_/view?usp=sharing' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2012-05-25","<p><strong>Yakutat</strong> (<em>Wave Energy</em>)</p>
 ","<p><strong>Yakutat</strong> (<em>Wave Energy</em>)<br>
 Dates: 2009-12-01 to 2017-07-01<br>
-Location (lon, lat): -139.763713, 59.470604<br>
-NA</p>
+Location (lon, lat): -139.763713, 59.470604<br></p>
+
+<ul>
+<li><a href='https://drive.google.com/file/d/1i__sZ6cbB6zZRKlh96hNRWqnO80tFb9_/view?usp=sharing' target='_blank'>Notice of Intent/Preliminary Permit Application</a>: 2012-05-25</li>
+</ul>
 "

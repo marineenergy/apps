@@ -126,11 +126,17 @@ server <- function(input, output, session) {
   # projects ----
   output$prj_map <- renderLeaflet({
     leaflet(
-      data = prj_sites, width = "100%") %>% 
+      data = prj_sites, width = "100%",
+      options = leafletOptions(
+        zoomControl = F)) %>% 
       addProviderTiles(providers$Esri.OceanBasemap) %>% 
       addMarkers(
         label        = ~label_html, 
-        popup        = ~popup_html) })
+        popup        = ~popup_html) %>%
+      htmlwidgets::onRender("function(el, x) {
+          L.control.zoom({ position: 'topright' }).addTo(this)
+        }") })
+  
   
   output$prj_p <- renderPlotly({
     
@@ -304,9 +310,16 @@ server <- function(input, output, session) {
   
   # management ----
   output$tbl_mgt <- renderDataTable({
+    if (length(values$ixns) == 0){
+      df_mgt %>% 
+        collect() %>% 
+        return()
+    }
+    
     df_mgt %>% 
       filter(
-        Technology %in% c("Wave") & Receptor %in% c("Birds"))
+        Technology %in% c("Wave") & Receptor %in% c("Birds")) %>% 
+      collect()
   })
   
   

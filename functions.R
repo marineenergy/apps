@@ -748,33 +748,72 @@ html_out <- function(){
   html_tags
 }
 
-update_tags <- function(){
-  shelf(googlesheets4)
+get_gsheet_data <- function(sheet = "tags"){
+  librarian::shelf(googlesheets4)
   
   # google sheet key from Google Console service account
   #   https://console.cloud.google.com/iam-admin/serviceaccounts/details/111453668228815650069/keys?authuser=2&organizationId=651265387478&project=marineenergy4gargle
   gs4_auth_json <- "/share/data/marineenergy4gargle.json" 
   # tags tab in [data | marineenergy.app - Google Sheet](https://docs.google.com/spreadsheets/d/1MTlWQgBeV4eNbM2JXNXU3Y-_Y6QcOOfjWFyKWfdMIQM/edit#gid=662531985)
   #   + shared sheet with: shares@marineenergy4gargle.iam.gserviceaccount.com
-  sheet_id  <- "1MTlWQgBeV4eNbM2JXNXU3Y-_Y6QcOOfjWFyKWfdMIQM"
-  sheet_tab <- "tags"
-  
-  # rename original tags
-  # DBI::dbSendQuery(con, "ALTER TABLE tags RENAME TO tags_0;")
-  # dbListTables(con) %>% sort()
+  # sheet_id  <- "1MTlWQgBeV4eNbM2JXNXU3Y-_Y6QcOOfjWFyKWfdMIQM"
+  sheet_id  <- "https://docs.google.com/spreadsheets/d/1MTlWQgBeV4eNbM2JXNXU3Y-_Y6QcOOfjWFyKWfdMIQM/edit"
   
   # googledrive
   stopifnot(file.exists(gs4_auth_json))
   gs4_auth(path = gs4_auth_json)
   
+  # rename original tags
+  # DBI::dbSendQuery(con, "ALTER TABLE tags RENAME TO tags_0;")
+  # dbListTables(con) %>% sort()
+  
+  
   # read tags from gsheet
-  tags <- read_sheet(sheet_id, sheet_tab)
+  read_sheet(sheet_id, sheet)
+}
+
+update_tags <- function(){
+  
+  # rename original tags
+  # DBI::dbSendQuery(con, "ALTER TABLE tags RENAME TO tags_0;")
+  # dbListTables(con) %>% sort()
+  
+  
+  # read tags from gsheet
+  tags       <- get_gsheet_data("tags") %>% 
+    select(category, tag_sql, tag)
+  
+  tag_lookup <- get_gsheet_data("tag_lookup") %>% 
+    select(content, tag_category, tag_content, tag_sql)
+  
+  # check tag_sql valid for ltree; 
+  ck_valid_tag_sql <- function(d){
+    d %>% 
+      mutate(
+        # ltree allows only certain characters
+        tag_sql_fix = str_replace_all(tag_sql, "[^A-Za-z0-9_.]", ""),
+        tag_sql_fix = ifelse(tag_sql_fix == tag_sql, NA, tag_sql_fix)) %>% 
+      filter(!is.na(tag_sql_fix))
+  }
+  
+  tags_tofix <- ck_tag_sql(tags)
+  stopifnot(nrow(tags_tofix) == 0)
+  
+  tag_lookup_tofix <- ck_tag_sql(tags)
+  stopifnot(nrow(tag_lookup_tofix) == 0)
+
+  # check all tag_lookup.tag_sql in tags.tag_sql
+  tag_lookup_notin_tags <- anti_join(tag_lookup, tags, by="tag_sql")
+  stopifnot(tag_lookup_notin_tags == 0)
   
   # write tags to db
   dbWriteTable(con, "tags", tags, overwrite=T)
+  dbWriteTable(con, "tag_lookup", tag_lookup, overwrite=T)
+  #  dbListTables(con) %>% str_subset("^tag")
   
-  dbSendStatement(con, "ALTER TABLE tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
-  
+  dbExecute(con, "CREATE EXTENSION IF NOT EXISTS ltree;")
+  dbExecute(con, "ALTER TABLE tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
+  dbExecute(con, "ALTER TABLE tag_lookup ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
 }
 
 update_tethys_docs <- function(){
@@ -887,13 +926,83 @@ update_tethys_docs <- function(){
 
 update_tethys_mgt <- function(){
   
-  mgt_url <- "https://tethys.pnnl.gov/management-measures"
-  mgt_csv <- here("data/tethys_mgt.csv")
+  mgt_url      <- "https://tethys.pnnl.gov/management-measures"
+  mgt_csv      <- here("data/tethys_mgt.csv")
+  mgt_tags_csv <- here("data/tethys_mgt_tags.csv")
   
-  read_html(mgt_url) %>% 
+  # read web
+  mgt <- read_html(mgt_url) %>% 
     html_table() %>% 
     .[[1]] %>% 
-    write_csv(mgt_csv)
+    tibble() %>% 
+    rowid_to_column("rowid")
+  
+  # write mgt_csv
+  write_csv(mgt, mgt_csv)
+  
+  # match tags
+  tag_lookup <- tbl(con, "tag_lookup") %>% 
+    filter(content == "tethys_mgt") %>% 
+    collect()
+  
+  mgt <- read_csv(mgt_csv, col_types = cols())
+  
+  mgt_tags_no_tag_sql <- mgt %>% 
+    select(
+      rowid,
+      Technology, 
+      Stressor, 
+      Management = `Management Measure Category`,
+      Phase      = `Phase of Project`) %>% 
+    pivot_longer(
+      everything() & -one_of("rowid"), 
+      names_to="tag_category", 
+      values_to="content_tag") %>% 
+    bind_rows(
+      mgt %>% 
+        select(
+          rowid,
+          content_tag       = Receptor, 
+          content_tag_extra = `Specific Receptor`) %>% 
+        mutate(
+          tag_category = "Receptor") %>% 
+        select(rowid, tag_category, content_tag, content_tag_extra)) %>% 
+    select(rowid, tag_category, content_tag, content_tag_extra) %>% 
+    arrange(rowid, tag_category, content_tag, content_tag_extra)
+  
+  mgt_tag_lookup <- mgt_tags_no_tag_sql %>% 
+    group_by(tag_category, content_tag, content_tag_extra) %>% 
+    summarise(.groups="drop") %>% 
+    mutate(
+      content = "tethys_mgt") %>% 
+    relocate(content)
+  # mgt_tag_lookup
+  # TODO: compare  missing to get_gsheet_data(), tag_lookup tab
+  
+  mgt_tag_lookup <- get_gsheet_data("tag_lookup") %>% 
+    filter(content == "tethys_mgt")
+  
+  mgt_tags <- mgt_tags_no_tag_sql %>% 
+    left_join(
+      mgt_tag_lookup,
+      by = c("tag_category", "content_tag", "content_tag_extra")) %>% 
+    arrange(rowid, tag_category, content_tag, content_tag_extra) # mgt_tags
+  mgt_tags_missing_tag_sql <- mgt_tags %>% filter(is.na(tag_sql))
+  stopifnot(nrow(mgt_tags_missing_tag_sql) == 0)
+  
+  write_csv(mgt_tags, mgt_tags_csv)
+  
+  tbl_mgt_tags <- mgt_tags %>% 
+    select(rowid, tag_sql)
+  
+  # View(mgt_tags)
+  
+  
+  # TODO: ALTER TABLE tethys_mgt_tags ALTER COLUMN rowid PRIMARY KEY.
+  # TODO: ADD FOREIGN KEYS for tethys_mgt
+  dbWriteTable(con, "tethys_mgt"     , mgt     , overwrite = T)
+  dbWriteTable(con, "tethys_mgt_tags", tbl_mgt_tags, overwrite = T)
+  dbExecute(con, "ALTER TABLE tethys_mgt_tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
 }
 
 
