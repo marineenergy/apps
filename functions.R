@@ -6,7 +6,7 @@ shelf(
   DBI, dplyr, DT, fs, glue, here, htmltools, htmlwidgets, kableExtra, knitr, 
   leaflet, markdown, r-spatial/mapview, # https://github.com/r-spatial/mapview/issues/324
   purrr, readr,  RPostgres, rmarkdown, rvest, tibble, tidyr,
-  scales, sf, shiny, sp, stringr, urltools)
+  scales, sf, shiny, sp, stringr, urltools, yaml)
 # ggmap, gt, webshot, png
 
 here <- here::here

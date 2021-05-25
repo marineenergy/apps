@@ -312,5 +312,5 @@ d_mgt <- tbl(con, "tethys_mgt") %>%
 
 d_mgt_n <- d_mgt %>% summarize(n = n()) %>% pull(n)
 # reports ----
-dir_reports <- "/share/user_reports"
+dir_rpt_pfx <- "/share/user_reports"
 url_rpt_pfx <- "https://api.marineenergy.app/report"
