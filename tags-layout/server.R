@@ -5,11 +5,13 @@ server <- function(input, output, session) {
 
   values <- reactiveValues(
     ixns   = list())
+  # cat(capture.output(dput(values$ixns)))
   
   # login ----
   glogin <- shiny::callModule(googleSignIn, "login")
   
   output$user <- renderUser({
+    #req(input$`login-g_email`)
     dashboardUser(
       name     = glogin()$name,
       image    = glogin()$image,
@@ -311,7 +313,6 @@ server <- function(input, output, session) {
   
   # management ----
   get_mgt <- reactive({
-    # cat(capture.output(dput(values$ixns)))
     if (length(values$ixns) == 0){
       d <- d_mgt
     } else {
@@ -338,9 +339,121 @@ server <- function(input, output, session) {
   })
   
   
-  # keep alive ----
-  # prevent gray outs of session
-  #  * [r - How to prevent a shiny app from being grayed out? - Stack Overflow](https://stackoverflow.com/questions/54594781/how-to-prevent-a-shiny-app-from-being-grayed-out)
-  #observe({     invalidateLater(10000)     cat(".")   })
+  # reports ----
+  
+  #* txt_rpt_login ----
+  output$txt_rpt_login <- renderText({
+    ifelse(
+      is.null(input$`login-g_email`),
+      HTML("
+        <span class = 'help-block'>
+        In order to create a report, you'll need to <b>Sign in</b> (upper right) using any Google login.
+        <br>
+        If you need to create a Google Account or associate your existing email for logging into Google, 
+        please see <a 
+           href='https://support.google.com/accounts/answer/27441?hl=en' target='_blank'>
+           Create a Google Account - Google Account Help
+           </a>.
+        </span>"),
+      HTML("
+        <span class = 'help-block'>
+        Here you can generate a report that will use the Location, Interactions
+        from Configure in the sidebar along with the checked content.
+        </span>"))
+  })
+  
+  #* TODO: btn_create ----
+  #        perhaps setup renderUI to handle all New Report elements
+  # observe({
+  #   if (is.null(input$`login-g_email`)){
+  #     shinyjs::disable("btn_create")
+  #   } else {
+  #     shinyjs::enable("btn_create")
+  #   }
+  # })
+  
+  
+  #* get_rpts_tbl() ----
+  get_rpts_tbl <- reactivePoll(
+    2000, session,
+    checkFunc = function() {
+      
+      if (is.null(input$`login-g_email`)) 
+        return("")
+      
+      email        <- glogin()$email
+      dir_usr_rpts <- glue("{dir_reports}/{email}")
+      
+      usr_reports <- dir_ls(dir_usr_rpts) %>% basename()
+      
+      #message(glue("usrReports - checkFunc: {paste(usr_reports, collapse = ', ')}"))
+      usr_reports },
+    valueFunc = function() {
+      
+      if (is.null(input$`login-g_email`)) 
+        return(tibble(path = "", file = ""))
+      
+      email        <- glogin()$email
+      dir_usr_rpts <- glue("{dir_reports}/{email}")
+
+      #message(glue("usrReports - valueFunc: {paste(usr_reports, collapse = ', ')}"))
+      tibble(
+        path = dir_ls(dir_usr_rpts)) %>% 
+        mutate(
+          file = basename(path))
+    })
+  
+  #* tbl_reports ----
+  output$tbl_reports = renderDT({
+    req(input$`login-g_email`)
+    get_rpts_tbl()
+  })
+  
+  #* btn_rpt_create() ----
+  observeEvent(input$btn_rpt_create, {
+  
+    req(input$`login-g_email`)
+    
+    rpt_title <- isolate(input$txt_rpt_title)
+    out_ext   <- isolate(input$sel_rpt_ext)
+    email     <- isolate(glogin()$email) 
+    
+    message(glue("
+      input$txt_rpt_title: {rpt_title}
+      input$sel_rpt_ext:   {out_ext}
+      glogin()$email:      {email}"))
+    
+    if (rpt_title == "") 
+      return()
+    # TODO: message if missing title
+    
+    # email = "bdbest@gmail.com"
+    # rpt_title = "Test Report"
+    # values <- list(
+    #   ixns = list(
+    #     c("Receptor.Fish", "Stressor.PhysicalInteraction.Collision"),
+    #     c("Technology.Wave", "Receptor.Birds")))
+    meta <- list(
+      Email        = email,
+      Date         = format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"),
+      Title        = rpt_title,
+      FileType     = out_ext,
+      Interactions = values[["ixns"]]) # cat(as.yaml(meta))
+    # TODO: Spatial wkt in meta
+    
+    hash <- digest(meta, algo="crc32")
+    yml <- glue("{dir_reports}/{email}/MarineEnergy.app_report_{hash}.yml")
+    dir.create(dirname(yml), showWarnings = F)
+    write_yaml(meta, yml)
+    
+    # submit report creation job request to API
+    q <- meta
+    q$Interactions <- toJSON(meta$Interactions)
+    
+    browser()
+    
+    r <- GET(url_rpt_pfx, query = q)
+    r
+  })
 
 }

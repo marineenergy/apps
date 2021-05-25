@@ -1,9 +1,9 @@
 # libraries ----
 library(librarian)
 shelf(
-  dplyr, DT, glue, googleAuthR, here, htmltools, leaflet, mapedit, 
+  dplyr, digest, DT, glue, googleAuthR, here, htmltools, httr, jsonlite, leaflet, mapedit, 
   plotly, RColorBrewer, readr,
-  readr, shiny, shinydashboard, shinyjs, shinyWidgets, sf)
+  readr, shiny, shinydashboard, shinyjs, shinyWidgets, sf, yaml)
 
 library(shinydashboardPlus) # overwrites shinydashboard functions
 
@@ -311,3 +311,6 @@ d_mgt <- tbl(con, "tethys_mgt") %>%
     Phase    = `Phase of Project`)
 
 d_mgt_n <- d_mgt %>% summarize(n = n()) %>% pull(n)
+# reports ----
+dir_reports <- "/share/user_reports"
+url_rpt_pfx <- "https://api.marineenergy.app/report"
