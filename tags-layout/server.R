@@ -427,8 +427,7 @@ server <- function(input, output, session) {
       return()
     # TODO: message if missing title
     
-    # email = "bdbest@gmail.com"
-    # rpt_title = "Test Report"
+    # email = "bdbest@gmail.com"; rpt_title = "Test Report"; out_ext = "html"
     # values <- list(
     #   ixns = list(
     #     c("Receptor.Fish", "Stressor.PhysicalInteraction.Collision"),
@@ -449,8 +448,6 @@ server <- function(input, output, session) {
     # submit report creation job request to API
     q <- meta
     q$Interactions <- toJSON(meta$Interactions)
-    
-    browser()
     
     r <- GET(url_rpt_pfx, query = q)
     r
