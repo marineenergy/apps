@@ -734,6 +734,22 @@ knit_tethys_literature_from_tags <- function(tags){
     cat(sep = '\n\n')
 }
 
+get_rowids_with_ixn <- function(db_tbl, ixn){
+  # used in shiny app
+  # db_tbl = "tethys_mgt_tags"; ixn = values$ixns[[2]]
+  
+  n_tags <- length(ixn)
+  q_tags <- glue("{ixn}.*") %>% paste(collapse = '", "')
+  lquery <- paste0('{"', q_tags, '"}') # cat(lquery)
+  
+  sql <- glue("
+    SELECT rowid FROM {db_tbl}
+    WHERE tag_sql ? '{lquery}'
+    GROUP BY rowid
+    HAVING COUNT(tag_sql) = {n_tags}") # cat(sql)
+  dbGetQuery(con, sql) %>% 
+    pull(rowid)
+}
 
 html_init <- function(){
   html_tags <<- tagList()
@@ -813,6 +829,8 @@ update_tags <- function(){
   dbExecute(con, "CREATE EXTENSION IF NOT EXISTS ltree;")
   dbExecute(con, "ALTER TABLE tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
   dbExecute(con, "ALTER TABLE tag_lookup ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
+  dbExecute(con, "CREATE INDEX idx_tags_tag_sql ON tags USING GIST (tag_sql);")
+  dbExecute(con, "CREATE INDEX idx_tag_lookup_tag_sql ON tag_lookup USING GIST (tag_sql);")
 }
 
 update_tethys_docs <- function(){
@@ -999,7 +1017,7 @@ update_tethys_mgt <- function(){
   
   # TODO: ALTER TABLE tethys_mgt_tags ALTER COLUMN rowid PRIMARY KEY.
   # TODO: ADD FOREIGN KEYS for tethys_mgt
-  dbWriteTable(con, "tethys_mgt"     , mgt     , overwrite = T)
+  dbWriteTable(con, "tethys_mgt"     , mgt         , overwrite = T)
   dbWriteTable(con, "tethys_mgt_tags", tbl_mgt_tags, overwrite = T)
   dbExecute(con, "ALTER TABLE tethys_mgt_tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
 }

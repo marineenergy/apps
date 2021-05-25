@@ -138,8 +138,9 @@ server <- function(input, output, session) {
         }") })
   
   
-  output$prj_p <- renderPlotly({
+  output$prj_p <- renderPlotly(suppressWarnings({
     
+    #browser()
     fig <- plot_ly(colors = cols, symbols = syms, height = 700)
     
     fig <- fig %>% 
@@ -284,9 +285,9 @@ server <- function(input, output, session) {
             font = list(size = 14),
             textangle = "90")))
     
-    #fig
+    fig
     
-  })
+  }))
   
   output$click <- renderPrint({
     d <- event_data("plotly_click")
@@ -309,17 +310,34 @@ server <- function(input, output, session) {
   })
   
   # management ----
-  output$tbl_mgt <- renderDataTable({
+  get_mgt <- reactive({
     if (length(values$ixns) == 0){
-      df_mgt %>% 
-        collect() %>% 
-        return()
+      d <- d_mgt
+    } else {
+      rowids <- sapply(values$ixns, get_rowids_with_ixn, db_tbl = "tethys_mgt_tags") %>% 
+        unlist() %>% unique()
+      d <- d_mgt %>%
+        filter(rowid %in% !!rowids)
     }
-    
-    df_mgt %>% 
-      filter(
-        Technology %in% c("Wave") & Receptor %in% c("Birds")) %>% 
+    d %>% 
+      select(-rowid) %>% 
       collect()
+  })
+  
+  output$box_mgt <- renderText({
+    n_ixns <- length(values$ixns)
+    ifelse(
+      n_ixns == 0,
+      HTML(glue("Management Measures <small>({d_mgt_n} rows)</small>")),
+      HTML(glue("Management Measures <small>({nrow(get_mgt())} of {d_mgt_n} rows; filtered by {n_ixns} interactions)</small>")))
+  })
+  
+  output$tbl_mgt <- renderDataTable({
+    # cat(capture.output(dput(values$ixns)))
+    # values <- list(ixns = list(c("Receptor.Fish", "Stressor.PhysicalInteraction.Collision" ), c("Receptor.MarineMammals", "Stressor.Noise")))
+    # values <- list(ixns = list(c("Receptor.MarineMammals", "Stressor.Noise")))
+    # values$ixns
+    get_mgt()
   })
   
   

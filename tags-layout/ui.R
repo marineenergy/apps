@@ -19,15 +19,15 @@ ui <- dashboardPage(
     sidebarMenu(
       menuItem(
         "Configure", 
-        tabName = "configure",icon = icon("gear"),
+        tabName = "configure",icon = icon("gears"),
         startExpanded = T,
         wellPanel(
-          h4("Interactions"),
+          h5(icon("tags"), "Interactions"),
           selectInput(
             "sel_ixn_tags", "Tags", tag_choices, multiple = T),
           uiOutput("ixn_btns")),
         wellPanel(
-          h4("Location"),
+          h5(icon("map-marked"), "Location"),
           div(
             class="shiny-input-container",
             leafletOutput("map_side", height = 200)),
@@ -102,7 +102,7 @@ ui <- dashboardPage(
             Management Measures Tool for Marine Renewable Energy | Tethys</a>")),
         fluidRow(
           box(
-            title = "Management Measures", width = 12,
+            title = uiOutput('box_mgt', inline=T), width = 12,
             dataTableOutput("tbl_mgt"))))
       
 )))

@@ -305,7 +305,9 @@ n_wav <- n_tech %>% filter(technology_type == "Wave Energy")     %>% pull(n)
 # management ----
 mgt_csv <- "/share/github/apps/data/tethys_mgt.csv"
 
-df_mgt <- tbl(con, "tethys_mgt") %>% 
+d_mgt <- tbl(con, "tethys_mgt") %>% 
   rename(
     Category = `Management Measure Category`,
     Phase    = `Phase of Project`)
+
+d_mgt_n <- d_mgt %>% summarize(n = n()) %>% pull(n)
