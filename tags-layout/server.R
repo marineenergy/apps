@@ -311,6 +311,7 @@ server <- function(input, output, session) {
   
   # management ----
   get_mgt <- reactive({
+    # cat(capture.output(dput(values$ixns)))
     if (length(values$ixns) == 0){
       d <- d_mgt
     } else {
@@ -333,10 +334,6 @@ server <- function(input, output, session) {
   })
   
   output$tbl_mgt <- renderDataTable({
-    # cat(capture.output(dput(values$ixns)))
-    # values <- list(ixns = list(c("Receptor.Fish", "Stressor.PhysicalInteraction.Collision" ), c("Receptor.MarineMammals", "Stressor.Noise")))
-    # values <- list(ixns = list(c("Receptor.MarineMammals", "Stressor.Noise")))
-    # values$ixns
     get_mgt()
   })
   

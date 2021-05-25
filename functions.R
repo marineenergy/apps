@@ -735,18 +735,10 @@ knit_tethys_literature_from_tags <- function(tags){
 }
 
 get_rowids_with_ixn <- function(db_tbl, ixn){
-  # used in shiny app
-  # db_tbl = "tethys_mgt_tags"; ixn = values$ixns[[2]]
+  # db_tbl = "tethys_mgt_tags"; ixn = c("Receptor.Fish", "Stressor.PhysicalInteraction.Collision")
   
-  n_tags <- length(ixn)
-  q_tags <- glue("{ixn}.*") %>% paste(collapse = '", "')
-  lquery <- paste0('{"', q_tags, '"}') # cat(lquery)
-  
-  sql <- glue("
-    SELECT rowid FROM {db_tbl}
-    WHERE tag_sql ? '{lquery}'
-    GROUP BY rowid
-    HAVING COUNT(tag_sql) = {n_tags}") # cat(sql)
+  sql <- glue("SELECT rowid FROM {db_tbl} WHERE tag_sql ~ '{ixn}.*'") %>% 
+    paste(collapse = "\nINTERSECT\n")
   dbGetQuery(con, sql) %>% 
     pull(rowid)
 }
