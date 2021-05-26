@@ -373,36 +373,20 @@ server <- function(input, output, session) {
   # })
   
   
+  
+  
   #* get_rpts_tbl() ----
   get_rpts_tbl <- reactivePoll(
-    2000, session,
+    10000, session,
     checkFunc = function() {
-      
       if (is.null(input$`login-g_email`)) 
         return("")
-      
-      email        <- glogin()$email # email = "bdbest@gmail.com"
-      dir_usr_rpts <- glue("{dir_rpt_pfx}/{email}")
-      dir.create(dir_usr_rpts, showWarnings = F)
-      
-      usr_reports <- dir_ls(dir_usr_rpts, regexp = ".*(docx|html|pdf)$") %>% basename()
-      
-      #message(glue("usrReports - checkFunc: {paste(usr_reports, collapse = ', ')}"))
-      usr_reports },
+      get_user_reports(glogin()$email)
+      },
     valueFunc = function() {
-      
       if (is.null(input$`login-g_email`)) 
         return(tibble(path = "", file = ""))
-      
-      email        <- glogin()$email
-      dir_usr_rpts <- glue("{dir_rpt_pfx}/{email}")
-      dir.create(dir_usr_rpts, showWarnings = F)
-      
-      #message(glue("usrReports - valueFunc: {paste(usr_reports, collapse = ', ')}"))
-      tibble(
-        path = dir_ls(dir_usr_rpts, regexp = ".*(docx|html|pdf)$")) %>% 
-        mutate(
-          file = basename(path))
+      get_user_reports(glogin()$email)
     })
   
   #* tbl_reports ----
@@ -439,36 +423,39 @@ server <- function(input, output, session) {
     #   ck_rpt_prj = T,
     #   ck_rpt_mgt = T)
     m <- list(
-      Email        = email,
-      Date         = format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"),
-      Title        = rpt_title,
-      FileType     = out_ext,
-      Contents     = list(
-          Projects   = input$ck_rpt_prj,
-          Management = input$ck_rpt_mgt),
-      Interactions = values[["ixns"]]) 
+      email        = email,
+      date         = format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"),
+      title        = rpt_title,
+      filetype     = out_ext,
+      contents     = list(
+          projects   = input$ck_rpt_prj,
+          management = input$ck_rpt_mgt),
+      interactions = values[["ixns"]]) 
     # list(params = m) %>% as.yaml() %>% cat()
     # TODO: Spatial wkt in meta
     
-    hash <- digest(m, algo="crc32")
-    yml <- glue("{dir_rpt_pfx}/{email}/MarineEnergy.app_report_{hash}_shiny.yml")
-    dir.create(dirname(yml), showWarnings = F)
-    write_yaml(m, yml)
+    # hash <- digest(m, algo="crc32")
+    # yml <- glue("{dir_rpt_pfx}/{email}/MarineEnergy.app_report_{hash}_shiny.yml")
+    # dir.create(dirname(yml), showWarnings = F)
+    # write_yaml(m, yml)
 
     # params for Rmd
-    p <- m
-    p$Content      <- list(value = p$Content)
-    p$Interactions <- list(value = p$Interactions)
+    # p <- m
+    # p$Content      <- list(value = p$Content)
+    # p$Interactions <- list(value = p$Interactions)
     # as.yaml(p) %>% cat()
         
     # submit report creation job request to API
     q <- m
-    q$Content      <- toJSON(m$Content)
-    q$Interactions <- toJSON(m$Interactions)
+    q$contents     <- toJSON(m$contents) # %>% as.character()
+    q$interactions <- toJSON(m$interactions) # %>% as.character()
     # as.yaml(q) %>% cat()
-              
-    r <- GET(url_rpt_pfx, query = q)
-    r
+
+    
+    r <- GET(url_rpt_api, query = q)
+    message(glue("r$url: {r$url}"))
+    
+    # content(r)
   })
 
 }
