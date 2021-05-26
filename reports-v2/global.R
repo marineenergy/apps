@@ -314,3 +314,11 @@ d_mgt_n <- d_mgt %>% summarize(n = n()) %>% pull(n)
 # reports ----
 dir_rpt_pfx <- "/share/user_reports"
 url_rpt_pfx <- "https://api.marineenergy.app/report"
+
+get_user_reports <- function(email){
+  httr::GET(
+    "https://api.marineenergy.app/user_reports", 
+    query = list(email=email)) %>% 
+    httr::content(col_types=cols())
+}
+
