@@ -314,3 +314,19 @@ d_mgt_n <- d_mgt %>% summarize(n = n()) %>% pull(n)
 # reports ----
 dir_rpt_pfx <- "/share/user_reports"
 url_rpt_api <- "https://api.marineenergy.app/report"
+
+get_user_reports <- function(email){
+  httr::GET(
+    "https://api.marineenergy.app/user_reports", 
+    query = list(email=email)) %>% 
+    httr::content(col_types=cols())
+}
+
+# user_reports_last_modified
+get_user_reports_last_modified <- function(email){
+  # email = "bdbest@gmail.com"
+  httr::GET(
+    "https://api.marineenergy.app/user_reports_last_modified", 
+    query = list(email=email)) %>% 
+    httr::content()
+}

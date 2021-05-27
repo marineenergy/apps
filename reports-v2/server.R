@@ -371,9 +371,7 @@ server <- function(input, output, session) {
   #     shinyjs::enable("btn_create")
   #   }
   # })
-  
-  
-  
+
   
   #* get_rpts_tbl() ----
   get_rpts_tbl <- reactivePoll(
@@ -381,7 +379,9 @@ server <- function(input, output, session) {
     checkFunc = function() {
       if (is.null(input$`login-g_email`)) 
         return("")
-      get_user_reports(glogin()$email)
+      lastmod <- get_user_reports_last_modified(glogin()$email)
+      message(glue("lastmod: {lastmod}"))
+      lastmod
       },
     valueFunc = function() {
       if (is.null(input$`login-g_email`)) 
