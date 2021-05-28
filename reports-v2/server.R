@@ -4,14 +4,14 @@ server <- function(input, output, session) {
   histdata <- rnorm(500)
 
   values <- reactiveValues(
-    ixns   = list())
+    ixns   = list(),
+    rpts   = rpts_0 )
   # cat(capture.output(dput(values$ixns)))
   
   # login ----
   glogin <- shiny::callModule(googleSignIn, "login")
   
   output$user <- renderUser({
-    #req(input$`login-g_email`)
     dashboardUser(
       name     = glogin()$name,
       image    = glogin()$image,
@@ -341,10 +341,24 @@ server <- function(input, output, session) {
   
   # reports ----
   
+  #* get_email() ----
+  get_email <- reactive({
+    email <- input$`login-g_email`
+    if (is.null(email)){
+      message("get_email() is.null")
+      values$rpts <- rpts_0
+      return(NULL)
+    } else {
+      message(glue("get_email(): {email}"))
+      values$rpts <- get_user_reports(email)
+    }
+    email
+  })
+  
   #* txt_rpt_login ----
   output$txt_rpt_login <- renderText({
     ifelse(
-      is.null(input$`login-g_email`),
+      is.null(get_email()),
       HTML("
         <span class = 'help-block'>
         In order to create a report, you'll need to <b>Sign in</b> (upper right) using any Google login.
@@ -373,32 +387,50 @@ server <- function(input, output, session) {
   # })
 
   
-  #* get_rpts_tbl() ----
-  get_rpts_tbl <- reactivePoll(
-    10000, session,
+  
+  #* poll_rpts_tbl() ----
+  poll_rpts_tbl <- reactivePoll(
+    10000, session, # check every 10 seconds
     checkFunc = function() {
-      if (is.null(input$`login-g_email`)) 
+      email <- get_email()
+      if (is.null(email)) 
         return("")
-      lastmod <- get_user_reports_last_modified(glogin()$email)
-      message(glue("lastmod: {lastmod}"))
+      lastmod <- get_user_reports_last_modified(email)
+      message(glue("poll_rpts_tbl({email}) {Sys.time()} -- lastmod: {lastmod}"))
       lastmod
       },
     valueFunc = function() {
-      if (is.null(input$`login-g_email`)) 
-        return(tibble(path = "", file = ""))
-      get_user_reports(glogin()$email)
+      email <- get_email()
+      if (is.null(email)) 
+        return(rpts_0)
+      message(glue("poll_rpts_tbl({email}) set value {Sys.time()}"))
+      #browser()
+      values$rpts <- get_user_reports(email)
+      values$rpts
     })
+  
+  observe(poll_rpts_tbl())  # 2: Triggers every time
+  
+  observe(get_email())  # 2: Triggers every time
+  
+  get_rpts <- reactive({
+    email       <- get_email()
+    message(glue("get_rpts() email: {email}"))
+    values$rpts <- get_user_reports(email)
+    values$rpts
+  })
+  
+  observe(get_rpts())
   
   #* tbl_reports ----
   output$tbl_reports = renderDT({
-    req(input$`login-g_email`)
-    get_rpts_tbl()
+    get_rpts()
   })
   
   #* btn_rpt_create() ----
   observeEvent(input$btn_rpt_create, {
   
-    req(input$`login-g_email`)
+    # req(input$`login-g_email`)
     
     rpt_title <- isolate(input$txt_rpt_title)
     out_ext   <- isolate(input$sel_rpt_ext)
@@ -448,12 +480,16 @@ server <- function(input, output, session) {
     # submit report creation job request to API
     q <- m
     q$contents     <- toJSON(m$contents) # %>% as.character()
+    #browser()
     q$interactions <- toJSON(m$interactions) # %>% as.character()
     # as.yaml(q) %>% cat()
 
     
     r <- GET(url_rpt_api, query = q)
     message(glue("r$url: {r$url}"))
+    
+    #Sys.sleep(1)
+    values$rpts <- get_user_reports(glogin()$email)
     
     # content(r)
   })
