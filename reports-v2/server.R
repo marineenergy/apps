@@ -435,7 +435,6 @@ server <- function(input, output, session) {
   observeEvent(input$btn_rpt_create, {
   
     # req(input$`login-g_email`)
-    
     rpt_title <- isolate(input$txt_rpt_title)
     out_ext   <- isolate(input$sel_rpt_ext)
     email     <- isolate(glogin()$email) 

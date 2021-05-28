@@ -106,46 +106,47 @@ ui <- dashboardPage(
       tabItem(
         tabName = "tab_rpt",
         uiOutput("txt_rpt_login"),
-        
-        fluidRow(
-          box(
-            title = "New Report", width = 12,
-            column(
-              width = 8,
-              textInput(
-                "txt_rpt_title", "Report Title")),
-            column(
-              width = 1,
-              dropdownButton(
-                tags$h3("Configure report"),
-                selectInput(
-                  inputId = "sel_rpt_ext", 
-                  label = "Format", 
-                  selected = "html",
-                  choices = c(
-                    "Portable (*.pdf)" = "pdf",
-                    "Word (*.docx)"    = "docx",
-                    "Web (*.html)"     = "html")),
-                prettyToggle(
-                  inputId   = "ck_rpt_prj",
-                  value     = T,
-                  label_on  = "Projects",  label_off = "Projects",
-                  icon_on   = icon("check"), icon_off  = icon("remove")),
-                prettyToggle(
-                  inputId   = "ck_rpt_mgt",
-                  value     = T,
-                  label_on  = "Management",  label_off = "Management",
-                  icon_on   = icon("check"), icon_off  = icon("remove")),
-                circle = T, status = "warning", icon = icon("gear"), width = "20px",
-                tooltip = tooltipOptions(title = "Click to configure report"))),
-            column(
-              width = 3,
-              actionButton("btn_rpt_create", "Submit", icon = icon("arrow-circle-right"))))),
-        
-        fluidRow(
-          box(
-            title = "Existing Reports", width = 12,
-            DTOutput("tbl_reports"))))
-            
+        conditionalPanel(
+          condition = "input['login-g_email'] != null && input['login-g_email'] != ''",
+          fluidRow(
+            box(
+              title = "New Report", width = 12,
+              column(
+                width = 8,
+                textInput(
+                  "txt_rpt_title", "Report Title")),
+              column(
+                width = 1,
+                dropdownButton(
+                  tags$h3("Configure report"),
+                  selectInput(
+                    inputId = "sel_rpt_ext", 
+                    label = "Format", 
+                    selected = "html",
+                    choices = c(
+                      "Portable (*.pdf)" = "pdf",
+                      "Word (*.docx)"    = "docx",
+                      "Web (*.html)"     = "html")),
+                  prettyToggle(
+                    inputId   = "ck_rpt_prj",
+                    value     = T,
+                    label_on  = "Projects",  label_off = "Projects",
+                    icon_on   = icon("check"), icon_off  = icon("remove")),
+                  prettyToggle(
+                    inputId   = "ck_rpt_mgt",
+                    value     = T,
+                    label_on  = "Management",  label_off = "Management",
+                    icon_on   = icon("check"), icon_off  = icon("remove")),
+                  circle = T, status = "warning", icon = icon("gear"), width = "20px",
+                  tooltip = tooltipOptions(title = "Click to configure report"))),
+              column(
+                width = 3,
+                actionButton("btn_rpt_create", "Submit", icon = icon("arrow-circle-right"))))),
+          
+          fluidRow(
+            box(
+              title = "Existing Reports", width = 12,
+              DTOutput("tbl_reports")))))
+      
             
 )))
