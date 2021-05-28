@@ -311,14 +311,36 @@ d_mgt <- tbl(con, "tethys_mgt") %>%
     Phase    = `Phase of Project`)
 
 d_mgt_n <- d_mgt %>% summarize(n = n()) %>% pull(n)
+
 # reports ----
 dir_rpt_pfx <- "/share/user_reports"
 url_rpt_pfx <- "https://api.marineenergy.app/report"
 
+rpts_0 <- tibble(
+  title    = character(),
+  date     = character(), 
+  status   = character(), 
+  contents = character(), 
+  n_ixns   = double(), 
+  url      = character())
+
 get_user_reports <- function(email){
-  httr::GET(
+  # email = "bdbest@gmail.com"
+  if (is.null(email))
+    return(rpts_0)
+  r <- httr::GET(
     "https://api.marineenergy.app/user_reports", 
-    query = list(email=email)) %>% 
-    httr::content(col_types=cols())
+    query = list(email=email))
+  # r$status
+  httr::content(r, col_types=cols())
 }
 
+get_user_reports_last_modified <- function(email){
+  # email = "bdbest@gmail.com"
+  if (is.null(email))
+    return("")
+  httr::GET(
+    "https://api.marineenergy.app/user_reports_last_modified", 
+    query = list(email=email)) %>% 
+    httr::content()
+}
