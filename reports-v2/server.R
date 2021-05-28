@@ -424,8 +424,12 @@ server <- function(input, output, session) {
   
   #* tbl_reports ----
   output$tbl_reports = renderDT({
-    get_rpts()
-  })
+    get_rpts() %>% 
+      arrange(desc(date)) %>% 
+      mutate(
+        title = glue("<a href='{url}' target='_blank'>{title}</a>")) %>% 
+      select(-url)
+  }, escape = F)
   
   #* btn_rpt_create() ----
   observeEvent(input$btn_rpt_create, {
