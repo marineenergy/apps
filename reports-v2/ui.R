@@ -146,7 +146,8 @@ ui <- dashboardPage(
           fluidRow(
             box(
               title = "Existing Reports", width = 12,
-              DTOutput("tbl_reports")))))
+              DTOutput("tbl_rpts"),
+              actionButton("btn_del_rpts", "Delete selected report(s)", icon=icon("minus"))))))
       
             
 )))
