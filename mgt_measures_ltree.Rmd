@@ -97,7 +97,7 @@ write_csv(d_mgt_tags, "data/tethys_mgt_tags.csv")
 View(d_mgt_tags)
 ```
 
-
+```{r}
 tbl(con, "tethys_mgt") %>% 
   arrange(id)
 
