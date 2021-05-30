@@ -5,17 +5,14 @@
 # shelf(
 #   DBI, dplyr, DT, fs, glue, here, RPostgres, stringr)
 
-here <- here::here
-glue <- glue::glue
-
 db_params <- list(
   dbname  = "gis",
   host    = "postgis",
   user    = "admin",
   pwd_txt = "/share/.password_mhk-env.us")
 
+# Caleb's machine
 if (Sys.info()[["sysname"]] != "Linux"){
-  # presumably Caleb's machine
   db_params <- list(
     dbname  = "dev",
     host    = "localhost",
@@ -32,7 +29,7 @@ if (Sys.info()[["user"]] == "bbest" & Sys.info()[["sysname"]] == "Darwin"){
     pwd_txt = "~/private/dbpass_marineenergy.app.txt") 
 }
 
-con <<- dbConnect(
+con <<- DBI::dbConnect(
   RPostgres::Postgres(),
   dbname   = db_params$dbname,
   host     = db_params$host,
@@ -42,10 +39,13 @@ con <<- dbConnect(
 
 # tbls <- dbListTables(con) %>% sort(); tbls
 
-# helper functions
-drop_d <- function(d_tbl){
-  DBI::dbSendQuery(con, glue("SELECT DropGeometryTable ('public','{d_tbl}');"))
+# helper functions ----
+
+dbRenameTable <- function(con, old, new){
+  if (old %in% dbListTables(con))
+    DBI::dbExecute(con, glue("ALTER TABLE {old} RENAME TO {new}"))
 }
+#dbRenameTable(con, "cetmap_bia", "d_cetmap_bia")
 
 dbSafeNames = function(names) {
   # make names db safe: no '.' or other illegal characters,
@@ -56,9 +56,10 @@ dbSafeNames = function(names) {
   names
 }
 
-dbRenameTable <- function(con, old, new){
-  if (old %in% dbListTables(con))
-    DBI::dbExecute(con, glue("ALTER TABLE {old} RENAME TO {new}"))
+drop_d <- function(d_tbl){
+  DBI::dbSendQuery(con, glue("SELECT DropGeometryTable ('public','{d_tbl}');"))
 }
-#dbRenameTable(con, "cetmap_bia", "d_cetmap_bia")
+# TODO: rename drop_d -> drop_tbl
+
+
 
