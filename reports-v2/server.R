@@ -96,7 +96,7 @@ server <- function(input, output, session) {
       title = "Modify Interactions",
       tagList(
         DTOutput("tbl_ixns"),
-        actionButton("btn_del_ixns", "Delete selected interaction(s)")),
+        actionButton("btn_del_ixns", "Delete selected interaction(s)", icon=icon("minus"))),
       easyClose = T))
   })
   
@@ -354,6 +354,7 @@ server <- function(input, output, session) {
     }
     email
   })
+  observe(get_email())
   
   #* txt_rpt_login ----
   output$txt_rpt_login <- renderText({
@@ -376,18 +377,6 @@ server <- function(input, output, session) {
         </span>"))
   })
   
-  #* TODO: btn_create ----
-  #        perhaps setup renderUI to handle all New Report elements
-  # observe({
-  #   if (is.null(input$`login-g_email`)){
-  #     shinyjs::disable("btn_create")
-  #   } else {
-  #     shinyjs::enable("btn_create")
-  #   }
-  # })
-
-  
-  
   #* poll_rpts_tbl() ----
   poll_rpts_tbl <- reactivePoll(
     10000, session, # check every 10 seconds
@@ -396,7 +385,7 @@ server <- function(input, output, session) {
       if (is.null(email)) 
         return("")
       lastmod <- get_user_reports_last_modified(email)
-      message(glue("poll_rpts_tbl({email}) {Sys.time()} -- lastmod: {lastmod}"))
+      #message(glue("poll_rpts_tbl({email}) {Sys.time()} -- lastmod: {lastmod}"))
       lastmod
       },
     valueFunc = function() {
@@ -408,24 +397,21 @@ server <- function(input, output, session) {
       values$rpts <- get_user_reports(email)
       values$rpts
     })
+  observe(poll_rpts_tbl())
   
-  observe(poll_rpts_tbl())  # 2: Triggers every time
-  
-  observe(get_email())  # 2: Triggers every time
-  
+  #* get_rpts() ----
   get_rpts <- reactive({
     email       <- get_email()
     message(glue("get_rpts() email: {email}"))
     values$rpts <- get_user_reports(email)
     values$rpts
   })
-  
   observe(get_rpts())
   
-  #* tbl_reports ----
-  output$tbl_reports = renderDT({
+  #* tbl_rpts ----
+  output$tbl_rpts = renderDT({
     get_rpts() %>% 
-      arrange(desc(date)) %>% 
+      # arrange(desc(date)) %>% 
       mutate(
         title = glue("<a href='{url}' target='_blank'>{title}</a>")) %>% 
       select(-url)
@@ -435,7 +421,6 @@ server <- function(input, output, session) {
   observeEvent(input$btn_rpt_create, {
   
     # req(input$`login-g_email`)
-    
     rpt_title <- isolate(input$txt_rpt_title)
     out_ext   <- isolate(input$sel_rpt_ext)
     email     <- isolate(glogin()$email) 
@@ -489,7 +474,7 @@ server <- function(input, output, session) {
     # as.yaml(q) %>% cat()
 
     
-    r <- GET(url_rpt_api, query = q)
+    r <- GET(url_rpt_pfx, query = q)
     message(glue("r$url: {r$url}"))
     
     #Sys.sleep(1)
@@ -498,4 +483,27 @@ server <- function(input, output, session) {
     # content(r)
   })
 
+  #* btn_del_rpts
+  observeEvent(input$btn_del_rpts, {
+    req(input$tbl_rpts_rows_selected)
+    
+    irows <- input$tbl_rpts_rows_selected
+    email <- isolate(get_email())
+    
+    rpts_del <- get_rpts() %>% 
+      slice(irows) %>% 
+      pull(url) %>% 
+      basename()
+    message(glue("rpts_del: {paste(rpts_del, collapse=', ')}"))
+    
+    sapply(rpts_del, del_user_report, email = email)
+    
+    values$rpts <- get_user_reports(email)
+    
+    # browser()
+    
+    # dataTableProxy("tbl_rpts") %>% 
+    #   selectRows(irows)
+    # input$tbl_rpts
+  })
 }

@@ -344,3 +344,20 @@ get_user_reports_last_modified <- function(email){
     query = list(email=email)) %>% 
     httr::content()
 }
+
+del_user_report <- function(email, rpt){
+  
+  if (is.null(email) | is.null(rpt))
+    return("")
+  
+  # email = "bdbest@gmail.com"; rpt = "report_cef7d716.docx"
+  pw  <- readLines("/share/.password_mhk-env.us")
+  tkn <- digest::digest(c(rpt, pw), algo="crc32")
+  
+  r <- httr::GET(
+    "https://api.marineenergy.app/delete_report", 
+    query = list(email=email, report=rpt, token=tkn))
+  # TODO: handle error
+  #   if (r$status_code == 500)...
+  httr::content(r)
+}
