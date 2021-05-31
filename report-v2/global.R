@@ -1,14 +1,12 @@
 # libraries ----
-library(librarian)
-shelf(
-  dplyr, digest, DT, glue, googleAuthR, here, htmltools, httr, jsonlite, leaflet, mapedit, 
-  plotly, RColorBrewer, readr,
-  readr, shiny, shinydashboard, shinydashboardPlus, shinyjs, shinyWidgets, sf, yaml)
-
-#source(here("functions.R"))
 source(here::here("scripts/common.R"))
 source(file.path(dir_scripts, "db.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
+
+library(shiny)
+librarian::shelf(
+  DT, googleAuthR, htmltools, httr, jsonlite, leaflet, mapedit, plotly, purrr,
+  shinydashboard, shinydashboardPlus, shinyjs, shinyWidgets)
 
 # navbar ----
 dashboardHeader <- function(
@@ -164,7 +162,7 @@ df_tags <- tbl(con, "tags") %>%
   filter(tag != category) %>% 
   mutate(
     tag = map2_chr(tag, category, function(tag, category){
-      str_replace(tag, glue("{category}/"), "")}),
+      stringr::str_replace(tag, glue("{category}/"), "")}),
     tag_named = map2(tag_sql, tag, setNames))
 
 tag_choices = list()
@@ -238,10 +236,11 @@ prj_times_csv        <- here("data/project_times.csv")
 prj_permits_csv      <- here("data/project_permits.csv")
 prj_permit_types_csv <- here("data/project_permit_types.csv")
 
-prj_sites <- read_csv(prj_sites_csv, col_types = cols()) %>% 
-  st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = F)
+# TODO: load prj_*  into db, read from db
+prj_sites <- readr::read_csv(prj_sites_csv, col_types = readr::cols()) %>% 
+  sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = F)
 
-d_times <- read_csv(prj_times_csv, col_types = cols())  %>% 
+d_times <- readr::read_csv(prj_times_csv, col_types = readr::cols())  %>% 
   arrange(technology_type, project) %>% 
   mutate(
     technology_type = factor(technology_type))
@@ -251,7 +250,7 @@ d_times <- d_times %>%
     project = factor(project, levels = d_times$project))
 # levels(d_times$project) # Igiugig,...,Yakutat
 
-d_permits <- read_csv(prj_permits_csv, col_types = cols()) %>% 
+d_permits <- readr::read_csv(prj_permits_csv, col_types = readr::cols()) %>% 
   left_join(
     d_times %>% 
       select(project, technology_type), 
@@ -264,7 +263,7 @@ d_permits <- d_permits %>%
 # levels(d_permits$project) # Igiugig,...,Yakutat
 
 # order permit_types
-permit_types <- read_csv(prj_permit_types_csv, col_types = cols()) %>% 
+permit_types <- readr::read_csv(prj_permit_types_csv, col_types = readr::cols()) %>% 
   pull(permit_types)
 permit_types <- permit_types %>% 
   intersect(d_permits$permit_type)
@@ -283,7 +282,7 @@ prj_sites$popup_html <- prj_sites$popup_html %>% lapply(HTML)
 
 # colors & symbols
 project_statuses <- unique(d_times$project_status)
-cols_type  <- colorRampPalette(brewer.pal(n=11, name = 'PiYG'))(length(permit_types))
+cols_type  <- colorRampPalette(RColorBrewer::brewer.pal(n=11, name = 'PiYG'))(length(permit_types))
 cols_status <- c("#30A4E1", "#999999") # Active/Inactive Projects
 cols <- setNames(
   c(cols_type, cols_status), 
@@ -333,7 +332,7 @@ get_user_reports <- function(email){
     "https://api.marineenergy.app/user_reports", 
     query = list(email=email))
   # r$status
-  httr::content(r, col_types=cols())
+  httr::content(r, col_types=readr::cols())
 }
 
 get_user_reports_last_modified <- function(email){

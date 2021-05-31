@@ -52,7 +52,7 @@ server <- function(input, output, session) {
       actionButton(
         "btn_mod_map", "Add", icon=icon("plus"))
     } else {
-      bb <- st_bbox(ply)
+      bb <- sf::st_bbox(ply)
       
       leafletProxy("map_side") %>%
         addPolygons(data = ply) %>% 
