@@ -25,6 +25,7 @@ shinyServer(function(input, output, session) {
       Stressors  = character(0),
       Technology = character(0))) 
 
+  #* updateLitQueries() ----
   updateLitQueries <- function(technology, receptors, stressors){
     
     #browser()
@@ -35,7 +36,7 @@ shinyServer(function(input, output, session) {
       Technology = technology,
       stringsAsFactors = F)
     
-    vals$queries_lit <- full_join(
+    vals$queries_lit <<- full_join(
       vals$queries_lit,
       queries,
       by = c("Receptors", "Stressors", "Technology")) %>% 
@@ -44,7 +45,7 @@ shinyServer(function(input, output, session) {
     
   }
   
-  # btnAddLitQ* ----
+  #* btnAddLitQuery ----
   observeEvent(input$btnAddLitQuery, {
     
     updateLitQueries(
@@ -79,11 +80,12 @@ shinyServer(function(input, output, session) {
   })
   
   # tblLitQueries ----
-  output$tblLitQueries <- DT::renderDataTable({
+  output$tblLitQueries <- renderDT(
 
-    #browser()
+    #browser("output$tblLitQueries")
     vals$queries_lit
-  })
+  )
+  #observe({ vals$queries_lit })
   
   # btnRmLitQ* ----
   observeEvent(input$btnRmLitQuery, {

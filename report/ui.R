@@ -108,16 +108,11 @@ tagList(
           
           fluidRow(
             align="center", 
-            introBox(
               box(
                 title = "Queries", width=12,
-                
-                dataTableOutput("tblLitQueries"),
-                
+                DTOutput("tblLitQueries"),
                 actionButton("btnRmLitQuery"   , "Remove selected queries", icon = icon("minus")),
-                actionButton("btnRmAllLitQuery", "Remove ALL queries"     , icon = icon("minus")),
-                data.step  = 7,
-                data.intro = "Refine your queries from the combinations of Receptors, Stressors & Technology.")))))), #)),      
+                actionButton("btnRmAllLitQuery", "Remove ALL queries"     , icon = icon("minus"))))))), #)),      
     
     tabPanel(
       "Literature",

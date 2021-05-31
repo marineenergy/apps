@@ -2,7 +2,7 @@ message(paste("user:", Sys.info()[["user"]]))
 source(here::here("functions.R")) # libraries, db connection object (con)
 shelf(
   # shiny
-  rintrojs, shinydashboard, shinyEventLogger, shinyWidgets, shinyjs, waiter, yaml, # shinydashboardPlus, nutterb/shinydust,
+  DT, rintrojs, shinydashboard, shinyEventLogger, shinyWidgets, shinyjs, waiter, yaml, # shinydashboardPlus, nutterb/shinydust,
   # report
   hadley/emo, rhandsontable,
   # spatial
