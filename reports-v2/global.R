@@ -3,11 +3,12 @@ library(librarian)
 shelf(
   dplyr, digest, DT, glue, googleAuthR, here, htmltools, httr, jsonlite, leaflet, mapedit, 
   plotly, RColorBrewer, readr,
-  readr, shiny, shinydashboard, shinyjs, shinyWidgets, sf, yaml)
+  readr, shiny, shinydashboard, shinydashboardPlus, shinyjs, shinyWidgets, sf, yaml)
 
-library(shinydashboardPlus) # overwrites shinydashboard functions
-
-source(here("functions.R"))
+#source(here("functions.R"))
+source(here::here("scripts/common.R"))
+source(file.path(dir_scripts, "db.R"))
+source(file.path(dir_scripts, "shiny_report.R"))
 
 # navbar ----
 dashboardHeader <- function(

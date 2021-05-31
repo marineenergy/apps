@@ -3,6 +3,6 @@ get_rowids_with_ixn <- function(db_tbl, ixn){
   
   sql <- glue("SELECT rowid FROM {db_tbl} WHERE tag_sql ~ '{ixn}.*'") %>% 
     paste(collapse = "\nINTERSECT\n")
-  dbGetQuery(con, sql) %>% 
+  DBI::dbGetQuery(con, sql) %>% 
     pull(rowid)
 }
