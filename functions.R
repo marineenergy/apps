@@ -9,9 +9,8 @@ shelf(
   scales, sf, shiny, sp, stringr, urltools, yaml)
 # ggmap, gt, webshot, png
 
-
+source(here::here("scripts/common.R"))
 source(file.path(dir_scripts, "db.R"))
-source(file.path(dir_scripts, "common.R"))
 source(file.path(dir_scripts, "shp_mc.R"))
 source(file.path(dir_scripts, "report-v1.R"))
 source(file.path(dir_scripts, "update.R"))

@@ -5,29 +5,24 @@
 # shelf(
 #   DBI, dplyr, DT, fs, glue, here, RPostgres, stringr)
 
-db_params <- list(
-  dbname  = "gis",
-  host    = "postgis",
-  user    = "admin",
-  pwd_txt = "/share/.password_mhk-env.us")
-
-# Caleb's machine
-if (Sys.info()[["sysname"]] != "Linux"){
-  db_params <- list(
-    dbname  = "dev",
-    host    = "localhost",
-    user    = "cgrant",
-    pwd_txt = "../../pwd.txt")
-}
-
-# Ben's laptop
-if (Sys.info()[["user"]] == "bbest" & Sys.info()[["sysname"]] == "Darwin"){
-  db_params <- list(
+db_params <- switch(machine, # common.R:machine
+  Caleb  = 
+    list(
+      dbname  = "dev",
+      host    = "localhost",
+      user    = "cgrant",
+      pwd_txt = "../../pwd.txt"),
+  Ben = 
+    list(
+      dbname  = "gis",
+      host    = "marineenergy.app",
+      user    = "admin",
+      pwd_txt = "~/private/dbpass_marineenergy.app.txt"),
+  list(
     dbname  = "gis",
-    host    = "marineenergy.app",
+    host    = "postgis",
     user    = "admin",
-    pwd_txt = "~/private/dbpass_marineenergy.app.txt") 
-}
+    pwd_txt = "/share/.password_mhk-env.us"))
 
 con <<- DBI::dbConnect(
   RPostgres::Postgres(),
