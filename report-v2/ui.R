@@ -124,9 +124,9 @@ ui <- dashboardPage(
                     label = "Format", 
                     selected = "html",
                     choices = c(
+                      "Web (*.html)"     = "html",
                       "Portable (*.pdf)" = "pdf",
-                      "Word (*.docx)"    = "docx",
-                      "Web (*.html)"     = "html")),
+                      "Word (*.docx)"    = "docx")),
                   prettyToggle(
                     inputId   = "ck_rpt_prj",
                     value     = T,

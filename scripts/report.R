@@ -110,10 +110,30 @@ rpt_tbl <- function(d, cntnt, caption_md=""){
 
       # TODO: get nice table output in docx
       #   https://stackoverflow.com/questions/47704329/how-to-format-kable-table-when-knit-from-rmd-to-word-with-bookdown
-      d %>% 
-        kableExtra::kbl(booktabs = T, caption = caption_md) %>% 
-        kableExtra::kable_styling(full_width = T, latex_options = "striped") %>% 
-        kableExtra::column_spec(1:4, width = rep("1.5in", 4))
+      # d %>% 
+      #   kableExtra::kbl(booktabs = T, caption = caption_md) %>% 
+      #   kableExtra::kable_styling(full_width = T, latex_options = "striped") %>% 
+      #   kableExtra::column_spec(1:4, width = rep("1.5in", 4))
+      # library(huxtable)
+      
+      glue("{caption_md}:\n\n", .trim=F) %>% cat()
+      
+      # install.packages(c("huxtable", "flextable"))
+      h <- d %>% 
+        huxtable::as_hux() %>%
+        # huxtable::set_caption(caption_md) %>% 
+        huxtable::theme_basic() %>% 
+        huxtable::map_background_color(
+          huxtable::by_rows("grey95", "grey80")) %>%
+        # set_tb_padding(2)
+        # set_width(0.8) %>% 
+        # set_font_size(8) %>% 
+        # set_lr_padding(2) %>% 
+        huxtable::set_col_width(rep(1/ncol(d), ncol(d))) # %>% 
+        # set_position("left")
+      huxtable::width(h) <- 1
+      huxtable::wrap(h) <- TRUE
+      h
     } else {
       glue("{caption_md}:\n\n", .trim=F) %>% cat()
       cat(d)

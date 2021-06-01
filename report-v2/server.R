@@ -410,13 +410,17 @@ server <- function(input, output, session) {
   
   #* tbl_rpts ----
   output$tbl_rpts = renderDT({
+    
     get_rpts() %>% 
+      # get_user_reports("ben@ecoquants.com") %>% 
       # arrange(desc(date)) %>% 
       mutate(
+        filetype  = fs::path_ext(url),
+        file_icon = file_icons[filetype],
         title = ifelse(
           status == "published",
-          glue("<a href='{url}' target='_blank'><b>{title}</b></a>"),
-          glue("<b>{title}</b>")),
+          glue("<a href='{url}' target='_blank'><i class='fas fa-{file_icon}'></i> <b>{title}</b></a>"),
+          glue("<i class='fas fa-{file_icon}'></i> <b>{title}</b>")),
         status = ifelse(
           status == "published",
           "<span class='badge btn-default'>Published</span>",
@@ -492,9 +496,10 @@ server <- function(input, output, session) {
     # content(r)
   })
 
-  #* btn_del_rpts
+  #* btn_del_rpts ----
   observeEvent(input$btn_del_rpts, {
     req(input$tbl_rpts_rows_selected)
+    
     
     irows <- input$tbl_rpts_rows_selected
     email <- isolate(get_email())
@@ -505,6 +510,7 @@ server <- function(input, output, session) {
       basename()
     # message(glue("rpts_del: {paste(rpts_del, collapse=', ')}"))
     
+    #browser()
     sapply(rpts_del, del_user_report, email = email)
     
     values$rpts <- get_user_reports(email)

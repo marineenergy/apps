@@ -349,7 +349,7 @@ del_user_report <- function(email, rpt){
   if (is.null(email) | is.null(rpt))
     return("")
   
-  # email = "bdbest@gmail.com"; rpt = "report_cef7d716.docx"
+  # email = "bdbest@gmail.com"; rpt = "report_55894680.pdf"
   pw  <- readLines("/share/.password_mhk-env.us")
   tkn <- digest::digest(c(rpt, pw), algo="crc32")
   
@@ -360,3 +360,5 @@ del_user_report <- function(email, rpt){
   #   if (r$status_code == 500)...
   httr::content(r)
 }
+
+file_icons = c(html = "file", pdf="file-pdf", docx = "file-word")
