@@ -137,7 +137,7 @@ ui <- dashboardPage(
                     value     = T,
                     label_on  = "Management",  label_off = "Management",
                     icon_on   = icon("check"), icon_off  = icon("remove")),
-                  circle = T, status = "warning", icon = icon("gear"), width = "20px",
+                  circle = T, status = "default", icon = icon("gear"), width = "20px",
                   tooltip = tooltipOptions(title = "Click to configure report"))),
               column(
                 width = 3,

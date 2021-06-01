@@ -345,11 +345,11 @@ server <- function(input, output, session) {
   get_email <- reactive({
     email <- input$`login-g_email`
     if (is.null(email)){
-      message("get_email() is.null")
+      #message("get_email() is.null")
       values$rpts <- rpts_0
       return(NULL)
     } else {
-      message(glue("get_email(): {email}"))
+      #message(glue("get_email(): {email}"))
       values$rpts <- get_user_reports(email)
     }
     email
@@ -392,7 +392,7 @@ server <- function(input, output, session) {
       email <- get_email()
       if (is.null(email)) 
         return(rpts_0)
-      message(glue("poll_rpts_tbl({email}) set value {Sys.time()}"))
+      #message(glue("poll_rpts_tbl({email}) set value {Sys.time()}"))
       #browser()
       values$rpts <- get_user_reports(email)
       values$rpts
@@ -402,7 +402,7 @@ server <- function(input, output, session) {
   #* get_rpts() ----
   get_rpts <- reactive({
     email       <- get_email()
-    message(glue("get_rpts() email: {email}"))
+    #message(glue("get_rpts() email: {email}"))
     values$rpts <- get_user_reports(email)
     values$rpts
   })
@@ -413,8 +413,17 @@ server <- function(input, output, session) {
     get_rpts() %>% 
       # arrange(desc(date)) %>% 
       mutate(
-        title = glue("<a href='{url}' target='_blank'>{title}</a>")) %>% 
-      select(-url)
+        title = ifelse(
+          status == "published",
+          glue("<a href='{url}' target='_blank'><b>{title}</b></a>"),
+          glue("<b>{title}</b>")),
+        status = ifelse(
+          status == "published",
+          "<span class='badge btn-success'>Published</span>",
+          "<span class='badge btn-warning'>Rendering</span>")) %>% 
+      select(
+        Title = title, Date = date, Status = status, 
+        Contents = contents, `# Interactions` = n_ixns)
   }, escape = F)
   
   #* btn_rpt_create() ----
@@ -425,10 +434,10 @@ server <- function(input, output, session) {
     out_ext   <- isolate(input$sel_rpt_ext)
     email     <- isolate(glogin()$email) 
     
-    message(glue("
-      input$txt_rpt_title: {rpt_title}
-      input$sel_rpt_ext:   {out_ext}
-      glogin()$email:      {email}"))
+    # message(glue("
+    #   input$txt_rpt_title: {rpt_title}
+    #   input$sel_rpt_ext:   {out_ext}
+    #   glogin()$email:      {email}"))
     
     if (rpt_title == "") 
       return()
@@ -475,7 +484,7 @@ server <- function(input, output, session) {
 
     
     r <- GET(url_rpt_pfx, query = q)
-    message(glue("r$url: {r$url}"))
+    # message(glue("r$url: {r$url}"))
     
     #Sys.sleep(1)
     values$rpts <- get_user_reports(glogin()$email)
@@ -494,7 +503,7 @@ server <- function(input, output, session) {
       slice(irows) %>% 
       pull(url) %>% 
       basename()
-    message(glue("rpts_del: {paste(rpts_del, collapse=', ')}"))
+    # message(glue("rpts_del: {paste(rpts_del, collapse=', ')}"))
     
     sapply(rpts_del, del_user_report, email = email)
     

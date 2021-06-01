@@ -303,8 +303,6 @@ n_tid <- n_tech %>% filter(technology_type == "Tidal Energy")    %>% pull(n)
 n_wav <- n_tech %>% filter(technology_type == "Wave Energy")     %>% pull(n)
 
 # management ----
-mgt_csv <- "/share/github/apps/data/tethys_mgt.csv"
-
 d_mgt <- tbl(con, "tethys_mgt") %>% 
   rename(
     Category = `Management Measure Category`,
