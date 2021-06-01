@@ -19,3 +19,8 @@ dir_scripts <<- switch(
   machine,
   Ben = "~/github/marineenergy/apps_dev/scripts",
   "/share/github/apps_dev/scripts")
+
+dir_data <<- switch(
+  machine,
+  Ben = "~/github/marineenergy/apps_dev/data",
+  "/share/github/apps_dev/data")

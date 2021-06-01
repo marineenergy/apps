@@ -419,8 +419,8 @@ server <- function(input, output, session) {
           glue("<b>{title}</b>")),
         status = ifelse(
           status == "published",
-          "<span class='badge btn-success'>Published</span>",
-          "<span class='badge btn-warning'>Rendering</span>")) %>% 
+          "<span class='badge btn-default'>Published</span>",
+          "<span class='badge btn-default' disabled='disabled'>Rendering...</span>")) %>% 
       select(
         Title = title, Date = date, Status = status, 
         Contents = contents, `# Interactions` = n_ixns)

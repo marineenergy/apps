@@ -1,5 +1,6 @@
 # libraries ----
-source(here::here("scripts/common.R"))
+#source(here::here("scripts/common.R"))
+source("/share/github/apps_dev/scripts/common.R")
 source(file.path(dir_scripts, "db.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
 
@@ -231,10 +232,10 @@ map_edit <- leaflet(
 # projects ----
 # p_csvs <- list.files("/share/github/apps/data", "project_.*")
 # file.copy(file.path("/share/github/apps/data", p_csvs), file.path("/share/github/apps_dev/data", p_csvs), overwrite = T)
-prj_sites_csv        <- here("data/project_sites.csv")
-prj_times_csv        <- here("data/project_times.csv")
-prj_permits_csv      <- here("data/project_permits.csv")
-prj_permit_types_csv <- here("data/project_permit_types.csv")
+prj_sites_csv        <- file.path(dir_data, "project_sites.csv")
+prj_times_csv        <- file.path(dir_data, "project_times.csv")
+prj_permits_csv      <- file.path(dir_data, "project_permits.csv")
+prj_permit_types_csv <- file.path(dir_data, "project_permit_types.csv")
 
 # TODO: load prj_*  into db, read from db
 prj_sites <- readr::read_csv(prj_sites_csv, col_types = readr::cols()) %>% 
