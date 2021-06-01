@@ -14,17 +14,23 @@ get_tbl_ixn <- function(db_tbl, ixn){
 rpt_content <- function(cntnt, ixns, rmd){
   # cntnt = contents[1]; ixns = params$interactions
   
-  cntnt_tbl <- c(
+  cntnt_info <- list(
     # projects   = "projects", 
-    management = "tethys_mgt")
+    management = list(
+      db_tbl     = c("tethys_mgt"),
+      caption_md = "Literature from [Tethys Knowledge Base](https://tethys.pnnl.gov/knowledge-base-all)."))
   
-  if (cntnt %in% names(cntnt_tbl)){
-    db_tbl <- cntnt_tbl[[cntnt]]
+  if (cntnt %in% names(cntnt_info)){
+    db_tbl     <- cntnt_info[[cntnt]]$db_tbl
+    caption_md <- cntnt_info[[cntnt]]$db_tbl
     
-    rmd_ixns <- lapply(
-      1:length(ixns), 
-      function(i_ixn){ 
-        knitr::knit_expand('_interaction.Rmd') })
+    # cntnt <- "management"
+    rmd_ixns <- with(
+      cntnt_info[[cntnt]],
+      lapply(
+        1:length(ixns), 
+        function(i_ixn){ 
+          knitr::knit_expand('_interaction.Rmd') }))
   } else {
     rmd_ixns <- list("Coming soon...")
   }
@@ -37,6 +43,82 @@ rpt_content <- function(cntnt, ixns, rmd){
     unlist() %>% 
     write(rmd, append = T)
   T
+}
+
+rpt_tbl <- function(d, cntnt, caption_md=""){
+  
+  is_df   <- T
+  is_html <- knitr::is_html_output()
+  
+  if (cntnt == "literature" & is_html){
+    # tethys_lit
+    d <- d %>%
+      mutate(
+        Title = map2_chr(
+          title, uri,
+          function(x, y)
+            glue("<a href={y} target='_blank'>{x}</a>"))) %>%
+      select(Title) %>%
+      arrange(Title)
+  }
+  
+  if (cntnt == "literature" & !is_html){
+    is_df <- F
+    
+    d <- d %>%
+      mutate(
+        li_title = glue("1. [{title}]({uri})")) %>%
+      pull(li_title) %>% 
+      paste(collapse = "\n")
+  }
+  
+  if (cntnt == "management" & !is_html){
+    #tbl(con, "tethys_mgt") %>% collect() %>% names() %>% paste(collapse = '`,\n = `') %>% cat()
+    
+    # d <- tbl(con, "tethys_mgt") %>% 
+    #   collect() %>% 
+    #   slice(1:3)
+    d <- d %>% 
+      mutate(
+        Parameters = glue(
+          "
+          Technology: {Technology}; Category: {`Management Measure Category`}; 
+          Phase: {`Phase of Project`}; 
+          Stressor: {Stressor}; 
+          Receptor: {Receptor} -- {`Specific Receptor`}")) %>% 
+      select(
+        Parameters, 
+        Interaction, 
+        Measure = `Specific Management Measures`, 
+        Implications = `Implications of Measure`)
+    # d %>% 
+    #   knitr::kable(format="html", caption=caption_md)
+  }
+  
+  if (is_html){
+    caption_html <- htmltools::HTML(markdown::markdownToHTML(
+      text = caption_md,
+      fragment.only = T))
+    
+    d %>% 
+      DT::datatable(
+        caption = caption_html,
+        escape = F)
+  } else {
+    if (is_df){
+      #d, caption = caption_md, format = "simple")
+
+      # TODO: get nice table output in docx
+      #   https://stackoverflow.com/questions/47704329/how-to-format-kable-table-when-knit-from-rmd-to-word-with-bookdown
+      d %>% 
+        kableExtra::kbl(booktabs = T, caption = caption_md) %>% 
+        kableExtra::kable_styling(full_width = T, latex_options = "striped") %>% 
+        kableExtra::column_spec(1:4, width = rep("1.5in", 4))
+    } else {
+      glue("{caption_md}:\n\n", .trim=F) %>% cat()
+      cat(d)
+    }
+  }
 }
 
 # yaml to params for Rmd
