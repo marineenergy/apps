@@ -1,13 +1,13 @@
 # libraries ----
-library(librarian)
-shelf(
-  dplyr, digest, DT, glue, googleAuthR, here, htmltools, httr, jsonlite, leaflet, mapedit, 
-  plotly, RColorBrewer, readr,
-  readr, shiny, shinydashboard, shinyjs, shinyWidgets, sf, yaml)
+#source(here::here("scripts/common.R"))
+source("/share/github/apps_dev/scripts/common.R")
+source(file.path(dir_scripts, "db.R"))
+source(file.path(dir_scripts, "shiny_report.R"))
 
-library(shinydashboardPlus) # overwrites shinydashboard functions
-
-source(here("functions.R"))
+library(shiny)
+librarian::shelf(
+  DT, googleAuthR, htmltools, httr, jsonlite, leaflet, mapedit, plotly, purrr,
+  shinydashboard, shinydashboardPlus, shinyjs, shinyWidgets)
 
 # navbar ----
 dashboardHeader <- function(
@@ -163,7 +163,7 @@ df_tags <- tbl(con, "tags") %>%
   filter(tag != category) %>% 
   mutate(
     tag = map2_chr(tag, category, function(tag, category){
-      str_replace(tag, glue("{category}/"), "")}),
+      stringr::str_replace(tag, glue("{category}/"), "")}),
     tag_named = map2(tag_sql, tag, setNames))
 
 tag_choices = list()
@@ -221,7 +221,6 @@ googleSignInUI_btn_signout <- function(id, logout_name = "Sign Out", logout_clas
 
 
 # map_edit ----
-
 map_edit <- leaflet(
   options = leafletOptions(
     zoomControl = T,
@@ -230,81 +229,9 @@ map_edit <- leaflet(
   setView(-93.4, 37.4, 4)
 
 # projects ----
-# p_csvs <- list.files("/share/github/apps/data", "project_.*")
-# file.copy(file.path("/share/github/apps/data", p_csvs), file.path("/share/github/apps_dev/data", p_csvs), overwrite = T)
-prj_sites_csv        <- here("data/project_sites.csv")
-prj_times_csv        <- here("data/project_times.csv")
-prj_permits_csv      <- here("data/project_permits.csv")
-prj_permit_types_csv <- here("data/project_permit_types.csv")
-
-prj_sites <- read_csv(prj_sites_csv, col_types = cols()) %>% 
-  st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = F)
-
-d_times <- read_csv(prj_times_csv, col_types = cols())  %>% 
-  arrange(technology_type, project) %>% 
-  mutate(
-    technology_type = factor(technology_type))
-d_times <- d_times %>% 
-  mutate(
-    # order projects by technology_type, then project
-    project = factor(project, levels = d_times$project))
-# levels(d_times$project) # Igiugig,...,Yakutat
-
-d_permits <- read_csv(prj_permits_csv, col_types = cols()) %>% 
-  left_join(
-    d_times %>% 
-      select(project, technology_type), 
-    by = "project") %>% 
-  arrange(technology_type, project)
-d_permits <- d_permits %>% 
-  mutate(
-    # order projects by technology_type, then project
-    project = factor(project, levels = distinct(d_permits, project) %>% pull(project)))
-# levels(d_permits$project) # Igiugig,...,Yakutat
-
-# order permit_types
-permit_types <- read_csv(prj_permit_types_csv, col_types = cols()) %>% 
-  pull(permit_types)
-permit_types <- permit_types %>% 
-  intersect(d_permits$permit_type)
-d_permits <- d_permits %>% 
-  mutate(
-    # order by permit_types
-    permit_type = factor(permit_type, levels = permit_types))
-
-prj_sites$label_html <- prj_sites$label_html %>% lapply(HTML)
-prj_sites$popup_html <- prj_sites$popup_html %>% lapply(HTML)
-
-# prj_sites %>%
-#   filter(project == "WETS") %>%
-#   pull(popup_md)
-
-
-# colors & symbols
-project_statuses <- unique(d_times$project_status)
-cols_type  <- colorRampPalette(brewer.pal(n=11, name = 'PiYG'))(length(permit_types))
-cols_status <- c("#30A4E1", "#999999") # Active/Inactive Projects
-cols <- setNames(
-  c(cols_type, cols_status), 
-  c(permit_types, project_statuses))
-syms_type  <- c(rep('triangle-up', 3), 'triangle-down', 'triangle-up', 'triangle-down', 'triangle-up', 'triangle-down', rep('triangle-up', 3))
-syms_status <- rep(NA, 2)
-syms <- setNames(
-  c(syms_type, syms_status), 
-  c(permit_types, project_statuses))
-
-# technology_type numbers for horizontal line and label placement along y axis
-n_tech <- d_times %>% 
-  group_by(technology_type) %>% 
-  summarize(
-    n = n())
-n_riv <- n_tech %>% filter(technology_type == "Riverine Energy") %>% pull(n)
-n_tid <- n_tech %>% filter(technology_type == "Tidal Energy")    %>% pull(n)
-n_wav <- n_tech %>% filter(technology_type == "Wave Energy")     %>% pull(n)
+load_projects()
 
 # management ----
-mgt_csv <- "/share/github/apps/data/tethys_mgt.csv"
-
 d_mgt <- tbl(con, "tethys_mgt") %>% 
   rename(
     Category = `Management Measure Category`,
@@ -332,7 +259,7 @@ get_user_reports <- function(email){
     "https://api.marineenergy.app/user_reports", 
     query = list(email=email))
   # r$status
-  httr::content(r, col_types=cols())
+  httr::content(r, col_types=readr::cols())
 }
 
 get_user_reports_last_modified <- function(email){
@@ -350,7 +277,7 @@ del_user_report <- function(email, rpt){
   if (is.null(email) | is.null(rpt))
     return("")
   
-  # email = "bdbest@gmail.com"; rpt = "report_cef7d716.docx"
+  # email = "bdbest@gmail.com"; rpt = "report_55894680.pdf"
   pw  <- readLines("/share/.password_mhk-env.us")
   tkn <- digest::digest(c(rpt, pw), algo="crc32")
   
@@ -361,3 +288,5 @@ del_user_report <- function(email, rpt){
   #   if (r$status_code == 500)...
   httr::content(r)
 }
+
+file_icons = c(html = "file", pdf="file-pdf", docx = "file-word")

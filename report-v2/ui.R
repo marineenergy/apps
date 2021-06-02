@@ -60,29 +60,25 @@ ui <- dashboardPage(
             "Tethys Knowledge Base.", 
             href="https://tethys.pnnl.gov/knowledge-base", target="_blank")),
         
-        helpText(
-          "To learn more about a project, select the blue pin on the map with your 
-          cursor and a pop up will open with the project’s name, timeline, geographic 
-          coordinates and a list of all submitted permitting and licensing materials to 
-          date. Where available, the permitting/licensing documents have been linked to 
-          a downloadable PDF of the document or to pages with additional information."),
-        
         fluidRow(
           box(
-            title = "Map of Projects", width = 12,
-            leafletOutput("prj_map"))),
-        
-        helpText(
-          "The figure below shows all past and present Marine Energy projects 
-          and the permitting milestones of each over time organized by energy type 
-          (riverine, tidal, and wave). Click on the triangles in the plot to zoom the 
-          map to the study location of interest. You can access relevant FERC documents 
-          per project and permitting milestones by clicking on the study location icon in the map."),
-        
-        fluidRow(
+            title = "Map of Projects", width = 6,
+            leafletOutput("prj_map"),
+            helpText(
+              "To learn more about a project, select the blue pin on the map with your 
+              cursor and a pop up will open with the project’s name, timeline, geographic 
+              coordinates and a list of all submitted permitting and licensing materials to 
+              date. Where available, the permitting/licensing documents have been linked to 
+              a downloadable PDF of the document or to pages with additional information.")),
           box(
-            title = "Timeline of Projects", width = 12,
-            plotlyOutput("prj_p")))),
+            title = "Timeline of Projects", width = 6,
+            plotlyOutput("prj_p", height="700px"),
+            helpText(
+              "The figure above shows all past and present Marine Energy projects 
+              and the permitting milestones of each over time organized by energy type 
+              (riverine, tidal, and wave). Click on the triangles in the plot to zoom the 
+              map to the study location of interest. You can access relevant FERC documents 
+              per project and permitting milestones by clicking on the study location icon in the map.")))),
         
         #verbatimTextOutput("click")),
     
@@ -124,9 +120,9 @@ ui <- dashboardPage(
                     label = "Format", 
                     selected = "html",
                     choices = c(
+                      "Web (*.html)"     = "html",
                       "Portable (*.pdf)" = "pdf",
-                      "Word (*.docx)"    = "docx",
-                      "Web (*.html)"     = "html")),
+                      "Word (*.docx)"    = "docx")),
                   prettyToggle(
                     inputId   = "ck_rpt_prj",
                     value     = T,
@@ -137,7 +133,7 @@ ui <- dashboardPage(
                     value     = T,
                     label_on  = "Management",  label_off = "Management",
                     icon_on   = icon("check"), icon_off  = icon("remove")),
-                  circle = T, status = "warning", icon = icon("gear"), width = "20px",
+                  circle = T, status = "default", icon = icon("gear"), width = "20px",
                   tooltip = tooltipOptions(title = "Click to configure report"))),
               column(
                 width = 3,

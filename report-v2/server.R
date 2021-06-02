@@ -52,7 +52,7 @@ server <- function(input, output, session) {
       actionButton(
         "btn_mod_map", "Add", icon=icon("plus"))
     } else {
-      bb <- st_bbox(ply)
+      bb <- sf::st_bbox(ply)
       
       leafletProxy("map_side") %>%
         addPolygons(data = ply) %>% 
@@ -127,167 +127,12 @@ server <- function(input, output, session) {
   
   # projects ----
   output$prj_map <- renderLeaflet({
-    leaflet(
-      data = prj_sites, width = "100%",
-      options = leafletOptions(
-        zoomControl = F)) %>% 
-      addProviderTiles(providers$Esri.OceanBasemap) %>% 
-      addMarkers(
-        label        = ~label_html, 
-        popup        = ~popup_html) %>%
-      htmlwidgets::onRender("function(el, x) {
-          L.control.zoom({ position: 'topright' }).addTo(this)
-        }") })
-  
+     map_projects(prj_sites) })
   
   output$prj_p <- renderPlotly(suppressWarnings({
     
     #browser()
-    fig <- plot_ly(colors = cols, symbols = syms, height = 700)
-    
-    fig <- fig %>% 
-      add_segments(
-        data  = d_times,
-        x     = ~date_beg,
-        xend  = ~date_end,
-        y     = ~project,
-        yend  = ~project,
-        color = ~project_status,
-        line  = list(width = 10))
-    #fig
-    #plotly_json(p = fig)
-    
-    fig <- fig %>% add_markers(
-      data = d_permits,
-      x = ~license_date, 
-      y = ~project,
-      symbol = ~permit_type,
-      symbols = syms_type,
-      color = ~permit_type,
-      colors = cols_type, 
-      size = 10,
-      hoverinfo = "text",
-      hovertext = paste(
-        'License Date: '    , d_permits$license_date, 
-        '<br>Project Name: ', d_permits$project, 
-        '<br>Permit Type: ' , d_permits$permit_type))
-    
-    #fig
-    #plotly_json(p = fig)
-    
-    fig <- fig %>% 
-      layout(
-        xaxis = list(
-          title = 'Date',
-          showline = FALSE,
-          showgrid = FALSE),
-        yaxis = list(
-          title = '',
-          autorange = "reversed",
-          domain = c(0,1),
-          range = c(0, length(unique(d_times$project))),
-          showline = FALSE,
-          showgrid = FALSE,
-          type = "category"),
-        # margin = list(
-        #   r = 10, 
-        #   t = 25, 
-        #   b = 40, 
-        #   l = 100),
-        legend = list(
-          x = 1.01, 
-          y = 0.5), 
-        shapes = list(
-          list(
-            line = list(
-              color = "black", 
-              width = 0.8), 
-            type = "line", 
-            x0 = 0, 
-            x1 = 1, 
-            xref = "paper", 
-            y0 = -0.5 + n_riv, #Defines horizontal line separating riverine projects from tidal projects
-            y1 = -0.5 + n_riv, 
-            yref = "y"), 
-          list(
-            line = list(
-              color = "black", 
-              width = 0.8), 
-            type = "line", 
-            x0 = 0, 
-            x1 = 1, 
-            xref = "paper", 
-            y0 = -0.5 + n_riv + n_tid, #Defines horizontal line separating tidal projects from wave projects
-            y1 = -0.5 + n_riv + n_tid, 
-            yref = "y"), 
-          list(
-            line = list(
-              color = "black", 
-              width = 0.8), 
-            type = "line", 
-            x0 = 0, 
-            x1 = 1, 
-            xref = "paper", 
-            y0 = 0.025, 
-            y1 = 0.025, 
-            yref = "paper"),
-          list(
-            line = list(
-              color = "black", 
-              width = 0.8), 
-            type = "line", 
-            x0 = 0, 
-            x1 = 1, 
-            xref = "paper", 
-            y0 = 0.975, 
-            y1 = 0.975, 
-            yref = "paper"),
-          list(
-            line = list(
-              color = "black", 
-              width = 0.8
-            ), 
-            type = "line", 
-            x0 = 0, 
-            x1 = 0, 
-            xref = "paper", 
-            y0 = 0.975, 
-            y1 = 0.025, 
-            yref = "paper")),
-        annotations = list(
-          list(
-            x = 1,
-            y = (-1 + n_riv)/2,
-            showarrow = FALSE,
-            text = "<b>Riverine</b>",
-            xref = "paper",
-            yref = "y",
-            align = "center",
-            font = list(size = 14),
-            textangle = "90",
-            yshift = 4),
-          list(
-            x = 1,
-            y = (-1 + n_riv + (n_tid)/2),
-            showarrow = FALSE,
-            text = "<b>Tidal</b>",
-            xref = "paper",
-            yref = "y",
-            align = "center",
-            font = list(size = 14),
-            textangle = "90"),
-          list(
-            x = 1,
-            y = (-1 + n_riv + n_tid + (n_wav)/2),
-            showarrow = FALSE,
-            text = "<b>Wave</b>",
-            xref = "paper",
-            yref = "y",
-            align = "center",
-            font = list(size = 14),
-            textangle = "90")))
-    
-    fig
+    plot_projects()
     
   }))
   
@@ -345,11 +190,11 @@ server <- function(input, output, session) {
   get_email <- reactive({
     email <- input$`login-g_email`
     if (is.null(email)){
-      message("get_email() is.null")
+      #message("get_email() is.null")
       values$rpts <- rpts_0
       return(NULL)
     } else {
-      message(glue("get_email(): {email}"))
+      #message(glue("get_email(): {email}"))
       values$rpts <- get_user_reports(email)
     }
     email
@@ -392,7 +237,7 @@ server <- function(input, output, session) {
       email <- get_email()
       if (is.null(email)) 
         return(rpts_0)
-      message(glue("poll_rpts_tbl({email}) set value {Sys.time()}"))
+      #message(glue("poll_rpts_tbl({email}) set value {Sys.time()}"))
       #browser()
       values$rpts <- get_user_reports(email)
       values$rpts
@@ -402,7 +247,7 @@ server <- function(input, output, session) {
   #* get_rpts() ----
   get_rpts <- reactive({
     email       <- get_email()
-    message(glue("get_rpts() email: {email}"))
+    #message(glue("get_rpts() email: {email}"))
     values$rpts <- get_user_reports(email)
     values$rpts
   })
@@ -410,11 +255,24 @@ server <- function(input, output, session) {
   
   #* tbl_rpts ----
   output$tbl_rpts = renderDT({
+    
     get_rpts() %>% 
+      # get_user_reports("ben@ecoquants.com") %>% 
       # arrange(desc(date)) %>% 
       mutate(
-        title = glue("<a href='{url}' target='_blank'>{title}</a>")) %>% 
-      select(-url)
+        filetype  = fs::path_ext(url),
+        file_icon = file_icons[filetype],
+        title = ifelse(
+          status == "published",
+          glue("<a href='{url}' target='_blank'><i class='fas fa-{file_icon}'></i> <b>{title}</b></a>"),
+          glue("<i class='fas fa-{file_icon}'></i> <b>{title}</b>")),
+        status = ifelse(
+          status == "published",
+          "<span class='badge btn-default'>Published</span>",
+          "<span class='badge btn-default' disabled='disabled'>Rendering...</span>")) %>% 
+      select(
+        Title = title, Date = date, Status = status, 
+        Contents = contents, `# Interactions` = n_ixns)
   }, escape = F)
   
   #* btn_rpt_create() ----
@@ -425,10 +283,10 @@ server <- function(input, output, session) {
     out_ext   <- isolate(input$sel_rpt_ext)
     email     <- isolate(glogin()$email) 
     
-    message(glue("
-      input$txt_rpt_title: {rpt_title}
-      input$sel_rpt_ext:   {out_ext}
-      glogin()$email:      {email}"))
+    # message(glue("
+    #   input$txt_rpt_title: {rpt_title}
+    #   input$sel_rpt_ext:   {out_ext}
+    #   glogin()$email:      {email}"))
     
     if (rpt_title == "") 
       return()
@@ -475,7 +333,7 @@ server <- function(input, output, session) {
 
     
     r <- GET(url_rpt_pfx, query = q)
-    message(glue("r$url: {r$url}"))
+    # message(glue("r$url: {r$url}"))
     
     #Sys.sleep(1)
     values$rpts <- get_user_reports(glogin()$email)
@@ -483,9 +341,10 @@ server <- function(input, output, session) {
     # content(r)
   })
 
-  #* btn_del_rpts
+  #* btn_del_rpts ----
   observeEvent(input$btn_del_rpts, {
     req(input$tbl_rpts_rows_selected)
+    
     
     irows <- input$tbl_rpts_rows_selected
     email <- isolate(get_email())
@@ -494,8 +353,9 @@ server <- function(input, output, session) {
       slice(irows) %>% 
       pull(url) %>% 
       basename()
-    message(glue("rpts_del: {paste(rpts_del, collapse=', ')}"))
+    # message(glue("rpts_del: {paste(rpts_del, collapse=', ')}"))
     
+    #browser()
     sapply(rpts_del, del_user_report, email = email)
     
     values$rpts <- get_user_reports(email)
