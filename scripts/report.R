@@ -14,34 +14,45 @@ get_tbl_ixn <- function(db_tbl, ixn){
 rpt_content <- function(cntnt, ixns, rmd){
   # cntnt = contents[1]; ixns = params$interactions
   
-  cntnt_info <- list(
-    # projects   = "projects", 
+  cntnts_info <- list(
+    projects   = list(
+      method     = "child_rmd",
+      # TODO: migrate from csv to db
+      # db_tbl     = "projects",  
+      child_rmd  = "_projects.Rmd"),
     management = list(
-      db_tbl     = c("tethys_mgt"),
+      method     = "tbl_per_ixn",
+      db_tbl     = "tethys_mgt",
       caption_md = "Literature from [Tethys Knowledge Base](https://tethys.pnnl.gov/knowledge-base-all)."))
   
-  if (cntnt %in% names(cntnt_info)){
-    db_tbl     <- cntnt_info[[cntnt]]$db_tbl
-    caption_md <- cntnt_info[[cntnt]]$db_tbl
+  info <- cntnts_info[[cntnt]]
+  
+  if (info$method == "tbl_per_ixn"){
+    db_tbl     <- info$db_tbl
+    caption_md <- info$db_tbl
     
     # cntnt <- "management"
     rmd_ixns <- with(
-      cntnt_info[[cntnt]],
+      info,
       lapply(
         1:length(ixns), 
         function(i_ixn){ 
           knitr::knit_expand('_interaction.Rmd') }))
-  } else {
-    rmd_ixns <- list("Coming soon...")
+    
+    list(
+      glue("\n# {stringr::str_to_title(cntnt)}\n", .trim = F)) %>% 
+      append(rmd_ixns) %>% 
+      # knit_child(text = unlist(.), quiet = T) %>% 
+      # paste(sep = '\n\n')
+      unlist() %>% 
+      write(rmd, append = T)
   }
   
-  list(
-    glue("\n# {stringr::str_to_title(cntnt)}\n", .trim = F)) %>% 
-    append(rmd_ixns) %>% 
-    # knit_child(text = unlist(.), quiet = T) %>% 
-    # paste(sep = '\n\n')
-    unlist() %>% 
-    write(rmd, append = T)
+  if (info$method == "child_rmd"){
+    readLines(info$child_rmd) %>% 
+      write(rmd, append = T)
+  }
+  
   T
 }
 
