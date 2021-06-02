@@ -48,7 +48,10 @@ ui <- dashboardPage(
       #** tab_prj ----
       tabItem(
         tabName = "tab_prj",
-        
+        HTML(
+          "<div>
+            Filters by: <span class='me-tag me-tag-technology'>Technology</span> [TODO]
+          </div>"),
         helpText(
           "This page provides an overview of all past and present Marine Energy projects 
           in the United States at different levels of development and provides active links 
@@ -85,6 +88,15 @@ ui <- dashboardPage(
       #** tab_mgt ----
       tabItem(
         tabName = "tab_mgt",
+        HTML(
+          "<div><!--div style='float:right'-->
+            Filters by: 
+              <span class='me-tag me-tag-technology'>Technology</span>
+              <span class='me-tag me-tag-receptor'>Receptor</span>
+              <span class='me-tag me-tag-stressor'>Stressor</span>
+              <span class='me-tag me-tag-management'>Management</span>
+              <span class='me-tag me-tag-phase'>Phase</span>
+          </div>"),
         helpText(
           HTML("The Management Measures tool allows users to search and query the Tethys 
           Management Measures Tool for Marine Renewable Energy - a robust compilation 

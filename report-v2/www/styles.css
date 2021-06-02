@@ -66,3 +66,32 @@
   border-color: transparent;
 }
 
+.me-tag {
+  border-color: transparent;
+  border-radius: 3px;
+  margin: 0 3px 3px 0;
+  padding: 1px 3px;
+  display: inline-block;
+  box-sizing: border-box;
+  line-height: 20px;
+}
+.me-tag-technology {
+  color: #333333;
+  background-color: #d1e5f0;
+}
+.me-tag-receptor { 
+  color: #333333;
+  background-color: #e6f5d0; /*light green*/
+}
+.me-tag-stressor { 
+  color: #333333;
+  background-color: #fde0ef; /*light pink*/
+}
+.me-tag-management { 
+  color: #333333;
+  background-color: #d8daeb; /*light purple*/
+}
+.me-tag-phase { 
+  color: #333333;
+  background-color: #efefef; /*light gray*/
+}
