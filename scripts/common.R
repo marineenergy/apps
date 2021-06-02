@@ -3,7 +3,7 @@ if (!require(librarian)){
   library(librarian)
 }
 shelf(
-  dplyr, glue, here)
+  dplyr)
 
 here <- here::here
 glue <- glue::glue
@@ -11,7 +11,7 @@ glue <- glue::glue
 os   <- Sys.info()[["sysname"]]
 user <- Sys.info()[["user"]]
 machine <<- dplyr::case_when(
-  os != "Linux"                    ~ "Caleb",
+  os   != "Linux"                  ~ "Caleb",
   user == "bbest" & os == "Darwin" ~ "Ben",
   T                                ~ "server")
 

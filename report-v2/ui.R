@@ -48,10 +48,7 @@ ui <- dashboardPage(
       #** tab_prj ----
       tabItem(
         tabName = "tab_prj",
-        HTML(
-          "<div>
-            Filters by: <span class='me-tag me-tag-technology'>Technology</span> [TODO]
-          </div>"),
+        div("Filters by:", icon("tags"), span(class="me-tag me-technology", "Technology"), "[TODO]"),
         helpText(
           "This page provides an overview of all past and present Marine Energy projects 
           in the United States at different levels of development and provides active links 
@@ -91,11 +88,11 @@ ui <- dashboardPage(
         HTML(
           "<div><!--div style='float:right'-->
             Filters by: 
-              <span class='me-tag me-tag-technology'>Technology</span>
-              <span class='me-tag me-tag-receptor'>Receptor</span>
-              <span class='me-tag me-tag-stressor'>Stressor</span>
-              <span class='me-tag me-tag-management'>Management</span>
-              <span class='me-tag me-tag-phase'>Phase</span>
+              <span class='me-tag me-technology'>Technology</span>
+              <span class='me-tag me-receptor'>Receptor</span>
+              <span class='me-tag me-stressor'>Stressor</span>
+              <span class='me-tag me-management'>Management</span>
+              <span class='me-tag me-phase'>Phase</span>
           </div>"),
         helpText(
           HTML("The Management Measures tool allows users to search and query the Tethys 

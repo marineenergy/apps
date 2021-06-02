@@ -75,23 +75,23 @@
   box-sizing: border-box;
   line-height: 20px;
 }
-.me-tag-technology {
+.me-technology {
   color: #333333;
   background-color: #d1e5f0;
 }
-.me-tag-receptor { 
+.me-receptor { 
   color: #333333;
   background-color: #e6f5d0; /*light green*/
 }
-.me-tag-stressor { 
+.me-stressor { 
   color: #333333;
   background-color: #fde0ef; /*light pink*/
 }
-.me-tag-management { 
+.me-management { 
   color: #333333;
   background-color: #d8daeb; /*light purple*/
 }
-.me-tag-phase { 
+.me-phase { 
   color: #333333;
   background-color: #efefef; /*light gray*/
 }

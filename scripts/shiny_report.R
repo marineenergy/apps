@@ -1,3 +1,16 @@
+get_tags <- function(){
+  tbl(con, "tags") %>% 
+    collect() %>% 
+    filter(tag != category) %>% 
+    mutate(
+      tag_sql = as.character(tag_sql),
+      tag = purrr::map2_chr(tag, category, function(tag, category){
+        stringr::str_replace(tag, glue("{category}/"), "")}),
+      tag_named = purrr::map2(tag_sql, tag, setNames),
+      tag_html  = purrr::map2_chr(tag, category, function(tag, category){
+        glue("<span class='me-tag me-{tolower(category)}'>{tag}</span>") }))
+}
+
 get_rowids_with_ixn <- function(db_tbl, ixn){
   # db_tbl = "tethys_mgt_tags"; ixn = c("Receptor.Fish", "Stressor.PhysicalInteraction.Collision")
   
@@ -5,6 +18,33 @@ get_rowids_with_ixn <- function(db_tbl, ixn){
     paste(collapse = "\nINTERSECT\n")
   DBI::dbGetQuery(con, sql) %>% 
     pull(rowid)
+}
+
+ixns_to_colorhtml_df <- function(ixns, df_tags){
+  # from tag_sql character vector produce data.frame of Interaction with colored HTML tags
+  # shiny: tbl_ixns
+  # _report: 
+  #browser()
+  tibble(
+    rowid   = 1:length(ixns),
+    tag_sql = ixns) %>% 
+    tidyr::unnest(tag_sql) %>% 
+    left_join(
+      df_tags, by = "tag_sql") %>% 
+    group_by(rowid) %>% 
+    summarize(
+      Interaction = paste(tag_html, collapse = " ")) %>% 
+    select(-rowid)
+}
+
+ixn_to_colorhtml <- function(ixns, df_tags){
+  if (knitr::is_html_output()){
+    ixns_to_colorhtml_df(ixns, df_tags) %>% 
+    pull(Interaction) %>% 
+    paste(collapse = ', ')
+  } else {
+    ixns
+  }
 }
 
 load_projects <- function(){
@@ -245,4 +285,8 @@ plot_projects <- function(){
   
   fig
     
+}
+
+tags_sql_to_html <- function(ixns, df_tags){
+  
 }

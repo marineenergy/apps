@@ -37,8 +37,9 @@ server <- function(input, output, session) {
   
   observeEvent(input$btn_mod_map, {
     showModal(modalDialog(
-      title = "Modify Location",
+      title     = "Modify Location",
       editModUI("mapEdit"),
+      footer    = modalButton("Close"),
       easyClose = T))
   })
   
@@ -66,6 +67,8 @@ server <- function(input, output, session) {
   
   # ixns ----
   
+  
+  #* ixn_btns ----
   output$ixn_btns <- renderUI({
     
     if (length(values$ixns) == 0)
@@ -80,6 +83,7 @@ server <- function(input, output, session) {
         "btn_mod_ixns", "Modify (n=0)", icon=icon("gear"), width="120px", style="display:inline-block;margin-right:15px;float:right"))
   })
   
+  #* btn_add_ixn ----
   observeEvent(input$btn_add_ixn, {
     req(input$sel_ixn_tags)
     
@@ -91,31 +95,21 @@ server <- function(input, output, session) {
       selected = "")
   })
   
+  #* btn_mod_ixns ----
   observeEvent(input$btn_mod_ixns, {
     showModal(modalDialog(
       title = "Modify Interactions",
       tagList(
         DTOutput("tbl_ixns"),
         actionButton("btn_del_ixns", "Delete selected interaction(s)", icon=icon("minus"))),
+      footer    = modalButton("Close"),
       easyClose = T))
   })
   
+  #* tbl_ixns ----
   output$tbl_ixns <- renderDT({
     req(values$ixns)
-    
-    # TODO: improve table in phases:
-    #   1) replace df_tags.sql with prettier shorter df_tags.tag
-    #   2) break into columns: technology | stressor | receptor
-    tibble(
-      Interaction = map_chr(
-        values$ixns, #%>% 
-          # stringr::str_replace("Technology\\.(.*)", "\\1")
-          # <span class='me-tag me-tag-technology'>Technology</span>
-          # <span class='me-tag me-tag-receptor'>Receptor</span>
-          # <span class='me-tag me-tag-stressor'>Stressor</span>
-          # <span class='me-tag me-tag-management'>Management</span>
-          # <span class='me-tag me-tag-phase'>Phase</span>
-          paste, collapse = ", "))
+    ixns_to_colorhtml_df(values$ixns, df_tags)
   }, escape = F)
   
   observeEvent(input$btn_del_ixns, {
