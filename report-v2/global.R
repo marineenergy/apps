@@ -158,13 +158,7 @@ navbarMenu <- function(..., id = NULL) {
 
 
 # tag_choices ----
-df_tags <- tbl(con, "tags") %>% 
-  collect() %>% 
-  filter(tag != category) %>% 
-  mutate(
-    tag = map2_chr(tag, category, function(tag, category){
-      stringr::str_replace(tag, glue("{category}/"), "")}),
-    tag_named = map2(tag_sql, tag, setNames))
+df_tags <- get_tags()
 
 tag_choices = list()
 for (cat in unique(df_tags$category)){ # (cat = df_tags$category[1])
