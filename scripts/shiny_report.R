@@ -130,7 +130,8 @@ plot_projects <- function(){
   fig <- fig %>% 
     plotly::layout(
       xaxis = list(
-        title = 'Date',
+        #title = 'Date',
+        title = '',
         showline = FALSE,
         showgrid = FALSE),
       yaxis = list(
@@ -150,7 +151,8 @@ plot_projects <- function(){
       legend = list(
         # x = 1.01, 
         # y = 0.5), 
-        orientation = 'h'),
+        orientation = 'h',
+        font = list(size = 10)),
       shapes = list(
         list(
           line = list(
