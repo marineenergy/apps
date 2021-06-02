@@ -107,8 +107,16 @@ server <- function(input, output, session) {
     #   1) replace df_tags.sql with prettier shorter df_tags.tag
     #   2) break into columns: technology | stressor | receptor
     tibble(
-      Interaction = map_chr(values$ixns, paste, collapse = "; "))
-  })
+      Interaction = map_chr(
+        values$ixns, #%>% 
+          # stringr::str_replace("Technology\\.(.*)", "\\1")
+          # <span class='me-tag me-tag-technology'>Technology</span>
+          # <span class='me-tag me-tag-receptor'>Receptor</span>
+          # <span class='me-tag me-tag-stressor'>Stressor</span>
+          # <span class='me-tag me-tag-management'>Management</span>
+          # <span class='me-tag me-tag-phase'>Phase</span>
+          paste, collapse = ", "))
+  }, escape = F)
   
   observeEvent(input$btn_del_ixns, {
     req(values$ixns, input$tbl_ixns_rows_selected)
