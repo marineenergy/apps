@@ -128,14 +128,14 @@ server <- function(input, output, session) {
   })
   
   # projects ----
+  
+  #* prj_map ----
   output$prj_map <- renderLeaflet({
      map_projects(prj_sites) })
   
+  #* prj_p ----
   output$prj_p <- renderPlotly(suppressWarnings({
-    
-    #browser()
     plot_projects()
-    
   }))
   
   output$click <- renderPrint({
