@@ -69,12 +69,13 @@
 .me-tag {
   border-color: transparent;
   border-radius: 3px;
-  margin: 0 3px 3px 0;
-  padding: 1px 3px;
-  display: inline-block;
+  margin: 0;
+  padding: 2px 2px;
   box-sizing: border-box;
-  line-height: 20px;
+  /* display: inline-block; */
+  /* line-height: 20px; */
 }
+
 .me-technology {
   color: #333333;
   background-color: #d1e5f0;

@@ -8,7 +8,8 @@ get_tags <- function(){
         stringr::str_replace(tag, glue("{category}/"), "")}),
       tag_named = purrr::map2(tag_sql, tag, setNames),
       tag_html  = purrr::map2_chr(tag, category, function(tag, category){
-        glue("<span class='me-tag me-{tolower(category)}'>{tag}</span>") }))
+        glue("<span class='me-tag me-{tolower(category)}'>{tag}</span>") })) %>% 
+    arrange(category, tag)
 }
 
 get_rowids_with_ixn <- function(db_tbl, ixn){
@@ -24,24 +25,47 @@ ixns_to_colorhtml_df <- function(ixns, df_tags){
   # from tag_sql character vector produce data.frame of Interaction with colored HTML tags
   # shiny: tbl_ixns
   # _report: 
-  #browser()
+  
+  if (length(ixns) == 0)
+    return(tibble(Interaction = character(0)))
+  
+  if (class(ixns) == "character"){
+    # individual interactions, like headers in report
+    d <- tibble(
+      tag_sql = ixns) %>% 
+      tidyr::unnest(tag_sql) %>% 
+      left_join(
+        df_tags, by = "tag_sql") %>% 
+      # arrange by category inverse alphabetical:
+      #   Technology, Stressor, Receptor, Phase, Management
+      arrange(desc(category), tag) %>% 
+      summarize(
+        Interaction = paste(tag_html, collapse = " "), .groups = "drop")
+    return(d)
+  }
+  # multiple interactions, like tbl_ixns in app
   tibble(
     rowid   = 1:length(ixns),
     tag_sql = ixns) %>% 
     tidyr::unnest(tag_sql) %>% 
     left_join(
       df_tags, by = "tag_sql") %>% 
+    # arrange by category inverse alphabetical:
+    #   Technology, Stressor, Receptor, Phase, Management
+    arrange(rowid, desc(category), tag) %>% 
     group_by(rowid) %>% 
     summarize(
-      Interaction = paste(tag_html, collapse = " ")) %>% 
+      Interaction = paste(tag_html, collapse = " "), .groups = "drop") %>% 
     select(-rowid)
 }
 
-ixn_to_colorhtml <- function(ixns, df_tags){
-  if (knitr::is_html_output()){
+ixn_to_colorhtml <- function(ixns, df_tags, is_html = NULL){
+  if (is.null(is_html))
+    is_html <- knitr::is_html_output()
+  if (is_html){
     ixns_to_colorhtml_df(ixns, df_tags) %>% 
-    pull(Interaction) %>% 
-    paste(collapse = ', ')
+      pull(Interaction) %>% 
+      paste(collapse = ', ')
   } else {
     ixns
   }
