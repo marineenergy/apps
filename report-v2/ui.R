@@ -85,15 +85,13 @@ ui <- dashboardPage(
       #** tab_mgt ----
       tabItem(
         tabName = "tab_mgt",
-        HTML(
-          "<div><!--div style='float:right'-->
-            Filters by: 
-              <span class='me-tag me-technology'>Technology</span>
-              <span class='me-tag me-receptor'>Receptor</span>
-              <span class='me-tag me-stressor'>Stressor</span>
-              <span class='me-tag me-management'>Management</span>
-              <span class='me-tag me-phase'>Phase</span>
-          </div>"),
+        div("Filters by:", 
+            icon("tags"), 
+            span(class="me-tag me-technology", "Technology"),
+            span(class="me-tag me-receptor",   "Receptor"),
+            span(class="me-tag me-stressor",   "Stressor"),
+            span(class="me-tag me-management", "Management"),
+            span(class="me-tag me-phase",      "Phase")),
         helpText(
           HTML("The Management Measures tool allows users to search and query the Tethys 
           Management Measures Tool for Marine Renewable Energy - a robust compilation 
