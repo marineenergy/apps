@@ -133,17 +133,41 @@ server <- function(input, output, session) {
   output$prj_map <- renderLeaflet({
      map_projects(prj_sites) })
   
+  #* observe plotly_click ----
+  observe({
+    #req(length(values$ixns) > 0)
+  
+    sql2tech <- c(
+      "Technology.Riverine" = "Riverine Energy", 
+      "Technology.Tidal"    = "Tidal Energy",
+      "Technology.Wave"     = "Wave Energy")
+    
+    #browser()
+    tech <- sql2tech[intersect(names(sql2tech), values$ixns %>% unlist())]
+
+    if (length(tech) == 0)
+      tech = sql2tech
+    
+    #message(glue("prj_map proxy tech: {paste(tech, collapse=', ')}"))
+    
+    prj_tech <- prj_sites %>% 
+      filter(technology_type %in% tech)
+    
+    leafletProxy("prj_map") %>% 
+      leaflet::clearMarkers() %>% 
+      leaflet::addMarkers(
+        data  = prj_tech,
+        label = ~label_html, 
+        popup = ~popup_html)
+    
+  })
+  
   #* prj_p ----
   output$prj_p <- renderPlotly(suppressWarnings({
     plot_projects()
   }))
   
-  output$click <- renderPrint({
-    d <- event_data("plotly_click")
-    if (is.null(d)) "Click events appear here (double-click to clear)" else d
-  })
-  
-  # Use a separate observer to zoom to point
+  #* observe plotly_click ----
   observe({
     d <- event_data("plotly_click")
     req(d)
