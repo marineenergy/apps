@@ -31,6 +31,18 @@ con <<- DBI::dbConnect(
   port     = 5432,
   user     = db_params$user,
   password = readLines(db_params$pwd_txt))
+# use conn to preview SQL, but con for st_read() to get spatial geometries
+conn <<- connections::connection_open(
+  RPostgres::Postgres(),
+  dbname   = db_params$dbname,
+  host     = db_params$host,
+  port     = 5432,
+  user     = db_params$user,
+  password = readLines(db_params$pwd_txt))
+
+
+library()
+
 
 # tbls <- dbListTables(con) %>% sort(); tbls
 
