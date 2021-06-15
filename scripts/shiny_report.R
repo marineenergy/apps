@@ -71,7 +71,7 @@ ixn_to_colorhtml <- function(ixns, df_tags, is_html = NULL){
   }
 }
 
-load_projects <- function(){
+load_projects <- function(ixns=NULL){
   # p_csvs <- list.files("/share/github/apps/data", "project_.*")
   # file.copy(file.path("/share/github/apps/data", p_csvs), file.path("/share/github/apps_dev/data", p_csvs), overwrite = T)
   prj_sites_csv        <<- file.path(dir_data, "project_sites.csv")
@@ -114,15 +114,36 @@ load_projects <- function(){
     mutate(
       # order by permit_types
       permit_type = factor(permit_type, levels = permit_types))
-  
-  prj_sites$label_html <<- prj_sites$label_html %>% lapply(htmltools::HTML)
-  prj_sites$popup_html <<- prj_sites$popup_html %>% lapply(htmltools::HTML)
+
+  # extract technology from interaction tags
+  tags2tech <- c(
+    "Technology.Riverine" = "Riverine Energy", 
+    "Technology.Tidal"    = "Tidal Energy",
+    "Technology.Wave"     = "Wave Energy")
+  if (!is.null(ixns)){
+    tech <- tags2tech[intersect(names(tags2tech), values$ixns %>% unlist())]
+    # tech <- tags2tech[1:2]
+  } else {
+    tech <- tags2tech
+  }
+
+  # filter by technology
+  prj_sites <<- prj_sites %>% 
+    filter(technology_type %in% tech)
+  d_times <<- d_times %>% 
+    filter(technology_type %in% tech)
+  d_permits <<- d_permits %>% 
+    filter(technology_type %in% tech)
+    
+  prj_sites$label_html <- prj_sites$label_html %>% lapply(htmltools::HTML)
+  prj_sites$popup_html <- prj_sites$popup_html %>% lapply(htmltools::HTML)
   
   # colors & symbols
-  project_statuses <<- unique(d_times$project_status)
-  cols_type  <<- colorRampPalette(RColorBrewer::brewer.pal(n=11, name = 'PiYG'))(length(permit_types))
+  #project_statuses <<- unique(d_times$project_status)
+  project_statuses <<- c("Active Project", "Inactive Project")
+  cols_type   <<- colorRampPalette(RColorBrewer::brewer.pal(n=11, name = 'PiYG'))(length(permit_types))
   cols_status <<- c("#30A4E1", "#999999") # Active/Inactive Projects
-  cols <<- setNames(
+  cols        <<- setNames(
     c(cols_type, cols_status), 
     c(permit_types, project_statuses))
   symbls_type  <<- c(rep('triangle-up', 3), 'triangle-down', 'triangle-up', 'triangle-down', 'triangle-up', 'triangle-down', rep('triangle-up', 3))
@@ -216,30 +237,32 @@ plot_projects <- function(){
         # x = 1.01, 
         # y = 0.5), 
         orientation = 'h',
-        font = list(size = 10)),
+        font = list(size = 10)))
+  
+  add_tech_ln <- function(fig, n_y){
+    fig %>% 
+      plotly::layout(
+        shapes = list(
+          list(
+            line = list(
+              color = "black", 
+              width = 0.8), 
+            type = "line", 
+            x0 = 0, 
+            x1 = 1, 
+            xref = "paper", 
+            y0 = -0.5 + n_y, #Defines horizontal line separating riverine projects from tidal projects
+            y1 = -0.5 + n_y, 
+            yref = "y")))
+  }
+
+  fig <- fig %>% 
+    add_tech_ln(n_riv) %>% 
+    add_tech_ln(n_riv + n_tid)
+  
+  fig <- fig %>% 
+    plotly::layout(
       shapes = list(
-        list(
-          line = list(
-            color = "black", 
-            width = 0.8), 
-          type = "line", 
-          x0 = 0, 
-          x1 = 1, 
-          xref = "paper", 
-          y0 = -0.5 + n_riv, #Defines horizontal line separating riverine projects from tidal projects
-          y1 = -0.5 + n_riv, 
-          yref = "y"), 
-        list(
-          line = list(
-            color = "black", 
-            width = 0.8), 
-          type = "line", 
-          x0 = 0, 
-          x1 = 1, 
-          xref = "paper", 
-          y0 = -0.5 + n_riv + n_tid, #Defines horizontal line separating tidal projects from wave projects
-          y1 = -0.5 + n_riv + n_tid, 
-          yref = "y"), 
         list(
           line = list(
             color = "black", 

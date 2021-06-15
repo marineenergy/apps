@@ -226,9 +226,6 @@ server <- function(input, output, session) {
       # test: this works
       plotlyProxyInvoke("restyle", list(x=0, y=1), 0) %>% 
       plotlyProxyInvoke("relayout", list(title = "test update"))
-
-    # git config --global user.email "cristinadobbelaere@gmail.com"
-    # git config --global user.name "cdobbelaere"
     
         # data  = d_times_tech, # %>% 
             # # TODO: squeez labels by wrapping lines or some such
