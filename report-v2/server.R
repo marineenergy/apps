@@ -133,7 +133,7 @@ server <- function(input, output, session) {
   output$prj_map <- renderLeaflet({
      map_projects(prj_sites) })
   
-  #* observe plotly_click ----
+  #* prj_map observe Technology tag  ----
   observe({
     #req(length(values$ixns) > 0)
   
@@ -143,6 +143,7 @@ server <- function(input, output, session) {
       "Technology.Wave"     = "Wave Energy")
     
     #browser()
+    # find technologies that exist in both sql2tech and selected interactions
     tech <- sql2tech[intersect(names(sql2tech), values$ixns %>% unlist())]
 
     if (length(tech) == 0)
@@ -164,9 +165,264 @@ server <- function(input, output, session) {
   
   #* prj_p ----
   output$prj_p <- renderPlotly(suppressWarnings({
-    plot_projects()
+    plot_projects() 
   }))
   
+  #* prj_p observe Technology tag  ----
+  observe({
+    req(length(values$ixns) > 0)
+    
+    # could probably condense this by including in same observe({}) as leaflet
+    sql2tech <- c(
+      "Technology.Riverine" = "Riverine Energy", 
+      "Technology.Tidal"    = "Tidal Energy",
+      "Technology.Wave"     = "Wave Energy")
+    
+    #browser()
+    tech <- sql2tech[intersect(names(sql2tech), values$ixns %>% unlist())]
+   
+    if (length(tech) == 0)
+      tech <- sql2tech
+    
+    
+    d_times_tech   <- d_times   %>% filter(technology_type %in% tech)
+    d_permits_tech <- d_permits %>% filter(technology_type %in% tech)
+  
+    plotlyProxy("prj_p", session) %>% 
+      plotlyProxyInvoke("deleteTraces", 0) %>% 
+      # plotlyProxyInvoke("newPlot") %>% 
+      # plotlyProxyInvoke(
+      #   "restyle",
+      #   "marker.color", list("blue"))  %>% 
+      # plotlyProxyInvoke("deleteTraces", 0) %>% 
+      # plotlyProxyInvoke("deleteTraces", 1) %>%
+      plotlyProxyInvoke(
+        "addTraces",
+        list(
+          x     = d_times_tech[,3],
+          # xend  = d_times_tech[,4],
+          y     = d_times_tech[,1],
+          color = "blue", # test
+          # yend  = d_times_tech[,1],
+          # color = d_times_tech[,5],
+          type  = "scatter",
+          mode  = "lines",
+          line.width = 10
+          # line  = list(width = 10)
+          )) %>% 
+      plotlyProxyInvoke(
+        "addTraces",
+        list(
+          x = d_permits_tech[,2],
+          y = d_times_tech[,1],
+          type = "scatter",
+          mode = "markers",
+          symbol = d_permits_tech[,3]
+          )
+      ) %>% 
+      
+     
+      
+      # test: this works
+      plotlyProxyInvoke("restyle", list(x=0, y=1), 0) %>% 
+      plotlyProxyInvoke("relayout", list(title = "test update"))
+          
+      
+    
+            # data  = d_times_tech, # %>% 
+            # # TODO: squeez labels by wrapping lines or some such
+            # # mutate(project = recode(project, `Portsmouth Memorial Bridge`="Portsmouth\n Memorial\n Bridge")),
+            # x     = ~date_beg,
+            # xend  = ~date_end,
+            # y     = ~project,
+            # yend  = ~project,
+            # color = ~project_status,
+            # line  = list(width = 10))
+          
+          # markers = list(
+          #   
+          #   data = d_permits_tech,
+          #   x = ~license_date,
+          #   y = ~project,
+          #   symbol = ~permit_type,
+          #   symbols = symbls_type,
+          #   color = ~permit_type,
+          #   colors = cols_type,
+          #   size = 10,
+          #   hoverinfo = "text",
+          #     hovertext = paste(
+          #       'License Date: '    , d_permits_tech$license_date,
+          #       '<br>Project Name: ', d_permits_tech$project,
+          #       '<br>Permit Type: ' , d_permits_tech$permit_type))
+          
+      
+    
+    
+  })
+ 
+  
+  
+  #####
+  # original plot_projects() looks like this:
+  
+  # plot_projects <- function(){
+  #   fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700)
+  #   
+  #   fig <- fig %>% 
+  #     plotly::add_segments(
+  #       data  = d_times, # %>% 
+  #       # TODO: squeez labels by wrapping lines or some such
+  #       # mutate(project = recode(project, `Portsmouth Memorial Bridge`="Portsmouth\n Memorial\n Bridge")),
+  #       x     = ~date_beg,
+  #       xend  = ~date_end,
+  #       y     = ~project,
+  #       yend  = ~project,
+  #       color = ~project_status,
+  #       line  = list(width = 10))
+  #   #fig
+  #   #plotly_json(p = fig)
+  #   
+  #   fig <- fig %>% 
+  #     plotly::add_markers(
+  #       data = d_permits,
+  #       x = ~license_date, 
+  #       y = ~project,
+  #       symbol = ~permit_type,
+  #       symbols = symbls_type,
+  #       color = ~permit_type,
+  #       colors = cols_type, 
+  #       size = 10,
+  #       hoverinfo = "text",
+  #       hovertext = paste(
+  #         'License Date: '    , d_permits$license_date, 
+  #         '<br>Project Name: ', d_permits$project, 
+  #         '<br>Permit Type: ' , d_permits$permit_type))
+  #   
+  #   #fig
+  #   #plotly_json(p = fig)
+  #   
+  #   fig <- fig %>% 
+  #     plotly::layout(
+  #       xaxis = list(
+  #         #title = 'Date',
+  #         title = '',
+  #         showline = FALSE,
+  #         showgrid = FALSE),
+  #       yaxis = list(
+  #         title = '',
+  #         autorange = "reversed",
+  #         domain = c(0,1),
+  #         range = c(0, length(unique(d_times$project))),
+  #         showline = FALSE,
+  #         showgrid = FALSE,
+  #         type = "category",
+  #         tickfont = list(size = 8)),
+  #       # margin = list(
+  #       #   r = 10, 
+  #       #   t = 25, 
+  #       #   b = 40, 
+  #       #   l = 100),
+  #       legend = list(
+  #         # x = 1.01, 
+  #         # y = 0.5), 
+  #         orientation = 'h',
+  #         font = list(size = 10)),
+  #       shapes = list(
+  #         list(
+  #           line = list(
+  #             color = "black", 
+  #             width = 0.8), 
+  #           type = "line", 
+  #           x0 = 0, 
+  #           x1 = 1, 
+  #           xref = "paper", 
+  #           y0 = -0.5 + n_riv, #Defines horizontal line separating riverine projects from tidal projects
+  #           y1 = -0.5 + n_riv, 
+  #           yref = "y"), 
+  #         list(
+  #           line = list(
+  #             color = "black", 
+  #             width = 0.8), 
+  #           type = "line", 
+  #           x0 = 0, 
+  #           x1 = 1, 
+  #           xref = "paper", 
+  #           y0 = -0.5 + n_riv + n_tid, #Defines horizontal line separating tidal projects from wave projects
+  #           y1 = -0.5 + n_riv + n_tid, 
+  #           yref = "y"), 
+  #         list(
+  #           line = list(
+  #             color = "black", 
+  #             width = 0.8), 
+  #           type = "line", 
+  #           x0 = 0, 
+  #           x1 = 1, 
+  #           xref = "paper", 
+  #           y0 = 0.025, 
+  #           y1 = 0.025, 
+  #           yref = "paper"),
+  #         list(
+  #           line = list(
+  #             color = "black", 
+  #             width = 0.8), 
+  #           type = "line", 
+  #           x0 = 0, 
+  #           x1 = 1, 
+  #           xref = "paper", 
+  #           y0 = 0.975, 
+  #           y1 = 0.975, 
+  #           yref = "paper"),
+  #         list(
+  #           line = list(
+  #             color = "black", 
+  #             width = 0.8
+  #           ), 
+  #           type = "line", 
+  #           x0 = 0, 
+  #           x1 = 0, 
+  #           xref = "paper", 
+  #           y0 = 0.975, 
+  #           y1 = 0.025, 
+  #           yref = "paper")),
+  #       annotations = list(
+  #         list(
+  #           x = 1,
+  #           y = (-1 + n_riv)/2,
+  #           showarrow = FALSE,
+  #           text = "<b>Riverine</b>",
+  #           xref = "paper",
+  #           yref = "y",
+  #           align = "center",
+  #           font = list(size = 8),
+  #           textangle = "90",
+  #           yshift = 4),
+  #         list(
+  #           x = 1,
+  #           y = (-1 + n_riv + (n_tid)/2),
+  #           showarrow = FALSE,
+  #           text = "<b>Tidal</b>",
+  #           xref = "paper",
+  #           yref = "y",
+  #           align = "center",
+  #           font = list(size = 8),
+  #           textangle = "90"),
+  #         list(
+  #           x = 1,
+  #           y = (-1 + n_riv + n_tid + (n_wav)/2),
+  #           showarrow = FALSE,
+  #           text = "<b>Wave</b>",
+  #           xref = "paper",
+  #           yref = "y",
+  #           align = "center",
+  #           font = list(size = 8),
+  #           textangle = "90")))
+  #   
+  #   fig 
+  # }
+    
+    ####
+    
+
   #* observe plotly_click ----
   observe({
     d <- event_data("plotly_click")
