@@ -563,9 +563,11 @@ Interesting problem when forcing geometry to 2D:
 
 - Using `ST_Force2D(geometry)` and `intersection = Y` causes query function to fail.
 - Query function looks for `geometry` in the `select_sql` string and replaces it with `geometry, st_intersection(...)`
-- Workaround was to use `ST_Force2D(geom)`, which I assume is just shorthand for `geometry`. Not sure why it works, but it does.
+- Workaround was to use `ST_Force2D(geom)`
 
 Sparse metadata for this dataset. Not sure what columns mean.
+
+> Acres AOI overlaps with maintained dredging channels
 
 ```{r coastal-channels, eval=T, class.source='fold-show'}
 select_sql <- glue('
@@ -587,19 +589,98 @@ select_sql <- glue('
 
 summarize_sql <- glue("
   select
-    themelayer as \"Category\",
     fairway as \"Fairway\",
-    quasou_txt \"Quality\",
-    inform as \"Notes\"
-  from
+    round(sum(st_area(geometry::geography) * (st_area(ixn::geography) / st_area(geometry::geography))) / 4047) as \"AOI Acres\"
+  from 
     tmp_aoi
-  where 
-    fairway is not null
   group by
-    themelayer, fairway, inform, quasou_txt
+    fairway
+  order by
+    fairway
 ")
 
 intersection = T
+buffer_nm = 0
+aoi_size = "S"
+coast = "E"
+
+test_new_summary(select_sql, summarize_sql, buffer_nm, intersection, aoi_size, coast)
+```
+
+
+## Drilling Platforms
+
+> Count of structures within AOI.
+
+```{r drill-platforms, eval=T, class.source='fold-show'}
+select_sql <- glue('
+  select
+    structure, 
+    geometry
+  from (
+    select platform_n as structure, geometry from shp_pc_plat
+    union
+    select complex_id || \' \' || str_name as structure, geometry from shp_platform
+  )
+')
+
+summarize_sql <- glue("
+  select
+    count(*)
+  from 
+    tmp_aoi
+")
+
+intersection = F
+buffer_nm = 0
+aoi_size = "S"
+coast = "W"
+
+test_new_summary(select_sql, summarize_sql, buffer_nm, intersection, aoi_size, coast)
+```
+
+
+## Ocean Wave Resource Potential
+
+> Min, max, average annual WEF by depth category
+
+```{r wave-potential, eval=T, class.source='fold-show'}
+select_sql <- glue('
+  select
+    case
+      when depth_wef::double precision >= 0 and depth_wef::double precision < 1000 then \'0000-0999\'::text
+      when depth_wef::double precision >= 1000 and depth_wef::double precision < 2000 then \'1000-1999\'::text
+      when depth_wef::double precision >= 2000 and depth_wef::double precision < 3000 then \'2000-2999\'::text
+      when depth_wef::double precision >= 3000 and depth_wef::double precision < 4000 then \'3000-3999\'::text
+      when depth_wef::double precision >= 4000 and depth_wef::double precision < 5000 then \'4000-4999\'::text
+      when depth_wef::double precision >= 5000 then \'>5000\'::text end as depth_wef_cat,
+    ann_wef,
+    geometry
+  from (
+    select
+      depth_wef,
+      ann_wef,
+      geometry
+    from
+      shp_wave_power_density
+  )
+')
+
+summarize_sql <- glue("
+  select
+    depth_wef_cat as \"Depth Category\",
+    min(ann_wef) as \"Min Annual WEF\",
+    max(ann_wef) as \"Max Annual WEF\",
+    avg(ann_wef) as \"Avg Annual WEF\"
+  from
+    tmp_aoi
+  group by
+    depth_wef_cat
+  order by
+    depth_wef_cat
+")
+
+intersection = F
 buffer_nm = 0
 aoi_size = "S"
 coast = "W"
