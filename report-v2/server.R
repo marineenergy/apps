@@ -128,26 +128,25 @@ server <- function(input, output, session) {
   })
   
   # projects ----
+  load_projects()
   
   #* prj_map ----
   output$prj_map <- renderLeaflet({
-     map_projects(prj_sites) })
+     map_projects(prj_sites)})
   
   #* prj_map observe Technology tag  ----
   observe({
-    #req(length(values$ixns) > 0)
+    # req(length(values$ixns) > 0)
   
     sql2tech <- c(
       "Technology.Riverine" = "Riverine Energy", 
       "Technology.Tidal"    = "Tidal Energy",
       "Technology.Wave"     = "Wave Energy")
     
-    #browser()
-    # find technologies that exist in both sql2tech and selected interactions
     tech <- sql2tech[intersect(names(sql2tech), values$ixns %>% unlist())]
 
-    if (length(tech) == 0)
-      tech = sql2tech
+    if (length(tech) == 0){
+      tech <- sql2tech}
     
     #message(glue("prj_map proxy tech: {paste(tech, collapse=', ')}"))
     
@@ -164,98 +163,48 @@ server <- function(input, output, session) {
   })
   
   #* prj_p ----
-  output$prj_p <- renderPlotly(suppressWarnings({
-    plot_projects() 
+  output$prj_p <- renderPlotly(
+    suppressWarnings({
+      plot_projects()
   }))
   
   #* prj_p observe Technology tag  ----
   observe({
     req(length(values$ixns) > 0)
+    load_projects()
+    # output$prj_p <- renderText(suppressWarnings(""))
     
-    # could probably condense this by including in same observe({}) as leaflet
-    sql2tech <- c(
+    # extract technology from interaction tags
+    tags2tech <- c(
       "Technology.Riverine" = "Riverine Energy", 
       "Technology.Tidal"    = "Tidal Energy",
       "Technology.Wave"     = "Wave Energy")
     
-    #browser()
-    tech <- sql2tech[intersect(names(sql2tech), values$ixns %>% unlist())]
-   
-    if (length(tech) == 0)
-      tech <- sql2tech
+    # if an ixn exists, find tech selected in the ixn
+    if (!is.null(values$ixns)){
+      tech <<- tags2tech[intersect(names(tags2tech), values$ixns %>% unlist())]
+    } else tech <<- tags2tech 
     
+    message(glue("selected tech: {paste(tech, collapse = ', ')}"))
     
-    d_times_tech   <- d_times   %>% filter(technology_type %in% tech)
-    d_permits_tech <- d_permits %>% filter(technology_type %in% tech)
-  
-    plotlyProxy("prj_p", session) %>% 
-      plotlyProxyInvoke("deleteTraces", 0) %>% 
-      # plotlyProxyInvoke("newPlot") %>% 
-      # plotlyProxyInvoke(
-      #   "restyle",
-      #   "marker.color", list("blue"))  %>% 
-      # plotlyProxyInvoke("deleteTraces", 0) %>% 
-      # plotlyProxyInvoke("deleteTraces", 1) %>%
-      plotlyProxyInvoke(
-        "addTraces",
-        list(
-          x     = d_times_tech[,3],
-          # xend  = d_times_tech[,4],
-          y     = d_times_tech[,1],
-          color = "blue", # test
-          # yend  = d_times_tech[,1],
-          # color = d_times_tech[,5],
-          type  = "scatter",
-          mode  = "lines",
-          line.width = 10
-          # line  = list(width = 10)
-          )) %>% 
-      plotlyProxyInvoke(
-        "addTraces",
-        list(
-          x = d_permits_tech[,2],
-          y = d_times_tech[,1],
-          type = "scatter",
-          mode = "markers",
-          symbol = d_permits_tech[,3]
-          )
-      ) %>% 
-      
-     
-      
-      # test: this works
-      plotlyProxyInvoke("restyle", list(x=0, y=1), 0) %>% 
-      plotlyProxyInvoke("relayout", list(title = "test update"))
+    # filter by technology
+    prj_sites <<- prj_sites %>% filter(technology_type %in% tech)
+    d_times   <<- d_times   %>% filter(technology_type %in% tech)
+    d_permits <<- d_permits %>% filter(technology_type %in% tech)
+
     
-        # data  = d_times_tech, # %>% 
-            # # TODO: squeez labels by wrapping lines or some such
-            # # mutate(project = recode(project, `Portsmouth Memorial Bridge`="Portsmouth\n Memorial\n Bridge")),
-            # x     = ~date_beg,
-            # xend  = ~date_end,
-            # y     = ~project,
-            # yend  = ~project,
-            # color = ~project_status,
-            # line  = list(width = 10))
-          
-          # markers = list(
-          #   
-          #   data = d_permits_tech,
-          #   x = ~license_date,
-          #   y = ~project,
-          #   symbol = ~permit_type,
-          #   symbols = symbls_type,
-          #   color = ~permit_type,
-          #   colors = cols_type,
-          #   size = 10,
-          #   hoverinfo = "text",
-          #     hovertext = paste(
-          #       'License Date: '    , d_permits_tech$license_date,
-          #       '<br>Project Name: ', d_permits_tech$project,
-          #       '<br>Permit Type: ' , d_permits_tech$permit_type))
-          
-      
+    # browser()
     
+    message(glue("n_riv = {n_riv}"))
+    message(glue("n_tid = {n_tid}"))
+    message(glue("n_wav = {n_wav}"))
     
+    output$prj_p <- renderPlotly(
+      suppressWarnings({
+        plot_projects()
+      })
+    )
+
   })
  
   
@@ -417,8 +366,7 @@ server <- function(input, output, session) {
   #   
   #   fig 
   # }
-    
-    ####
+  
     
 
   #* observe plotly_click ----
@@ -624,7 +572,6 @@ server <- function(input, output, session) {
   #* btn_del_rpts ----
   observeEvent(input$btn_del_rpts, {
     req(input$tbl_rpts_rows_selected)
-    
     
     irows <- input$tbl_rpts_rows_selected
     email <- isolate(get_email())
