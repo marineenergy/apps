@@ -257,6 +257,28 @@ add_tech_ln <- function(fig, n_y){
           yref = "y")))
 }
 
+add_tech_text <- function(fig, tech, y){
+  #antns <- plotly::layout(fig, "annotations")
+  
+  # browser()
+  # y_pos <- (-1 + y + (n_tech)/2)
+  # message("y: {y}")
+  
+  fig %>% 
+    plotly::layout(
+      annotations = list(
+        # antns,
+        # list(
+          x         = 1,
+          y         = y,
+          showarrow = FALSE,
+          text      = glue("<b>{tech}</b>"),
+          xref      = "paper",
+          yref      = "y",
+          align     = "center",
+          font      = list(size = 8),
+          textangle = "90"))
+}
 
 add_borders <- function(fig) {
   
@@ -374,6 +396,26 @@ add_antns <- function(fig, n_riv, n_tid, n_wav){
   fig %>% 
     plotly::layout(annotations = antns)
   
+}
+
+plot_projects <- function(){
+  fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700) 
+  
+  #browser()
+  # table(d_times$technology_type)
+  # table(d_permits$technology_type)
+  
+  fig <- fig %>% 
+    add_prj_sgmts(time_data  = d_times)   %>% 
+    add_prj_mkrs(permit_data = d_permits) %>% 
+    lgnd_x_y(time_data       = d_times)   %>% 
+    add_borders() %>% 
+    add_tech_text("Tidal", n_tid/2 + 1)
+    
+    # add_tech_ln(n_riv) %>%
+    # add_tech_ln(n_riv + n_tid) %>% 
+    # add_antns(n_riv, n_tid, n_wav)
+  fig
 }
 
 
@@ -526,27 +568,6 @@ add_antns <- function(fig, n_riv, n_tid, n_wav){
   #     textangle = "90")))
 
 
-plot_projects <- function(){
-  fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700) 
-  fig <- fig %>% 
-    add_prj_sgmts(time_data  = d_times)   %>% 
-    add_prj_mkrs(permit_data = d_permits) %>% 
-    lgnd_x_y(time_data       = d_times)   %>% 
-    add_borders() %>% 
-    add_tech_ln(n_riv) %>%
-    add_tech_ln(n_riv + n_tid) %>% 
-    add_antns(n_riv, n_tid, n_wav)
-  fig
-}
-  
-
-
-    
-    
- 
-  
-  
-  
   # fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700) 
   # 
   # fig <- fig %>% 

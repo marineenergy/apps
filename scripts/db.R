@@ -24,13 +24,15 @@ db_params <- switch(machine, # common.R:machine
     user    = "admin",
     pwd_txt = "/share/.password_mhk-env.us"))
 
-con <<- DBI::dbConnect(
-  RPostgres::Postgres(),
-  dbname   = db_params$dbname,
-  host     = db_params$host,
-  port     = 5432,
-  user     = db_params$user,
-  password = readLines(db_params$pwd_txt))
+if (!exists("con"))
+  con <<- DBI::dbConnect(
+    RPostgres::Postgres(),
+    dbname   = db_params$dbname,
+    host     = db_params$host,
+    port     = 5432,
+    user     = db_params$user,
+    password = readLines(db_params$pwd_txt))
+# DBI::dbDisconnect(con)
 
 # tbls <- dbListTables(con) %>% sort(); tbls
 

@@ -1,6 +1,10 @@
 # libraries ----
-#source(here::here("scripts/common.R"))
-source("/share/github/apps_dev/scripts/common.R")
+#source("/share/github/apps_dev/scripts/common.R")
+#source(file.path(dir_scripts, "common.R"))
+dir_scripts <<- here::here("scripts")
+source(file.path(dir_scripts, "common_2.R"))
+# dir_scripts <<- here::here("scripts")
+# dir_data    <<- here::here("data")
 source(file.path(dir_scripts, "db.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
 

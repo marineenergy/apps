@@ -183,7 +183,9 @@ server <- function(input, output, session) {
     # if an ixn exists, find tech selected in the ixn
     if (!is.null(values$ixns)){
       tech <<- tags2tech[intersect(names(tags2tech), values$ixns %>% unlist())]
-    } else tech <<- tags2tech 
+    } else {
+      tech <<- tags2tech 
+    }
     
     message(glue("selected tech: {paste(tech, collapse = ', ')}"))
     
