@@ -129,6 +129,7 @@ server <- function(input, output, session) {
   
   # projects ----
   load_projects()
+  tech <<- c("Riverine Energy", "Tidal Energy", "Wave Energy")
   
   #* prj_map ----
   output$prj_map <- renderLeaflet({
@@ -163,6 +164,7 @@ server <- function(input, output, session) {
   })
   
   #* prj_p ----
+  calculate_y_tech(tech)
   output$prj_p <- renderPlotly(
     suppressWarnings({
       plot_projects()
@@ -182,19 +184,20 @@ server <- function(input, output, session) {
     
     # if an ixn exists, find tech selected in the ixn
     if (!is.null(values$ixns)){
-      tech <<- tags2tech[intersect(names(tags2tech), values$ixns %>% unlist())]
+      tech <<- tags2tech[intersect(
+        names(tags2tech), 
+        values$ixns %>% unlist())] %>% unname()
+      # browser()
     } else {
       tech <<- tags2tech 
     }
     
     message(glue("selected tech: {paste(tech, collapse = ', ')}"))
     
-    # filter by technology
-    prj_sites <<- prj_sites %>% filter(technology_type %in% tech)
-    d_times   <<- d_times   %>% filter(technology_type %in% tech)
-    d_permits <<- d_permits %>% filter(technology_type %in% tech)
-
+    filter_prj_by_tech(tech, prj_sites, d_times, d_permits)
+    calculate_y_tech(tech)
     
+
     # browser()
     
     message(glue("n_riv = {n_riv}"))
@@ -539,7 +542,7 @@ server <- function(input, output, session) {
       contents     = list(
           projects   = input$ck_rpt_prj,
           management = input$ck_rpt_mgt),
-      interactions = values[["ixns"]]) 
+      interactions = values[["ixns"]])
     # list(params = m) %>% as.yaml() %>% cat()
     # TODO: Spatial wkt in meta
     

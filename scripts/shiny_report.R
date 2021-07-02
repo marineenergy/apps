@@ -163,15 +163,54 @@ load_projects <- function(ixns=NULL){
   n_wav <<- n_tech %>% filter(technology_type == "Wave Energy")     %>% pull(n)
 }
 
+# filter projects by selected technology
+filter_prj_by_tech <-  function(tech, prj_sites, d_times, d_permits) {
+  prj_sites <<- prj_sites %>% filter(technology_type %in% tech)
+  d_times   <<- d_times   %>% filter(technology_type %in% tech)
+  d_permits <<- d_permits %>% filter(technology_type %in% tech)
+}
+
+# calculate y placement of antns and tech lines 
+calculate_y_tech <- function(tech) {
+  if ("Riverine Energy" %in% tech) {
+    n_riv_sel <- n_riv
+  } else if (!("Riverine Energy" %in% tech)) {
+    n_riv_sel <- as.integer(0)
+  }
+  if ("Wave Energy" %in% tech) {
+    n_wav_sel <- n_wav
+  } else if (!("Wave Energy" %in% tech)) {
+    n_wav_sel <- as.integer(0)
+  }
+  if ("Tidal Energy" %in% tech) {
+    n_tid_sel <- n_tid
+  } else if (!("Tidal Energy" %in% tech)) {
+    n_tid_sel <- as.integer(0)
+  }
+  n_projects <<- n_riv_sel + n_wav_sel + n_tid_sel
+  p_riv_sel  <<- n_riv_sel/n_projects
+  p_tid_sel  <<- n_tid_sel/n_projects
+  p_wav_sel  <<- n_wav_sel/n_projects
+  
+  p_tech_tbl <<- 
+    tibble(
+      tech        = c("Riverine Energy", "Tidal Energy", "Wave Energy"),
+      p_tech_sel  = c(p_riv_sel,          p_tid_sel,     p_wav_sel),
+      n_tech      = c(n_riv,              n_tid,         n_wav)) %>% 
+    mutate(
+      p_tech_all  = n_tech/(sum(n_tech)),
+      name        = stringr::str_replace(tech, " Energy", ""))
+}
+
 map_projects <- function(prj_sites){
   leaflet::leaflet(
-    data = prj_sites, width = "100%",
+    data    = prj_sites, width = "100%",
     options = leaflet::leafletOptions(
       zoomControl = F)) %>% 
     leaflet::addProviderTiles(leaflet::providers$Esri.OceanBasemap) %>% 
     leaflet::addMarkers(
-      label        = ~label_html, 
-      popup        = ~popup_html) %>%
+      label = ~label_html, 
+      popup = ~popup_html) %>%
     htmlwidgets::onRender("function(el, x) {
           L.control.zoom({ position: 'topright' }).addTo(this)
     }")
@@ -187,8 +226,8 @@ add_prj_sgmts <- function(fig, time_data) {
        # mutate(project = recode(project, `Portsmouth Memorial Bridge`="Portsmouth\n Memorial\n Bridge")),
        x     = ~date_beg,
        xend  = ~date_end,
-       y     = ~project,
-       yend  = ~project,
+       y     = ~time_data$project,
+       yend  = ~time_data$project,
        color = ~project_status,
        line  = list(width = 10)) 
 }
@@ -198,7 +237,7 @@ add_prj_mkrs <- function(fig, permit_data) {
     plotly::add_markers(
       data      = permit_data,
       x         = ~license_date, 
-      y         = ~project,
+      y         = ~permit_data$project,
       symbol    = ~permit_type,
       symbols   = symbls_type,
       color     = ~permit_type,
@@ -229,176 +268,104 @@ lgnd_x_y <- function(fig, time_data) {
         showgrid  = FALSE,
         type = "category",
         tickfont = list(size = 8)),
-      # margin = list(
-      #   r = 10, 
-      #   t = 25, 
-      #   b = 40, 
-      #   l = 100),
+      margin = list(
+        r = 15,
+        t = 25,
+        b = 40,
+        l = 25,
+        pad = list(r = 20, t = 0, b = 0, l = 50)),
       legend = list(
-        # x = 1.01, 
-        # y = 0.5), 
         orientation = 'h',
         font = list(size = 10)))
 }
 
-# add line for technology
-add_tech_ln <- function(fig, n_y){
-  fig %>%
-    plotly::layout(
-      shapes = list(
-        list(
-          line = list(color = "black", width = 0.8),
-          type = "line",
-          x0   = 0,
-          x1   = 1,
-          xref = "paper",
-          y0   = -0.5 + n_y, #Defines horizontal line separating riverine projects from tidal projects
-          y1   = -0.5 + n_y,
-          yref = "y")))
-}
 
-add_tech_text <- function(fig, tech, y){
+add_tech_text <- function(fig, tech, p_tech_sel, y){
   #antns <- plotly::layout(fig, "annotations")
   
   # browser()
   # y_pos <- (-1 + y + (n_tech)/2)
   # message("y: {y}")
   
-  fig %>% 
-    plotly::layout(
-      annotations = list(
-        # antns,
-        # list(
-          x         = 1,
-          y         = y,
-          showarrow = FALSE,
-          text      = glue("<b>{tech}</b>"),
-          xref      = "paper",
-          yref      = "y",
-          align     = "center",
-          font      = list(size = 8),
-          textangle = "90"))
-}
-
-add_borders <- function(fig) {
-  
-  # BOTTOM (x axis)
-  bottom_bdr <- list(
-    line = list(color = "black",   width = 0.8), 
-    type = "line", xref = "paper", yref  = "paper",
-    x0   = 0, 
-    x1   = 1, 
-    y0   = 0.025, 
-    y1   = 0.025)
-  
-  # TOP (x axis)
-  top_bdr <- list(
-    line = list(color = "black",   width = 0.8), 
-    type = "line", xref = "paper", yref  = "paper",
-    x0   = 0, 
-    x1   = 1, 
-    y0   = 0.975, 
-    y1   = 0.975)
-  
-  # LEFT (y axis)
-  left_bdr <- list(
-    line = list(color = "black",  width = 0.8), 
-    type = "line", xref = "paper", yref  = "paper",
-    x0   = 0, 
-    x1   = 0, 
-    y0   = 0.975, 
-    y1   = 0.025)
-  
-  fig %>% plotly::layout(shapes = list(bottom_bdr, top_bdr, left_bdr))
-}
-        
-        # list(
-          # line = list(color = "black", width = 0.8), 
-          # type = "line", 
-          # x0   = 0, 
-          # x1   = 1, 
-          # xref = "paper", 
-          # y0   = 0.025, 
-          # y1   = 0.025, 
-          # yref = "paper"),
-        # 
-        # list(
-        #   line = list(color = "black", width = 0.8), 
-        #   type = "line", 
-        #   x0   = 0, 
-        #   x1   = 1, 
-        #   xref = "paper", 
-        #   y0   = 0.975, 
-        #   y1   = 0.975, 
-        #   yref = "paper"),
-        # list(
-        #   line = list(color = "black", width = 0.8), 
-        #   type = "line", 
-        #   x0   = 0, 
-        #   x1   = 0, 
-        #   xref = "paper", 
-        #   y0   = 0.975, 
-        #   y1   = 0.025, 
-        #   yref = "paper")))
-
-add_antns <- function(fig, n_riv, n_tid, n_wav){
-  
-  antn_riv <- list(
-    x         = 1,
-    y         = -1 + n_riv/2,
-    showarrow = FALSE,
-    text      = "<b>Riverine</b>",
-    xref      = "paper",
-    yref      = "y",
-    align     = "center",
-    font      = list(size = 8),
-    textangle = "90",
-    yshift    = 4)
-  
-  antn_tid <- list(
-    x         = 1,
-    y         = (-1 + n_riv + (n_tid)/2),
-    showarrow = FALSE,
-    text      = "<b>Tidal</b>",
-    xref      = "paper",
-    yref      = "y",
-    align     = "center",
-    font      = list(size = 8),
-    textangle = "90")
-  
-  antn_wav <- list(
-    x         = 1,
-    y         = (-1 + n_riv + n_tid + (n_wav)/2),
-    showarrow = FALSE,
-    text      = "<b>Wave</b>",
-    xref      = "paper",
-    yref      = "y",
-    align     = "center",
-    font      = list(size = 8),
-    textangle = "90")
-  
-  if (all(c("Riverine Energy", "Tidal Energy", "Wave Energy") %in% tech)){
-    antns <<- list(antn_riv, antn_tid, antn_wav)
-  } else if (all(c("Riverine Energy", "Tidal Energy") %in% tech)){
-    antns <<- list(antn_riv, antn_tid)
-  } else if (all(c("Riverine Energy", "Wave Energy")  %in% tech)){
-    antns <<- list(antn_riv, antn_wav)
-  } else if (all(c("Tidal Energy", "Wave Energy")     %in% tech)){
-    antns <<- list(antn_tid, antn_wav)
-  } else if (tech == "Riverine Energy"){
-    antns <<- list(antn_riv)
-  } else if (tech == "Tidal Energy"){
-    antns <<- list(antn_tid)
-  } else if (tech == "Wave Energy"){
-    antns <<- list(antn_wav)
+  if (p_tech_sel == 0) {
+    fig 
+  } else {
+    fig %>% 
+      plotly::layout(
+        annotations = list(
+          # antns,
+          # list(
+            x         = 1,
+            y         = y,
+            showarrow = FALSE,
+            text      = glue("<b>{tech}</b>"),
+            xref      = "paper",
+            yref      = "paper",
+            align     = "center",
+            font      = list(size = 8),
+            textangle = "90",
+            yshift    = 8))
+              # case_when(tech == "Riverine" ~ +4)))
   }
+}
+
+
+add_line <- function(y_tech) {
+  list(
+    type      = "line", xref = "paper", yref  = "paper",
+    line      = list(color = "black",   width = 0.8), 
+    opacity   = 1,
+    x0        = 0,
+    x1        = 1.5,
+    y0        = y_tech,
+    y1        = y_tech) 
+}
+
+
+# add plot borders and lines separating tech types
+add_bdrs_and_lns <- function(fig, p_tech_tbl) {
   
-  fig %>% 
-    plotly::layout(annotations = antns)
+  top    <- 0.975
+  bottom <- 0.025
+  left   <- 0
+  right  <- 1.5
+
+  # rectangle bdr ----
+  rectangle <- list(
+    type      = "rect", xref = "paper", yref  = "paper",
+    fillcolor = "transparent", 
+    line      = list(color = "black",   width = 0.8), 
+    opacity   = 1,
+    x0        = left,
+    x1        = right,
+    y0        = bottom,
+    y1        = top)
   
+  # tech lines -----
+  n_tech_types  <- p_tech_tbl %>%
+    filter(p_tech_sel != 0) %>%
+    nrow()
+  
+  tech_ln_1 <- add_line(y_tech = top - 1.1*(p_tech_tbl$p_tech_sel[1]))
+  tech_ln_2 <- add_line(y_tech = top - 1.1*(p_tech_tbl$p_tech_sel[2]))
+  # tech_ln_3 <- add_line(y_tech = 1 - p_tech_tbl$p_tech_sel[3])
+
+  # function ----
+  if (n_tech_types %in% c(0, 1)) {
+    fig %>% plotly::layout(
+      shapes = list(rectangle))
+  } else if (n_tech_types > 1) {
+    fig %>%
+      plotly::layout(
+        shapes = list(
+          rectangle,
+          tech_ln_1,
+          tech_ln_2))
+  }
 }
 
 plot_projects <- function(){
+  # calculate_y_tech(tech)
   fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700) 
   
   #browser()
@@ -409,325 +376,27 @@ plot_projects <- function(){
     add_prj_sgmts(time_data  = d_times)   %>% 
     add_prj_mkrs(permit_data = d_permits) %>% 
     lgnd_x_y(time_data       = d_times)   %>% 
-    add_borders() %>% 
-    add_tech_text("Tidal", n_tid/2 + 1)
-    
-    # add_tech_ln(n_riv) %>%
-    # add_tech_ln(n_riv + n_tid) %>% 
-    # add_antns(n_riv, n_tid, n_wav)
+    add_bdrs_and_lns(p_tech_tbl) %>% 
+    add_tech_text(
+      tech       = p_tech_tbl$name[1],
+      p_tech_sel = p_tech_tbl$p_tech_sel[1],
+      y          = 1.005 - 0.5*p_tech_tbl$p_tech_sel[1]) %>% 
+    add_tech_text(
+      tech       = p_tech_tbl$name[2], 
+      p_tech_sel = p_tech_tbl$p_tech_sel[2],
+      y          = 1.005 - p_tech_tbl$p_tech_sel[1] - 0.5*p_tech_tbl$p_tech_sel[2]) %>% 
+    add_tech_text(
+      tech       = p_tech_tbl$name[3], 
+      p_tech_sel = p_tech_tbl$p_tech_sel[3],
+      y          = 1.005 - p_tech_tbl$p_tech_sel[1] - p_tech_tbl$p_tech_sel[2] - 0.5*p_tech_tbl$p_tech_sel[3])
   fig
 }
 
 
 
- 
-# add_antns <- function(n_riv, n_tid, n_wav) {
-#   plotly::layout(annotations = antns) 
-# }
-  #       # riverine
-  #       list(
-  #         x = 1,
-  #         y = (-1 + n_riv)/2,
-  #         showarrow = FALSE,
-  #         text = "<b>Riverine</b>",
-  #         xref = "paper",
-  #         yref = "y",
-  #         align = "center",
-  #         font = list(size = 8),
-  #         textangle = "90",
-  #         yshift = 4),
-  #       # tidal
-  #       list(
-  #         x = 1,
-  #         y = (-1 + n_riv + (n_tid)/2),
-  #         showarrow = FALSE,
-  #         text = "<b>Tidal</b>",
-  #         xref = "paper",
-  #         yref = "y",
-  #         align = "center",
-  #         font = list(size = 8),
-  #         textangle = "90"),
-  #       # wave
-  #       list(
-  #         x = 1,
-  #         y = (-1 + n_riv + n_tid + (n_wav)/2),
-  #         showarrow = FALSE,
-  #         text = "<b>Wave</b>",
-  #         xref = "paper",
-  #         yref = "y",
-  #         align = "center",
-  #         font = list(size = 8),
-  #         textangle = "90")))
-  # } else if (tech == c("Riverine Energy", "Wave Energy")) {
-  #   plotly::layout(
-  #     annotations = list(
-  #       list(
-  #         x = 1,
-  #         y = (-1 + n_riv)/2,
-  #         showarrow = FALSE,
-  #         text = "<b>Riverine</b>",
-  #         xref = "paper",
-  #         yref = "y",
-  #         align = "center",
-  #         font = list(size = 8),
-  #         textangle = "90",
-  #         yshift = 4),
-  #   list(
-  #     x = 1,
-  #     y = (-1 + n_riv + n_tid + (n_wav)/2),
-  #     showarrow = FALSE,
-  #     text = "<b>Wave</b>",
-  #     xref = "paper",
-  #     yref = "y",
-  #     align = "center",
-  #     font = list(size = 8),
-  #     textangle = "90")))
-  # } else if (tech == "Riverine Energy") {
-  #   plotly::layout(
-  #     annotations = list(
-  #       list(
-  #         x = 1,
-  #         y = (-1 + n_riv)/2,
-  #         showarrow = FALSE,
-  #         text = "<b>Riverine</b>",
-  #         xref = "paper",
-  #         yref = "y",
-  #         align = "center",
-  #         font = list(size = 8),
-  #         textangle = "90",
-  #         yshift = 4)))
-
-  # else if c("Riverine Energy", "Wave Energy") %in% tech) {
-
-# plotly::layout(
-#   shapes = list(
-#     list(
-#       line = list(
-#         color = "black", 
-#         width = 0.8), 
-#       type = "line", 
-#       x0 = 0, 
-#       x1 = 1, 
-#       xref = "paper", 
-#       y0 = 0.025, 
-#       y1 = 0.025, 
-#       yref = "paper"),
-#     list(
-#       line = list(
-#         color = "black", 
-#         width = 0.8), 
-#       type = "line", 
-#       x0 = 0, 
-#       x1 = 1, 
-#       xref = "paper", 
-#       y0 = 0.975, 
-#       y1 = 0.975, 
-#       yref = "paper"),
-#     list(
-#       line = list(
-#         color = "black", 
-#         width = 0.8), 
-#       type = "line", 
-#       x0 = 0, 
-#       x1 = 0, 
-#       xref = "paper", 
-#       y0 = 0.975, 
-#       y1 = 0.025, 
-#       yref = "paper")),
-  # annotations = list(
-  #   list(
-  #     x = 1,
-  #     y = (-1 + n_riv)/2,
-  #     showarrow = FALSE,
-  #     text = "<b>Riverine</b>",
-  #     xref = "paper",
-  #     yref = "y",
-  #     align = "center",
-  #     font = list(size = 8),
-  #     textangle = "90",
-  #     yshift = 4),
-  #   list(
-  #     x = 1,
-  #     y = (-1 + n_riv + (n_tid)/2),
-  #     showarrow = FALSE,
-  #     text = "<b>Tidal</b>",
-  #     xref = "paper",
-  #     yref = "y",
-  #     align = "center",
-  #     font = list(size = 8),
-  #     textangle = "90"),
-  #   list(
-  #     x = 1,
-  #     y = (-1 + n_riv + n_tid + (n_wav)/2),
-  #     showarrow = FALSE,
-  #     text = "<b>Wave</b>",
-  #     xref = "paper",
-  #     yref = "y",
-  #     align = "center",
-  #     font = list(size = 8),
-  #     textangle = "90")))
 
 
-  # fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700) 
-  # 
-  # fig <- fig %>% 
-  #   add_prj_sgmts(time_data  = d_times) %>% 
-  #   add_prj_mkrs(permit_data = d_permits) %>% 
-  #   lgnd_x_y(time_data       = d_times) 
-  # 
-  # fig <- fig %>%
-  #   add_tech_ln(n_riv) %>%
-  #   add_tech_ln(n_riv + n_tid)
-  # 
-  # fig <- fig %>% 
-  #   add_shapes() 
-  # # %>% 
-  # #   add_antns(n_riv, n_tid, n_wav)
-  # # %>% 
-  #   # add_antns(n_riv, n_tid, n_wav)
-  #   
-# fig
 
-  
-  # fig <- fig %>% 
-  #   add_prj_sgmts(d_times)
-  #   plotly::add_segments(
-  #     data  = d_times, # %>%
-  #       # TODO: squeez labels by wrapping lines or some such
-  #       # mutate(project = recode(project, `Portsmouth Memorial Bridge`="Portsmouth\n Memorial\n Bridge")),
-  #     x     = ~date_beg,
-  #     xend  = ~date_end,
-  #     y     = ~project,
-  #     yend  = ~project,
-  #     color = ~project_status,
-  #     line  = list(width = 10))
-  # #fig
-  #plotly_json(p = fig)
-  
-  # fig <- fig %>% 
-    # plotly::add_markers(
-    #   data = d_permits,
-    #   x = ~license_date, 
-    #   y = ~project,
-    #   symbol = ~permit_type,
-    #   symbols = symbls_type,
-    #   color = ~permit_type,
-    #   colors = cols_type, 
-    #   size = 10,
-    #   hoverinfo = "text",
-    #   hovertext = paste(
-    #     'License Date: '    , d_permits$license_date, 
-    #     '<br>Project Name: ', d_permits$project, 
-    #     '<br>Permit Type: ' , d_permits$permit_type))
-    # 
-  #fig
-  #plotly_json(p = fig)
-  
-  # fig <- fig %>% 
-    # plotly::layout(
-    #   xaxis = list(
-    #     #title = 'Date',
-    #     title = '',
-    #     showline = FALSE,
-    #     showgrid = FALSE),
-    #   yaxis = list(
-    #     title = '',
-    #     autorange = "reversed",
-    #     domain = c(0,1),
-    #     range = c(0, length(unique(d_times$project))),
-    #     showline = FALSE,
-    #     showgrid = FALSE,
-    #     type = "category",
-    #     tickfont = list(size = 8)),
-    #   # margin = list(
-    #   #   r = 10, 
-    #   #   t = 25, 
-    #   #   b = 40, 
-    #   #   l = 100),
-    #   legend = list(
-    #     # x = 1.01, 
-    #     # y = 0.5), 
-    #     orientation = 'h',
-    #     font = list(size = 10)))
-  
- 
-
-  # fig <- fig %>% 
-  #   add_tech_ln(n_riv) %>% 
-  #   add_tech_ln(n_riv + n_tid)
-  
-  # fig <- fig %>% 
-    # plotly::layout(
-    #   shapes = list(
-    #     list(
-    #       line = list(
-    #         color = "black", 
-    #         width = 0.8), 
-    #       type = "line", 
-    #       x0 = 0, 
-    #       x1 = 1, 
-    #       xref = "paper", 
-    #       y0 = 0.025, 
-    #       y1 = 0.025, 
-    #       yref = "paper"),
-    #     list(
-    #       line = list(
-    #         color = "black", 
-    #         width = 0.8), 
-    #       type = "line", 
-    #       x0 = 0, 
-    #       x1 = 1, 
-    #       xref = "paper", 
-    #       y0 = 0.975, 
-    #       y1 = 0.975, 
-    #       yref = "paper"),
-    #     list(
-    #       line = list(
-    #         color = "black", 
-    #         width = 0.8), 
-    #       type = "line", 
-    #       x0 = 0, 
-    #       x1 = 0, 
-    #       xref = "paper", 
-    #       y0 = 0.975, 
-    #       y1 = 0.025, 
-    #       yref = "paper")),
-    #   annotations = list(
-    #     list(
-    #       x = 1,
-    #       y = (-1 + n_riv)/2,
-    #       showarrow = FALSE,
-    #       text = "<b>Riverine</b>",
-    #       xref = "paper",
-    #       yref = "y",
-    #       align = "center",
-    #       font = list(size = 8),
-    #       textangle = "90",
-    #       yshift = 4),
-    #     list(
-    #       x = 1,
-    #       y = (-1 + n_riv + (n_tid)/2),
-    #       showarrow = FALSE,
-    #       text = "<b>Tidal</b>",
-    #       xref = "paper",
-    #       yref = "y",
-    #       align = "center",
-    #       font = list(size = 8),
-    #       textangle = "90"),
-    #     list(
-    #       x = 1,
-    #       y = (-1 + n_riv + n_tid + (n_wav)/2),
-    #       showarrow = FALSE,
-    #       text = "<b>Wave</b>",
-    #       xref = "paper",
-    #       yref = "y",
-    #       align = "center",
-    #       font = list(size = 8),
-    #       textangle = "90")))
-#   
-#   fig
-#     
-# }
 
 
 tags_sql_to_html <- function(ixns, df_tags){
