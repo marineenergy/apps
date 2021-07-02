@@ -187,7 +187,7 @@ server <- function(input, output, session) {
       tech <<- tags2tech[intersect(
         names(tags2tech), 
         values$ixns %>% unlist())] %>% unname()
-      # browser()
+      # browser() 
     } else {
       tech <<- tags2tech 
     }
