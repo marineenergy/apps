@@ -392,7 +392,25 @@ plot_projects <- function(){
   fig
 }
 
-
+test_anntns <- function(){
+  #tech <- c("riv", "wav")
+  tech <- c("riv", "tid")
+  # tech <- c("riv", "tid", "wav")
+  # tech <- c("wav")
+  # tech <- c("riv")
+  
+  n_tech_all <- c(riv=2, tid=5, wav=11)
+  
+  n_tech <- n_tech_all[tech]
+  # riv wav 
+  #  2  11
+  
+  if (n_tech > 1){
+    y_lns <- cumsum(rev(n_tech[-1]))
+  }
+  
+  
+}
 
 
 
