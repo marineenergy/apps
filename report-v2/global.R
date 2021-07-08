@@ -140,7 +140,7 @@ navbarTab <- function(tabName, ..., icon = NULL) {
       id = paste0("tab-", tabName),
       href = paste0("#shiny-tab-", tabName),
       `data-toggle` = "tab",
-      `data-value` = tabName,
+      `data-value`  = tabName,
       icon,
       tags$p(...)))
 }
@@ -152,7 +152,7 @@ navbarMenu <- function(..., id = NULL) {
   
   tags$ul(
     class = "navbar-nav dropdown sidebar-menu", 
-    role = "menu",
+    role  = "menu",
     ...,
     div(
       id = id,

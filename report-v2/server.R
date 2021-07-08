@@ -184,9 +184,8 @@ server <- function(input, output, session) {
     
     # if an ixn exists, find tech selected in the ixn
     if (!is.null(values$ixns)){
-      tech <<- tags2tech[intersect(
-        names(tags2tech), 
-        values$ixns %>% unlist())] %>% unname()
+      tech <<- tags2tech[intersect(names(tags2tech), values$ixns %>% unlist())] %>% 
+        unname()
       # browser() 
     } else {
       tech <<- tags2tech 
@@ -194,10 +193,9 @@ server <- function(input, output, session) {
     
     message(glue("selected tech: {paste(tech, collapse = ', ')}"))
     
-    filter_prj_by_tech(tech, prj_sites, d_times, d_permits)
-    calculate_y_tech(tech)
-    
-
+    # filter_prj_by_tech(tech, prj_sites, d_times, d_permits)
+    # calculate_y_tech(tech)
+  
     # browser()
     
     message(glue("n_riv = {n_riv}"))
@@ -206,7 +204,7 @@ server <- function(input, output, session) {
     
     output$prj_p <- renderPlotly(
       suppressWarnings({
-        plot_projects()
+        update_projects()
       })
     )
 
@@ -375,19 +373,21 @@ server <- function(input, output, session) {
     
 
   #* observe plotly_click ----
-  observe({
-    d <- event_data("plotly_click")
-    req(d)
-    
-    proxy <- leafletProxy("prj_map")
-    
-    s <- prj_sites %>% 
-      filter(project == d$y)
-    
-    proxy %>% 
-      flyTo(s$longitude, s$latitude, 8)
-    
-  })
+  # observe({
+  #   
+  #   # event_register("prj_p", "plotly_click")
+  #   d <- event_data("plotly_click")
+  #   req(d)
+  #   
+  #   proxy <- leafletProxy("prj_map")
+  #   
+  #   s <- prj_sites %>% 
+  #     filter(project == d$y)
+  #   
+  #   proxy %>% 
+  #     flyTo(s$longitude, s$latitude, 8)
+  #   
+  # })
   
   # management ----
   get_mgt <- reactive({
@@ -531,7 +531,7 @@ server <- function(input, output, session) {
     #   ixns = list(
     #     c("Receptor.Fish", "Stressor.PhysicalInteraction.Collision"),
     #     c("Technology.Wave", "Receptor.Birds")))
-    # input <- list(
+    # input <- list(x
     #   ck_rpt_prj = T,
     #   ck_rpt_mgt = T)
     m <- list(
