@@ -300,7 +300,7 @@ lgnd_x_y <- function(fig, time_data) {
 }
 
 
-create_antns <- function(tech, p_tech_tbl){
+get_antn_info <- function(tech, p_tech_tbl){
   calculate_y_tech(tech)
   ybase      <<- list()
   ybase[[1]] <<- 1.005      
@@ -330,9 +330,7 @@ create_antns <- function(tech, p_tech_tbl){
 }
 
 add_tech_text <- function(fig, p_tech_sel, y_tech, tech_name){
-  
-  create_antns(tech = tech, p_tech_tbl = p_tech_tbl)
-  
+  get_antn_info(tech = tech, p_tech_tbl = p_tech_tbl)
   if (p_tech_sel == 0) {
     fig 
   } else {
@@ -349,22 +347,6 @@ add_tech_text <- function(fig, p_tech_sel, y_tech, tech_name){
           font      = list(size = 8),
           textangle = "90",
           yshift    = 8))
-    
-    # p_tech_tbl$p_tech_sel[i]
-    
-    # fig %>% 
-    #   plotly::layout(
-    #     annotations = list(
-    #       x         = 1,
-    #       y         = 1.005 - y,
-    #       showarrow = FALSE,
-    #       text      = glue("<b>{tech}</b>"),
-    #       xref      = "paper",
-    #       yref      = "paper",
-    #       align     = "center",
-    #       font      = list(size = 8),
-    #       textangle = "90",
-    #       yshift    = 8))
   }
 }
     
@@ -373,187 +355,15 @@ add_tech_text <- function(fig, p_tech_sel, y_tech, tech_name){
     
     
     
-    
-    # %>% 
-    #   plotly::layout(annotations = antns[[2]]) %>% 
-    #   plotly::layout(annotations = antns[[3]])
+
   
 
-  #antns <- plotly::layout(fig, "annotations")
-  
-  # calculate_y_tech(tech)
-  # ybase      <- list()
-  # ybase[[1]] <- 1.005      
-  # ybase[[2]] <- ybase[[1]] - p_tech_tbl$p_tech_sel[1]
-  # ybase[[3]] <- ybase[[2]] - p_tech_tbl$p_tech_sel[2]
-  # 
-  # antns <<- list()
-  # 
-  # for (i in 1:nrow(p_tech_tbl)) {
-  #   antns[[i]] <<- list(
-  #     x         = 1,
-  #     y         = ybase[[i]] - 0.5*(p_tech_tbl$p_tech_sel[i]),
-  #     showarrow = FALSE,
-  #     text      = glue("<b>{p_tech_tbl$name[i]}</b>"),
-  #     xref      = "paper",
-  #     yref      = "paper",
-  #     align     = "center",
-  #     font      = list(size = 8),
-  #     textangle = "90",
-  #     yshift    = 8)
-  # }
-  
-  # fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700) 
-  # fig <- fig %>% 
-  #   add_prj_sgmts(time_data  = d_times)   %>% 
-  #   add_prj_mkrs(permit_data = d_permits) %>% 
-  #   lgnd_x_y(time_data       = d_times)   %>% 
-  #   add_lines(tech) 
-  
-
-          
-  
-  
-  
-    
-    
-    
-  
-    
-  #   
-  #   # lines[[names(y_lns[i])]] <- add_line(y_tech = y_lns[[i]])
-  #   lines[[i]] <- list(
-  #     type      = "line", xref = "paper", yref  = "y",
-  #     line      = list(color = "black",   width = 0.8), 
-  #     opacity   = 1,
-  #     x0        = 0,
-  #     x1        = 1.5,
-  #     y0        = y_lns[[i]] - (0.5),
-  #     y1        = y_lns[[i]] - (0.5))
-  # }
-  # 
-  
-   
-  
-  # text_y <- list()
-  # for (i in 1:nrow(p_tech_tbl)) {
-  #   # proportion of y axis taken up by each tech type
-  #   text_y[[i]] <- p_tech_tbl$p_tech_sel[i]
-  #   # text_y1 <- p_tech_tbl$p_tech_sel[1]
-  #   # text_y2 <- p_tech_tbl$p_tech_sel[2]
-  #   # text_y3 <- p_tech_tbl$p_tech_sel[3]
-  # }
-  # 
-  # # top tech
-  #   fig %>% 
-  #     plotly::layout(
-  #       annotations = list(
-  #         x         = 1,
-  #         y         = 1.005 - 0.5*text_y[[1]],
-  #         showarrow = FALSE,
-  #         text      = glue("<b>{tech}</b>"),
-  #         xref      = "paper",
-  #         yref      = "paper",
-  #         align     = "center",
-  #         font      = list(size = 8),
-  #         textangle = "90",
-  #         yshift    = 8))
-  #   
-  #   fig %>% 
-  #     plotly::layout(
-  #       annotations = list(
-  #         x         = 1,
-  #         y         = 1.005 - text_y[[1]] - 0.5*text_y[[2]],
-  #         showarrow = FALSE,
-  #         text      = glue("<b>{tech}</b>"),
-  #         xref      = "paper",
-  #         yref      = "paper",
-  #         align     = "center",
-  #         font      = list(size = 8),
-  #         textangle = "90",
-  #         yshift    = 8))
-  #   
-  #   fig %>% 
-  #     plotly::layout(
-  #       annotations = list(
-  #         x         = 1,
-  #         y         = 1.005 - text_y[[1]] - text_y[[2]] - 0.5*text_y[[3]],
-  #         showarrow = FALSE,
-  #         text      = glue("<b>{tech}</b>"),
-  #         xref      = "paper",
-  #         yref      = "paper",
-  #         align     = "center",
-  #         font      = list(size = 8),
-  #         textangle = "90",
-  #         yshift    = 8))
-  
-    
   
   
 
   
   
-  
-  # browser()
-  # y_pos <- (-1 + y + (n_tech)/2)
-  # message("y: {y}")
-  
-  # if (p_tech_sel == 0) {
-  #   fig 
-  # 
-  # } else {
-  #   fig %>% 
-  #     plotly::layout(
-  #       annotations = list(
-  #         # antns,
-  #         # list(
-  #           x         = 1,
-  #           y         = 1.005 - y,
-  #           showarrow = FALSE,
-  #           text      = glue("<b>{tech}</b>"),
-  #           xref      = "paper",
-  #           yref      = "paper",
-  #           align     = "center",
-  #           font      = list(size = 8),
-  #           textangle = "90",
-  #           yshift    = 8))
-  #             # case_when(tech == "Riverine" ~ +4)))
-  # }
 
-
-# add_tech_text(
-#   tech       = p_tech_tbl$name[1],
-#   p_tech_sel = p_tech_tbl$p_tech_sel[1],
-#   y          = 1.005 - 0.5*p_tech_tbl$p_tech_sel[1]) %>%
-#   add_tech_text(
-#     tech       = p_tech_tbl$name[2],
-#     p_tech_sel = p_tech_tbl$p_tech_sel[2],
-#     y          = 1.005 - p_tech_tbl$p_tech_sel[1] - 0.5*p_tech_tbl$p_tech_sel[2]) %>%
-#   add_tech_text(
-#     tech       = p_tech_tbl$name[3],
-#     p_tech_sel = p_tech_tbl$p_tech_sel[3],
-#     y          = 1.005 - p_tech_tbl$p_tech_sel[1] - p_tech_tbl$p_tech_sel[2] - 0.5*p_tech_tbl$p_tech_sel[3])
-
-
-# add plot borders and lines separating tech types
-# add_bdrs_and_lns <- function(fig, p_tech_tbl) {
-# 
-#   top    <- 0.975
-#   bottom <- 0.025
-#   left   <- 0
-#   right  <- 1.5
-# 
-#   # rectangle bdr ----
-#   rectangle <- list(
-#     type      = "rect", xref = "paper", yref  = "paper",
-#     fillcolor = "transparent",
-#     line      = list(color = "black",   width = 0.8),
-#     opacity   = 1,
-#     x0        = left,
-#     x1        = right,
-#     y0        = bottom,
-#     y1        = top)
-# 
 #   # tech lines -----
 #   n_tech_types  <- p_tech_tbl %>%
 #     filter(p_tech_sel != 0) %>%
@@ -579,8 +389,6 @@ add_tech_text <- function(fig, p_tech_sel, y_tech, tech_name){
 
 
 add_lines <- function(fig, tech){
-  #tech <- c("riv", "wav")
-  
   
   # rectangle bdr ----
   top       <- 0.975
@@ -598,22 +406,13 @@ add_lines <- function(fig, tech){
     y0        = bottom,
     y1        = top)
   
-  tech <- tech
-  # tech <- c("Riverine Energy", "Wave Energy")
-  # tech <- c("riv", "tid", "wav")
-  # tech <- c("wav")
-  # tech <- c("riv")
-  
-  n_tech_all <- c("Riverine Energy" = n_riv, 
-                  "Tidal Energy"    = n_tid, 
-                  "Wave Energy"     = n_wav)
-  # n_tech_all <- c(riv=2, tid=5, wav=11)
-  
-  n_tech <<- n_tech_all[tech]
-  # riv wav 
-  #  2  11
+  # tech lines ----
+  tech         <- tech
+  n_tech_all   <- c("Riverine Energy" = n_riv, 
+                    "Tidal Energy"    = n_tid, 
+                    "Wave Energy"     = n_wav)
+  n_tech       <<- n_tech_all[tech]
   n_tech_types <<- length(tech)
-  
   
   if (n_tech > 1){
     y_lns <- ((n_tech[-length(n_tech)])) %>% 
@@ -621,9 +420,7 @@ add_lines <- function(fig, tech){
       as.list()
   }
   
-  
   if (n_tech_types > 1){
-    
     # convert y_lns to list format
     lines <- list()
     for (i in 1:length(y_lns)) {
@@ -642,21 +439,9 @@ add_lines <- function(fig, tech){
       lines_list <- list(rectangle, lines[[1]], lines[[i]])
     }
   }
-      
-  
-  
-  # if (n_tech > 1){
-  #   y_lns      <- rev(n_tech[-1]) %>% 
-  #     # cumsum() %>% 
-  #     as.list()
-  #   info    <- n_tech[-1] %>% cumsum()
-  #   y_lns2 <- ( 20 - info) %>% as.list()
-  #   # n_tech_sum <- y_lns %>% as_tibble() %>% sum()
-  # }
-  
   # browser()
 
-  # function ----
+  # add_lines() function ----
   if (n_tech_types %in% c(0, 1)) {
     fig %>% plotly::layout(
       shapes = list(rectangle))
@@ -667,23 +452,39 @@ add_lines <- function(fig, tech){
   }
 }
 
-# add_line <- function(y_tech) {
-#   list(
-#     type      = "line", xref = "paper", yref  = "y",
-#     line      = list(color = "green",   width = 0.8), 
-#     opacity   = 1,
-#     x0        = 0,
-#     x1        = 1.5,
-#     y0        = y_tech,
-#     y1        = y_tech) 
-# }
+# for initial plotly projects plot
+plot_projects <- function(){
+  load_projects()
+  tech <<- c("Riverine Energy", "Tidal Energy", "Wave Energy")
+  filter_prj_by_tech(tech, prj_sites, d_times, d_permits)
+  calculate_y_tech(tech)
+  fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700) 
+  fig <- fig %>% 
+    lgnd_x_y(time_data       = d_times)   %>% 
+    add_prj_sgmts(time_data  = d_times)   %>% 
+    add_prj_mkrs(permit_data = d_permits) %>% 
+    add_lines(tech) %>% 
+    add_tech_text(
+      p_tech_sel = p_tech_tbl$p_tech_sel[1],
+      tech_name  = p_tech_tbl$name[1],
+      y_tech     = y_tech_antn[[1]]) %>% 
+    add_tech_text(
+      p_tech_sel = p_tech_tbl$p_tech_sel[2],
+      tech_name  = p_tech_tbl$name[2],
+      y_tech     = y_tech_antn[[2]]) %>% 
+    add_tech_text(
+      p_tech_sel = p_tech_tbl$p_tech_sel[3],
+      tech_name  = p_tech_tbl$name[3],
+      y_tech     = y_tech_antn[[3]])  
+  fig
+}
 
+# for plot filtered by tech selection
 update_projects <- function(){
   load_projects()
   tech <<- tech
   filter_prj_by_tech(tech, prj_sites, d_times, d_permits)
   calculate_y_tech(tech)
-  
   fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700) 
   fig <- fig %>% 
     lgnd_x_y(time_data       = d_times)   %>% 
@@ -703,12 +504,10 @@ update_projects <- function(){
       tech_name  = p_tech_tbl$name[3],
       y_tech     = y_tech_antn[[3]])  
   
+  # update plot
   tech <<- tech
   filter_prj_by_tech(tech, prj_sites, d_times, d_permits)
   calculate_y_tech(tech)
-  #browser()
-  # table(d_times$technology_type)
-  # table(d_permits$technology_type)
   fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700) 
   fig <- fig %>% 
     lgnd_x_y(time_data       = d_times)   %>% 
@@ -729,71 +528,6 @@ update_projects <- function(){
       y_tech     = y_tech_antn[[3]])  
   fig
 }
-
-plot_projects <- function(){
-  # tech <<- c("Riverine Energy", "Wave Energy")
-  load_projects()
-  tech <<- c("Riverine Energy", "Tidal Energy", "Wave Energy")
-  filter_prj_by_tech(tech, prj_sites, d_times, d_permits)
-  calculate_y_tech(tech)
-
-  #browser()
-  # table(d_times$technology_type)
-  # table(d_permits$technology_type)
-  fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700) 
-  fig <- fig %>% 
-    lgnd_x_y(time_data       = d_times)   %>% 
-    add_prj_sgmts(time_data  = d_times)   %>% 
-    add_prj_mkrs(permit_data = d_permits) %>% 
-    add_lines(tech) %>% 
-    add_tech_text(
-      p_tech_sel = p_tech_tbl$p_tech_sel[1],
-      tech_name  = p_tech_tbl$name[1],
-      y_tech     = y_tech_antn[[1]]) %>% 
-    add_tech_text(
-      p_tech_sel = p_tech_tbl$p_tech_sel[2],
-      tech_name  = p_tech_tbl$name[2],
-      y_tech     = y_tech_antn[[2]]) %>% 
-    add_tech_text(
-      p_tech_sel = p_tech_tbl$p_tech_sel[3],
-      tech_name  = p_tech_tbl$name[3],
-      y_tech     = y_tech_antn[[3]])  
-    # add_tech_text(tech, p_tech_tbl)
-  
-    # add_tech_text(
-    #   tech       = p_tech_tbl$name[1],
-    #   p_tech_sel = p_tech_tbl$p_tech_sel[1],
-    #   y          = 1.005 - 0.5*p_tech_tbl$p_tech_sel[1]) %>%
-    # add_tech_text(
-    #   tech       = p_tech_tbl$name[2],
-    #   p_tech_sel = p_tech_tbl$p_tech_sel[2],
-    #   y          = 1.005 - p_tech_tbl$p_tech_sel[1] - 0.5*p_tech_tbl$p_tech_sel[2]) %>%
-    # add_tech_text(
-    #   tech       = p_tech_tbl$name[3],
-    #   p_tech_sel = p_tech_tbl$p_tech_sel[3],
-    #   y          = 1.005 - p_tech_tbl$p_tech_sel[1] - p_tech_tbl$p_tech_sel[2] - 0.5*p_tech_tbl$p_tech_sel[3])
-
-  fig
-  
-  
-  # 
-  #   add_bdrs_and_lns(p_tech_tbl) %>% 
-  #   add_tech_text(
-  #     tech       = p_tech_tbl$name[1],
-  #     p_tech_sel = p_tech_tbl$p_tech_sel[1],
-  #     y          = 1.005 - 0.5*p_tech_tbl$p_tech_sel[1]) %>% 
-  #   add_tech_text(
-  #     tech       = p_tech_tbl$name[2], 
-  #     p_tech_sel = p_tech_tbl$p_tech_sel[2],
-  #     y          = 1.005 - p_tech_tbl$p_tech_sel[1] - 0.5*p_tech_tbl$p_tech_sel[2]) %>% 
-  #   add_tech_text(
-  #     tech       = p_tech_tbl$name[3], 
-  #     p_tech_sel = p_tech_tbl$p_tech_sel[3],
-  #     y          = 1.005 - p_tech_tbl$p_tech_sel[1] - p_tech_tbl$p_tech_sel[2] - 0.5*p_tech_tbl$p_tech_sel[3])
-  # fig
-}
-
-
 
 
 tags_sql_to_html <- function(ixns, df_tags){
