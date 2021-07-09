@@ -283,7 +283,7 @@ lgnd_x_y <- function(fig, time_data) {
         autorange = "reversed",
         domain    = c(0, length(unique(time_data$project[time_data$technology_type %in% tech]))),
         range     = c(0,1),
-        showline  = TRUE,
+        showline  = FALSE,
         showgrid  = TRUE,
         type = "category",
         text = c(unique(time_data$project)),
