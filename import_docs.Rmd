@@ -1,0 +1,100 @@
+---
+title: "Import FERC docs from gsheet into db"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+source(here::here("scripts/common.R")) # get `dir_scripts`: directory of apps/scripts
+source(file.path(dir_scripts, "db.R")) # get `con`: database connection object
+source(file.path(dir_scripts, "update.R"))
+
+docs <- get_gsheet_data("documents") 
+
+# names(docs)[sapply(docs, class) == "logical"] %>% paste(collapse = ',\n') %>% cat()
+# across(docs, where(is.logical), )
+  
+docs_ixns <- docs %>% 
+  group_by(key_interaction_detail) %>% 
+  summarize(
+    project                                        = first(project), 
+    `doc NAME`                                     = first(`doc NAME`), 
+    `ATTACHMENT NAME`                              = first(`ATTACHMENT NAME`), 
+    url                                            = first(url), 
+    presented_as_potential_interaction             = first(presented_as_potential_interaction),
+    decribed_from_observations_at_the_project_site = first(decribed_from_observations_at_the_project_site),
+    `monitoring_plan_(mp)`                         = first(`monitoring_plan_(mp)`),
+    `adaptive_management_plan_(amp)`               = first(`adaptive_management_plan_(amp)`),
+    protection_mitigation_and_enhancement          = first(protection_mitigation_and_enhancement),
+    bmps_applied                                   = first(bmps_applied),
+    .groups = "drop") %>% 
+  tibble::rownames_to_column("rowid")
+
+# ferc_docs:      rowid | key_interaction_detail
+# ferc_docs_tags: rowid | tag_sql
+
+docs <- docs %>% 
+  left_join(
+    docs_ixns %>% 
+      select(rowid, key_interaction_detail), 
+    by = "key_interaction_detail") %>% 
+  relocate(rowid)
+
+docs_tags <- bind_rows(
+  docs %>% 
+    mutate(
+      content      = "ferc_docs",
+      tag_category = "Technology") %>% 
+    select(content, rowid, tag_category, content_tag = technology),
+  docs %>% 
+    mutate(
+      content      = "ferc_docs",
+      tag_category = "Stressor") %>% 
+    select(content, rowid, tag_category, content_tag = stressor),
+  docs %>% 
+    mutate(
+      content      = "ferc_docs",
+      tag_category = "Receptor") %>% 
+    select(content, rowid, tag_category, content_tag = receptor),
+  docs %>% 
+    mutate(
+      content      = "ferc_docs",
+      tag_category = "Phase") %>% 
+    select(content, rowid, tag_category, content_tag = phase),
+  docs %>% 
+    mutate(
+      content      = "ferc_docs",
+      tag_category = "Effect") %>% 
+    select(content, rowid, tag_category, content_tag = key_effects))
+
+docs_tags_lookup <- docs_tags %>% 
+  group_by(content, tag_category, content_tag) %>% 
+  filter(!is.na(content_tag)) %>% 
+  summarize(.groups = "drop")
+
+tags <- tbl(con, "tags") %>% 
+  collect() %>% 
+  mutate(
+    tag_sql = as.character(tag_sql))
+  
+
+
+
+docs_tags_tbl <- 
+
+
+DBI::dbWriteTable(con, "ferc_docs", docs_tbl)
+
+DBI::dbListTables(con) %>% sort() %>% stringr::str_subset("^shp_", negate=T)
+
+
+tbl(con, "ferc_docs")
+```
+
+
