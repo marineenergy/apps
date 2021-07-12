@@ -73,17 +73,34 @@ docs_tags <- bind_rows(
       tag_category = "Effect") %>% 
     select(content, rowid, tag_category, content_tag = key_effects))
 
+tags <- tbl(con, "tags") %>% 
+  collect() %>% 
+  mutate(
+    tag_sql = as.character(tag_sql))
+
 docs_tags_lookup <- docs_tags %>% 
   group_by(content, tag_category, content_tag) %>% 
   filter(!is.na(content_tag)) %>% 
-  summarize(.groups = "drop")
+  summarize(.groups = "drop") %>% 
+  mutate(
+    content_tag_strip = stringr::str_replace_all(content_tag, "[^A-Za-z0-9_.]", ""),
+    content_tag_sql   = as.character(glue("{tag_category}.{content_tag_strip}"))) %>% 
+  left_join(
+    tags,
+    by = c("content_tag_sql" = "tag_sql")) %>% 
+  arrange(is.na(tag), tag_category, content_tag)
+
+table(!is.na(docs_tags_lookup$tag))
+# View(docs_tags_lookup)
+
+readr::write_csv(docs_tags_lookup, here("data/docs_tags_lookup.csv"))
+
+# TODO: copy/paste docs_tags_lookup.csv into gsheet and finish lookup there
 
 tags <- tbl(con, "tags") %>% 
   collect() %>% 
   mutate(
     tag_sql = as.character(tag_sql))
-  
-
 
 
 docs_tags_tbl <- 

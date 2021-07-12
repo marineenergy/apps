@@ -48,7 +48,7 @@ ui <- dashboardPage(
       #** tab_prj ----
       tabItem(
         tabName = "tab_prj",
-        div("Filters by:", icon("tags"), span(class="me-tag me-technology", "Technology"), "[TODO]"),
+        div("Filters by:", icon("tags"), span(class="me-tag me-technology", "Technology")),
         helpText(
           "This page provides an overview of all past and present Marine Energy projects 
           in the United States at different levels of development and provides active links 
