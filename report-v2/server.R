@@ -128,35 +128,266 @@ server <- function(input, output, session) {
   })
   
   # projects ----
+  load_projects()
+  tech <<- c("Riverine Energy", "Tidal Energy", "Wave Energy")
   
   #* prj_map ----
   output$prj_map <- renderLeaflet({
-     map_projects(prj_sites) })
+     map_projects(prj_sites)})
+  
+  #* prj_map observe Technology tag  ----
+  observe({
+    # req(length(values$ixns) > 0)
+  
+    sql2tech <- c(
+      "Technology.Riverine" = "Riverine Energy", 
+      "Technology.Tidal"    = "Tidal Energy",
+      "Technology.Wave"     = "Wave Energy")
+    
+    tech <- sql2tech[intersect(names(sql2tech), values$ixns %>% unlist())]
+
+    if (length(tech) == 0){
+      tech <- sql2tech}
+    
+    #message(glue("prj_map proxy tech: {paste(tech, collapse=', ')}"))
+    
+    prj_tech <- prj_sites %>% 
+      filter(technology_type %in% tech)
+    
+    leafletProxy("prj_map") %>% 
+      leaflet::clearMarkers() %>% 
+      leaflet::addMarkers(
+        data  = prj_tech,
+        label = ~label_html, 
+        popup = ~popup_html)
+    
+  })
   
   #* prj_p ----
-  output$prj_p <- renderPlotly(suppressWarnings({
-    plot_projects()
+  calculate_y_tech(tech)
+  output$prj_p <- renderPlotly(
+    suppressWarnings({
+      plot_projects()
   }))
   
-  output$click <- renderPrint({
-    d <- event_data("plotly_click")
-    if (is.null(d)) "Click events appear here (double-click to clear)" else d
-  })
-  
-  # Use a separate observer to zoom to point
+  #* prj_p observe Technology tag  ----
   observe({
-    d <- event_data("plotly_click")
-    req(d)
+    req(length(values$ixns) > 0)
+    load_projects()
+    # output$prj_p <- renderText(suppressWarnings(""))
     
-    proxy <- leafletProxy("prj_map")
+    # extract technology from interaction tags
+    tags2tech <- c(
+      "Technology.Riverine" = "Riverine Energy", 
+      "Technology.Tidal"    = "Tidal Energy",
+      "Technology.Wave"     = "Wave Energy")
     
-    s <- prj_sites %>% 
-      filter(project == d$y)
+    # if an ixn exists, find tech selected in the ixn
+    if (!is.null(values$ixns)){
+      tech <<- tags2tech[intersect(names(tags2tech), values$ixns %>% unlist())] %>% 
+        unname()
+      # browser() 
+    } else {
+      tech <<- tags2tech 
+    }
     
-    proxy %>% 
-      flyTo(s$longitude, s$latitude, 8)
+    message(glue("selected tech: {paste(tech, collapse = ', ')}"))
     
+    # filter_prj_by_tech(tech, prj_sites, d_times, d_permits)
+    # calculate_y_tech(tech)
+  
+    # browser()
+    
+    message(glue("n_riv = {n_riv}"))
+    message(glue("n_tid = {n_tid}"))
+    message(glue("n_wav = {n_wav}"))
+    
+    output$prj_p <- renderPlotly(
+      suppressWarnings({
+        update_projects()
+      })
+    )
+
   })
+ 
+  
+  
+  #####
+  # original plot_projects() looks like this:
+  
+  # plot_projects <- function(){
+  #   fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700)
+  #   
+  #   fig <- fig %>% 
+  #     plotly::add_segments(
+  #       data  = d_times, # %>% 
+  #       # TODO: squeez labels by wrapping lines or some such
+  #       # mutate(project = recode(project, `Portsmouth Memorial Bridge`="Portsmouth\n Memorial\n Bridge")),
+  #       x     = ~date_beg,
+  #       xend  = ~date_end,
+  #       y     = ~project,
+  #       yend  = ~project,
+  #       color = ~project_status,
+  #       line  = list(width = 10))
+  #   #fig
+  #   #plotly_json(p = fig)
+  #   
+  #   fig <- fig %>% 
+  #     plotly::add_markers(
+  #       data = d_permits,
+  #       x = ~license_date, 
+  #       y = ~project,
+  #       symbol = ~permit_type,
+  #       symbols = symbls_type,
+  #       color = ~permit_type,
+  #       colors = cols_type, 
+  #       size = 10,
+  #       hoverinfo = "text",
+  #       hovertext = paste(
+  #         'License Date: '    , d_permits$license_date, 
+  #         '<br>Project Name: ', d_permits$project, 
+  #         '<br>Permit Type: ' , d_permits$permit_type))
+  #   
+  #   #fig
+  #   #plotly_json(p = fig)
+  #   
+  #   fig <- fig %>% 
+  #     plotly::layout(
+  #       xaxis = list(
+  #         #title = 'Date',
+  #         title = '',
+  #         showline = FALSE,
+  #         showgrid = FALSE),
+  #       yaxis = list(
+  #         title = '',
+  #         autorange = "reversed",
+  #         domain = c(0,1),
+  #         range = c(0, length(unique(d_times$project))),
+  #         showline = FALSE,
+  #         showgrid = FALSE,
+  #         type = "category",
+  #         tickfont = list(size = 8)),
+  #       # margin = list(
+  #       #   r = 10, 
+  #       #   t = 25, 
+  #       #   b = 40, 
+  #       #   l = 100),
+  #       legend = list(
+  #         # x = 1.01, 
+  #         # y = 0.5), 
+  #         orientation = 'h',
+  #         font = list(size = 10)),
+  #       shapes = list(
+  #         list(
+  #           line = list(
+  #             color = "black", 
+  #             width = 0.8), 
+  #           type = "line", 
+  #           x0 = 0, 
+  #           x1 = 1, 
+  #           xref = "paper", 
+  #           y0 = -0.5 + n_riv, #Defines horizontal line separating riverine projects from tidal projects
+  #           y1 = -0.5 + n_riv, 
+  #           yref = "y"), 
+  #         list(
+  #           line = list(
+  #             color = "black", 
+  #             width = 0.8), 
+  #           type = "line", 
+  #           x0 = 0, 
+  #           x1 = 1, 
+  #           xref = "paper", 
+  #           y0 = -0.5 + n_riv + n_tid, #Defines horizontal line separating tidal projects from wave projects
+  #           y1 = -0.5 + n_riv + n_tid, 
+  #           yref = "y"), 
+  #         list(
+  #           line = list(
+  #             color = "black", 
+  #             width = 0.8), 
+  #           type = "line", 
+  #           x0 = 0, 
+  #           x1 = 1, 
+  #           xref = "paper", 
+  #           y0 = 0.025, 
+  #           y1 = 0.025, 
+  #           yref = "paper"),
+  #         list(
+  #           line = list(
+  #             color = "black", 
+  #             width = 0.8), 
+  #           type = "line", 
+  #           x0 = 0, 
+  #           x1 = 1, 
+  #           xref = "paper", 
+  #           y0 = 0.975, 
+  #           y1 = 0.975, 
+  #           yref = "paper"),
+  #         list(
+  #           line = list(
+  #             color = "black", 
+  #             width = 0.8
+  #           ), 
+  #           type = "line", 
+  #           x0 = 0, 
+  #           x1 = 0, 
+  #           xref = "paper", 
+  #           y0 = 0.975, 
+  #           y1 = 0.025, 
+  #           yref = "paper")),
+  #       annotations = list(
+  #         list(
+  #           x = 1,
+  #           y = (-1 + n_riv)/2,
+  #           showarrow = FALSE,
+  #           text = "<b>Riverine</b>",
+  #           xref = "paper",
+  #           yref = "y",
+  #           align = "center",
+  #           font = list(size = 8),
+  #           textangle = "90",
+  #           yshift = 4),
+  #         list(
+  #           x = 1,
+  #           y = (-1 + n_riv + (n_tid)/2),
+  #           showarrow = FALSE,
+  #           text = "<b>Tidal</b>",
+  #           xref = "paper",
+  #           yref = "y",
+  #           align = "center",
+  #           font = list(size = 8),
+  #           textangle = "90"),
+  #         list(
+  #           x = 1,
+  #           y = (-1 + n_riv + n_tid + (n_wav)/2),
+  #           showarrow = FALSE,
+  #           text = "<b>Wave</b>",
+  #           xref = "paper",
+  #           yref = "y",
+  #           align = "center",
+  #           font = list(size = 8),
+  #           textangle = "90")))
+  #   
+  #   fig 
+  # }
+  
+    
+
+  #* observe plotly_click ----
+  # observe({
+  #   
+  #   # event_register("prj_p", "plotly_click")
+  #   d <- event_data("plotly_click")
+  #   req(d)
+  #   
+  #   proxy <- leafletProxy("prj_map")
+  #   
+  #   s <- prj_sites %>% 
+  #     filter(project == d$y)
+  #   
+  #   proxy %>% 
+  #     flyTo(s$longitude, s$latitude, 8)
+  #   
+  # })
   
   # management ----
   get_mgt <- reactive({
@@ -300,7 +531,7 @@ server <- function(input, output, session) {
     #   ixns = list(
     #     c("Receptor.Fish", "Stressor.PhysicalInteraction.Collision"),
     #     c("Technology.Wave", "Receptor.Birds")))
-    # input <- list(
+    # input <- list(x
     #   ck_rpt_prj = T,
     #   ck_rpt_mgt = T)
     m <- list(
@@ -311,7 +542,7 @@ server <- function(input, output, session) {
       contents     = list(
           projects   = input$ck_rpt_prj,
           management = input$ck_rpt_mgt),
-      interactions = values[["ixns"]]) 
+      interactions = values[["ixns"]])
     # list(params = m) %>% as.yaml() %>% cat()
     # TODO: Spatial wkt in meta
     
@@ -346,7 +577,6 @@ server <- function(input, output, session) {
   #* btn_del_rpts ----
   observeEvent(input$btn_del_rpts, {
     req(input$tbl_rpts_rows_selected)
-    
     
     irows <- input$tbl_rpts_rows_selected
     email <- isolate(get_email())

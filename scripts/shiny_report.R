@@ -71,7 +71,7 @@ ixn_to_colorhtml <- function(ixns, df_tags, is_html = NULL){
   }
 }
 
-load_projects <- function(){
+load_projects <- function(ixns=NULL){
   # p_csvs <- list.files("/share/github/apps/data", "project_.*")
   # file.copy(file.path("/share/github/apps/data", p_csvs), file.path("/share/github/apps_dev/data", p_csvs), overwrite = T)
   prj_sites_csv        <<- file.path(dir_data, "project_sites.csv")
@@ -85,8 +85,7 @@ load_projects <- function(){
   
   d_times <<- readr::read_csv(prj_times_csv, col_types = readr::cols())  %>% 
     arrange(technology_type, project) %>% 
-    mutate(
-      technology_type = factor(technology_type))
+    mutate(technology_type = factor(technology_type))
   d_times <<- d_times %>% 
     mutate(
       # order projects by technology_type, then project
@@ -112,204 +111,424 @@ load_projects <- function(){
     intersect(d_permits$permit_type)
   d_permits <<- d_permits %>% 
     mutate(
-      # order by permit_types
-      permit_type = factor(permit_type, levels = permit_types))
-  
-  prj_sites$label_html <<- prj_sites$label_html %>% lapply(htmltools::HTML)
-  prj_sites$popup_html <<- prj_sites$popup_html %>% lapply(htmltools::HTML)
+      # order permit types by permit_types
+      permit_type = permit_type %>% factor(levels = permit_types))
+
+  # # extract technology from interaction tags
+  # tags2tech <- c(
+  #   "Technology.Riverine" = "Riverine Energy",
+  #   "Technology.Tidal"    = "Tidal Energy",
+  #   "Technology.Wave"     = "Wave Energy")
+  # if (!is.null(ixns)){
+  #   # if ixns exist
+  #   # tech contains only the tags2tech names that are also in values$ixns
+  #   tech <- tags2tech[intersect(names(tags2tech), values$ixns %>% unlist())]
+  #   # tech <- tags2tech[1:2]
+  # } else {
+  #   # else tech is all of tags2tech
+  #   tech <- tags2tech
+  # }
+
+  # # filter by technology
+  # prj_sites <<- prj_sites %>%
+  #   filter(technology_type %in% tech)
+  # d_times <<- d_times %>%
+  #   filter(technology_type %in% tech)
+  # d_permits <<- d_permits %>%
+  #   filter(technology_type %in% tech)
+
+  prj_sites$label_html <- prj_sites$label_html %>% lapply(htmltools::HTML)
+  prj_sites$popup_html <- prj_sites$popup_html %>% lapply(htmltools::HTML)
   
   # colors & symbols
-  project_statuses <<- unique(d_times$project_status)
-  cols_type  <<- colorRampPalette(RColorBrewer::brewer.pal(n=11, name = 'PiYG'))(length(permit_types))
+  #project_statuses <<- unique(d_times$project_status)
+  project_statuses <<- c("Active Project", "Inactive Project")
+  cols_type   <<- colorRampPalette(RColorBrewer::brewer.pal(n=11, name = 'PiYG'))(length(permit_types))
   cols_status <<- c("#30A4E1", "#999999") # Active/Inactive Projects
-  cols <<- setNames(
+  cols        <<- setNames(
     c(cols_type, cols_status), 
     c(permit_types, project_statuses))
   symbls_type  <<- c(rep('triangle-up', 3), 'triangle-down', 'triangle-up', 'triangle-down', 'triangle-up', 'triangle-down', rep('triangle-up', 3))
   symbls_status <<- rep(NA, 2)
   symbls <<- setNames(
-    c(symbls_type, symbls_status), 
+    c(symbls_type,  symbls_status), 
     c(permit_types, project_statuses))
   
   # technology_type numbers for horizontal line and label placement along y axis
   n_tech <<- d_times %>% 
     group_by(technology_type) %>% 
-    summarize(
-      n = n())
+    summarize(n = n())
   n_riv <<- n_tech %>% filter(technology_type == "Riverine Energy") %>% pull(n)
   n_tid <<- n_tech %>% filter(technology_type == "Tidal Energy")    %>% pull(n)
   n_wav <<- n_tech %>% filter(technology_type == "Wave Energy")     %>% pull(n)
 }
 
+# filter projects by selected technology
+filter_prj_by_tech <-  function(tech, prj_sites, d_times, d_permits) {
+  
+  prj_sites <<- prj_sites %>% filter(technology_type %in% tech) %>% 
+    mutate(
+      project = factor(
+        project,
+        levels = prj_sites %>% distinct(project) %>% pull(project)))
+  
+  d_times   <<- d_times   %>% filter(technology_type %in% tech) %>% 
+    mutate(
+      project = factor(
+        project, 
+        levels = d_times %>% distinct(project) %>% pull(project)))
+  
+  d_permits <<- d_permits %>% filter(technology_type %in% tech) %>% 
+    mutate(
+      project = factor(
+        project, 
+        levels = d_permits %>% distinct(project) %>% pull(project)))
+        # levels = d_permits %>% 
+        #   filter(technology_type %in% tech) %>% 
+        #   distinct(project) %>% 
+        #   pull(project)))
+}
+
+# calculate y placement of antns and tech lines 
+calculate_y_tech <- function(tech) {
+  if ("Riverine Energy" %in% tech) {
+    n_riv_sel <- n_riv
+  } else if (!("Riverine Energy" %in% tech)) {
+    n_riv_sel <- as.integer(0)
+  }
+  if ("Wave Energy" %in% tech) {
+    n_wav_sel <- n_wav
+  } else if (!("Wave Energy" %in% tech)) {
+    n_wav_sel <- as.integer(0)
+  }
+  if ("Tidal Energy" %in% tech) {
+    n_tid_sel <- n_tid
+  } else if (!("Tidal Energy" %in% tech)) {
+    n_tid_sel <- as.integer(0)
+  }
+  n_projects <<- n_riv_sel + n_wav_sel + n_tid_sel
+  p_riv_sel  <<- n_riv_sel/n_projects
+  p_tid_sel  <<- n_tid_sel/n_projects
+  p_wav_sel  <<- n_wav_sel/n_projects
+  
+  p_tech_tbl <<- 
+    tibble(
+      tech        = c("Riverine Energy", "Tidal Energy", "Wave Energy"),
+      p_tech_sel  = c(p_riv_sel,          p_tid_sel,     p_wav_sel),
+      n_tech      = c(n_riv,              n_tid,         n_wav)) %>% 
+    mutate(
+      p_tech_all  = n_tech/(sum(n_tech)),
+      name        = stringr::str_replace(tech, " Energy", ""))
+}
+
 map_projects <- function(prj_sites){
   leaflet::leaflet(
-    data = prj_sites, width = "100%",
+    data    = prj_sites, width = "100%",
     options = leaflet::leafletOptions(
       zoomControl = F)) %>% 
     leaflet::addProviderTiles(leaflet::providers$Esri.OceanBasemap) %>% 
     leaflet::addMarkers(
-      label        = ~label_html, 
-      popup        = ~popup_html) %>%
+      label = ~label_html, 
+      popup = ~popup_html) %>%
     htmlwidgets::onRender("function(el, x) {
           L.control.zoom({ position: 'topright' }).addTo(this)
     }")
 }
 
-plot_projects <- function(){
-  fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700)
-  
-  fig <- fig %>% 
+
+# plot_projects() helper functions ----
+add_prj_sgmts <- function(fig, time_data) {
+  fig %>% 
     plotly::add_segments(
-      data  = d_times, # %>% 
-        # TODO: squeez labels by wrapping lines or some such
-        # mutate(project = recode(project, `Portsmouth Memorial Bridge`="Portsmouth\n Memorial\n Bridge")),
-      x     = ~date_beg,
-      xend  = ~date_end,
-      y     = ~project,
-      yend  = ~project,
-      color = ~project_status,
-      line  = list(width = 10))
-  #fig
-  #plotly_json(p = fig)
-  
-  fig <- fig %>% 
+      data   = time_data %>% filter(technology_type %in% tech), # %>%
+       # TODO: squeez labels by wrapping lines or some such
+       # mutate(project = recode(project, `Portsmouth Memorial Bridge`="Portsmouth\n Memorial\n Bridge")),
+       x     = ~date_beg,
+       xend  = ~date_end,
+       y     = ~time_data$project[time_data$technology_type %in% tech],
+       yend  = ~time_data$project[time_data$technology_type %in% tech],
+       color = ~project_status,
+       line  = list(width = 10)) 
+}
+
+add_prj_mkrs <- function(fig, permit_data) {
+  fig %>% 
     plotly::add_markers(
-      data = d_permits,
-      x = ~license_date, 
-      y = ~project,
-      symbol = ~permit_type,
-      symbols = symbls_type,
-      color = ~permit_type,
-      colors = cols_type, 
-      size = 10,
+      data      = permit_data %>% filter(technology_type %in% tech),
+      x         = ~license_date, 
+      y         = ~permit_data$project[permit_data$technology_type %in% tech],
+      symbol    = ~permit_type,
+      symbols   = symbls_type,
+      color     = ~permit_type,
+      colors    = cols_type, 
+      size      = 10,
       hoverinfo = "text",
       hovertext = paste(
-        'License Date: '    , d_permits$license_date, 
-        '<br>Project Name: ', d_permits$project, 
-        '<br>Permit Type: ' , d_permits$permit_type))
-  
-  #fig
-  #plotly_json(p = fig)
-  
-  fig <- fig %>% 
+        '<b>License Date:</b> '    , permit_data$license_date, 
+        '<br><b>Project Name:</b> ', permit_data$project, 
+        '<br><b>Permit Type:</b> ' , permit_data$permit_type,
+        '<br><b>Technology:</b> '  , permit_data$technology_type))
+}
+
+lgnd_x_y <- function(fig, time_data) {
+  fig %>% 
     plotly::layout(
       xaxis = list(
         #title = 'Date',
-        title = '',
-        showline = FALSE,
-        showgrid = FALSE),
+        title     = '',
+        showline  = FALSE,
+        showgrid  = FALSE),
       yaxis = list(
-        title = '',
+        title     = '',
         autorange = "reversed",
-        domain = c(0,1),
-        range = c(0, length(unique(d_times$project))),
-        showline = FALSE,
-        showgrid = FALSE,
+        domain    = c(0, length(unique(time_data$project[time_data$technology_type %in% tech]))),
+        range     = c(0,1),
+        showline  = FALSE,
+        showgrid  = TRUE,
         type = "category",
+        text = c(unique(time_data$project)),
         tickfont = list(size = 8)),
-      # margin = list(
-      #   r = 10, 
-      #   t = 25, 
-      #   b = 40, 
-      #   l = 100),
+      margin = list(
+        r = 15,
+        t = 25,
+        b = 40,
+        l = 25,
+        pad = list(r = 20, t = 0, b = 0, l = 50)),
       legend = list(
-        # x = 1.01, 
-        # y = 0.5), 
         orientation = 'h',
-        font = list(size = 10)),
-      shapes = list(
-        list(
-          line = list(
-            color = "black", 
-            width = 0.8), 
-          type = "line", 
-          x0 = 0, 
-          x1 = 1, 
-          xref = "paper", 
-          y0 = -0.5 + n_riv, #Defines horizontal line separating riverine projects from tidal projects
-          y1 = -0.5 + n_riv, 
-          yref = "y"), 
-        list(
-          line = list(
-            color = "black", 
-            width = 0.8), 
-          type = "line", 
-          x0 = 0, 
-          x1 = 1, 
-          xref = "paper", 
-          y0 = -0.5 + n_riv + n_tid, #Defines horizontal line separating tidal projects from wave projects
-          y1 = -0.5 + n_riv + n_tid, 
-          yref = "y"), 
-        list(
-          line = list(
-            color = "black", 
-            width = 0.8), 
-          type = "line", 
-          x0 = 0, 
-          x1 = 1, 
-          xref = "paper", 
-          y0 = 0.025, 
-          y1 = 0.025, 
-          yref = "paper"),
-        list(
-          line = list(
-            color = "black", 
-            width = 0.8), 
-          type = "line", 
-          x0 = 0, 
-          x1 = 1, 
-          xref = "paper", 
-          y0 = 0.975, 
-          y1 = 0.975, 
-          yref = "paper"),
-        list(
-          line = list(
-            color = "black", 
-            width = 0.8
-          ), 
-          type = "line", 
-          x0 = 0, 
-          x1 = 0, 
-          xref = "paper", 
-          y0 = 0.975, 
-          y1 = 0.025, 
-          yref = "paper")),
-      annotations = list(
-        list(
-          x = 1,
-          y = (-1 + n_riv)/2,
-          showarrow = FALSE,
-          text = "<b>Riverine</b>",
-          xref = "paper",
-          yref = "y",
-          align = "center",
-          font = list(size = 8),
-          textangle = "90",
-          yshift = 4),
-        list(
-          x = 1,
-          y = (-1 + n_riv + (n_tid)/2),
-          showarrow = FALSE,
-          text = "<b>Tidal</b>",
-          xref = "paper",
-          yref = "y",
-          align = "center",
-          font = list(size = 8),
-          textangle = "90"),
-        list(
-          x = 1,
-          y = (-1 + n_riv + n_tid + (n_wav)/2),
-          showarrow = FALSE,
-          text = "<b>Wave</b>",
-          xref = "paper",
-          yref = "y",
-          align = "center",
-          font = list(size = 8),
-          textangle = "90")))
-  
-  fig
-    
+        font = list(size = 10)))
 }
+
+
+get_antn_info <- function(tech, p_tech_tbl){
+  calculate_y_tech(tech)
+  ybase      <<- list()
+  ybase[[1]] <<- 1.005      
+  ybase[[2]] <<- ybase[[1]] - p_tech_tbl$p_tech_sel[1]
+  ybase[[3]] <<- ybase[[2]] - p_tech_tbl$p_tech_sel[2]
+  
+  # antns <<- list()
+  
+  y_tech_antn <<- list()
+  for (i in 1:nrow(p_tech_tbl)) {
+    y_tech_antn[[i]] <<- ybase[[i]] - 0.5*(p_tech_tbl$p_tech_sel[i])
+  }
+    
+    
+    # antns[[i]] <<- list(
+    #   x         = 1,
+    #   y         = ybase[[i]] - 0.5*(p_tech_tbl$p_tech_sel[i]),
+    #   showarrow = FALSE,
+    #   text      = glue("<b>{p_tech_tbl$name[i]}</b>"),
+    #   xref      = "paper",
+    #   yref      = "paper",
+    #   align     = "center",
+    #   font      = list(size = 8),
+    #   textangle = "90",
+    #   yshift    = 8)
+  
+}
+
+add_tech_text <- function(fig, p_tech_sel, y_tech, tech_name){
+  get_antn_info(tech = tech, p_tech_tbl = p_tech_tbl)
+  if (p_tech_sel == 0) {
+    fig 
+  } else {
+    fig %>% 
+      plotly::layout(
+        annotations = list(
+          x         = 1,
+          y         = y_tech,
+          showarrow = FALSE,
+          text      = glue("<b>{tech_name}</b>"),
+          xref      = "paper",
+          yref      = "paper",
+          align     = "center",
+          font      = list(size = 8),
+          textangle = "90",
+          yshift    = 8))
+  }
+}
+    
+    
+    
+    
+    
+    
+
+  
+
+  
+  
+
+  
+  
+
+#   # tech lines -----
+#   n_tech_types  <- p_tech_tbl %>%
+#     filter(p_tech_sel != 0) %>%
+#     nrow()
+# 
+#   tech_ln_1 <- add_line(y_tech = top - 1.1*(p_tech_tbl$p_tech_sel[1]))
+#   tech_ln_2 <- add_line(y_tech = top - 1.1*(p_tech_tbl$p_tech_sel[2]))
+#   # tech_ln_3 <- add_line(y_tech = 1 - p_tech_tbl$p_tech_sel[3])
+# 
+#   # function ----
+#   if (n_tech_types %in% c(0, 1)) {
+#     fig %>% plotly::layout(
+#       shapes = list(rectangle))
+#   } else if (n_tech_types > 1) {
+#     fig %>%
+#       plotly::layout(
+#         shapes = list(
+#           rectangle,
+#           tech_ln_1,
+#           tech_ln_2))
+#   }
+# }
+
+
+add_lines <- function(fig, tech){
+  
+  # rectangle bdr ----
+  top       <- 0.975
+  bottom    <- 0.025
+  left      <- 0
+  right     <- 1.5
+  
+  rectangle <- list(
+    type      = "rect", xref = "paper", yref  = "paper",
+    fillcolor = "transparent", 
+    line      = list(color = "black",   width = 0.8), 
+    opacity   = 1,
+    x0        = left,
+    x1        = right,
+    y0        = bottom,
+    y1        = top)
+  
+  # tech lines ----
+  tech         <- tech
+  n_tech_all   <- c("Riverine Energy" = n_riv, 
+                    "Tidal Energy"    = n_tid, 
+                    "Wave Energy"     = n_wav)
+  n_tech       <<- n_tech_all[tech]
+  n_tech_types <<- length(tech)
+  
+  if (n_tech > 1){
+    y_lns <- ((n_tech[-length(n_tech)])) %>% 
+      cumsum() %>% 
+      as.list()
+  }
+  
+  if (n_tech_types > 1){
+    # convert y_lns to list format
+    lines <- list()
+    for (i in 1:length(y_lns)) {
+      # lines[[names(y_lns[i])]] <- add_line(y_tech = y_lns[[i]])
+      lines[[i]] <- list(
+        type      = "line", xref = "paper", yref  = "y",
+        line      = list(color = "black",   width = 0.8), 
+        opacity   = 1,
+        x0        = 0,
+        x1        = 1.5,
+        y0        = y_lns[[i]] - (0.5),
+        y1        = y_lns[[i]] - (0.5))
+    }
+    
+    for (i in 1:length(lines)) {
+      lines_list <- list(rectangle, lines[[1]], lines[[i]])
+    }
+  }
+  # browser()
+
+  # add_lines() function ----
+  if (n_tech_types %in% c(0, 1)) {
+    fig %>% plotly::layout(
+      shapes = list(rectangle))
+  } else if (n_tech_types > 1) {
+    fig %>% 
+        plotly::layout(
+          shapes = lines_list)
+  }
+}
+
+# for initial plotly projects plot
+plot_projects <- function(){
+  load_projects()
+  tech <<- c("Riverine Energy", "Tidal Energy", "Wave Energy")
+  filter_prj_by_tech(tech, prj_sites, d_times, d_permits)
+  calculate_y_tech(tech)
+  fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700) 
+  fig <- fig %>% 
+    lgnd_x_y(time_data       = d_times)   %>% 
+    add_prj_sgmts(time_data  = d_times)   %>% 
+    add_prj_mkrs(permit_data = d_permits) %>% 
+    add_lines(tech) %>% 
+    add_tech_text(
+      p_tech_sel = p_tech_tbl$p_tech_sel[1],
+      tech_name  = p_tech_tbl$name[1],
+      y_tech     = y_tech_antn[[1]]) %>% 
+    add_tech_text(
+      p_tech_sel = p_tech_tbl$p_tech_sel[2],
+      tech_name  = p_tech_tbl$name[2],
+      y_tech     = y_tech_antn[[2]]) %>% 
+    add_tech_text(
+      p_tech_sel = p_tech_tbl$p_tech_sel[3],
+      tech_name  = p_tech_tbl$name[3],
+      y_tech     = y_tech_antn[[3]])  
+  fig
+}
+
+# for plot filtered by tech selection
+update_projects <- function(){
+  load_projects()
+  tech <<- tech
+  filter_prj_by_tech(tech, prj_sites, d_times, d_permits)
+  calculate_y_tech(tech)
+  fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700) 
+  fig <- fig %>% 
+    lgnd_x_y(time_data       = d_times)   %>% 
+    add_prj_sgmts(time_data  = d_times)   %>% 
+    add_prj_mkrs(permit_data = d_permits) %>% 
+    add_lines(tech) %>% 
+    add_tech_text(
+      p_tech_sel = p_tech_tbl$p_tech_sel[1],
+      tech_name  = p_tech_tbl$name[1],
+      y_tech     = y_tech_antn[[1]]) %>% 
+    add_tech_text(
+      p_tech_sel = p_tech_tbl$p_tech_sel[2],
+      tech_name  = p_tech_tbl$name[2],
+      y_tech     = y_tech_antn[[2]]) %>% 
+    add_tech_text(
+      p_tech_sel = p_tech_tbl$p_tech_sel[3],
+      tech_name  = p_tech_tbl$name[3],
+      y_tech     = y_tech_antn[[3]])  
+  
+  # update plot
+  tech <<- tech
+  filter_prj_by_tech(tech, prj_sites, d_times, d_permits)
+  calculate_y_tech(tech)
+  fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700) 
+  fig <- fig %>% 
+    lgnd_x_y(time_data       = d_times)   %>% 
+    add_prj_sgmts(time_data  = d_times)   %>% 
+    add_prj_mkrs(permit_data = d_permits) %>% 
+    add_lines(tech) %>% 
+    add_tech_text(
+      p_tech_sel = p_tech_tbl$p_tech_sel[1],
+      tech_name  = p_tech_tbl$name[1],
+      y_tech     = y_tech_antn[[1]]) %>% 
+    add_tech_text(
+      p_tech_sel = p_tech_tbl$p_tech_sel[2],
+      tech_name  = p_tech_tbl$name[2],
+      y_tech     = y_tech_antn[[2]]) %>% 
+    add_tech_text(
+      p_tech_sel = p_tech_tbl$p_tech_sel[3],
+      tech_name  = p_tech_tbl$name[3],
+      y_tech     = y_tech_antn[[3]])  
+  fig
+}
+
 
 tags_sql_to_html <- function(ixns, df_tags){
   

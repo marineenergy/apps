@@ -1,6 +1,10 @@
 # libraries ----
-#source(here::here("scripts/common.R"))
-source("/share/github/apps_dev/scripts/common.R")
+#source("/share/github/apps_dev/scripts/common.R")
+#source(file.path(dir_scripts, "common.R"))
+dir_scripts <<- here::here("scripts")
+source(file.path(dir_scripts, "common_2.R"))
+# dir_scripts <<- here::here("scripts")
+# dir_data    <<- here::here("data")
 source(file.path(dir_scripts, "db.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
 
@@ -136,7 +140,7 @@ navbarTab <- function(tabName, ..., icon = NULL) {
       id = paste0("tab-", tabName),
       href = paste0("#shiny-tab-", tabName),
       `data-toggle` = "tab",
-      `data-value` = tabName,
+      `data-value`  = tabName,
       icon,
       tags$p(...)))
 }
@@ -148,7 +152,7 @@ navbarMenu <- function(..., id = NULL) {
   
   tags$ul(
     class = "navbar-nav dropdown sidebar-menu", 
-    role = "menu",
+    role  = "menu",
     ...,
     div(
       id = id,
