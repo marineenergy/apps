@@ -36,9 +36,6 @@ docs_ixns <- docs %>%
     .groups = "drop") %>% 
   tibble::rownames_to_column("rowid")
 
-# ferc_docs:      rowid | key_interaction_detail
-# ferc_docs_tags: rowid | tag_sql
-
 docs <- docs %>% 
   left_join(
     docs_ixns %>% 
@@ -95,19 +92,35 @@ table(!is.na(docs_tags_lookup$tag))
 
 readr::write_csv(docs_tags_lookup, here("data/docs_tags_lookup.csv"))
 
-# TODO: copy/paste docs_tags_lookup.csv into gsheet and finish lookup there
+# copy/pasted docs_tags_lookup.csv into gsheet
+# TODO: finish Effect.* lookups
 
+tag_lookup <- get_gsheet_data("tag_lookup") %>% 
+  filter(content == "ferc_docs") %>% 
+  select(-content, -content_tag_extra)
+# TODO: match Effect.* content_tag with tag_sql
+
+docs_tags <- docs_tags %>% 
+  left_join(
+    tag_lookup,
+    by = c("tag_category", "content_tag"))
+
+# TODO: check that all docs_tags.tag_sql in tags.tag_sql
 tags <- tbl(con, "tags") %>% 
   collect() %>% 
   mutate(
     tag_sql = as.character(tag_sql))
 
+# write tables to db
+DBI::dbWriteTable(con, "ferc_docs", docs_ixns, overwrite=T)
+# ferc_docs:      rowid | key_interaction_detail
+#  1 to many with :
+#   ferc_docs_tags: rowid | tag_sql
+dbWriteTable(con, "ferc_doc_tags", docs_tags, overwrite=T)
+dbExecute(con, "ALTER TABLE ferc_doc_tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
+# TODO: add db index & relationship: ferc_doc_tags.tag_sql <-> tags.tag_sql
 
-docs_tags_tbl <- 
-
-
-DBI::dbWriteTable(con, "ferc_docs", docs_tbl)
-
+# check table creation
 DBI::dbListTables(con) %>% sort() %>% stringr::str_subset("^shp_", negate=T)
 
 
