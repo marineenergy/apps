@@ -5,6 +5,9 @@
 # shelf(
 #   DBI, dplyr, DT, fs, glue, here, RPostgres, stringr)
 
+shelf(
+  pool)
+
 db_params <- switch(machine, # common.R:machine
   Caleb  = 
     list(
@@ -24,22 +27,35 @@ db_params <- switch(machine, # common.R:machine
     user    = "admin",
     pwd_txt = "/share/.password_mhk-env.us"))
 
-con <<- DBI::dbConnect(
-  RPostgres::Postgres(),
+# con <<- DBI::dbConnect(
+#   RPostgres::Postgres(),
+#   dbname   = db_params$dbname,
+#   host     = db_params$host,
+#   port     = 5432,
+#   user     = db_params$user,
+#   password = readLines(db_params$pwd_txt))
+
+con <<- dbPool(
+  drv      = RPostgres::Postgres(),
   dbname   = db_params$dbname,
   host     = db_params$host,
   port     = 5432,
   user     = db_params$user,
   password = readLines(db_params$pwd_txt))
 
+onStop(function() {
+  poolClose(con)
+})
+
 # use conn to preview SQL, but con for st_read() to get spatial geometries
-conn <<- connections::connection_open(
-  RPostgres::Postgres(),
-  dbname   = db_params$dbname,
-  host     = db_params$host,
-  port     = 5432,
-  user     = db_params$user,
-  password = readLines(db_params$pwd_txt))
+# conn <<- connections::connection_open(
+#   RPostgres::Postgres(),
+#   dbname   = db_params$dbname,
+#   host     = db_params$host,
+#   port     = 5432,
+#   user     = db_params$user,
+#   password = readLines(db_params$pwd_txt))
+
 
 # tbls <- dbListTables(con) %>% sort(); tbls
 

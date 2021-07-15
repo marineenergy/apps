@@ -185,6 +185,37 @@ server <- function(input, output, session) {
     get_mgt()
   })
   
+  # documents ----
+  get_docs <- reactive({
+    d <- d_docs
+    if (length(values$ixns) > 0){
+      rowids <- sapply(values$ixns, get_rowids_with_ixn, db_tbl = "ferc_doc_tags") %>% 
+        unlist() %>% unique()
+      d <- d %>%
+        filter(rowid %in% !!rowids)
+    }
+    
+    # browser()
+    d %>%
+      collect() %>% 
+      mutate(
+        Tags = map_chr(rowid, get_tags_html, "ferc_doc_tags")) %>% 
+      #select(-rowid) %>% 
+      select(rowid, key_interaction_detail, Tags)
+  })
+  
+  output$box_docs <- renderText({
+    n_ixns <- length(values$ixns)
+    ifelse(
+      n_ixns == 0,
+      HTML(glue("FERC Documents <small>({d_docs_n} rows)</small>")),
+      HTML(glue("FERC Documents <small>({nrow(get_docs())} of {d_docs_n} rows; filtered by {n_ixns} interactions)</small>")))
+  })
+  
+  output$tbl_docs <- renderDataTable({
+    get_docs()
+  }, escape = F)
+  
   
   # reports ----
   

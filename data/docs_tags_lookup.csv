@@ -1,0 +1,133 @@
+content,tag_category,content_tag,content_tag_strip,content_tag_sql,category,tag
+ferc_docs,Receptor,Bats,Bats,Receptor.Bats,Receptor,Receptor/Bats
+ferc_docs,Receptor,Birds,Birds,Receptor.Birds,Receptor,Receptor/Birds
+ferc_docs,Receptor,Birds.Raptors,Birds.Raptors,Receptor.Birds.Raptors,Receptor,Receptor/Birds/Raptors
+ferc_docs,Receptor,Birds.Seabirds,Birds.Seabirds,Receptor.Birds.Seabirds,Receptor,Receptor/Birds/Seabirds
+ferc_docs,Receptor,Birds.Shorebirds,Birds.Shorebirds,Receptor.Birds.Shorebirds,Receptor,Receptor/Birds/Shorebirds
+ferc_docs,Receptor,Birds.Waterfowl,Birds.Waterfowl,Receptor.Birds.Waterfowl,Receptor,Receptor/Birds/Waterfowl
+ferc_docs,Receptor,Ecosystem Processes,EcosystemProcesses,Receptor.EcosystemProcesses,Receptor,Receptor/Ecosystem Processes
+ferc_docs,Receptor,Fish,Fish,Receptor.Fish,Receptor,Receptor/Fish
+ferc_docs,Receptor,Fish.Demersal Fish,Fish.DemersalFish,Receptor.Fish.DemersalFish,Receptor,Receptor/Fish/Demersal Fish
+ferc_docs,Receptor,Fish.Pelagic Fish,Fish.PelagicFish,Receptor.Fish.PelagicFish,Receptor,Receptor/Fish/Pelagic Fish
+ferc_docs,Receptor,Human Dimensions.Fisheries,HumanDimensions.Fisheries,Receptor.HumanDimensions.Fisheries,Receptor,Receptor/Human Dimensions/Fisheries
+ferc_docs,Receptor,Human Dimensions.Navigation,HumanDimensions.Navigation,Receptor.HumanDimensions.Navigation,Receptor,Receptor/Human Dimensions/Navigation
+ferc_docs,Receptor,Human Dimensions.Recreation & Tourism,HumanDimensions.RecreationTourism,Receptor.HumanDimensions.RecreationTourism,Receptor,Receptor/Human Dimensions/Recreation & Tourism
+ferc_docs,Receptor,Human Dimensions.Social & Economic Data,HumanDimensions.SocialEconomicData,Receptor.HumanDimensions.SocialEconomicData,Receptor,Receptor/Human Dimensions/Social & Economic Data
+ferc_docs,Receptor,Human Dimensions.Visual Impacts,HumanDimensions.VisualImpacts,Receptor.HumanDimensions.VisualImpacts,Receptor,Receptor/Human Dimensions/Visual Impacts
+ferc_docs,Receptor,Invertebrates,Invertebrates,Receptor.Invertebrates,Receptor,Receptor/Invertebrates
+ferc_docs,Receptor,Marine Mammals,MarineMammals,Receptor.MarineMammals,Receptor,Receptor/Marine Mammals
+ferc_docs,Receptor,Marine Mammals.Cetaceans,MarineMammals.Cetaceans,Receptor.MarineMammals.Cetaceans,Receptor,Receptor/Marine Mammals/Cetaceans
+ferc_docs,Receptor,Marine Mammals.Pinnipeds,MarineMammals.Pinnipeds,Receptor.MarineMammals.Pinnipeds,Receptor,Receptor/Marine Mammals/Pinnipeds
+ferc_docs,Receptor,Physical Environment,PhysicalEnvironment,Receptor.PhysicalEnvironment,Receptor,Receptor/Physical Environment
+ferc_docs,Receptor,Physical Environment.Sediment Transport,PhysicalEnvironment.SedimentTransport,Receptor.PhysicalEnvironment.SedimentTransport,Receptor,Receptor/Physical Environment/Sediment Transport
+ferc_docs,Receptor,Physical Environment.Water Quality,PhysicalEnvironment.WaterQuality,Receptor.PhysicalEnvironment.WaterQuality,Receptor,Receptor/Physical Environment/Water Quality
+ferc_docs,Receptor,Reptiles,Reptiles,Receptor.Reptiles,Receptor,Receptor/Reptiles
+ferc_docs,Stressor,Behavioral Interaction,BehavioralInteraction,Stressor.BehavioralInteraction,Stressor,Stressor/Behavioral Interaction
+ferc_docs,Stressor,Behavioral Interaction.Attraction,BehavioralInteraction.Attraction,Stressor.BehavioralInteraction.Attraction,Stressor,Stressor/Behavioral Interaction/Attraction
+ferc_docs,Stressor,Behavioral Interaction.Avoidance,BehavioralInteraction.Avoidance,Stressor.BehavioralInteraction.Avoidance,Stressor,Stressor/Behavioral Interaction/Avoidance
+ferc_docs,Stressor,Behavioral Interaction.Displacement,BehavioralInteraction.Displacement,Stressor.BehavioralInteraction.Displacement,Stressor,Stressor/Behavioral Interaction/Displacement
+ferc_docs,Stressor,EMF,EMF,Stressor.EMF,Stressor,Stressor/EMF
+ferc_docs,Stressor,Habitat Change,HabitatChange,Stressor.HabitatChange,Stressor,Stressor/Habitat Change
+ferc_docs,Stressor,Lighting,Lighting,Stressor.Lighting,Stressor,Stressor/Lighting
+ferc_docs,Stressor,Noise,Noise,Stressor.Noise,Stressor,Stressor/Noise
+ferc_docs,Stressor,Physical Interaction,PhysicalInteraction,Stressor.PhysicalInteraction,Stressor,Stressor/Physical Interaction
+ferc_docs,Stressor,Physical Interaction.Changes in Flow,PhysicalInteraction.ChangesinFlow,Stressor.PhysicalInteraction.ChangesinFlow,Stressor,Stressor/Physical Interaction/Changes in Flow
+ferc_docs,Stressor,Physical Interaction.Collision,PhysicalInteraction.Collision,Stressor.PhysicalInteraction.Collision,Stressor,Stressor/Physical Interaction/Collision
+ferc_docs,Stressor,Physical Interaction.Entrapment,PhysicalInteraction.Entrapment,Stressor.PhysicalInteraction.Entrapment,Stressor,Stressor/Physical Interaction/Entrapment
+ferc_docs,Effect,ARTIFICIAL REEF,ARTIFICIALREEF,Effect.ARTIFICIALREEF,NA,NA
+ferc_docs,Effect,ATTRACTION,ATTRACTION,Effect.ATTRACTION,NA,NA
+ferc_docs,Effect,"ATTRACTION, AVOIDANCE",ATTRACTIONAVOIDANCE,Effect.ATTRACTIONAVOIDANCE,NA,NA
+ferc_docs,Effect,"ATTRACTION, BIOFOULING",ATTRACTIONBIOFOULING,Effect.ATTRACTIONBIOFOULING,NA,NA
+ferc_docs,Effect,"ATTRACTION, CHANGE IN BEHAVIOR, FOOD WEB IMPLICATIONS",ATTRACTIONCHANGEINBEHAVIORFOODWEBIMPLICATIONS,Effect.ATTRACTIONCHANGEINBEHAVIORFOODWEBIMPLICATIONS,NA,NA
+ferc_docs,Effect,"ATTRACTION, FISH AGGREGATION",ATTRACTIONFISHAGGREGATION,Effect.ATTRACTIONFISHAGGREGATION,NA,NA
+ferc_docs,Effect,"ATTRACTION, POTENTIAL HARM",ATTRACTIONPOTENTIALHARM,Effect.ATTRACTIONPOTENTIALHARM,NA,NA
+ferc_docs,Effect,ATTRACTION/BIOFOULING,ATTRACTIONBIOFOULING,Effect.ATTRACTIONBIOFOULING,NA,NA
+ferc_docs,Effect,AVOIDANCE,AVOIDANCE,Effect.AVOIDANCE,NA,NA
+ferc_docs,Effect,"AVOIDANCE, ATTRACTION",AVOIDANCEATTRACTION,Effect.AVOIDANCEATTRACTION,NA,NA
+ferc_docs,Effect,"AVOIDANCE, BEHAVIOR CHANGE",AVOIDANCEBEHAVIORCHANGE,Effect.AVOIDANCEBEHAVIORCHANGE,NA,NA
+ferc_docs,Effect,"AVOIDANCE, CHANGE IN BEHAVIOR",AVOIDANCECHANGEINBEHAVIOR,Effect.AVOIDANCECHANGEINBEHAVIOR,NA,NA
+ferc_docs,Effect,"AVOIDANCE, DISRUPTION OF BEHAVIOR",AVOIDANCEDISRUPTIONOFBEHAVIOR,Effect.AVOIDANCEDISRUPTIONOFBEHAVIOR,NA,NA
+ferc_docs,Effect,"AVOIDANCE, POTENTIAL HARM",AVOIDANCEPOTENTIALHARM,Effect.AVOIDANCEPOTENTIALHARM,NA,NA
+ferc_docs,Effect,BEHAVIOR CHANGE,BEHAVIORCHANGE,Effect.BEHAVIORCHANGE,NA,NA
+ferc_docs,Effect,BEHAVIORAL CHANGE,BEHAVIORALCHANGE,Effect.BEHAVIORALCHANGE,NA,NA
+ferc_docs,Effect,BIODIVERSITY SHIFT,BIODIVERSITYSHIFT,Effect.BIODIVERSITYSHIFT,NA,NA
+ferc_docs,Effect,BIODIVERSITY SHIFT/FOOD WEB IMPLICATIONS,BIODIVERSITYSHIFTFOODWEBIMPLICATIONS,Effect.BIODIVERSITYSHIFTFOODWEBIMPLICATIONS,NA,NA
+ferc_docs,Effect,BIOFOULING,BIOFOULING,Effect.BIOFOULING,NA,NA
+ferc_docs,Effect,CHANGE IN BEHAVIOR,CHANGEINBEHAVIOR,Effect.CHANGEINBEHAVIOR,NA,NA
+ferc_docs,Effect,"CHANGE IN BEHAVIOR, FOOD WEB IMPLICATIONS",CHANGEINBEHAVIORFOODWEBIMPLICATIONS,Effect.CHANGEINBEHAVIORFOODWEBIMPLICATIONS,NA,NA
+ferc_docs,Effect,"CHANGE IN BEHAVIOR, INJURY",CHANGEINBEHAVIORINJURY,Effect.CHANGEINBEHAVIORINJURY,NA,NA
+ferc_docs,Effect,"CHANGE IN BEHAVIOR, POTENTIAL HARM",CHANGEINBEHAVIORPOTENTIALHARM,Effect.CHANGEINBEHAVIORPOTENTIALHARM,NA,NA
+ferc_docs,Effect,COLLISION,COLLISION,Effect.COLLISION,NA,NA
+ferc_docs,Effect,"COLLISION, INJURY, MORTALITY",COLLISIONINJURYMORTALITY,Effect.COLLISIONINJURYMORTALITY,NA,NA
+ferc_docs,Effect,"COLLISION, INJURY/MORTALITY",COLLISIONINJURYMORTALITY,Effect.COLLISIONINJURYMORTALITY,NA,NA
+ferc_docs,Effect,"COLLISION, POSSIBLE INJURY",COLLISIONPOSSIBLEINJURY,Effect.COLLISIONPOSSIBLEINJURY,NA,NA
+ferc_docs,Effect,"COLLISION, POTENTIAL INJURY",COLLISIONPOTENTIALINJURY,Effect.COLLISIONPOTENTIALINJURY,NA,NA
+ferc_docs,Effect,COLONIZATION,COLONIZATION,Effect.COLONIZATION,NA,NA
+ferc_docs,Effect,COMMUNITY CHANGE,COMMUNITYCHANGE,Effect.COMMUNITYCHANGE,NA,NA
+ferc_docs,Effect,DISRUPTION OF BEHAVIOR,DISRUPTIONOFBEHAVIOR,Effect.DISRUPTIONOFBEHAVIOR,NA,NA
+ferc_docs,Effect,"DISRUPTION OF BEHAVIOR, AVOIDANCE",DISRUPTIONOFBEHAVIORAVOIDANCE,Effect.DISRUPTIONOFBEHAVIORAVOIDANCE,NA,NA
+ferc_docs,Effect,"DISRUPTION OF BEHAVIOR, AVOIDANCE, POTENTIAL HARM",DISRUPTIONOFBEHAVIORAVOIDANCEPOTENTIALHARM,Effect.DISRUPTIONOFBEHAVIORAVOIDANCEPOTENTIALHARM,NA,NA
+ferc_docs,Effect,"DISRUPTION OF BEHAVIOR, BIODIVERSITY CHANGE",DISRUPTIONOFBEHAVIORBIODIVERSITYCHANGE,Effect.DISRUPTIONOFBEHAVIORBIODIVERSITYCHANGE,NA,NA
+ferc_docs,Effect,"DISRUPTION OF BEHAVIOR, FOOD WEB IMPLICATIONS",DISRUPTIONOFBEHAVIORFOODWEBIMPLICATIONS,Effect.DISRUPTIONOFBEHAVIORFOODWEBIMPLICATIONS,NA,NA
+ferc_docs,Effect,"DISRUPTION OF BEHAVIOR, FOOD WEB IMPLICATIONS, AVOIDANCE",DISRUPTIONOFBEHAVIORFOODWEBIMPLICATIONSAVOIDANCE,Effect.DISRUPTIONOFBEHAVIORFOODWEBIMPLICATIONSAVOIDANCE,NA,NA
+ferc_docs,Effect,"DISRUPTION OF BEHAVIOR, POTENTIAL HARM",DISRUPTIONOFBEHAVIORPOTENTIALHARM,Effect.DISRUPTIONOFBEHAVIORPOTENTIALHARM,NA,NA
+ferc_docs,Effect,"DISTURANCE, DISRUPTION OF BEHAVIOR, BIODIVERSITY SHIFT",DISTURANCEDISRUPTIONOFBEHAVIORBIODIVERSITYSHIFT,Effect.DISTURANCEDISRUPTIONOFBEHAVIORBIODIVERSITYSHIFT,NA,NA
+ferc_docs,Effect,DISTURBANCE,DISTURBANCE,Effect.DISTURBANCE,NA,NA
+ferc_docs,Effect,"DISTURBANCE, BIODIVERSITY SHIFT",DISTURBANCEBIODIVERSITYSHIFT,Effect.DISTURBANCEBIODIVERSITYSHIFT,NA,NA
+ferc_docs,Effect,"DISTURBANCE, FOOD WEB IMPLICATIONS",DISTURBANCEFOODWEBIMPLICATIONS,Effect.DISTURBANCEFOODWEBIMPLICATIONS,NA,NA
+ferc_docs,Effect,"DISTURBANCE, SCOUR, FOOD WEB IMPLICATIONS",DISTURBANCESCOURFOODWEBIMPLICATIONS,Effect.DISTURBANCESCOURFOODWEBIMPLICATIONS,NA,NA
+ferc_docs,Effect,"DISTURBANCE, SCOUR, SEDIMENT TRANSPORT",DISTURBANCESCOURSEDIMENTTRANSPORT,Effect.DISTURBANCESCOURSEDIMENTTRANSPORT,NA,NA
+ferc_docs,Effect,EMPLOYMENT AND ECONOMIC GAINS,EMPLOYMENTANDECONOMICGAINS,Effect.EMPLOYMENTANDECONOMICGAINS,NA,NA
+ferc_docs,Effect,ENTRAPMENT,ENTRAPMENT,Effect.ENTRAPMENT,NA,NA
+ferc_docs,Effect,"ENTRAPMENT, POTENTIAL HARM",ENTRAPMENTPOTENTIALHARM,Effect.ENTRAPMENTPOTENTIALHARM,NA,NA
+ferc_docs,Effect,FISH AGGREGATE DEVICE,FISHAGGREGATEDEVICE,Effect.FISHAGGREGATEDEVICE,NA,NA
+ferc_docs,Effect,FISH AGGREGATION DEVICE,FISHAGGREGATIONDEVICE,Effect.FISHAGGREGATIONDEVICE,NA,NA
+ferc_docs,Effect,"FOOD WEB IMPLICATIONS, BIOFOULING,",FOODWEBIMPLICATIONSBIOFOULING,Effect.FOODWEBIMPLICATIONSBIOFOULING,NA,NA
+ferc_docs,Effect,HABITAT CHANGE,HABITATCHANGE,Effect.HABITATCHANGE,NA,NA
+ferc_docs,Effect,INDIRECT BIODIVERSITY SHIFT,INDIRECTBIODIVERSITYSHIFT,Effect.INDIRECTBIODIVERSITYSHIFT,NA,NA
+ferc_docs,Effect,INDIRECT MORTALITY/INJURY,INDIRECTMORTALITYINJURY,Effect.INDIRECTMORTALITYINJURY,NA,NA
+ferc_docs,Effect,INDIRECT TURBIDITY,INDIRECTTURBIDITY,Effect.INDIRECTTURBIDITY,NA,NA
+ferc_docs,Effect,INJURY,INJURY,Effect.INJURY,NA,NA
+ferc_docs,Effect,"INJURY, DISRUPTION OF BEHAVIOR, FOOD WEB IMPLICATIONS",INJURYDISRUPTIONOFBEHAVIORFOODWEBIMPLICATIONS,Effect.INJURYDISRUPTIONOFBEHAVIORFOODWEBIMPLICATIONS,NA,NA
+ferc_docs,Effect,"INJURY, MORTALITY",INJURYMORTALITY,Effect.INJURYMORTALITY,NA,NA
+ferc_docs,Effect,"INJURY, RISK",INJURYRISK,Effect.INJURYRISK,NA,NA
+ferc_docs,Effect,INJURY/MORTALITY,INJURYMORTALITY,Effect.INJURYMORTALITY,NA,NA
+ferc_docs,Effect,"INJURY/MORTALITY, POTENTIAL HARM",INJURYMORTALITYPOTENTIALHARM,Effect.INJURYMORTALITYPOTENTIALHARM,NA,NA
+ferc_docs,Effect,MORTALITY,MORTALITY,Effect.MORTALITY,NA,NA
+ferc_docs,Effect,"NA","NA",Effect.NA,NA,NA
+ferc_docs,Effect,POSSIBLE TOXIC RESPONSE,POSSIBLETOXICRESPONSE,Effect.POSSIBLETOXICRESPONSE,NA,NA
+ferc_docs,Effect,"POSSIBLE TOXIC RESPONSE, BIOFOULING",POSSIBLETOXICRESPONSEBIOFOULING,Effect.POSSIBLETOXICRESPONSEBIOFOULING,NA,NA
+ferc_docs,Effect,POTENTIAL AVOIDANCE,POTENTIALAVOIDANCE,Effect.POTENTIALAVOIDANCE,NA,NA
+ferc_docs,Effect,POTENTIAL BIODIVERSITY SHIFT,POTENTIALBIODIVERSITYSHIFT,Effect.POTENTIALBIODIVERSITYSHIFT,NA,NA
+ferc_docs,Effect,POTENTIAL HARM,POTENTIALHARM,Effect.POTENTIALHARM,NA,NA
+ferc_docs,Effect,"POTENTIAL HARM, DISRUPTION OF BEHAVIOR",POTENTIALHARMDISRUPTIONOFBEHAVIOR,Effect.POTENTIALHARMDISRUPTIONOFBEHAVIOR,NA,NA
+ferc_docs,Effect,"POTENTIAL HARM, INJURY",POTENTIALHARMINJURY,Effect.POTENTIALHARMINJURY,NA,NA
+ferc_docs,Effect,"POTENTIAL INJURY, MORTALITY",POTENTIALINJURYMORTALITY,Effect.POTENTIALINJURYMORTALITY,NA,NA
+ferc_docs,Effect,POTENTIAL TOXIC RESPONSE,POTENTIALTOXICRESPONSE,Effect.POTENTIALTOXICRESPONSE,NA,NA
+ferc_docs,Effect,RISK OF COLLISION,RISKOFCOLLISION,Effect.RISKOFCOLLISION,NA,NA
+ferc_docs,Effect,"RISK OF COLLISION, INJURY/MORTALITY",RISKOFCOLLISIONINJURYMORTALITY,Effect.RISKOFCOLLISIONINJURYMORTALITY,NA,NA
+ferc_docs,Effect,"RISK OF COLLISION, MORTALITY/INJURY",RISKOFCOLLISIONMORTALITYINJURY,Effect.RISKOFCOLLISIONMORTALITYINJURY,NA,NA
+ferc_docs,Effect,"RISK OF COLLISION, POTENTIAL HARM",RISKOFCOLLISIONPOTENTIALHARM,Effect.RISKOFCOLLISIONPOTENTIALHARM,NA,NA
+ferc_docs,Effect,"RISK OF COLLISION, POTENTIAL HARM, INJURY",RISKOFCOLLISIONPOTENTIALHARMINJURY,Effect.RISKOFCOLLISIONPOTENTIALHARMINJURY,NA,NA
+ferc_docs,Effect,RISK OF COLLSIION,RISKOFCOLLSIION,Effect.RISKOFCOLLSIION,NA,NA
+ferc_docs,Effect,"RISK OF COLLSION, POTENTIAL HARM",RISKOFCOLLSIONPOTENTIALHARM,Effect.RISKOFCOLLSIONPOTENTIALHARM,NA,NA
+ferc_docs,Effect,SCOUR,SCOUR,Effect.SCOUR,NA,NA
+ferc_docs,Effect,"SCOUR, SEDIMENT TRANSPORT",SCOURSEDIMENTTRANSPORT,Effect.SCOURSEDIMENTTRANSPORT,NA,NA
+ferc_docs,Effect,"SCOUR, SEDIMENT TRANSPORT, DISTURBANCE",SCOURSEDIMENTTRANSPORTDISTURBANCE,Effect.SCOURSEDIMENTTRANSPORTDISTURBANCE,NA,NA
+ferc_docs,Effect,"SEDIMEND TRANSPORT, ATTRACTION",SEDIMENDTRANSPORTATTRACTION,Effect.SEDIMENDTRANSPORTATTRACTION,NA,NA
+ferc_docs,Effect,SEDIMENT TRANSPORT,SEDIMENTTRANSPORT,Effect.SEDIMENTTRANSPORT,NA,NA
+ferc_docs,Effect,"SEDIMENT TRANSPORT, ATTRACTION",SEDIMENTTRANSPORTATTRACTION,Effect.SEDIMENTTRANSPORTATTRACTION,NA,NA
+ferc_docs,Effect,"SEDIMENT TRANSPOT, SCOUR",SEDIMENTTRANSPOTSCOUR,Effect.SEDIMENTTRANSPOTSCOUR,NA,NA
+ferc_docs,Effect,WATER QUALITY,WATERQUALITY,Effect.WATERQUALITY,NA,NA
+ferc_docs,Phase,1. Site Characterization and Assessment,1.SiteCharacterizationandAssessment,Phase.1.SiteCharacterizationandAssessment,NA,NA
+ferc_docs,Phase,2. Construction,2.Construction,Phase.2.Construction,NA,NA
+ferc_docs,Phase,3. Operations and Maintenance,3.OperationsandMaintenance,Phase.3.OperationsandMaintenance,NA,NA
+ferc_docs,Phase,4. Decommissioning,4.Decommissioning,Phase.4.Decommissioning,NA,NA
+ferc_docs,Phase,ALL,ALL,Phase.ALL,NA,NA
+ferc_docs,Phase,"NA","NA",Phase.NA,NA,NA
+ferc_docs,Receptor,ALL,ALL,Receptor.ALL,NA,NA
+ferc_docs,Receptor,"NA","NA",Receptor.NA,NA,NA
+ferc_docs,Stressor,ALL,ALL,Stressor.ALL,NA,NA
+ferc_docs,Stressor,"NA","NA",Stressor.NA,NA,NA
+ferc_docs,Technology,Marine Energy.Tidal,MarineEnergy.Tidal,Technology.MarineEnergy.Tidal,NA,NA
+ferc_docs,Technology,Marine Energy.Wave,MarineEnergy.Wave,Technology.MarineEnergy.Wave,NA,NA
