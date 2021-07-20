@@ -137,30 +137,48 @@ server <- function(input, output, session) {
   
   #* prj_map observe Technology tag  ----
   observe({
-    # req(length(values$ixns) > 0)
-  
+    req(length(values$ixns) > 0)
+    # output$prj_p <- renderText(suppressWarnings(""))
+    
+    # extract technology from interaction tags
     sql2tech <- c(
       "Technology.Riverine" = "Riverine Energy", 
       "Technology.Tidal"    = "Tidal Energy",
       "Technology.Wave"     = "Wave Energy")
     
-    tech <- sql2tech[intersect(names(sql2tech), values$ixns %>% unlist())]
-
-    if (length(tech) == 0){
-      tech <- sql2tech}
+    if (!is.null(values$ixns)){
+      tech <<- sql2tech[intersect(names(sql2tech), values$ixns %>% unlist())]
+    }
+    else {
+      tech <<- sql2tech
+    }
     
-    #message(glue("prj_map proxy tech: {paste(tech, collapse=', ')}"))
+    values_unlist  <- values$ixns %>% unlist() 
+    tech_str_match <- grepl("Technology", values_unlist)
     
-    prj_tech <- prj_sites %>% 
-      filter(technology_type %in% tech)
-    
-    leafletProxy("prj_map") %>% 
-      leaflet::clearMarkers() %>% 
-      leaflet::addMarkers(
-        data  = prj_tech,
-        label = ~label_html, 
-        popup = ~popup_html)
-    
+    # if tech type selected, redraw ONLY mkrs corresponding to selected tech types
+    if (TRUE %in% tech_str_match){
+      load_projects()
+      prj_tech <<- prj_sites %>% 
+        filter(technology_type %in% tech)
+      leafletProxy("prj_map") %>% 
+        leaflet::clearMarkers() %>% 
+        leaflet::addMarkers(
+          data  = prj_tech,
+          label = ~label_html, 
+          popup = ~popup_html)
+    }
+    # if NO tech type selected in ixns, redraw ALL markers
+    else if (!TRUE %in% tech_str_match){
+      load_projects()
+      prj_tech <<- prj_sites
+      leafletProxy("prj_map") %>% 
+        leaflet::clearMarkers() %>% 
+        leaflet::addMarkers(
+          data  = prj_tech,
+          label = ~label_html, 
+          popup = ~popup_html)
+    }
   })
   
   #* prj_p ----
@@ -169,46 +187,113 @@ server <- function(input, output, session) {
     suppressWarnings({
       plot_projects()
   }))
-  
+
   #* prj_p observe Technology tag  ----
   observe({
     req(length(values$ixns) > 0)
-    load_projects()
-    # output$prj_p <- renderText(suppressWarnings(""))
     
-    # extract technology from interaction tags
-    tags2tech <- c(
-      "Technology.Riverine" = "Riverine Energy", 
-      "Technology.Tidal"    = "Tidal Energy",
-      "Technology.Wave"     = "Wave Energy")
-    
-    # if an ixn exists, find tech selected in the ixn
-    if (!is.null(values$ixns)){
-      tech <<- tags2tech[intersect(names(tags2tech), values$ixns %>% unlist())] %>% 
-        unname()
-      # browser() 
-    } else {
-      tech <<- tags2tech 
+    # vector: T = tech selected, F = no tech selected
+    values_unlist  <- values$ixns %>% unlist() 
+    tech_str_match <- grepl("Technology", values_unlist)
+    # browser()
+  
+    # if no tech type selected in ixns 
+    if (!TRUE %in% tech_str_match){
+      # browser()
+      # load_projects()
+      tech <<- c("Riverine Energy", "Tidal Energy", "Wave Energy")
+      message(glue("no explicitly selected tech so plot all tech: {paste(tech, collapse = ', ')}"))
+      # browser()
+      # calculate_y_tech(tech)
+      output$prj_p <- renderPlotly(
+        suppressWarnings({
+          plot_projects()
+        })
+      )
     }
+  
+    else if (TRUE %in% tech_str_match){
+      load_projects() 
+      # output$prj_p <- renderText(suppressWarnings(""))
+  
+      # extract technology from interaction tags
+      tags2tech <- c(
+        "Technology.Riverine" = "Riverine Energy", 
+        "Technology.Tidal"    = "Tidal Energy",
+        "Technology.Wave"     = "Wave Energy")
+      
+      # if an ixn exists, find tech selected in the ixn
+      if (!is.null(values$ixns)){
+        tech <<- tags2tech[intersect(names(tags2tech), values$ixns %>% unlist())] %>% 
+          unname()
+        # browser() 
+      } else {
+        tech <<- tags2tech 
+      }
+      
+      output$prj_p <- renderPlotly(
+        suppressWarnings({
+          update_projects()
+          })
+        )
+    }
+  })
+  
+      
+  
     
-    message(glue("selected tech: {paste(tech, collapse = ', ')}"))
+      
+      
+      
+      
+    # load_projects()
+    # # output$prj_p <- renderText(suppressWarnings(""))
+    # 
+    # # extract technology from interaction tags
+    # tags2tech <- c(
+    #   "Technology.Riverine" = "Riverine Energy", 
+    #   "Technology.Tidal"    = "Tidal Energy",
+    #   "Technology.Wave"     = "Wave Energy")
+    # 
+    # # if an ixn exists, find tech selected in the ixn
+    # if (!is.null(values$ixns)){
+    #   tech <<- tags2tech[intersect(names(tags2tech), values$ixns %>% unlist())] %>% 
+    #     unname()
+    #   # browser() 
+    # } else {
+    #   tech <<- tags2tech 
+    # }
+    # 
+    # if (length(tech) > 0){
+    #   output$prj_p <- renderPlotly(
+    #     suppressWarnings({
+    #       update_projects()
+    #     })
+    #   )
+    # }
+    # 
+    # else if (length(tech) == 0){
+    #   tech <<- tags2tech 
+    #   output$prj_p <- renderPlotly(
+    #     suppressWarnings(
+    #       plot_projects()
+    #     )
+    #   )
+    # }
+    # message(glue("selected tech: {paste(tech, collapse = ', ')}"))
     
     # filter_prj_by_tech(tech, prj_sites, d_times, d_permits)
     # calculate_y_tech(tech)
   
     # browser()
     
-    message(glue("n_riv = {n_riv}"))
-    message(glue("n_tid = {n_tid}"))
-    message(glue("n_wav = {n_wav}"))
+    # message(glue("n_riv = {n_riv}"))
+    # message(glue("n_tid = {n_tid}"))
+    # message(glue("n_wav = {n_wav}"))
     
-    output$prj_p <- renderPlotly(
-      suppressWarnings({
-        update_projects()
-      })
-    )
+  
 
-  })
+
  
   
   
@@ -373,21 +458,21 @@ server <- function(input, output, session) {
     
 
   #* observe plotly_click ----
-  # observe({
-  #   
-  #   # event_register("prj_p", "plotly_click")
-  #   d <- event_data("plotly_click")
-  #   req(d)
-  #   
-  #   proxy <- leafletProxy("prj_map")
-  #   
-  #   s <- prj_sites %>% 
-  #     filter(project == d$y)
-  #   
-  #   proxy %>% 
-  #     flyTo(s$longitude, s$latitude, 8)
-  #   
-  # })
+  observe({
+
+    # event_register("prj_p", "plotly_click")
+    d <- event_data("plotly_click")
+    req(d)
+
+    proxy <- leafletProxy("prj_map")
+
+    s <- prj_sites %>%
+      filter(project == d$y)
+
+    proxy %>%
+      flyTo(s$longitude, s$latitude, 8)
+
+  })
   
   # management ----
   get_mgt <- reactive({
