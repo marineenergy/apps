@@ -137,23 +137,26 @@ server <- function(input, output, session) {
   
   #* prj_map observe Technology tag  ----
   observe({
-    # req(length(values$ixns) > 0)
-  
+    req(length(values$ixns) > 0)
+    # output$prj_p <- renderText(suppressWarnings(""))
+    
+    # extract technology from interaction tags
     sql2tech <- c(
       "Technology.Riverine" = "Riverine Energy", 
       "Technology.Tidal"    = "Tidal Energy",
       "Technology.Wave"     = "Wave Energy")
     
-    tech <- sql2tech[intersect(names(sql2tech), values$ixns %>% unlist())]
-
-    if (length(tech) == 0){
-      tech <- sql2tech}
+    if (!is.null(values$ixns)){
+      tech <<- sql2tech[intersect(names(sql2tech), values$ixns %>% unlist())]
+    }
+    else {
+      tech <<- sql2tech
+    }
     
     #message(glue("prj_map proxy tech: {paste(tech, collapse=', ')}"))
-    
-    prj_tech <- prj_sites %>% 
+    load_projects()
+    prj_tech <<- prj_sites %>% 
       filter(technology_type %in% tech)
-    
     leafletProxy("prj_map") %>% 
       leaflet::clearMarkers() %>% 
       leaflet::addMarkers(
