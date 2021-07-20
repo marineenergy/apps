@@ -373,21 +373,21 @@ server <- function(input, output, session) {
     
 
   #* observe plotly_click ----
-  # observe({
-  #   
-  #   # event_register("prj_p", "plotly_click")
-  #   d <- event_data("plotly_click")
-  #   req(d)
-  #   
-  #   proxy <- leafletProxy("prj_map")
-  #   
-  #   s <- prj_sites %>% 
-  #     filter(project == d$y)
-  #   
-  #   proxy %>% 
-  #     flyTo(s$longitude, s$latitude, 8)
-  #   
-  # })
+  observe({
+
+    # event_register("prj_p", "plotly_click")
+    d <- event_data("plotly_click")
+    req(d)
+
+    proxy <- leafletProxy("prj_map")
+
+    s <- prj_sites %>%
+      filter(project == d$y)
+
+    proxy %>%
+      flyTo(s$longitude, s$latitude, 8)
+
+  })
   
   # management ----
   get_mgt <- reactive({
