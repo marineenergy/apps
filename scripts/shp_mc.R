@@ -69,6 +69,51 @@ shp2db <- function(shp, tbl, redo = F){
   }
 }
 
+gdb2db <- function(gdb, lyr, tbl, redo = F){
+  # redo = F
+  # gdb <- "/share/data/marinecadastre.gov/Federal and State Waters/FederalAndStateWaters_dir/FederalAndStateWaters.gdb"
+  # lyr <- "FederalAndStateWaters"
+  # tbl <- "gdb_FederalAndStateWaters"
+  # Error in st_geometry.sf(x) : 
+  #   attr(obj, "sf_column") does not point to a geometry column.
+  # Did you rename it, without setting st_geometry(obj) <- "newname"? 
+  
+  message(glue("LOAD: {tbl}"))
+  
+  if (!tbl %in% dbListTables(con) | redo){
+    d_sf <- read_sf(gdb, lyr)
+
+    idx_geom <- which(names(d_sf) == attr(d_sf, "sf_column"))
+    names(d_sf) <- dbSafeNames(names(d_sf))
+    d_sf <- st_set_geometry(d_sf, names(d_sf)[idx_geom]) 
+    
+    # d_tbl  <- "d_efh" # prefix: mc_ for MarineCadastre, ds_ for dataset?
+    # d_redo <- FALSE
+    
+    # project to geographic coordinate reference system if need be
+    if (is.na(st_crs(d_sf))){
+      message("  st_set_crs(4326)")
+      st_crs(d_sf) = 4326
+    }
+    if (st_crs(d_sf) != st_crs(4326)){
+      message("  st_transform(crs = 4326)")
+      d_sf <- st_transform(d_sf, crs = 4326)
+    }
+    
+    message("  st_write()")
+    st_write(d_sf, con, tbl)
+    
+  } else {
+    message("  already loaded")
+  }
+  
+  if (tbl %in% dbListTables(con)){
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+}
+
 
 datasets_gsheet2db <- function(tbl = "datasets", redo = T){
   # tbl = "datasets" OR "datasets_mc"
