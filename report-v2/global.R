@@ -237,6 +237,36 @@ d_mgt <- tbl(con, "tethys_mgt") %>%
 
 d_mgt_n <- d_mgt %>% summarize(n = n()) %>% pull(n)
 
+# documents ----
+d_docs <- tbl(con, "ferc_docs") # %>% 
+  # rename(
+  #   Category = `Management Measure Category`,
+  #   Phase    = `Phase of Project`)
+
+d_doc_tags <- tbl(con, "ferc_doc_tags")
+d_tags     <- get_tags()
+
+d_docs_n <- d_docs %>% summarize(n = n()) %>% pull(n)
+
+get_tags_html <- function(rid, tbl_tags = "ferc_doc_tags"){
+  # rid = 1; tbl_tags = "ferc_doc_tags"
+  tbl(con, tbl_tags) %>% 
+    filter(rowid == !!rid, !is.na(tag_sql)) %>% 
+    # select(rowid, tag_sql) %>% 
+    distinct(rowid, tag_sql) %>% 
+    collect() %>% 
+    mutate(
+      tag_sql = as.character(tag_sql)) %>%
+    left_join(
+      d_tags %>% 
+        select(tag_sql, category, tag, tag_html),
+      by = "tag_sql") %>% 
+    filter(!is.na(tag)) %>% 
+    arrange(desc(category), tag) %>% 
+    pull(tag_html) %>% 
+    paste(collapse = " ")
+}
+
 # reports ----
 dir_rpt_pfx <- "/share/user_reports"
 url_rpt_pfx <- "https://api.marineenergy.app/report"

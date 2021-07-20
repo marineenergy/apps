@@ -10,6 +10,7 @@ ui <- dashboardPage(
     leftUi = navbarMenu(
       navbarTab(tabName = "tab_prj", "Projects"),
       navbarTab(tabName = "tab_mgt", "Management"),
+      navbarTab(tabName = "tab_docs", "Documents"),
       navbarTab(tabName = "tab_rpt", "Reports")),
     tags$li(
       googleSignInUI_btn_signin("login"), class = "dropdown"),
@@ -79,9 +80,9 @@ ui <- dashboardPage(
               (riverine, tidal, and wave). Click on the triangles in the plot to zoom the 
               map to the study location of interest. You can access relevant FERC documents 
               per project and permitting milestones by clicking on the study location icon in the map.")))),
-        
-        #verbatimTextOutput("click")),
-    
+      
+      #verbatimTextOutput("click")),
+      
       #** tab_mgt ----
       tabItem(
         tabName = "tab_mgt",
@@ -104,6 +105,26 @@ ui <- dashboardPage(
           box(
             title = uiOutput("box_mgt", inline=T), width = 12,
             dataTableOutput("tbl_mgt")))),
+      
+      #** tab_docs ----
+      tabItem(
+        tabName = "tab_docs",
+        div("Filters by:", 
+            icon("tags"), 
+            span(class="me-tag me-technology", "Technology"),
+            # TODO: handle mismatched ferc_docs.tag_sql
+            #span(class="me-tag me-management", "Management missing in data"),
+            #span(class="me-tag me-effect?", "Effect missing in db.tags"),
+            span(class="me-tag me-stressor",   "Stressor"),
+            span(class="me-tag me-receptor",   "Receptor"),
+            span(class="me-tag me-phase",      "Phase")),
+        helpText(
+          HTML("The FERC eLibrary contains environmental compliance project documents, 
+          of which excerpts have been manually tagged for reference.")),
+        fluidRow(
+          box(
+            title = uiOutput("box_docs", inline=T), width = 12,
+            dataTableOutput("tbl_docs")))),
       
       #** tab_reports ----
       tabItem(
@@ -152,5 +173,5 @@ ui <- dashboardPage(
               DTOutput("tbl_rpts"),
               actionButton("btn_del_rpts", "Delete selected report(s)", icon=icon("minus"))))))
       
-            
-)))
+      
+    )))
