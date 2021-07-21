@@ -9,6 +9,22 @@ editor_options:
   chunk_output_type: console
 ---
 
+# TODO
+
+1. Write to CSV or log the following parameters:
+    1. data directory
+    1. gdb directory
+    1. gdb layer name
+    1. db table name
+    1. if successful load
+1. Convert python chunk to R
+1. Determine method for truncating names: 
+    - GDB: `GDB: /share/data/marinecadastre.gov/Hawaii Benthic Habitat Map - Biological Cover/GIS-Data_FileGeodatabase_Chapter-3_Benthics_dir/MHI-Biogeographic-Assessment_Chapter-3_Benthics_Public.gdb`
+    - `NOTICE:  identifier "gdb_Shallow_CompiledHabitatRecords_Benthic_Habitat_VideoPhotoLocations" will be truncated to "gdb_Shallow_CompiledHabitatRecords_Benthic_Habitat_VideoPhotoLo"`
+1. Error handling: `Error in st_sf(x, sf_column_name = value) : no simple features geometry column present`
+    - GDB: `/share/data/marinecadastre.gov/Hawaii Benthic Habitat Map - Biological Cover/GIS-Data_FileGeodatabase_Chapter-3_Benthics_dir/MHI-Biogeographic-Assessment_Chapter-3_Benthics_Public.gdb`
+    - Layer: `Shallow_CompiledHabitatRecords_Benthic_Habitat_VideoPhotoLocations_Key`
+
 # Setup
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
@@ -26,7 +42,7 @@ library(reticulate)
 ```
 
 # Initiate empty data.frame to keep track of data loading
-```{r tracking}
+```{r tracking, class.source='fold-show'}
 df <- data.frame(
   data_dir=character(),
   geodatabase=character(),
@@ -36,35 +52,41 @@ df <- data.frame(
 )
 ```
 
-# Load gdb layer
-```{r load_lyr}
-load_mc_gdb <- function(dir, gdb, lyr, tbl, verbose) {
-  # source(here::here("functions.R"))
-  source(here::here("scripts/shp_mc.R"))
-  sf::st_layers(gdb)
-
-  if(verbose) {
-    cat(sprintf('GDB: %s\n', gdb))
-    cat(sprintf('Layer: %s\n', lyr))
-    sf::read_sf(gdb, lyr)
-    cat(sprintf("Loading...")
-  }
-
-  gdb2db(gdb, lyr, tbl)
+# Load gdb layers
+```{r load_lyrs, class.source='fold-show'}
+load_mc_gdb <- function(dir, gdb, verbose) {
+  source(here::here("functions.R"))
+  sdf <- sf::st_layers(gdb)
   
-  if(verbose) {
-    #if(tbl %in% dbListTables(con)) {
-    if(dbExistsTable(con, tbl)) {
-      cat(sprintf('Success: %s -> %s', lyr, tbl))
-    } else {
-      cat(sprintf('Failed to load: %s -> %s', lyr, tbl))
+  for (lyr in sdf$name) {
+    tbl <- glue('gdb_', lyr)
+  
+    if(verbose) {
+      message(glue('GDB: {gdb}'))
+      message(glue('LAYER: {lyr}'))
+      # sf::read_sf(gdb, lyr)
+      
+      if(dbExistsTable(con, tbl)) {
+        message('Already exists, skipping\n')
+        next
+      }
     }
-  }
   
-  if(dbExistsTable(con, tbl)) {
-    df[nrow(df) + 1,] = c(dir, gdb, lyr, tbl, T)
-  } else {
-    df[nrow(df) + 1,] = c(dir, gdb, lyr, tbl, F)
+    gdb2db(gdb, lyr, tbl)
+    
+    if(verbose) {
+      if(dbExistsTable(con, tbl)) {
+        cat(sprintf('Success: %s -> %s\n', lyr, tbl))
+      } else {
+        cat(sprintf('Failed to load: %s -> %s\n', lyr, tbl))
+      }
+    }
+    
+    if(dbExistsTable(con, tbl)) {
+      df[nrow(df) + 1,] = c(dir, gdb, lyr, tbl, T)
+    } else {
+      df[nrow(df) + 1,] = c(dir, gdb, lyr, tbl, F)
+    }
   }
 }
 ```
@@ -76,7 +98,7 @@ load_mc_gdb <- function(dir, gdb, lyr, tbl, verbose) {
 ***Requirement***
 `cd ~/.local/share/r-miniconda/envs/r-reticulate/bin | pip install pandas`
 
-```{python}
+```{python, class.source='fold-show'}
 import os
 import re
 import pandas as pd
@@ -255,52 +277,50 @@ data_sets = [
   'Coast Guard Jurisdictions']
 
 # Iterate over data directory to search for .gdb and associated .lyr file
-lyr_list = []
+# lyr_list = []
+gdb_list = []
 for d in data_sets:
   dir = os.path.join(data_dir, d)
   for root, dirs, files in os.walk(dir):
     for name in dirs:
       if '.gdb' in name:
-        for file in files:
-          if '.lyr' in file:
-            lyr = file.split('.')[0]
-            lyr_list.append({'dir': root, 
-                             'gdb': os.path.join(root, name), 
-                             'lyr': lyr.replace(' ', ''), 
-                             'tbl': 'gdb_' + re.sub("[^\w\s]", '_', lyr).replace(' ', '_').lower()})
+        gdb_list.append({'dir': root, 'gdb': os.path.join(root, name)})
+        # for file in files:
+        #   if '.lyr' in file:
+        #     lyr = file.split('.')[0]
+        #     lyr_list.append({'dir': root, 
+        #                      'gdb': os.path.join(root, name), 
+        #                      'lyr': lyr.replace(' ', ''), 
+        #                      'tbl': 'gdb_' + re.sub("[^\w\s]", '_', lyr).replace(' ', '_').lower()})
 
 # Create dataframe to pass back to R for handling.
-df = pd.DataFrame(lyr_list)
+df = pd.DataFrame(gdb_list)
 ```
 
 # Example Dataset Load
-```{r example-dataset, eval=F}
+```{r example-dataset, eval=F, class.source='fold-show'}
 dir <- "/share/data/marinecadastre.gov/Federal and State Waters/FederalAndStateWaters_dir"
 gdb <- "/share/data/marinecadastre.gov/Federal and State Waters/FederalAndStateWaters_dir/FederalAndStateWaters.gdb"
-lyr <- "FederalAndStateWaters"
-tbl <- "gdb_FederalAndStateWaters"
-load_mc_gdb(dir, gdb, lyr, tbl, T)
+# lyr <- "FederalAndStateWaters"
+# tbl <- "gdb_FederalAndStateWaters"
+load_mc_gdb(dir, gdb, T)  #, lyr, tbl, T)
 ```
 
 # Bulk Load Datasets
-```{r bulk-load, eval=F}
+```{r bulk-load, eval=F, class.source='fold-show'}
 datasets_to_load <- data.frame(py$df)
 
 for (i in 1:nrow(datasets_to_load)) {
   dir <- datasets_to_load[i, 1]
   gdb <- datasets_to_load[i, 2]
-  lyr <- datasets_to_load[i, 3]
-  tbl <- datasets_to_load[i, 4]
+  load_mc_gdb(dir, gdb, T)
 }
-
-load_mc_gdb(dir, gdb, lyr, tbl, T)
 ```
-
 
 ---
 
 # Write dataframe to csv
-```{r write_csv_log}
+```{r write_csv_log, eval=F, class.source='fold-show'}
 df
 f <- glue("gdb_loading_", format(Sys.time(), "%Y%m%d"), ".csv")
 write_csv(df, f)
