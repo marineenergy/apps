@@ -1,0 +1,307 @@
+---
+title: "Load geodatabase layers scraped from MarineCadastre.gov to database"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+editor_options: 
+  chunk_output_type: console
+---
+
+# Setup
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
+
+library(tidyverse)
+library(rvest)
+library(webshot)
+library(stringr)
+library(DT)
+library(glue)
+library(dplyr)
+library(tibble)
+library(sf)
+library(reticulate)
+```
+
+# Initiate empty data.frame to keep track of data loading
+```{r tracking}
+df <- data.frame(
+  data_dir=character(),
+  geodatabase=character(),
+  layer=character(),
+  table=character(),
+  loaded=logical()
+)
+```
+
+# Load gdb layer
+```{r load_lyr}
+load_mc_gdb <- function(dir, gdb, lyr, tbl, verbose) {
+  # source(here::here("functions.R"))
+  source(here::here("scripts/shp_mc.R"))
+  sf::st_layers(gdb)
+
+  if(verbose) {
+    cat(sprintf('GDB: %s\n', gdb))
+    cat(sprintf('Layer: %s\n', lyr))
+    sf::read_sf(gdb, lyr)
+    cat(sprintf("Loading...")
+  }
+
+  gdb2db(gdb, lyr, tbl)
+  
+  if(verbose) {
+    #if(tbl %in% dbListTables(con)) {
+    if(dbExistsTable(con, tbl)) {
+      cat(sprintf('Success: %s -> %s', lyr, tbl))
+    } else {
+      cat(sprintf('Failed to load: %s -> %s', lyr, tbl))
+    }
+  }
+  
+  if(dbExistsTable(con, tbl)) {
+    df[nrow(df) + 1,] = c(dir, gdb, lyr, tbl, T)
+  } else {
+    df[nrow(df) + 1,] = c(dir, gdb, lyr, tbl, F)
+  }
+}
+```
+
+---
+
+# Compile list of GDBs to load
+
+***Requirement***
+`cd ~/.local/share/r-miniconda/envs/r-reticulate/bin | pip install pandas`
+
+```{python}
+import os
+import re
+import pandas as pd
+
+data_dir = '/share/data/marinecadastre.gov'
+  
+data_sets = [
+  'Federal and State Waters',
+  'Fish Species Richness- Fall',
+  'Fish Species Richness- Spring',
+  'Fish Total Biomass- Fall'
+  'Fish Total Biomass- Spring',
+  'Formerly Used Defense Sites (Unexploded Ordnances)',
+  'Hawaii Benthic Habitat Map - Biological Cover',
+  'Hawaii Bottomfish - Catch per unit effort (catch per fishing trip)',
+  'Hawaii Brown Booby - Predicted Relative Abundance Aug - Oct',
+  'Hawaii Brown Booby - Presences Aug - Oct',
+  'Hawaii Humpback Whale - Predicted Relative Abundance Winter',
+  'Hawaii Humpback Whale - Presences Winter',
+  'Hawaii Reef Fish - Predicted Total Biomass',
+  'Hawaii Reef Fish - Total Biomass',
+  'Hawaii Speed of Surface Currents Summer',
+  'Hawaii Speed of Surface Currents Winter',
+  'Hawaii Spinner Dolphin - Predicted Relative Abundance Summer',
+  'Hawaii Spinner Dolphin - Predicted Relative Abundance Winter',
+  'Hawaii Spinner Dolphin - Presences Summer',
+  'Hawaii Spinner Dolphin - Presences Winter',
+  'Hawaii Wedge-tailed Shearwater - Predicted Relative Abundance Aug - Oct',
+  'Hawaii Wedge-tailed Shearwater - Presences Aug - Oct',
+  'Indian Lands',
+  'Individual Avian Species Abundance Models',
+  'Individual Deep-Sea Coral Species',
+  'Individual Marine Mammals Species Models',
+  'Kemps Ridley Turtle, Atlantic Fall Density',
+  'Kemps Ridley Turtle, Atlantic Spring Density',
+  'Kemps Ridley Turtle, Atlantic Summer Density',
+  'Kemps Ridley Turtle, Atlantic Winter Density',
+  'Leatherback Turtle, Atlantic Fall Density',
+  'Leatherback Turtle, Atlantic Spring Density',
+  'Leatherback Turtle, Atlantic Summer Density',
+  'Leatherback Turtle, Atlantic Winter Density',
+  'Leatherback Turtle, Gulf of Mexico Fall Density',
+  'Leatherback Turtle, Gulf of Mexico Spring Density',
+  'Leatherback Turtle, Gulf of Mexico Summer Density',
+  'Leatherback Turtle, Gulf of Mexico Winter Density',
+  'Loggerhead Turtle, Atlantic Fall Density',
+  'Loggerhead Turtle, Atlantic Spring Density',
+  'Loggerhead Turtle, Atlantic Summer Density',
+  'Loggerhead Turtle, Atlantic Winter Density',
+  'Loggerhead Turtle, Gulf of Mexico Fall Density',
+  'Loggerhead Turtle, Gulf of Mexico Spring Density',
+  'Loggerhead Turtle, Gulf of Mexico Summer Density',
+  'Loggerhead Turtle, Gulf of Mexico Winter Density',
+  'Marine Mammal Low Frequency Sound Sensitivity Abundance',
+  'Marine Mammal Medium Frequency Sound Sensitivity Abundance',
+  'Marine Mammal Protection Act',
+  'Marine Mammal Species Richness',
+  'Marine Mammal Total Abundance',
+  'Marine Protected Areas Inventory',
+  'Military Operating Area Boundaries',
+  'Military Submarine Transit Lanes: Atlantic - Gulf of Mexico',
+  'Military Surface Grid Areas: Atlantic - Gulf of Mexico',
+  'MPA Inventory - MPAs by Fishing Restriction',
+  'MPA Inventory - MPAs by Government Level',
+  'NASCA Submarine Cables',
+  'National Environmental Policy Act',
+  'National Marine Fisheries Service Regions',
+  'National Marine Sanctuaries Act',
+  'NOAA Charted Submarine Cables',
+  'NOAA National Marine Sanctuaries',
+  'North Atlantic Right Whale: December Abundance',
+  'North Atlantic Right Whale: June Abundance',
+  'Ocean Sediment Thickness Contours',
+  'Ocean Uses',
+  'PaCSEA Seabird Density - All Surveys 2011-2012 Birds/km2',
+  'PaCSEA Seabird Density - Feb 2012 Birds-km2',
+  'PaCSEA Seabird Density - Jan 2011 Birds-km2',
+  'PaCSEA Seabird Density - July 2012 Birds-km2',
+  'PaCSEA Seabird Density - June 2011 Birds-km2',
+  'PaCSEA Seabird Density - Oct 2011 Birds-km2',
+  'PaCSEA Seabird Density - Sept 2012 Birds-km2',
+  'PaCSEA Seabird Density 7km - Original 2011-2012',
+  'Permitted Marine Hydrokinetic Projects',
+  'Pilot Boarding Areas',
+  'Pilot Boarding Stations',
+  'Pipeline Areas',
+  'Principal Ports',
+  'Proposed Coastal Critical Habitat Areas',
+  'Regulated Navigation Areas',
+  'Rivers and Harbors Act',
+  'Seagrasses',
+  'Unexploded Ordnance Areas',
+  'Unexploded Ordnance Locations',
+  'US Atlantic Coast Fishing Atlas',
+  'West Coast Bottom Trawl Fishing Extent (2002-2006)',
+  'West Coast Bottom Trawl Fishing Extent (2006-2010)',
+  'West Coast Bottom Trawl Fishing Intensity (2002-2006)',
+  'West Coast Bottom Trawl Fishing Intensity (2006-2010)',
+  'West Coast Canopy-Forming Kelp, 1989-2014',
+  'West Coast Commercial Fishing Closures, 2015',
+  'West Coast EFH Conservation Areas',
+  'West Coast Fishing Ethnography',
+  'West Coast Mid-Water Trawl Fishing Extent (2002-2006)',
+  'West Coast Mid-Water Trawl Fishing Extent (2006-2010)',
+  'West Coast Mid-Water Trawl Fishing Intensity (2002-2006)',
+  'West Coast Mid-Water Trawl Fishing Intensity (2006-2010)',
+  'West Coast Recreational Fishing Closures, 2015',
+  'West Coast Rockfish Conservation Areas, 2015',
+  'West Coast USA Current and Historical Estuary Extent',
+  'West Coast USA Estuarine Biotic Habitat',
+  'Wrecks and Obstructions',
+  'Benthic Cover',
+  'Coastal Critical Habitat Designations',
+  'Coastal Energy Facilities',
+  'Coastal Zone Management Act Boundary',
+  'Danger Zones and Restricted Areas',
+  'Deep-Sea Coral Observations',
+  'Deep-Sea Soft Coral Habitat Suitability',
+  'Deep-Sea Stony Coral Habitat Suitability',
+  'Deepwater Ports',
+  'Department of Defense Offshore Wind Mission Compatibility Assessments',
+  'Endangered Species Act',
+  'Gulf of Alaska Margin Bathymetry',
+  'Gulf of Mexico Deepwater Bathymetry Contours - BOEM 100 ft',
+  'Gulf of Mexico Deepwater Bathymetry Contours - BOEM 100 m',
+  'Gulf of Mexico Deepwater Bathymetry Contours - BOEM 1000 ft',
+  'Gulf of Mexico Deepwater Bathymetry Contours - BOEM 500 ft',
+  'Gulf of Mexico Deepwater Bathymetry Contours - BOEM 500 m',
+  'Gulf of Mexico Deepwater Bathymetry Contours - NOAA 100 m',
+  'Gulf of Mexico Deepwater Bathymetry Contours - NOAA 1000 ft',
+  'Gulf of Mexico Deepwater Bathymetry Contours - NOAA 500 ft',
+  'Gulf of Mexico Deepwater Bathymetry Contours - NOAA 500 m',
+  'Gulf of Mexico Deepwater Bathymetry with Hill Shade',
+  'Gulf of Mexico Outer Continental Shelf Blocks with Significant Sand Resources',
+  'High Frequency Radar Locations',
+  'Line Islands Bathymetry',
+  'Mariana Trench, Guam, and Northern Mariana Islands Bathymetry',
+  'Mendocino Ridge Bathymetry',
+  'Necker Ridge Bathymetry',
+  'Nitrate Mean Concentration',
+  'NOAA NOS Hydrographic Survey Data',
+  'Ocean Current Resource Potential: Mean Power Density',
+  'Ocean Current Resource Potential: Mean Speed',
+  'Outer Continental Shelf Lands Act',
+  'Phosphate Mean Concentration',
+  'Raster Nautical Charts',
+  'Sigsbee and Florida Escarpment Bathymetry',
+  'Silicate Mean Concentration',
+  '2013 Vessel Density',
+  '2015 Vessel Transit Counts: All Vessels',
+  '2016 Vessel Transit Counts: All Vessels',
+  '2017 Vessel Transit Counts: All Vessels',
+  'Active Oil and Gas Leases',
+  'AIS Vessel Tracks 2019',
+  'Alaska Native Corporations',
+  'Alaska Native Villages',
+  'Anchorage Areas',
+  'Annual Mean Chlorophyll-a Concentration',
+  'Annual Mean Surface Aragonite Saturation State',
+  'Aquaculture',
+  'Artificial Reefs',
+  'Atlantic Continental Margin Bathymetry',
+  'Atlantic Fishing Revenue Intensity, 2007-2012',
+  'Avian Higher Collision Sensitivity Abundance',
+  'Avian Higher Collision Sensitivity Species Richness',
+  'Avian Higher Displacement Sensitivity Abundance',
+  'Avian Higher Displacement Sensitivity Species Richness',
+  'Avian Species Richness',
+  'Avian Total Relative Abundance',
+  'Bathymetric Contours',
+  'Beach Nourishment Projects',
+  'Block Island Transmission Cables',
+  'Block Island Wind Turbine Locations',
+  'Bowers Ridge and Beringian Margin Bathymetry',
+  'California Seafloor Mapping Index',
+  'Coast Guard Jurisdictions']
+
+# Iterate over data directory to search for .gdb and associated .lyr file
+lyr_list = []
+for d in data_sets:
+  dir = os.path.join(data_dir, d)
+  for root, dirs, files in os.walk(dir):
+    for name in dirs:
+      if '.gdb' in name:
+        for file in files:
+          if '.lyr' in file:
+            lyr = file.split('.')[0]
+            lyr_list.append({'dir': root, 
+                             'gdb': os.path.join(root, name), 
+                             'lyr': lyr.replace(' ', ''), 
+                             'tbl': 'gdb_' + re.sub("[^\w\s]", '_', lyr).replace(' ', '_').lower()})
+
+# Create dataframe to pass back to R for handling.
+df = pd.DataFrame(lyr_list)
+```
+
+# Example Dataset Load
+```{r example-dataset, eval=F}
+dir <- "/share/data/marinecadastre.gov/Federal and State Waters/FederalAndStateWaters_dir"
+gdb <- "/share/data/marinecadastre.gov/Federal and State Waters/FederalAndStateWaters_dir/FederalAndStateWaters.gdb"
+lyr <- "FederalAndStateWaters"
+tbl <- "gdb_FederalAndStateWaters"
+load_mc_gdb(dir, gdb, lyr, tbl, T)
+```
+
+# Bulk Load Datasets
+```{r bulk-load, eval=F}
+datasets_to_load <- data.frame(py$df)
+
+for (i in 1:nrow(datasets_to_load)) {
+  dir <- datasets_to_load[i, 1]
+  gdb <- datasets_to_load[i, 2]
+  lyr <- datasets_to_load[i, 3]
+  tbl <- datasets_to_load[i, 4]
+}
+
+load_mc_gdb(dir, gdb, lyr, tbl, T)
+```
+
+
+---
+
+# Write dataframe to csv
+```{r write_csv_log}
+df
+f <- glue("gdb_loading_", format(Sys.time(), "%Y%m%d"), ".csv")
+write_csv(df, f)
+```
