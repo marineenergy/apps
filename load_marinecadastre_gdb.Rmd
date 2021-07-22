@@ -11,12 +11,6 @@ editor_options:
 
 # TODO
 
-1. Write to CSV or log the following parameters:
-    1. data directory
-    1. gdb directory
-    1. gdb layer name
-    1. db table name
-    1. if successful load
 1. Convert python chunk to R
 1. Determine method for truncating names: 
     - GDB: `GDB: /share/data/marinecadastre.gov/Hawaii Benthic Habitat Map - Biological Cover/GIS-Data_FileGeodatabase_Chapter-3_Benthics_dir/MHI-Biogeographic-Assessment_Chapter-3_Benthics_Public.gdb`
@@ -24,6 +18,7 @@ editor_options:
 1. Error handling: `Error in st_sf(x, sf_column_name = value) : no simple features geometry column present`
     - GDB: `/share/data/marinecadastre.gov/Hawaii Benthic Habitat Map - Biological Cover/GIS-Data_FileGeodatabase_Chapter-3_Benthics_dir/MHI-Biogeographic-Assessment_Chapter-3_Benthics_Public.gdb`
     - Layer: `Shallow_CompiledHabitatRecords_Benthic_Habitat_VideoPhotoLocations_Key`
+1. Postgresql table names limited to max length of 63 bytes
 
 # Setup
 ```{r setup, include=FALSE}
@@ -41,52 +36,56 @@ library(sf)
 library(reticulate)
 ```
 
-# Initiate empty data.frame to keep track of data loading
-```{r tracking, class.source='fold-show'}
-df <- data.frame(
-  data_dir=character(),
-  geodatabase=character(),
-  layer=character(),
-  table=character(),
-  loaded=logical()
-)
-```
-
 # Load gdb layers
 ```{r load_lyrs, class.source='fold-show'}
-load_mc_gdb <- function(dir, gdb, verbose) {
+# load_mc_gdb(<dataframe for logging>, <csv log>, <data directory>, <geodatabase path>)
+load_mc_gdb <- function(df, csv, dir, gdb) {
   source(here::here("functions.R"))
+  
+  # Capture layers existing in gdb
   sdf <- sf::st_layers(gdb)
   
-  for (lyr in sdf$name) {
+  # Count layers in gdb
+  lyr_cnt <- length(sdf[[1]])
+  
+  for (idx in (1: lyr_cnt)) {
+    # GDB layer name
+    lyr <- sdf[[1]][[idx]]
+  
     tbl <- glue('gdb_', lyr)
-  
-    if(verbose) {
-      message(glue('GDB: {gdb}'))
-      message(glue('LAYER: {lyr}'))
-      # sf::read_sf(gdb, lyr)
-      
-      if(dbExistsTable(con, tbl)) {
-        message('Already exists, skipping\n')
-        next
-      }
+    # Create db table name - max length of 63 bytes
+    if (nchar(tbl) >= 63) {
+      tbl <- str_trunc(tbl, 59, side="right", ellipsis=glue("_{idx}"))
+    } 
+    
+    message(glue('[{idx}/{lyr_cnt}] LAYER: {lyr}'))
+    # sf::read_sf(gdb, lyr)
+
+    # No geom type
+    if (is.na(sdf[[2]][[idx]])) {
+      message('No geometry type, skipping\n')
+      df[1,] = c(dir, gdb, lyr, tbl, F, F, F)
+      write.table(df, csv, append=T, sep=",", col.names=F, row.names=F, quote=F)
+      next
     }
-  
+    # Layer exists in database
+    if(dbExistsTable(con, tbl)) {
+      message('Already exists, skipping\n')
+      df[1,] = c(dir, gdb, lyr, tbl, T, F, T)
+      write.table(df, csv, append=T, sep=",", col.names=F, row.names=F, quote=F)
+      next
+    }
+    
     gdb2db(gdb, lyr, tbl)
     
-    if(verbose) {
-      if(dbExistsTable(con, tbl)) {
-        cat(sprintf('Success: %s -> %s\n', lyr, tbl))
-      } else {
-        cat(sprintf('Failed to load: %s -> %s\n', lyr, tbl))
-      }
-    }
-    
     if(dbExistsTable(con, tbl)) {
-      df[nrow(df) + 1,] = c(dir, gdb, lyr, tbl, T)
+      message(glue('Success: {lyr} -> {tbl}'))
+      df[1,] = c(dir, gdb, lyr, tbl, T, T, T)
     } else {
-      df[nrow(df) + 1,] = c(dir, gdb, lyr, tbl, F)
+      message(glue('Failed to load: {lyr} -> {tbl}'))
+      df[1,] = c(dir, gdb, lyr, tbl, F, F, T)
     }
+    write.table(df, csv, append=T, sep=",", col.names=F, row.names=F, quote=F)
   }
 }
 ```
@@ -106,89 +105,89 @@ import pandas as pd
 data_dir = '/share/data/marinecadastre.gov'
   
 data_sets = [
-  'Federal and State Waters',
-  'Fish Species Richness- Fall',
-  'Fish Species Richness- Spring',
-  'Fish Total Biomass- Fall'
-  'Fish Total Biomass- Spring',
-  'Formerly Used Defense Sites (Unexploded Ordnances)',
-  'Hawaii Benthic Habitat Map - Biological Cover',
-  'Hawaii Bottomfish - Catch per unit effort (catch per fishing trip)',
-  'Hawaii Brown Booby - Predicted Relative Abundance Aug - Oct',
-  'Hawaii Brown Booby - Presences Aug - Oct',
-  'Hawaii Humpback Whale - Predicted Relative Abundance Winter',
-  'Hawaii Humpback Whale - Presences Winter',
-  'Hawaii Reef Fish - Predicted Total Biomass',
-  'Hawaii Reef Fish - Total Biomass',
-  'Hawaii Speed of Surface Currents Summer',
-  'Hawaii Speed of Surface Currents Winter',
-  'Hawaii Spinner Dolphin - Predicted Relative Abundance Summer',
-  'Hawaii Spinner Dolphin - Predicted Relative Abundance Winter',
-  'Hawaii Spinner Dolphin - Presences Summer',
-  'Hawaii Spinner Dolphin - Presences Winter',
-  'Hawaii Wedge-tailed Shearwater - Predicted Relative Abundance Aug - Oct',
-  'Hawaii Wedge-tailed Shearwater - Presences Aug - Oct',
-  'Indian Lands',
-  'Individual Avian Species Abundance Models',
-  'Individual Deep-Sea Coral Species',
-  'Individual Marine Mammals Species Models',
-  'Kemps Ridley Turtle, Atlantic Fall Density',
-  'Kemps Ridley Turtle, Atlantic Spring Density',
-  'Kemps Ridley Turtle, Atlantic Summer Density',
-  'Kemps Ridley Turtle, Atlantic Winter Density',
-  'Leatherback Turtle, Atlantic Fall Density',
-  'Leatherback Turtle, Atlantic Spring Density',
-  'Leatherback Turtle, Atlantic Summer Density',
-  'Leatherback Turtle, Atlantic Winter Density',
-  'Leatherback Turtle, Gulf of Mexico Fall Density',
-  'Leatherback Turtle, Gulf of Mexico Spring Density',
-  'Leatherback Turtle, Gulf of Mexico Summer Density',
-  'Leatherback Turtle, Gulf of Mexico Winter Density',
-  'Loggerhead Turtle, Atlantic Fall Density',
-  'Loggerhead Turtle, Atlantic Spring Density',
-  'Loggerhead Turtle, Atlantic Summer Density',
-  'Loggerhead Turtle, Atlantic Winter Density',
-  'Loggerhead Turtle, Gulf of Mexico Fall Density',
-  'Loggerhead Turtle, Gulf of Mexico Spring Density',
-  'Loggerhead Turtle, Gulf of Mexico Summer Density',
-  'Loggerhead Turtle, Gulf of Mexico Winter Density',
-  'Marine Mammal Low Frequency Sound Sensitivity Abundance',
-  'Marine Mammal Medium Frequency Sound Sensitivity Abundance',
-  'Marine Mammal Protection Act',
-  'Marine Mammal Species Richness',
-  'Marine Mammal Total Abundance',
-  'Marine Protected Areas Inventory',
-  'Military Operating Area Boundaries',
-  'Military Submarine Transit Lanes: Atlantic - Gulf of Mexico',
-  'Military Surface Grid Areas: Atlantic - Gulf of Mexico',
-  'MPA Inventory - MPAs by Fishing Restriction',
-  'MPA Inventory - MPAs by Government Level',
-  'NASCA Submarine Cables',
-  'National Environmental Policy Act',
-  'National Marine Fisheries Service Regions',
-  'National Marine Sanctuaries Act',
-  'NOAA Charted Submarine Cables',
-  'NOAA National Marine Sanctuaries',
-  'North Atlantic Right Whale: December Abundance',
-  'North Atlantic Right Whale: June Abundance',
-  'Ocean Sediment Thickness Contours',
-  'Ocean Uses',
-  'PaCSEA Seabird Density - All Surveys 2011-2012 Birds/km2',
-  'PaCSEA Seabird Density - Feb 2012 Birds-km2',
-  'PaCSEA Seabird Density - Jan 2011 Birds-km2',
-  'PaCSEA Seabird Density - July 2012 Birds-km2',
-  'PaCSEA Seabird Density - June 2011 Birds-km2',
-  'PaCSEA Seabird Density - Oct 2011 Birds-km2',
-  'PaCSEA Seabird Density - Sept 2012 Birds-km2',
-  'PaCSEA Seabird Density 7km - Original 2011-2012',
-  'Permitted Marine Hydrokinetic Projects',
-  'Pilot Boarding Areas',
-  'Pilot Boarding Stations',
-  'Pipeline Areas',
-  'Principal Ports',
-  'Proposed Coastal Critical Habitat Areas',
-  'Regulated Navigation Areas',
-  'Rivers and Harbors Act',
+  # 'Federal and State Waters',
+  # 'Fish Species Richness- Fall',
+  # 'Fish Species Richness- Spring',
+  # 'Fish Total Biomass- Fall'
+  # 'Fish Total Biomass- Spring',
+  # 'Formerly Used Defense Sites (Unexploded Ordnances)',
+  # 'Hawaii Benthic Habitat Map - Biological Cover',
+  # 'Hawaii Bottomfish - Catch per unit effort (catch per fishing trip)',
+  # 'Hawaii Brown Booby - Predicted Relative Abundance Aug - Oct',
+  # 'Hawaii Brown Booby - Presences Aug - Oct',
+  # 'Hawaii Humpback Whale - Predicted Relative Abundance Winter',
+  # 'Hawaii Humpback Whale - Presences Winter',
+  # 'Hawaii Reef Fish - Predicted Total Biomass',
+  # 'Hawaii Reef Fish - Total Biomass',
+  # 'Hawaii Speed of Surface Currents Summer',
+  # 'Hawaii Speed of Surface Currents Winter',
+  # 'Hawaii Spinner Dolphin - Predicted Relative Abundance Summer',
+  # 'Hawaii Spinner Dolphin - Predicted Relative Abundance Winter',
+  # 'Hawaii Spinner Dolphin - Presences Summer',
+  # 'Hawaii Spinner Dolphin - Presences Winter',
+  # 'Hawaii Wedge-tailed Shearwater - Predicted Relative Abundance Aug - Oct',
+  # 'Hawaii Wedge-tailed Shearwater - Presences Aug - Oct',
+  # 'Indian Lands',
+  # 'Individual Avian Species Abundance Models',
+  # 'Individual Deep-Sea Coral Species',
+  # 'Individual Marine Mammals Species Models',
+  # 'Kemps Ridley Turtle, Atlantic Fall Density',
+  # 'Kemps Ridley Turtle, Atlantic Spring Density',
+  # 'Kemps Ridley Turtle, Atlantic Summer Density',
+  # 'Kemps Ridley Turtle, Atlantic Winter Density',
+  # 'Leatherback Turtle, Atlantic Fall Density',
+  # 'Leatherback Turtle, Atlantic Spring Density',
+  # 'Leatherback Turtle, Atlantic Summer Density',
+  # 'Leatherback Turtle, Atlantic Winter Density',
+  # 'Leatherback Turtle, Gulf of Mexico Fall Density',
+  # 'Leatherback Turtle, Gulf of Mexico Spring Density',
+  # 'Leatherback Turtle, Gulf of Mexico Summer Density',
+  # 'Leatherback Turtle, Gulf of Mexico Winter Density',
+  # 'Loggerhead Turtle, Atlantic Fall Density',
+  # 'Loggerhead Turtle, Atlantic Spring Density',
+  # 'Loggerhead Turtle, Atlantic Summer Density',
+  # 'Loggerhead Turtle, Atlantic Winter Density',
+  # 'Loggerhead Turtle, Gulf of Mexico Fall Density',
+  # 'Loggerhead Turtle, Gulf of Mexico Spring Density',
+  # 'Loggerhead Turtle, Gulf of Mexico Summer Density',
+  # 'Loggerhead Turtle, Gulf of Mexico Winter Density',
+  # 'Marine Mammal Low Frequency Sound Sensitivity Abundance',
+  # 'Marine Mammal Medium Frequency Sound Sensitivity Abundance',
+  # 'Marine Mammal Protection Act',
+  # 'Marine Mammal Species Richness',
+  # 'Marine Mammal Total Abundance',
+  # 'Marine Protected Areas Inventory',
+  # 'Military Operating Area Boundaries',
+  # 'Military Submarine Transit Lanes: Atlantic - Gulf of Mexico',
+  # 'Military Surface Grid Areas: Atlantic - Gulf of Mexico',
+  # 'MPA Inventory - MPAs by Fishing Restriction',
+  # 'MPA Inventory - MPAs by Government Level',
+  # 'NASCA Submarine Cables',
+  # 'National Environmental Policy Act',
+  # 'National Marine Fisheries Service Regions',
+  # 'National Marine Sanctuaries Act',
+  # 'NOAA Charted Submarine Cables',
+  # 'NOAA National Marine Sanctuaries',
+  # 'North Atlantic Right Whale: December Abundance',
+  # 'North Atlantic Right Whale: June Abundance',
+  # 'Ocean Sediment Thickness Contours',
+  # 'Ocean Uses',
+  # 'PaCSEA Seabird Density - All Surveys 2011-2012 Birds/km2',
+  # 'PaCSEA Seabird Density - Feb 2012 Birds-km2',
+  # 'PaCSEA Seabird Density - Jan 2011 Birds-km2',
+  # 'PaCSEA Seabird Density - July 2012 Birds-km2',
+  # 'PaCSEA Seabird Density - June 2011 Birds-km2',
+  # 'PaCSEA Seabird Density - Oct 2011 Birds-km2',
+  # 'PaCSEA Seabird Density - Sept 2012 Birds-km2',
+  # 'PaCSEA Seabird Density 7km - Original 2011-2012',
+  # 'Permitted Marine Hydrokinetic Projects',
+  # 'Pilot Boarding Areas',
+  # 'Pilot Boarding Stations',
+  # 'Pipeline Areas',
+  # 'Principal Ports',
+  # 'Proposed Coastal Critical Habitat Areas',
+  # 'Regulated Navigation Areas',
+  # 'Rivers and Harbors Act',
   'Seagrasses',
   'Unexploded Ordnance Areas',
   'Unexploded Ordnance Locations',
@@ -277,7 +276,6 @@ data_sets = [
   'Coast Guard Jurisdictions']
 
 # Iterate over data directory to search for .gdb and associated .lyr file
-# lyr_list = []
 gdb_list = []
 for d in data_sets:
   dir = os.path.join(data_dir, d)
@@ -285,43 +283,37 @@ for d in data_sets:
     for name in dirs:
       if '.gdb' in name:
         gdb_list.append({'dir': root, 'gdb': os.path.join(root, name)})
-        # for file in files:
-        #   if '.lyr' in file:
-        #     lyr = file.split('.')[0]
-        #     lyr_list.append({'dir': root, 
-        #                      'gdb': os.path.join(root, name), 
-        #                      'lyr': lyr.replace(' ', ''), 
-        #                      'tbl': 'gdb_' + re.sub("[^\w\s]", '_', lyr).replace(' ', '_').lower()})
-
+        
 # Create dataframe to pass back to R for handling.
 df = pd.DataFrame(gdb_list)
-```
-
-# Example Dataset Load
-```{r example-dataset, eval=F, class.source='fold-show'}
-dir <- "/share/data/marinecadastre.gov/Federal and State Waters/FederalAndStateWaters_dir"
-gdb <- "/share/data/marinecadastre.gov/Federal and State Waters/FederalAndStateWaters_dir/FederalAndStateWaters.gdb"
-# lyr <- "FederalAndStateWaters"
-# tbl <- "gdb_FederalAndStateWaters"
-load_mc_gdb(dir, gdb, T)  #, lyr, tbl, T)
 ```
 
 # Bulk Load Datasets
 ```{r bulk-load, eval=F, class.source='fold-show'}
 datasets_to_load <- data.frame(py$df)
 
+# Create new csv log for each day
+fname <- glue("gdb_loading_", format(Sys.time(), "%Y%m%d"), ".csv")
+
+# Initiate empty data.frame to keep track of data loading
+log_df <- data.frame(
+  data_dir=character(),
+  geodatabase=character(),
+  layer=character(),
+  table=character(),
+  tbl_exists=logical(),
+  loaded=logical(),
+  has_geom=logical()
+)
+
+# Write column names to log
+write_csv(log_df, fname)
+
 for (i in 1:nrow(datasets_to_load)) {
   dir <- datasets_to_load[i, 1]
   gdb <- datasets_to_load[i, 2]
-  load_mc_gdb(dir, gdb, T)
+  message(glue('\nGDB: {gdb}'))
+  message('--------------')
+  load_mc_gdb(log_df, fname, dir, gdb)
 }
-```
-
----
-
-# Write dataframe to csv
-```{r write_csv_log, eval=F, class.source='fold-show'}
-df
-f <- glue("gdb_loading_", format(Sys.time(), "%Y%m%d"), ".csv")
-write_csv(df, f)
 ```
