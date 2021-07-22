@@ -52,8 +52,8 @@ load_mc_gdb <- function(df, csv, dir, gdb) {
     # GDB layer name
     lyr <- sdf[[1]][[idx]]
   
-    tbl <- glue('gdb_', lyr)
     # Create db table name - max length of 63 bytes
+    tbl <- glue('gdb_', lyr)
     if (nchar(tbl) >= 63) {
       tbl <- str_trunc(tbl, 59, side="right", ellipsis=glue("_{idx}"))
     } 
@@ -75,14 +75,13 @@ load_mc_gdb <- function(df, csv, dir, gdb) {
       write.table(df, csv, append=T, sep=",", col.names=F, row.names=F, quote=F)
       next
     }
-    
     gdb2db(gdb, lyr, tbl)
     
     if(dbExistsTable(con, tbl)) {
-      message(glue('Success: {lyr} -> {tbl}'))
+      message(glue('SUCCESS: {lyr} -> {tbl}'))
       df[1,] = c(dir, gdb, lyr, tbl, T, T, T)
     } else {
-      message(glue('Failed to load: {lyr} -> {tbl}'))
+      message(glue('FAILES: {lyr} -> {tbl}'))
       df[1,] = c(dir, gdb, lyr, tbl, F, F, T)
     }
     write.table(df, csv, append=T, sep=",", col.names=F, row.names=F, quote=F)
@@ -91,8 +90,31 @@ load_mc_gdb <- function(df, csv, dir, gdb) {
 ```
 
 ---
+# (r) Compile list of GDBs to load
+```{r eval=F}
+library(here)
 
-# Compile list of GDBs to load
+#Define folder structure for moving between directories
+folder_from <- "~/github/apps"
+folder_to <- "~/data/marinecadastre.gov"
+
+#Search for .gdb and .lyr files and create full path
+fi_list <- fi_list_temp <- c()
+# for(i in c(".gdb$", ".lyr$")){
+for(i in c(".gdb$")){
+  # fi_list_temp <- list.files(pattern = i, path = gsub(folder_from, folder_to, here()), full.name = T, recursive = TRUE)
+  # fi_list_temp <- list.files(pattern = "\\.gdb$", path = "/share/data/marinecadastre.gov", full.name = T, recursive = TRUE)
+  fi_list_temp <- list.files(pattern = Sys.glob(".gdb$"), path = "/share/data/marinecadastre.gov", full.name = T, recursive = T)
+  fi_list <- c(fi_list, fi_list_temp)
+}
+
+#Create dataframe of links to .gdb and .lyr files
+fi_dataframe <- data.frame(file_folderpath = fi_list)
+fi_dataframe
+```
+
+
+# (python) Compile list of GDBs to load
 
 ***Requirement***
 `cd ~/.local/share/r-miniconda/envs/r-reticulate/bin | pip install pandas`
@@ -103,190 +125,20 @@ import re
 import pandas as pd
 
 data_dir = '/share/data/marinecadastre.gov'
-  
-data_sets = [
-  # 'Federal and State Waters',
-  # 'Fish Species Richness- Fall',
-  # 'Fish Species Richness- Spring',
-  # 'Fish Total Biomass- Fall'
-  # 'Fish Total Biomass- Spring',
-  # 'Formerly Used Defense Sites (Unexploded Ordnances)',
-  # 'Hawaii Benthic Habitat Map - Biological Cover',
-  # 'Hawaii Bottomfish - Catch per unit effort (catch per fishing trip)',
-  # 'Hawaii Brown Booby - Predicted Relative Abundance Aug - Oct',
-  # 'Hawaii Brown Booby - Presences Aug - Oct',
-  # 'Hawaii Humpback Whale - Predicted Relative Abundance Winter',
-  # 'Hawaii Humpback Whale - Presences Winter',
-  # 'Hawaii Reef Fish - Predicted Total Biomass',
-  # 'Hawaii Reef Fish - Total Biomass',
-  # 'Hawaii Speed of Surface Currents Summer',
-  # 'Hawaii Speed of Surface Currents Winter',
-  # 'Hawaii Spinner Dolphin - Predicted Relative Abundance Summer',
-  # 'Hawaii Spinner Dolphin - Predicted Relative Abundance Winter',
-  # 'Hawaii Spinner Dolphin - Presences Summer',
-  # 'Hawaii Spinner Dolphin - Presences Winter',
-  # 'Hawaii Wedge-tailed Shearwater - Predicted Relative Abundance Aug - Oct',
-  # 'Hawaii Wedge-tailed Shearwater - Presences Aug - Oct',
-  # 'Indian Lands',
-  # 'Individual Avian Species Abundance Models',
-  # 'Individual Deep-Sea Coral Species',
-  # 'Individual Marine Mammals Species Models',
-  # 'Kemps Ridley Turtle, Atlantic Fall Density',
-  # 'Kemps Ridley Turtle, Atlantic Spring Density',
-  # 'Kemps Ridley Turtle, Atlantic Summer Density',
-  # 'Kemps Ridley Turtle, Atlantic Winter Density',
-  # 'Leatherback Turtle, Atlantic Fall Density',
-  # 'Leatherback Turtle, Atlantic Spring Density',
-  # 'Leatherback Turtle, Atlantic Summer Density',
-  # 'Leatherback Turtle, Atlantic Winter Density',
-  # 'Leatherback Turtle, Gulf of Mexico Fall Density',
-  # 'Leatherback Turtle, Gulf of Mexico Spring Density',
-  # 'Leatherback Turtle, Gulf of Mexico Summer Density',
-  # 'Leatherback Turtle, Gulf of Mexico Winter Density',
-  # 'Loggerhead Turtle, Atlantic Fall Density',
-  # 'Loggerhead Turtle, Atlantic Spring Density',
-  # 'Loggerhead Turtle, Atlantic Summer Density',
-  # 'Loggerhead Turtle, Atlantic Winter Density',
-  # 'Loggerhead Turtle, Gulf of Mexico Fall Density',
-  # 'Loggerhead Turtle, Gulf of Mexico Spring Density',
-  # 'Loggerhead Turtle, Gulf of Mexico Summer Density',
-  # 'Loggerhead Turtle, Gulf of Mexico Winter Density',
-  # 'Marine Mammal Low Frequency Sound Sensitivity Abundance',
-  # 'Marine Mammal Medium Frequency Sound Sensitivity Abundance',
-  # 'Marine Mammal Protection Act',
-  # 'Marine Mammal Species Richness',
-  # 'Marine Mammal Total Abundance',
-  # 'Marine Protected Areas Inventory',
-  # 'Military Operating Area Boundaries',
-  # 'Military Submarine Transit Lanes: Atlantic - Gulf of Mexico',
-  # 'Military Surface Grid Areas: Atlantic - Gulf of Mexico',
-  # 'MPA Inventory - MPAs by Fishing Restriction',
-  # 'MPA Inventory - MPAs by Government Level',
-  # 'NASCA Submarine Cables',
-  # 'National Environmental Policy Act',
-  # 'National Marine Fisheries Service Regions',
-  # 'National Marine Sanctuaries Act',
-  # 'NOAA Charted Submarine Cables',
-  # 'NOAA National Marine Sanctuaries',
-  # 'North Atlantic Right Whale: December Abundance',
-  # 'North Atlantic Right Whale: June Abundance',
-  # 'Ocean Sediment Thickness Contours',
-  # 'Ocean Uses',
-  # 'PaCSEA Seabird Density - All Surveys 2011-2012 Birds/km2',
-  # 'PaCSEA Seabird Density - Feb 2012 Birds-km2',
-  # 'PaCSEA Seabird Density - Jan 2011 Birds-km2',
-  # 'PaCSEA Seabird Density - July 2012 Birds-km2',
-  # 'PaCSEA Seabird Density - June 2011 Birds-km2',
-  # 'PaCSEA Seabird Density - Oct 2011 Birds-km2',
-  # 'PaCSEA Seabird Density - Sept 2012 Birds-km2',
-  # 'PaCSEA Seabird Density 7km - Original 2011-2012',
-  # 'Permitted Marine Hydrokinetic Projects',
-  # 'Pilot Boarding Areas',
-  # 'Pilot Boarding Stations',
-  # 'Pipeline Areas',
-  # 'Principal Ports',
-  # 'Proposed Coastal Critical Habitat Areas',
-  # 'Regulated Navigation Areas',
-  # 'Rivers and Harbors Act',
-  'Seagrasses',
-  'Unexploded Ordnance Areas',
-  'Unexploded Ordnance Locations',
-  'US Atlantic Coast Fishing Atlas',
-  'West Coast Bottom Trawl Fishing Extent (2002-2006)',
-  'West Coast Bottom Trawl Fishing Extent (2006-2010)',
-  'West Coast Bottom Trawl Fishing Intensity (2002-2006)',
-  'West Coast Bottom Trawl Fishing Intensity (2006-2010)',
-  'West Coast Canopy-Forming Kelp, 1989-2014',
-  'West Coast Commercial Fishing Closures, 2015',
-  'West Coast EFH Conservation Areas',
-  'West Coast Fishing Ethnography',
-  'West Coast Mid-Water Trawl Fishing Extent (2002-2006)',
-  'West Coast Mid-Water Trawl Fishing Extent (2006-2010)',
-  'West Coast Mid-Water Trawl Fishing Intensity (2002-2006)',
-  'West Coast Mid-Water Trawl Fishing Intensity (2006-2010)',
-  'West Coast Recreational Fishing Closures, 2015',
-  'West Coast Rockfish Conservation Areas, 2015',
-  'West Coast USA Current and Historical Estuary Extent',
-  'West Coast USA Estuarine Biotic Habitat',
-  'Wrecks and Obstructions',
-  'Benthic Cover',
-  'Coastal Critical Habitat Designations',
-  'Coastal Energy Facilities',
-  'Coastal Zone Management Act Boundary',
-  'Danger Zones and Restricted Areas',
-  'Deep-Sea Coral Observations',
-  'Deep-Sea Soft Coral Habitat Suitability',
-  'Deep-Sea Stony Coral Habitat Suitability',
-  'Deepwater Ports',
-  'Department of Defense Offshore Wind Mission Compatibility Assessments',
-  'Endangered Species Act',
-  'Gulf of Alaska Margin Bathymetry',
-  'Gulf of Mexico Deepwater Bathymetry Contours - BOEM 100 ft',
-  'Gulf of Mexico Deepwater Bathymetry Contours - BOEM 100 m',
-  'Gulf of Mexico Deepwater Bathymetry Contours - BOEM 1000 ft',
-  'Gulf of Mexico Deepwater Bathymetry Contours - BOEM 500 ft',
-  'Gulf of Mexico Deepwater Bathymetry Contours - BOEM 500 m',
-  'Gulf of Mexico Deepwater Bathymetry Contours - NOAA 100 m',
-  'Gulf of Mexico Deepwater Bathymetry Contours - NOAA 1000 ft',
-  'Gulf of Mexico Deepwater Bathymetry Contours - NOAA 500 ft',
-  'Gulf of Mexico Deepwater Bathymetry Contours - NOAA 500 m',
-  'Gulf of Mexico Deepwater Bathymetry with Hill Shade',
-  'Gulf of Mexico Outer Continental Shelf Blocks with Significant Sand Resources',
-  'High Frequency Radar Locations',
-  'Line Islands Bathymetry',
-  'Mariana Trench, Guam, and Northern Mariana Islands Bathymetry',
-  'Mendocino Ridge Bathymetry',
-  'Necker Ridge Bathymetry',
-  'Nitrate Mean Concentration',
-  'NOAA NOS Hydrographic Survey Data',
-  'Ocean Current Resource Potential: Mean Power Density',
-  'Ocean Current Resource Potential: Mean Speed',
-  'Outer Continental Shelf Lands Act',
-  'Phosphate Mean Concentration',
-  'Raster Nautical Charts',
-  'Sigsbee and Florida Escarpment Bathymetry',
-  'Silicate Mean Concentration',
-  '2013 Vessel Density',
-  '2015 Vessel Transit Counts: All Vessels',
-  '2016 Vessel Transit Counts: All Vessels',
-  '2017 Vessel Transit Counts: All Vessels',
-  'Active Oil and Gas Leases',
-  'AIS Vessel Tracks 2019',
-  'Alaska Native Corporations',
-  'Alaska Native Villages',
-  'Anchorage Areas',
-  'Annual Mean Chlorophyll-a Concentration',
-  'Annual Mean Surface Aragonite Saturation State',
-  'Aquaculture',
-  'Artificial Reefs',
-  'Atlantic Continental Margin Bathymetry',
-  'Atlantic Fishing Revenue Intensity, 2007-2012',
-  'Avian Higher Collision Sensitivity Abundance',
-  'Avian Higher Collision Sensitivity Species Richness',
-  'Avian Higher Displacement Sensitivity Abundance',
-  'Avian Higher Displacement Sensitivity Species Richness',
-  'Avian Species Richness',
-  'Avian Total Relative Abundance',
-  'Bathymetric Contours',
-  'Beach Nourishment Projects',
-  'Block Island Transmission Cables',
-  'Block Island Wind Turbine Locations',
-  'Bowers Ridge and Beringian Margin Bathymetry',
-  'California Seafloor Mapping Index',
-  'Coast Guard Jurisdictions']
 
-# Iterate over data directory to search for .gdb and associated .lyr file
+# Iterate over data directory to search for ".gdb"
 gdb_list = []
-for d in data_sets:
+for d in os.listdir(data_dir):
   dir = os.path.join(data_dir, d)
   for root, dirs, files in os.walk(dir):
     for name in dirs:
       if '.gdb' in name:
         gdb_list.append({'dir': root, 'gdb': os.path.join(root, name)})
-        
+
 # Create dataframe to pass back to R for handling.
 df = pd.DataFrame(gdb_list)
 ```
+
 
 # Bulk Load Datasets
 ```{r bulk-load, eval=F, class.source='fold-show'}
