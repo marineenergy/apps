@@ -34,7 +34,9 @@ docs_ixns <- docs %>%
     protection_mitigation_and_enhancement          = first(protection_mitigation_and_enhancement),
     bmps_applied                                   = first(bmps_applied),
     .groups = "drop") %>% 
-  tibble::rownames_to_column("rowid")
+  tibble::rownames_to_column("rowid") %>% 
+  mutate(
+    rowid = as.integer(rowid))
 
 docs <- docs %>% 
   left_join(
@@ -125,6 +127,7 @@ DBI::dbListTables(con) %>% sort() %>% stringr::str_subset("^shp_", negate=T)
 
 
 tbl(con, "ferc_docs")
+tbl(con, "ferc_doc_tags")
 ```
 
 
