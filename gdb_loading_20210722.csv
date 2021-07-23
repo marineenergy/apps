@@ -1,0 +1,5 @@
+data_dir,geodatabase,layer,table,tbl_exists,loaded,has_geom
+/share/data/marinecadastre.gov/Unexploded Ordnance Areas/UnexplodedOrdnance_dir,/share/data/marinecadastre.gov/Unexploded Ordnance Areas/UnexplodedOrdnance_dir/UnexplodedOrdnance.gdb,UnexplodedOrdnanceAreas,gdb_UnexplodedOrdnanceAreas,TRUE,TRUE,TRUE
+/share/data/marinecadastre.gov/Unexploded Ordnance Areas/UnexplodedOrdnance_dir,/share/data/marinecadastre.gov/Unexploded Ordnance Areas/UnexplodedOrdnance_dir/UnexplodedOrdnance.gdb,UnexplodedOrdnanceLocations,gdb_UnexplodedOrdnanceLocations,TRUE,TRUE,TRUE
+/share/data/marinecadastre.gov/Unexploded Ordnance Locations/UnexplodedOrdnance_dir,/share/data/marinecadastre.gov/Unexploded Ordnance Locations/UnexplodedOrdnance_dir/UnexplodedOrdnance.gdb,UnexplodedOrdnanceAreas,gdb_UnexplodedOrdnanceAreas,TRUE,FALSE,TRUE
+/share/data/marinecadastre.gov/Unexploded Ordnance Locations/UnexplodedOrdnance_dir,/share/data/marinecadastre.gov/Unexploded Ordnance Locations/UnexplodedOrdnance_dir/UnexplodedOrdnance.gdb,UnexplodedOrdnanceLocations,gdb_UnexplodedOrdnanceLocations,TRUE,FALSE,TRUE

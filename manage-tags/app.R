@@ -4,7 +4,8 @@ librarian::shelf(
 source(here("functions.R"))
 
 # mgt_tags ----
-mgt_csv <- here("data/tethys_mgt.csv")
+mgt_csv      <- here("data/tethys_mgt.csv")
+mgt_tags_csv <- here("data/tethys_mgt_tags.csv")
 
 stopifnot(file.exists(mgt_csv))
 d_mgt <- read_csv(mgt_csv)
@@ -14,19 +15,23 @@ d_mgt_tags <- d_mgt %>%
     Technology, Stressor, 
     Management = `Management Measure Category`,
     Phase = `Phase of Project`) %>% 
-  pivot_longer(everything(), names_to="category", values_to="tag_mgt") %>% 
-  group_by(category, tag_mgt) %>% 
+  pivot_longer(everything(), names_to="tag_category", values_to="tag_content") %>% 
+  group_by(tag_category, tag_content) %>% 
   summarise(.groups="drop") %>% 
   bind_rows(
     d_mgt %>% 
       select(
-        Receptor, ReceptorSpecifics = `Specific Receptor`) %>% 
-      group_by(Receptor, ReceptorSpecifics) %>% 
+        Receptor, `Specific Receptor`) %>% 
+      group_by(Receptor, `Specific Receptor`) %>% 
       summarise(.groups="drop") %>% 
       mutate(
-        category = "Receptor") %>% 
-      select(category, tag_mgt = Receptor, ReceptorSpecifics)) %>% 
-  arrange(category, tag_mgt, ReceptorSpecifics)
+        tag_category = "Receptor") %>% 
+      select(tag_category, tag_content = Receptor, tag_mgt_ReceptorSpecifics = `Specific Receptor`)) %>% 
+  arrange(tag_category, tag_content, tag_mgt_ReceptorSpecifics) %>% 
+  mutate(
+    content = "tethys_mgt") %>% 
+  relocate(content)
+write_csv(d_mgt_tags, mgt_tags_csv)
 
 ui <- fluidPage(
 

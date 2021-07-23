@@ -3,7 +3,7 @@ if (!require(librarian)){
   library(librarian)
 }
 shelf(
-  dplyr)
+  dplyr, pool, shiny)
 
 here <- here::here
 glue <- glue::glue

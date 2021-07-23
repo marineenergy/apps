@@ -1,18 +1,14 @@
-# if (!require(librarian)){
-#   remotes::install_github("DesiQuintans/librarian")
-#   library(librarian)
-# }
-# shelf(
-#   DBI, dplyr, DT, fs, glue, here, RPostgres, stringr)
+librarian::shelf(
+  dbplyr, dplyr, pool, shiny, stringr)
 
 db_params <- switch(machine, # common.R:machine
-  Caleb  = 
+  Caleb  =
     list(
       dbname  = "dev",
       host    = "localhost",
       user    = "cgrant",
       pwd_txt = "../../pwd.txt"),
-  Ben = 
+  Ben =
     list(
       dbname  = "gis",
       host    = "marineenergy.app",
@@ -24,15 +20,35 @@ db_params <- switch(machine, # common.R:machine
     user    = "admin",
     pwd_txt = "/share/.password_mhk-env.us"))
 
-if (!exists("con"))
-  con <<- DBI::dbConnect(
-    RPostgres::Postgres(),
-    dbname   = db_params$dbname,
-    host     = db_params$host,
-    port     = 5432,
-    user     = db_params$user,
-    password = readLines(db_params$pwd_txt))
-# DBI::dbDisconnect(con)
+# con <<- DBI::dbConnect(
+#   RPostgres::Postgres(),
+#   dbname   = db_params$dbname,
+#   host     = db_params$host,
+#   port     = 5432,
+#   user     = db_params$user,
+#   password = readLines(db_params$pwd_txt))
+
+con <<- pool::dbPool(
+  drv      = RPostgres::Postgres(),
+  dbname   = db_params$dbname,
+  host     = db_params$host,
+  port     = 5432,
+  user     = db_params$user,
+  password = readLines(db_params$pwd_txt))
+
+shiny::onStop(function() {
+  pool::poolClose(con)
+})
+
+# use conn to preview SQL, but con for st_read() to get spatial geometries
+# conn <<- connections::connection_open(
+#   RPostgres::Postgres(),
+#   dbname   = db_params$dbname,
+#   host     = db_params$host,
+#   port     = 5432,
+#   user     = db_params$user,
+#   password = readLines(db_params$pwd_txt))
+
 
 # tbls <- dbListTables(con) %>% sort(); tbls
 
@@ -57,6 +73,3 @@ drop_d <- function(d_tbl){
   DBI::dbSendQuery(con, glue("SELECT DropGeometryTable ('public','{d_tbl}');"))
 }
 # TODO: rename drop_d -> drop_tbl
-
-
-

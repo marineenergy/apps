@@ -347,3 +347,29 @@ dataset_shps4db %>%
 #   DT::datatable(options = list(pageLength = 50))
 ```
 
+
+## Reading gdb: Federal and State Waters
+
+This is an Esri geodatabase (*.gdb) 
+
+```{r}
+gdb <- "/share/data/marinecadastre.gov/Federal and State Waters/FederalAndStateWaters_dir/FederalAndStateWaters.gdb"
+
+source(here::here("functions.R"))
+
+library(sf)
+
+sf::st_layers(gdb)
+# Driver: OpenFileGDB 
+# Available layers:
+#              layer_name geometry_type features fields
+# 1 FederalAndStateWaters Multi Polygon       40      6
+# plys <- sf::read_sf(gdb, lyr)
+
+lyr <- "FederalAndStateWaters"
+tbl <- "gdb_FederalAndStateWaters"
+gdb2db(gdb, lyr, tbl)
+  
+dbListTables(con) %>% sort()
+```
+

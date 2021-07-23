@@ -4,12 +4,28 @@ get_tags <- function(){
     filter(tag != category) %>% 
     mutate(
       tag_sql = as.character(tag_sql),
-      tag = purrr::map2_chr(tag, category, function(tag, category){
-        stringr::str_replace(tag, glue("{category}/"), "")}),
-      tag_named = purrr::map2(tag_sql, tag, setNames),
-      tag_html  = purrr::map2_chr(tag, category, function(tag, category){
-        glue("<span class='me-tag me-{tolower(category)}'>{tag}</span>") })) %>% 
-    arrange(category, tag)
+      tag_named = purrr::map2(tag_sql, tag_nocat, setNames),
+      tag_html  = glue("<span class='me-tag me-{cat}'>{tag}</span>")) %>% 
+    arrange(desc(category), tag)
+}
+
+get_tags_html <- function(rid, tbl_tags = "ferc_doc_tags"){
+  # rid = 1; tbl_tags = "ferc_doc_tags"
+  tbl(con, tbl_tags) %>% 
+    filter(rowid == !!rid, !is.na(tag_sql)) %>% 
+    # select(rowid, tag_sql) %>% 
+    distinct(rowid, tag_sql) %>% 
+    collect() %>% 
+    mutate(
+      tag_sql = as.character(tag_sql)) %>%
+    left_join(
+      d_tags %>% 
+        select(tag_sql, category, tag, tag_html),
+      by = "tag_sql") %>% 
+    filter(!is.na(tag)) %>% 
+    arrange(desc(category), tag) %>% 
+    pull(tag_html) %>% 
+    paste(collapse = " ")
 }
 
 get_rowids_with_ixn <- function(db_tbl, ixn){

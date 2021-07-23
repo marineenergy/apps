@@ -1,0 +1,171 @@
+---
+title: "Load geodatabase layers scraped from MarineCadastre.gov to database"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+editor_options: 
+  chunk_output_type: console
+---
+
+# TODO
+
+1. Convert python chunk to R
+1. Determine method for truncating names: 
+    - GDB: `GDB: /share/data/marinecadastre.gov/Hawaii Benthic Habitat Map - Biological Cover/GIS-Data_FileGeodatabase_Chapter-3_Benthics_dir/MHI-Biogeographic-Assessment_Chapter-3_Benthics_Public.gdb`
+    - `NOTICE:  identifier "gdb_Shallow_CompiledHabitatRecords_Benthic_Habitat_VideoPhotoLocations" will be truncated to "gdb_Shallow_CompiledHabitatRecords_Benthic_Habitat_VideoPhotoLo"`
+1. Error handling: `Error in st_sf(x, sf_column_name = value) : no simple features geometry column present`
+    - GDB: `/share/data/marinecadastre.gov/Hawaii Benthic Habitat Map - Biological Cover/GIS-Data_FileGeodatabase_Chapter-3_Benthics_dir/MHI-Biogeographic-Assessment_Chapter-3_Benthics_Public.gdb`
+    - Layer: `Shallow_CompiledHabitatRecords_Benthic_Habitat_VideoPhotoLocations_Key`
+1. Postgresql table names limited to max length of 63 bytes
+
+# Setup
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
+
+library(tidyverse)
+library(rvest)
+library(webshot)
+library(stringr)
+library(DT)
+library(glue)
+library(dplyr)
+library(tibble)
+library(sf)
+library(reticulate)
+```
+
+# Load gdb layers
+```{r load_lyrs, class.source='fold-show'}
+# load_mc_gdb(<dataframe for logging>, <csv log>, <data directory>, <geodatabase path>)
+load_mc_gdb <- function(df, csv, dir, gdb) {
+  source(here::here("functions.R"))
+  
+  # Capture layers existing in gdb
+  sdf <- sf::st_layers(gdb)
+  
+  # Count layers in gdb
+  lyr_cnt <- length(sdf[[1]])
+  
+  for (idx in (1: lyr_cnt)) {
+    # GDB layer name
+    lyr <- sdf[[1]][[idx]]
+  
+    # Create db table name - max length of 63 bytes
+    tbl <- glue('gdb_', lyr)
+    if (nchar(tbl) >= 63) {
+      tbl <- str_trunc(tbl, 59, side="right", ellipsis=glue("_{idx}"))
+    } 
+    
+    message(glue('[{idx}/{lyr_cnt}] LAYER: {lyr}'))
+    # sf::read_sf(gdb, lyr)
+
+    # No geom type
+    if (is.na(sdf[[2]][[idx]])) {
+      message('No geometry type, skipping\n')
+      df[1,] = c(dir, gdb, lyr, tbl, F, F, F)
+      write.table(df, csv, append=T, sep=",", col.names=F, row.names=F, quote=F)
+      next
+    }
+    # Layer exists in database
+    if(dbExistsTable(con, tbl)) {
+      message('Already exists, skipping\n')
+      df[1,] = c(dir, gdb, lyr, tbl, T, F, T)
+      write.table(df, csv, append=T, sep=",", col.names=F, row.names=F, quote=F)
+      next
+    }
+    gdb2db(gdb, lyr, tbl)
+    
+    if(dbExistsTable(con, tbl)) {
+      message(glue('SUCCESS: {lyr} -> {tbl}'))
+      df[1,] = c(dir, gdb, lyr, tbl, T, T, T)
+    } else {
+      message(glue('FAILES: {lyr} -> {tbl}'))
+      df[1,] = c(dir, gdb, lyr, tbl, F, F, T)
+    }
+    write.table(df, csv, append=T, sep=",", col.names=F, row.names=F, quote=F)
+  }
+}
+```
+
+---
+# (r) Compile list of GDBs to load
+```{r eval=F}
+library(here)
+
+#Define folder structure for moving between directories
+folder_from <- "~/github/apps"
+folder_to <- "~/data/marinecadastre.gov"
+
+#Search for .gdb and .lyr files and create full path
+fi_list <- fi_list_temp <- c()
+# for(i in c(".gdb$", ".lyr$")){
+for(i in c(".gdb$")){
+  # fi_list_temp <- list.files(pattern = i, path = gsub(folder_from, folder_to, here()), full.name = T, recursive = TRUE)
+  # fi_list_temp <- list.files(pattern = "\\.gdb$", path = "/share/data/marinecadastre.gov", full.name = T, recursive = TRUE)
+  fi_list_temp <- list.files(pattern = Sys.glob(".gdb$"), path = "/share/data/marinecadastre.gov", full.name = T, recursive = T)
+  fi_list <- c(fi_list, fi_list_temp)
+}
+
+#Create dataframe of links to .gdb and .lyr files
+fi_dataframe <- data.frame(file_folderpath = fi_list)
+fi_dataframe
+```
+
+
+# (python) Compile list of GDBs to load
+
+***Requirement***
+`cd ~/.local/share/r-miniconda/envs/r-reticulate/bin | pip install pandas`
+
+```{python, class.source='fold-show'}
+import os
+import re
+import pandas as pd
+
+data_dir = '/share/data/marinecadastre.gov'
+
+# Iterate over data directory to search for ".gdb"
+gdb_list = []
+for d in os.listdir(data_dir):
+  dir = os.path.join(data_dir, d)
+  for root, dirs, files in os.walk(dir):
+    for name in dirs:
+      if '.gdb' in name:
+        gdb_list.append({'dir': root, 'gdb': os.path.join(root, name)})
+
+# Create dataframe to pass back to R for handling.
+df = pd.DataFrame(gdb_list)
+```
+
+
+# Bulk Load Datasets
+```{r bulk-load, eval=F, class.source='fold-show'}
+datasets_to_load <- data.frame(py$df)
+
+# Create new csv log for each day
+fname <- glue("gdb_loading_", format(Sys.time(), "%Y%m%d"), ".csv")
+
+# Initiate empty data.frame to keep track of data loading
+log_df <- data.frame(
+  data_dir=character(),
+  geodatabase=character(),
+  layer=character(),
+  table=character(),
+  tbl_exists=logical(),
+  loaded=logical(),
+  has_geom=logical()
+)
+
+# Write column names to log
+write_csv(log_df, fname)
+
+for (i in 1:nrow(datasets_to_load)) {
+  dir <- datasets_to_load[i, 1]
+  gdb <- datasets_to_load[i, 2]
+  message(glue('\nGDB: {gdb}'))
+  message('--------------')
+  load_mc_gdb(log_df, fname, dir, gdb)
+}
+```

@@ -8,10 +8,9 @@ source(file.path(dir_scripts, "common_2.R"))
 source(file.path(dir_scripts, "db.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
 
-library(shiny)
 librarian::shelf(
-  DT, googleAuthR, htmltools, httr, jsonlite, leaflet, mapedit, plotly, purrr,
-  shinydashboard, shinydashboardPlus, shinyjs, shinyWidgets)
+  DT, r-lib/gargle, MarkEdmondson1234/googleAuthR, htmltools, httr, jsonlite, leaflet, mapedit, plotly, purrr,
+  shinydashboard, RinteRface/shinydashboardPlus, shiny, shinyjs, shinyWidgets)
 
 # navbar ----
 dashboardHeader <- function(
@@ -160,21 +159,18 @@ navbarMenu <- function(..., id = NULL) {
       `data-value` = "null"))
 }
 
-
 # tag_choices ----
-df_tags <- get_tags()
-
 tag_choices = list()
-for (cat in unique(df_tags$category)){ # (cat = df_tags$category[1])
+for (category in unique(d_tags$category)){ # category = d_tags$category[1]
   tag_choices <- append(
     tag_choices,
     setNames(
       list(
-        df_tags %>% 
-          filter(category == cat) %>% 
+        d_tags %>% 
+          filter(category == !!category) %>% 
           pull(tag_named) %>% 
           unlist()),
-      cat))
+      category))
 }
 
 
@@ -230,12 +226,34 @@ map_edit <- leaflet(
 load_projects()
 
 # management ----
-d_mgt <- tbl(con, "tethys_mgt") %>% 
-  rename(
-    Category = `Management Measure Category`,
-    Phase    = `Phase of Project`)
+tbl_tags     <- tbl(con, "tags") 
+tbl_mgt      <- tbl(con, "tethys_mgt") 
+tbl_mgt_tags <- tbl(con, "tethys_mgt_tags")
+d_mgt_tags <- tbl_mgt %>% 
+  select(rowid, Interaction, `Specific Management Measures`, `Implications of Measure`) %>% 
+  left_join(
+    tbl_mgt_tags, by = "rowid") #%>% 
+  # left_join(
+  #   tbl_tags, by = "tag_sql")
+  
+  # rename(
+  #   Category = `Management Measure Category`,
+  #   Phase    = `Phase of Project`)
+# d_mgt %>% 
+#   select()
 
-d_mgt_n <- d_mgt %>% summarize(n = n()) %>% pull(n)
+d_mgt_n <- tbl_mgt %>% summarize(n = n()) %>% pull(n)
+
+# documents ----
+d_docs <- tbl(con, "ferc_docs") # %>% 
+  # rename(
+  #   Category = `Management Measure Category`,
+  #   Phase    = `Phase of Project`)
+
+d_doc_tags <- tbl(con, "ferc_doc_tags")
+d_tags     <- get_tags()
+
+d_docs_n <- d_docs %>% summarize(n = n()) %>% pull(n)
 
 # reports ----
 dir_rpt_pfx <- "/share/user_reports"
@@ -257,7 +275,7 @@ get_user_reports <- function(email){
     "https://api.marineenergy.app/user_reports", 
     query = list(email=email))
   # r$status
-  httr::content(r, col_types=readr::cols())
+  httr::content(r, col_types=readr::cols(), encoding = "UTF-8")
 }
 
 get_user_reports_last_modified <- function(email){
@@ -267,7 +285,7 @@ get_user_reports_last_modified <- function(email){
   httr::GET(
     "https://api.marineenergy.app/user_reports_last_modified", 
     query = list(email=email)) %>% 
-    httr::content()
+    httr::content(encoding = "UTF-8")
 }
 
 del_user_report <- function(email, rpt){
@@ -284,7 +302,7 @@ del_user_report <- function(email, rpt){
     query = list(email=email, report=rpt, token=tkn))
   # TODO: handle error
   #   if (r$status_code == 500)...
-  httr::content(r)
+  httr::content(r, encoding = "UTF-8")
 }
 
 file_icons = c(html = "file", pdf="file-pdf", docx = "file-word")
