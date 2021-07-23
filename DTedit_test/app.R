@@ -1,11 +1,14 @@
 # https://rpubs.com/DavidFong/DTedit
 # https://github.com/DavidPatShuiFong/DTedit/blob/master/inst/shiny_demo/app.R
 
+# libraries ----
+dir_scripts <<- here::here("scripts")
+source(file.path(dir_scripts, "common_2.R"))
+source(file.path(dir_scripts, "db.R"))
+
 library(shiny)
 library(RSQLite)
 library(DTedit)
-
-
 
 # ferc_docs example ----
 # #38 read & write to ferc_docs and ferc_doc_tags
@@ -15,8 +18,21 @@ library(DTedit)
 ##### load ferc_docs
 # conn <- dbConnect(RSQLite::SQLite(), "books.sqlite")
 # conn <- dbConnect(RSQLite::SQLite(), "ferc_docs")
-ferc_docs <- readr::read_csv(here::here("data/ferc_docs.csv")) 
+# ferc_docs <- readr::read_csv(here::here("data/ferc_docs.csv")) 
   
+
+tbl_ferc_docs     <- tbl(con, "ferc_docs")     # main field: key_interaction
+tbl_ferc_doc_tags <- tbl(con, "ferc_doc_tags") # linked by rowid
+
+d_ferc_docs <- tbl_ferc_docs %>% 
+  left_join(
+    tbl_ferc_doc_tags,
+    by = "rowid") %>% 
+  collect()
+
+# add/update a single row?
+# write whole table:
+#   DBI::dbWriteTable(con, "")
 
 # callback fxns for inserting, updating, and deleting data
 ferc.insert.callback <- function(data, row) {
@@ -34,12 +50,13 @@ ferc.delete.callback <- function(data, row) {
   return(d)
 }
 
-
-
 getFERC <- function(ferc_docs) {
   # res <- dbSendQuery(conn, "SELECT * FROM books")
   # docs <- dbFetch(res)
   # dbClearResult(res)
+  
+  con
+  
   docs            <- ferc_docs
   docs$doc        <- strsplit(docs$doc, ',')
   docs$receptor   <- as.factor(docs$receptor)
