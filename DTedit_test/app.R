@@ -21,6 +21,8 @@ library(DTedit)
 # ferc_docs <- readr::read_csv(here::here("data/ferc_docs.csv")) 
   
 
+# test commit
+
 tbl_ferc_docs     <- tbl(con, "ferc_docs")     # main field: key_interaction
 tbl_ferc_doc_tags <- tbl(con, "ferc_doc_tags") # linked by rowid
 
