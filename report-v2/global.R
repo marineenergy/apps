@@ -8,10 +8,9 @@ source(file.path(dir_scripts, "common_2.R"))
 source(file.path(dir_scripts, "db.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
 
-library(shiny)
 librarian::shelf(
   DT, googleAuthR, htmltools, httr, jsonlite, leaflet, mapedit, plotly, purrr,
-  shinydashboard, shinydashboardPlus, shinyjs, shinyWidgets)
+  shinydashboard, shinydashboardPlus, shiny, shinyjs, shinyWidgets)
 
 # navbar ----
 dashboardHeader <- function(

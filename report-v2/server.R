@@ -475,7 +475,9 @@ server <- function(input, output, session) {
   })
   
   # management ----
-  get_mgt <- reactive({
+  
+  #* get_mgt ----
+  get_mgt() <- reactive({
     if (length(values$ixns) == 0){
       d <- d_mgt
     } else {
@@ -489,6 +491,7 @@ server <- function(input, output, session) {
       collect()
   })
   
+  #* box_mgt ----
   output$box_mgt <- renderText({
     n_ixns <- length(values$ixns)
     ifelse(
@@ -497,6 +500,7 @@ server <- function(input, output, session) {
       HTML(glue("Management Measures <small>({nrow(get_mgt())} of {d_mgt_n} rows; filtered by {n_ixns} interactions)</small>")))
   })
   
+  #* tbl_mgt ----
   output$tbl_mgt <- renderDataTable({
     get_mgt()
   })

@@ -6,7 +6,7 @@
 #   DBI, dplyr, DT, fs, glue, here, RPostgres, stringr)
 
 shelf(
-  pool)
+  pool, shiny)
 
 db_params <- switch(machine, # common.R:machine
   Caleb  =
@@ -35,7 +35,7 @@ db_params <- switch(machine, # common.R:machine
 #   user     = db_params$user,
 #   password = readLines(db_params$pwd_txt))
 
-con <<- dbPool(
+con <<- pool::dbPool(
   drv      = RPostgres::Postgres(),
   dbname   = db_params$dbname,
   host     = db_params$host,
@@ -43,8 +43,8 @@ con <<- dbPool(
   user     = db_params$user,
   password = readLines(db_params$pwd_txt))
 
-onStop(function() {
-  poolClose(con)
+shiny::onStop(function() {
+  pool::poolClose(con)
 })
 
 # use conn to preview SQL, but con for st_read() to get spatial geometries
