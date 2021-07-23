@@ -1,12 +1,5 @@
-# if (!require(librarian)){
-#   remotes::install_github("DesiQuintans/librarian")
-#   library(librarian)
-# }
-# shelf(
-#   DBI, dplyr, DT, fs, glue, here, RPostgres, stringr)
-
-shelf(
-  pool, shiny)
+librarian::shelf(
+  dbplyr, dplyr, pool, shiny, stringr)
 
 db_params <- switch(machine, # common.R:machine
   Caleb  =

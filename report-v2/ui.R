@@ -104,7 +104,7 @@ ui <- dashboardPage(
         fluidRow(
           box(
             title = uiOutput("box_mgt", inline=T), width = 12,
-            dataTableOutput("tbl_mgt")))),
+            DT::dataTableOutput("tbl_mgt")))),
       
       #** tab_docs ----
       tabItem(

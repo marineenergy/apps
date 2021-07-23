@@ -124,33 +124,54 @@ update_tags <- function(){
   # DBI::dbSendQuery(con, "ALTER TABLE tags RENAME TO tags_0;")
   # dbListTables(con) %>% sort()
   
-  
   # read tags from gsheet
   tags  <- get_gsheet_data("tags") %>% 
     select(category, tag_sql, tag)
   
   tag_lookup <- get_gsheet_data("tag_lookup") %>% 
-    select(content, tag_category, tag_content, tag_sql)
+    select(content, tag_category, content_tag, tag_sql)
   
   # check tag_sql valid for ltree; 
   ck_valid_tag_sql <- function(d){
     d %>% 
       mutate(
         # ltree allows only certain characters
-        tag_sql_fix = str_replace_all(tag_sql, "[^A-Za-z0-9_.]", ""),
+        tag_sql_fix = stringr::str_replace_all(tag_sql, "[^A-Za-z0-9_.]", ""),
         tag_sql_fix = ifelse(tag_sql_fix == tag_sql, NA, tag_sql_fix)) %>% 
       filter(!is.na(tag_sql_fix))
   }
   
-  tags_tofix <- ck_tag_sql(tags)
+  tags_tofix <- ck_valid_tag_sql(tags)
   stopifnot(nrow(tags_tofix) == 0)
   
-  tag_lookup_tofix <- ck_tag_sql(tags)
+  tag_lookup_tofix <- ck_valid_tag_sql(tags)
   stopifnot(nrow(tag_lookup_tofix) == 0)
   
   # check all tag_lookup.tag_sql in tags.tag_sql
   tag_lookup_notin_tags <- anti_join(tag_lookup, tags, by="tag_sql")
   stopifnot(tag_lookup_notin_tags == 0)
+  
+  # provide plural form if tagged at highest level of category
+  categories_all <- c(
+    Technology  = "All Technologies",
+    Receptor    = "All Receptors",
+    Stressor    = "All Stressors",
+    Phase       = "All Phases",
+    Management  = "All Management Categories",
+    Consequence = "All Consequences")
+  stopifnot(all(tags %>% distinct(category) %>% pull(category) %in% names(categories_all)))
+  
+  # add columns for fast, pretty printing to shiny and reports
+  tags <- tags %>% 
+    mutate(
+      cat       = tolower(category),
+      tag_nocat = purrr::map2_chr(tag, category, function(tag, category){
+        stringr::str_replace(tag, glue("{category}/"), "")}),
+      tag_nocat = ifelse(
+        tag_nocat == tag,
+        # provide plural form if tagged at highest level of category
+        categories_all[tag_nocat],
+        tag_nocat))
   
   # write tags to db
   dbWriteTable(con, "tags", tags, overwrite=T)
@@ -175,15 +196,12 @@ update_ferc_docs <- function(){
   
   # read tags from gsheet
   docs  <- get_gsheet_data("documents")
-  
-  
-  
+
   stressors <- docs %>% 
     select(stressor)
-  
-  
+
   tag_lookup <- get_gsheet_data("tag_lookup") %>% 
-    select(content, tag_category, tag_content, tag_sql)
+    select(content, tag_category, content_tag, tag_sql)
   
   # check tag_sql valid for ltree; 
   ck_valid_tag_sql <- function(d){
