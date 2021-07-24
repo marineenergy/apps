@@ -226,34 +226,18 @@ map_edit <- leaflet(
 load_projects()
 
 # management ----
-tbl_tags     <- tbl(con, "tags") 
-tbl_mgt      <- tbl(con, "tethys_mgt") 
-tbl_mgt_tags <- tbl(con, "tethys_mgt_tags")
-d_mgt_tags <- tbl_mgt %>% 
+d_mgt_tags <- tbl(con, "tethys_mgt") %>% 
   select(rowid, Interaction, `Specific Management Measures`, `Implications of Measure`) %>% 
   left_join(
-    tbl_mgt_tags, by = "rowid") #%>% 
-  # left_join(
-  #   tbl_tags, by = "tag_sql")
-  
-  # rename(
-  #   Category = `Management Measure Category`,
-  #   Phase    = `Phase of Project`)
-# d_mgt %>% 
-#   select()
-
-d_mgt_n <- tbl_mgt %>% summarize(n = n()) %>% pull(n)
+    tbl(con, "tethys_mgt_tags"), by = "rowid")
+d_mgt_n <- tbl(con, "tethys_mgt") %>% summarize(n = n()) %>% pull(n)
 
 # documents ----
-d_docs <- tbl(con, "ferc_docs") # %>% 
-  # rename(
-  #   Category = `Management Measure Category`,
-  #   Phase    = `Phase of Project`)
-
-d_doc_tags <- tbl(con, "ferc_doc_tags")
-d_tags     <- get_tags()
-
-d_docs_n <- d_docs %>% summarize(n = n()) %>% pull(n)
+d_docs <- tbl(con, "ferc_docs") %>% 
+  left_join(
+    tbl(con, "ferc_doc_tags"),
+    by = "rowid")
+d_docs_n <- tbl(con, "ferc_docs") %>% summarize(n = n()) %>% pull(n)
 
 # reports ----
 dir_rpt_pfx <- "/share/user_reports"
@@ -306,3 +290,29 @@ del_user_report <- function(email, rpt){
 }
 
 file_icons = c(html = "file", pdf="file-pdf", docx = "file-word")
+
+tbl_tags   <- tbl(con, "tags")
+
+d_to_tags_html <- function(d){
+  y <- d %>% 
+    left_join(
+      tbl_tags %>% 
+        select(tag_sql, cat, tag_nocat),
+      by = "tag_sql") %>% 
+    mutate(
+      tag_html = paste0("<span class='me-tag me-", cat, "'>", tag_nocat, "</span>")) %>% 
+    arrange(rowid, desc(cat), tag_nocat) %>% 
+    select(-tag_sql, -cat, -tag_nocat)
+  
+  cols_grpby <- setdiff(colnames(y), "tag_html")
+  
+  y %>% 
+    group_by(
+      !!!syms(cols_grpby)) %>% 
+    summarize(
+      Tags = str_flatten(tag_html, collapse = " ")) %>% 
+    rename(ID = rowid) %>% 
+    arrange(ID) %>% 
+    collect() %>% 
+    ungroup()
+}
