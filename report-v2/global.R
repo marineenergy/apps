@@ -291,8 +291,13 @@ del_user_report <- function(email, rpt){
 
 file_icons = c(html = "file", pdf="file-pdf", docx = "file-word")
 
-tbl_tags   <- tbl(con, "tags")
-
+tbl_tags <- tbl(con, "tags")
+df_tags  <- tbl(con, "tags") %>%
+  mutate(
+    tag_sql  = as.character(tag_sql),
+    tag_html = paste0("<span class='me-tag me-", cat, "'>", tag_nocat, "</span>")) %>% 
+  collect()
+  
 d_to_tags_html <- function(d){
   y <- d %>% 
     left_join(
