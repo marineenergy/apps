@@ -124,33 +124,54 @@ update_tags <- function(){
   # DBI::dbSendQuery(con, "ALTER TABLE tags RENAME TO tags_0;")
   # dbListTables(con) %>% sort()
   
-  
   # read tags from gsheet
   tags  <- get_gsheet_data("tags") %>% 
     select(category, tag_sql, tag)
   
   tag_lookup <- get_gsheet_data("tag_lookup") %>% 
-    select(content, tag_category, tag_content, tag_sql)
+    select(content, tag_category, content_tag, tag_sql)
   
   # check tag_sql valid for ltree; 
   ck_valid_tag_sql <- function(d){
     d %>% 
       mutate(
         # ltree allows only certain characters
-        tag_sql_fix = str_replace_all(tag_sql, "[^A-Za-z0-9_.]", ""),
+        tag_sql_fix = stringr::str_replace_all(tag_sql, "[^A-Za-z0-9_.]", ""),
         tag_sql_fix = ifelse(tag_sql_fix == tag_sql, NA, tag_sql_fix)) %>% 
       filter(!is.na(tag_sql_fix))
   }
   
-  tags_tofix <- ck_tag_sql(tags)
+  tags_tofix <- ck_valid_tag_sql(tags)
   stopifnot(nrow(tags_tofix) == 0)
   
-  tag_lookup_tofix <- ck_tag_sql(tags)
+  tag_lookup_tofix <- ck_valid_tag_sql(tags)
   stopifnot(nrow(tag_lookup_tofix) == 0)
   
   # check all tag_lookup.tag_sql in tags.tag_sql
   tag_lookup_notin_tags <- anti_join(tag_lookup, tags, by="tag_sql")
   stopifnot(tag_lookup_notin_tags == 0)
+  
+  # provide plural form if tagged at highest level of category
+  categories_all <- c(
+    Technology  = "All Technologies",
+    Receptor    = "All Receptors",
+    Stressor    = "All Stressors",
+    Phase       = "All Phases",
+    Management  = "All Management Categories",
+    Consequence = "All Consequences")
+  stopifnot(all(tags %>% distinct(category) %>% pull(category) %in% names(categories_all)))
+  
+  # add columns for fast, pretty printing to shiny and reports
+  tags <- tags %>% 
+    mutate(
+      cat       = tolower(category),
+      tag_nocat = purrr::map2_chr(tag, category, function(tag, category){
+        stringr::str_replace(tag, glue("{category}/"), "")}),
+      tag_nocat = ifelse(
+        tag_nocat == tag,
+        # provide plural form if tagged at highest level of category
+        categories_all[tag_nocat],
+        tag_nocat))
   
   # write tags to db
   dbWriteTable(con, "tags", tags, overwrite=T)
@@ -175,15 +196,12 @@ update_ferc_docs <- function(){
   
   # read tags from gsheet
   docs  <- get_gsheet_data("documents")
-  
-  
-  
+
   stressors <- docs %>% 
     select(stressor)
-  
-  
+
   tag_lookup <- get_gsheet_data("tag_lookup") %>% 
-    select(content, tag_category, tag_content, tag_sql)
+    select(content, tag_category, content_tag, tag_sql)
   
   # check tag_sql valid for ltree; 
   ck_valid_tag_sql <- function(d){
@@ -386,75 +404,84 @@ update_tethys_mgt <- function(){
   # read web
   mgt <- read_html(mgt_url) %>% 
     html_table() %>% 
-    .[[1]] %>% 
-    tibble() %>% 
+    .[[1]] %>%
+    mutate(across(where(is.character), ~na_if(., "n/a"))) %>% 
+    tibble()
+  
+  #paste(names(mgt), collapse = ", ")
+  # Technology, Management Measure Category, Phase of Project, Stressor, Receptor, 
+  #   Specific Receptor, Interaction, Specific Management Measures, Implications of Measure
+  mgt <- mgt %>% 
+    group_by(Interaction, `Specific Management Measures`, `Implications of Measure`) %>% 
+    nest() %>% 
+    ungroup() %>% 
     rowid_to_column("rowid")
   
   # write mgt_csv
-  write_csv(mgt, mgt_csv)
+  mgt %>% 
+    select(-data) %>% 
+    write_csv(mgt_csv)
   
-  # match tags
-  tag_lookup <- tbl(con, "tag_lookup") %>% 
+  # OLD: match tags from tag_lookup in db
+  # tag_lookup <- tbl(con, "tag_lookup") %>% 
+  #   filter(content == "tethys_mgt")
+  tag_lookup <- get_gsheet_data("tag_lookup") %>% 
     filter(content == "tethys_mgt") %>% 
-    collect()
+    select(-content)
+  #table(tag_lookup$tag_category)
+  # Management      Phase   Receptor   Stressor Technology 
+  #          5          3         39         22          2
+  # TODO: update db tag_lookup, optional?
   
-  mgt <- read_csv(mgt_csv, col_types = cols())
+  get_tag_content <- function(d_r){
+    # d_r <- mgt$data[[1]]
+    d_r %>% 
+      select(
+        Technology, 
+        Stressor, 
+        Management = `Management Measure Category`,
+        Phase      = `Phase of Project`) %>% 
+      pivot_longer(
+        everything(), 
+        names_to  = "tag_category", 
+        values_to = "content_tag") %>% 
+      bind_rows(
+        d_r %>% 
+          select(
+            content_tag       = Receptor, 
+            content_tag_extra = `Specific Receptor`) %>% 
+          mutate(
+            tag_category = "Receptor") %>% 
+          select(tag_category, content_tag, content_tag_extra)) %>% 
+      distinct(tag_category, content_tag, content_tag_extra) %>% 
+      arrange(desc(tag_category), content_tag, content_tag_extra)
+  }
   
-  mgt_tags_no_tag_sql <- mgt %>% 
-    select(
-      rowid,
-      Technology, 
-      Stressor, 
-      Management = `Management Measure Category`,
-      Phase      = `Phase of Project`) %>% 
-    pivot_longer(
-      everything() & -one_of("rowid"), 
-      names_to="tag_category", 
-      values_to="content_tag") %>% 
-    bind_rows(
-      mgt %>% 
-        select(
-          rowid,
-          content_tag       = Receptor, 
-          content_tag_extra = `Specific Receptor`) %>% 
-        mutate(
-          tag_category = "Receptor") %>% 
-        select(rowid, tag_category, content_tag, content_tag_extra)) %>% 
-    select(rowid, tag_category, content_tag, content_tag_extra) %>% 
-    arrange(rowid, tag_category, content_tag, content_tag_extra)
-  
-  mgt_tag_lookup <- mgt_tags_no_tag_sql %>% 
-    group_by(tag_category, content_tag, content_tag_extra) %>% 
-    summarise(.groups="drop") %>% 
+  mgt_tags <- mgt %>%
+    select(rowid, data) %>% 
     mutate(
-      content = "tethys_mgt") %>% 
-    relocate(content)
-  # mgt_tag_lookup
-  # TODO: compare  missing to get_gsheet_data(), tag_lookup tab
-  
-  mgt_tag_lookup <- get_gsheet_data("tag_lookup") %>% 
-    filter(content == "tethys_mgt")
-  
-  mgt_tags <- mgt_tags_no_tag_sql %>% 
+      tags = map(data, get_tag_content)) %>% 
+    select(-data) %>% 
+    unnest(tags) %>% 
     left_join(
-      mgt_tag_lookup,
+      tag_lookup,
       by = c("tag_category", "content_tag", "content_tag_extra")) %>% 
-    arrange(rowid, tag_category, content_tag, content_tag_extra) # mgt_tags
+    arrange(rowid, tag_sql, tag_category, content_tag, content_tag_extra)
+  
   mgt_tags_missing_tag_sql <- mgt_tags %>% filter(is.na(tag_sql))
   stopifnot(nrow(mgt_tags_missing_tag_sql) == 0)
   
-  write_csv(mgt_tags, mgt_tags_csv)
+  mgt_tags %>% 
+    select(rowid, tag_sql) %>% 
+    write_csv(mgt_tags_csv)
   
-  tbl_mgt_tags <- mgt_tags %>% 
-    select(rowid, tag_sql)
-  
-  # View(mgt_tags)
-  
+  mgt      <- read_csv(mgt_csv, col_types = cols())
+  mgt_tags <- read_csv(mgt_tags_csv, col_types = cols())
   
   # TODO: ALTER TABLE tethys_mgt_tags ALTER COLUMN rowid PRIMARY KEY.
   # TODO: ADD FOREIGN KEYS for tethys_mgt
-  dbWriteTable(con, "tethys_mgt"     , mgt         , overwrite = T)
-  dbWriteTable(con, "tethys_mgt_tags", tbl_mgt_tags, overwrite = T)
+  dbWriteTable(con, "tethys_mgt"     , mgt     , overwrite = T)
+  dbWriteTable(con, "tethys_mgt_tags", mgt_tags, overwrite = T)
   dbExecute(con, "ALTER TABLE tethys_mgt_tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
 }
 

@@ -118,6 +118,7 @@ server <- function(input, output, session) {
     values$ixns <- values$ixns[-input$tbl_ixns_rows_selected]
   })
   
+  
   observe({
     n_ixns <- length(values$ixns)
     
@@ -133,7 +134,8 @@ server <- function(input, output, session) {
   
   #* prj_map ----
   output$prj_map <- renderLeaflet({
-     map_projects(prj_sites)})
+    
+    map_projects(prj_sites)})
   
   #* prj_map observe Technology tag  ----
   observe({
@@ -195,15 +197,13 @@ server <- function(input, output, session) {
     # vector: T = tech selected, F = no tech selected
     values_unlist  <- values$ixns %>% unlist() 
     tech_str_match <- grepl("Technology", values_unlist)
-    # browser()
   
     # if no tech type selected in ixns 
     if (!TRUE %in% tech_str_match){
-      # browser()
       # load_projects()
       tech <<- c("Riverine Energy", "Tidal Energy", "Wave Energy")
       message(glue("no explicitly selected tech so plot all tech: {paste(tech, collapse = ', ')}"))
-      # browser()
+
       # calculate_y_tech(tech)
       output$prj_p <- renderPlotly(
         suppressWarnings({
@@ -226,7 +226,6 @@ server <- function(input, output, session) {
       if (!is.null(values$ixns)){
         tech <<- tags2tech[intersect(names(tags2tech), values$ixns %>% unlist())] %>% 
           unname()
-        # browser() 
       } else {
         tech <<- tags2tech 
       }
@@ -239,223 +238,6 @@ server <- function(input, output, session) {
     }
   })
   
-      
-  
-    
-      
-      
-      
-      
-    # load_projects()
-    # # output$prj_p <- renderText(suppressWarnings(""))
-    # 
-    # # extract technology from interaction tags
-    # tags2tech <- c(
-    #   "Technology.Riverine" = "Riverine Energy", 
-    #   "Technology.Tidal"    = "Tidal Energy",
-    #   "Technology.Wave"     = "Wave Energy")
-    # 
-    # # if an ixn exists, find tech selected in the ixn
-    # if (!is.null(values$ixns)){
-    #   tech <<- tags2tech[intersect(names(tags2tech), values$ixns %>% unlist())] %>% 
-    #     unname()
-    #   # browser() 
-    # } else {
-    #   tech <<- tags2tech 
-    # }
-    # 
-    # if (length(tech) > 0){
-    #   output$prj_p <- renderPlotly(
-    #     suppressWarnings({
-    #       update_projects()
-    #     })
-    #   )
-    # }
-    # 
-    # else if (length(tech) == 0){
-    #   tech <<- tags2tech 
-    #   output$prj_p <- renderPlotly(
-    #     suppressWarnings(
-    #       plot_projects()
-    #     )
-    #   )
-    # }
-    # message(glue("selected tech: {paste(tech, collapse = ', ')}"))
-    
-    # filter_prj_by_tech(tech, prj_sites, d_times, d_permits)
-    # calculate_y_tech(tech)
-  
-    # browser()
-    
-    # message(glue("n_riv = {n_riv}"))
-    # message(glue("n_tid = {n_tid}"))
-    # message(glue("n_wav = {n_wav}"))
-    
-  
-
-
- 
-  
-  
-  #####
-  # original plot_projects() looks like this:
-  
-  # plot_projects <- function(){
-  #   fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700)
-  #   
-  #   fig <- fig %>% 
-  #     plotly::add_segments(
-  #       data  = d_times, # %>% 
-  #       # TODO: squeez labels by wrapping lines or some such
-  #       # mutate(project = recode(project, `Portsmouth Memorial Bridge`="Portsmouth\n Memorial\n Bridge")),
-  #       x     = ~date_beg,
-  #       xend  = ~date_end,
-  #       y     = ~project,
-  #       yend  = ~project,
-  #       color = ~project_status,
-  #       line  = list(width = 10))
-  #   #fig
-  #   #plotly_json(p = fig)
-  #   
-  #   fig <- fig %>% 
-  #     plotly::add_markers(
-  #       data = d_permits,
-  #       x = ~license_date, 
-  #       y = ~project,
-  #       symbol = ~permit_type,
-  #       symbols = symbls_type,
-  #       color = ~permit_type,
-  #       colors = cols_type, 
-  #       size = 10,
-  #       hoverinfo = "text",
-  #       hovertext = paste(
-  #         'License Date: '    , d_permits$license_date, 
-  #         '<br>Project Name: ', d_permits$project, 
-  #         '<br>Permit Type: ' , d_permits$permit_type))
-  #   
-  #   #fig
-  #   #plotly_json(p = fig)
-  #   
-  #   fig <- fig %>% 
-  #     plotly::layout(
-  #       xaxis = list(
-  #         #title = 'Date',
-  #         title = '',
-  #         showline = FALSE,
-  #         showgrid = FALSE),
-  #       yaxis = list(
-  #         title = '',
-  #         autorange = "reversed",
-  #         domain = c(0,1),
-  #         range = c(0, length(unique(d_times$project))),
-  #         showline = FALSE,
-  #         showgrid = FALSE,
-  #         type = "category",
-  #         tickfont = list(size = 8)),
-  #       # margin = list(
-  #       #   r = 10, 
-  #       #   t = 25, 
-  #       #   b = 40, 
-  #       #   l = 100),
-  #       legend = list(
-  #         # x = 1.01, 
-  #         # y = 0.5), 
-  #         orientation = 'h',
-  #         font = list(size = 10)),
-  #       shapes = list(
-  #         list(
-  #           line = list(
-  #             color = "black", 
-  #             width = 0.8), 
-  #           type = "line", 
-  #           x0 = 0, 
-  #           x1 = 1, 
-  #           xref = "paper", 
-  #           y0 = -0.5 + n_riv, #Defines horizontal line separating riverine projects from tidal projects
-  #           y1 = -0.5 + n_riv, 
-  #           yref = "y"), 
-  #         list(
-  #           line = list(
-  #             color = "black", 
-  #             width = 0.8), 
-  #           type = "line", 
-  #           x0 = 0, 
-  #           x1 = 1, 
-  #           xref = "paper", 
-  #           y0 = -0.5 + n_riv + n_tid, #Defines horizontal line separating tidal projects from wave projects
-  #           y1 = -0.5 + n_riv + n_tid, 
-  #           yref = "y"), 
-  #         list(
-  #           line = list(
-  #             color = "black", 
-  #             width = 0.8), 
-  #           type = "line", 
-  #           x0 = 0, 
-  #           x1 = 1, 
-  #           xref = "paper", 
-  #           y0 = 0.025, 
-  #           y1 = 0.025, 
-  #           yref = "paper"),
-  #         list(
-  #           line = list(
-  #             color = "black", 
-  #             width = 0.8), 
-  #           type = "line", 
-  #           x0 = 0, 
-  #           x1 = 1, 
-  #           xref = "paper", 
-  #           y0 = 0.975, 
-  #           y1 = 0.975, 
-  #           yref = "paper"),
-  #         list(
-  #           line = list(
-  #             color = "black", 
-  #             width = 0.8
-  #           ), 
-  #           type = "line", 
-  #           x0 = 0, 
-  #           x1 = 0, 
-  #           xref = "paper", 
-  #           y0 = 0.975, 
-  #           y1 = 0.025, 
-  #           yref = "paper")),
-  #       annotations = list(
-  #         list(
-  #           x = 1,
-  #           y = (-1 + n_riv)/2,
-  #           showarrow = FALSE,
-  #           text = "<b>Riverine</b>",
-  #           xref = "paper",
-  #           yref = "y",
-  #           align = "center",
-  #           font = list(size = 8),
-  #           textangle = "90",
-  #           yshift = 4),
-  #         list(
-  #           x = 1,
-  #           y = (-1 + n_riv + (n_tid)/2),
-  #           showarrow = FALSE,
-  #           text = "<b>Tidal</b>",
-  #           xref = "paper",
-  #           yref = "y",
-  #           align = "center",
-  #           font = list(size = 8),
-  #           textangle = "90"),
-  #         list(
-  #           x = 1,
-  #           y = (-1 + n_riv + n_tid + (n_wav)/2),
-  #           showarrow = FALSE,
-  #           text = "<b>Wave</b>",
-  #           xref = "paper",
-  #           yref = "y",
-  #           align = "center",
-  #           font = list(size = 8),
-  #           textangle = "90")))
-  #   
-  #   fig 
-  # }
-  
-    
 
   #* observe plotly_click ----
   observe({
@@ -475,21 +257,28 @@ server <- function(input, output, session) {
   })
   
   # management ----
+  
+  #* get_mgt() ----
   get_mgt <- reactive({
+    
+    # TODO: functionalize for any tabular content
     if (length(values$ixns) == 0){
-      d <- d_mgt
+      d <- d_mgt_tags
     } else {
       rowids <- sapply(values$ixns, get_rowids_with_ixn, db_tbl = "tethys_mgt_tags") %>% 
         unlist() %>% unique()
-      d <- d_mgt %>%
+      d <- d_mgt_tags %>%
         filter(rowid %in% !!rowids)
     }
-    d %>% 
-      select(-rowid) %>% 
-      collect()
+    
+    # TODO: functionalize for any tabular content
+    # d_1 <- 
+    d_to_tags_html(d)
   })
   
+  #* box_mgt ----
   output$box_mgt <- renderText({
+    
     n_ixns <- length(values$ixns)
     ifelse(
       n_ixns == 0,
@@ -497,11 +286,15 @@ server <- function(input, output, session) {
       HTML(glue("Management Measures <small>({nrow(get_mgt())} of {d_mgt_n} rows; filtered by {n_ixns} interactions)</small>")))
   })
   
+  #* tbl_mgt ----
   output$tbl_mgt <- renderDataTable({
+    
     get_mgt()
-  })
+  }, escape = F, rownames = F)
   
   # documents ----
+  
+  #* get_docs() ----
   get_docs <- reactive({
     d <- d_docs
     if (length(values$ixns) > 0){
@@ -511,15 +304,10 @@ server <- function(input, output, session) {
         filter(rowid %in% !!rowids)
     }
     
-    # browser()
-    d %>%
-      collect() %>% 
-      mutate(
-        Tags = map_chr(rowid, get_tags_html, "ferc_doc_tags")) %>% 
-      #select(-rowid) %>% 
-      select(rowid, key_interaction_detail, Tags)
+    d_to_tags_html(d)
   })
   
+  #* box_docs ----
   output$box_docs <- renderText({
     n_ixns <- length(values$ixns)
     ifelse(
@@ -528,9 +316,10 @@ server <- function(input, output, session) {
       HTML(glue("FERC Documents <small>({nrow(get_docs())} of {d_docs_n} rows; filtered by {n_ixns} interactions)</small>")))
   })
   
+  #* tbl_docs ----
   output$tbl_docs <- renderDataTable({
     get_docs()
-  }, escape = F)
+  }, escape = F, rownames = F)
   
   
   # reports ----
@@ -587,7 +376,6 @@ server <- function(input, output, session) {
       if (is.null(email)) 
         return(rpts_0)
       #message(glue("poll_rpts_tbl({email}) set value {Sys.time()}"))
-      #browser()
       values$rpts <- get_user_reports(email)
       values$rpts
     })
@@ -676,7 +464,6 @@ server <- function(input, output, session) {
     # submit report creation job request to API
     q <- m
     q$contents     <- toJSON(m$contents) # %>% as.character()
-    #browser()
     q$interactions <- toJSON(m$interactions) # %>% as.character()
     # as.yaml(q) %>% cat()
 
@@ -703,12 +490,9 @@ server <- function(input, output, session) {
       basename()
     # message(glue("rpts_del: {paste(rpts_del, collapse=', ')}"))
     
-    #browser()
     sapply(rpts_del, del_user_report, email = email)
     
     values$rpts <- get_user_reports(email)
-    
-    # browser()
     
     # dataTableProxy("tbl_rpts") %>% 
     #   selectRows(irows)
