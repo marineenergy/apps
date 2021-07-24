@@ -276,19 +276,19 @@ server <- function(input, output, session) {
         tbl_tags %>% 
           select(tag_sql, cat, tag_nocat),
         by = "tag_sql") %>% 
-      arrange(rowid, desc(cat), tag_nocat) %>% 
       mutate(
         tag_html = paste0("<span class='me-tag me-", cat, "'>", tag_nocat, "</span>")) %>% 
-      distinct(rowid, Interaction, `Specific Management Measures`, `Implications of Measure`, tag_html) %>% 
+      distinct(rowid, Interaction, `Specific Management Measures`, `Implications of Measure`, cat, tag_nocat, tag_html) %>% 
+      arrange(rowid, desc(cat), tag_nocat) %>% 
       group_by(
         rowid, Interaction, `Specific Management Measures`, `Implications of Measure`) %>% 
       summarize(
         Tags = str_flatten(tag_html, collapse = " ")) %>% 
+      rename(ID = rowid) %>% 
       arrange(Interaction) %>% 
       collect() %>% 
-      ungroup() %>% 
-      select(-rowid) %>% 
-      arrange(Interaction)
+      ungroup() #%>% 
+      # arrange(Interaction)
     
   })
   
@@ -303,10 +303,10 @@ server <- function(input, output, session) {
   })
   
   #* tbl_mgt ----
-  output$tbl_mgt <- DT::renderDataTable({
+  output$tbl_mgt <- renderDataTable({
     
     get_mgt()
-  }, escape = F)
+  }, escape = F, rownames = F)
   
   # documents ----
   get_docs <- reactive({
