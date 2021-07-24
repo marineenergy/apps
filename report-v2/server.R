@@ -118,6 +118,7 @@ server <- function(input, output, session) {
     values$ixns <- values$ixns[-input$tbl_ixns_rows_selected]
   })
   
+  
   observe({
     n_ixns <- length(values$ixns)
     
