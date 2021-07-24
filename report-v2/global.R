@@ -160,6 +160,7 @@ navbarMenu <- function(..., id = NULL) {
 }
 
 # tag_choices ----
+d_tags <- get_tags()
 tag_choices = list()
 for (category in unique(d_tags$category)){ # category = d_tags$category[1]
   tag_choices <- append(
@@ -172,7 +173,6 @@ for (category in unique(d_tags$category)){ # category = d_tags$category[1]
           unlist()),
       category))
 }
-
 
 # googleAuthR ----
 
