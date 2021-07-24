@@ -118,6 +118,7 @@ server <- function(input, output, session) {
     values$ixns <- values$ixns[-input$tbl_ixns_rows_selected]
   })
   
+  
   observe({
     n_ixns <- length(values$ixns)
     
@@ -260,6 +261,7 @@ server <- function(input, output, session) {
   #* get_mgt() ----
   get_mgt <- reactive({
     
+    # TODO: functionalize for any tabular content
     if (length(values$ixns) == 0){
       d <- d_mgt_tags
     } else {
@@ -269,27 +271,9 @@ server <- function(input, output, session) {
         filter(rowid %in% !!rowids)
     }
     
-    # browser()
-
-    d %>% 
-      left_join(
-        tbl_tags %>% 
-          select(tag_sql, cat, tag_nocat),
-        by = "tag_sql") %>% 
-      arrange(rowid, desc(cat), tag_nocat) %>% 
-      mutate(
-        tag_html = paste0("<span class='me-tag me-", cat, "'>", tag_nocat, "</span>")) %>% 
-      distinct(rowid, Interaction, `Specific Management Measures`, `Implications of Measure`, tag_html) %>% 
-      group_by(
-        rowid, Interaction, `Specific Management Measures`, `Implications of Measure`) %>% 
-      summarize(
-        Tags = str_flatten(tag_html, collapse = " ")) %>% 
-      arrange(Interaction) %>% 
-      collect() %>% 
-      ungroup() %>% 
-      select(-rowid) %>% 
-      arrange(Interaction)
-    
+    # TODO: functionalize for any tabular content
+    # d_1 <- 
+    d_to_tags_html(d)
   })
   
   #* box_mgt ----
@@ -303,12 +287,14 @@ server <- function(input, output, session) {
   })
   
   #* tbl_mgt ----
-  output$tbl_mgt <- DT::renderDataTable({
+  output$tbl_mgt <- renderDataTable({
     
     get_mgt()
-  }, escape = F)
+  }, escape = F, rownames = F)
   
   # documents ----
+  
+  #* get_docs() ----
   get_docs <- reactive({
     d <- d_docs
     if (length(values$ixns) > 0){
@@ -318,14 +304,10 @@ server <- function(input, output, session) {
         filter(rowid %in% !!rowids)
     }
     
-    d %>%
-      collect() %>% 
-      mutate(
-        Tags = map_chr(rowid, get_tags_html, "ferc_doc_tags")) %>% 
-      #select(-rowid) %>% 
-      select(rowid, key_interaction_detail, Tags)
+    d_to_tags_html(d)
   })
   
+  #* box_docs ----
   output$box_docs <- renderText({
     n_ixns <- length(values$ixns)
     ifelse(
@@ -334,9 +316,10 @@ server <- function(input, output, session) {
       HTML(glue("FERC Documents <small>({nrow(get_docs())} of {d_docs_n} rows; filtered by {n_ixns} interactions)</small>")))
   })
   
+  #* tbl_docs ----
   output$tbl_docs <- renderDataTable({
     get_docs()
-  }, escape = F)
+  }, escape = F, rownames = F)
   
   
   # reports ----
