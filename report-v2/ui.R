@@ -121,6 +121,16 @@ ui <- dashboardPage(
         helpText(
           HTML("The FERC eLibrary contains environmental compliance project documents, 
           of which excerpts have been manually tagged for reference.")),
+        checkboxGroupInput(
+          "cks_docs", 
+          "Binary Filters:",
+          c(
+            "Ixn: Presented as potential interaction?"              = "ck_ixn",
+            "Obs: Described from observations at the project site?" = "ck_obs",
+            "MP: Monitoring Plan?"                                  = "ck_mp",
+            "AMP: Adaptive Management Plan?"                        = "ck_amp",
+            "PME: Protection, mitigation, and ehnhancement?"        = "ck_pme",
+            "BMP: Best Management Practices applied?"               = "ck_bmp")),
         fluidRow(
           box(
             title = uiOutput("box_docs", inline=T), width = 12,
