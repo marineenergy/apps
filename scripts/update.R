@@ -187,52 +187,116 @@ update_tags <- function(){
 
 update_ferc_docs <- function(){
   
-  # rename original tags
-  # DBI::dbSendQuery(con, "ALTER TABLE tags RENAME TO tags_0;")
-  # dbListTables(con) %>% sort()
-  # source(here::here("scripts/common.R"))
-  # source(file.path(dir_scripts, "db.R"))
-  # source(file.path(dir_scripts, "update.R"))
+  docs <- get_gsheet_data("documents") 
   
-  # read tags from gsheet
-  docs  <- get_gsheet_data("documents")
-
-  stressors <- docs %>% 
-    select(stressor)
-
-  tag_lookup <- get_gsheet_data("tag_lookup") %>% 
-    select(content, tag_category, content_tag, tag_sql)
+  # names(docs)[sapply(docs, class) == "logical"] %>% paste(collapse = ',\n') %>% cat()
+  # across(docs, where(is.logical), )
   
-  # check tag_sql valid for ltree; 
-  ck_valid_tag_sql <- function(d){
-    d %>% 
+  docs_ixns <- docs %>% 
+    group_by(key_interaction_detail) %>% 
+    summarize(
+      project                                        = first(project), 
+      `doc NAME`                                     = first(`doc NAME`), 
+      `ATTACHMENT NAME`                              = first(`ATTACHMENT NAME`), 
+      url                                            = first(url), 
+      presented_as_potential_interaction             = first(presented_as_potential_interaction),
+      decribed_from_observations_at_the_project_site = first(decribed_from_observations_at_the_project_site),
+      `monitoring_plan_(mp)`                         = first(`monitoring_plan_(mp)`),
+      `adaptive_management_plan_(amp)`               = first(`adaptive_management_plan_(amp)`),
+      protection_mitigation_and_enhancement          = first(protection_mitigation_and_enhancement),
+      bmps_applied                                   = first(bmps_applied),
+      .groups = "drop") %>% 
+    tibble::rownames_to_column("rowid") %>% 
+    mutate(
+      rowid = as.integer(rowid))
+  
+  docs <- docs %>% 
+    left_join(
+      docs_ixns %>% 
+        select(rowid, key_interaction_detail), 
+      by = "key_interaction_detail") %>% 
+    relocate(rowid)
+  
+  docs_tags <- bind_rows(
+    docs %>% 
       mutate(
-        # ltree allows only certain characters
-        tag_sql_fix = str_replace_all(tag_sql, "[^A-Za-z0-9_.]", ""),
-        tag_sql_fix = ifelse(tag_sql_fix == tag_sql, NA, tag_sql_fix)) %>% 
-      filter(!is.na(tag_sql_fix))
-  }
+        content      = "ferc_docs",
+        tag_category = "Technology") %>% 
+      select(content, rowid, tag_category, content_tag = technology),
+    docs %>% 
+      mutate(
+        content      = "ferc_docs",
+        tag_category = "Stressor") %>% 
+      select(content, rowid, tag_category, content_tag = stressor),
+    docs %>% 
+      mutate(
+        content      = "ferc_docs",
+        tag_category = "Receptor") %>% 
+      select(content, rowid, tag_category, content_tag = receptor),
+    docs %>% 
+      mutate(
+        content      = "ferc_docs",
+        tag_category = "Phase") %>% 
+      select(content, rowid, tag_category, content_tag = phase),
+    docs %>% 
+      mutate(
+        content      = "ferc_docs",
+        tag_category = "Effect") %>% 
+      select(content, rowid, tag_category, content_tag = key_effects))
   
-  tags_tofix <- ck_tag_sql(tags)
-  stopifnot(nrow(tags_tofix) == 0)
+  tags <- tbl(con, "tags") %>% 
+    collect() %>% 
+    mutate(
+      tag_sql = as.character(tag_sql))
   
-  tag_lookup_tofix <- ck_tag_sql(tags)
-  stopifnot(nrow(tag_lookup_tofix) == 0)
+  docs_tags_lookup <- docs_tags %>% 
+    group_by(content, tag_category, content_tag) %>% 
+    filter(!is.na(content_tag)) %>% 
+    summarize(.groups = "drop") %>% 
+    mutate(
+      content_tag_strip = stringr::str_replace_all(content_tag, "[^A-Za-z0-9_.]", ""),
+      content_tag_sql   = as.character(glue("{tag_category}.{content_tag_strip}"))) %>% 
+    left_join(
+      tags,
+      by = c("content_tag_sql" = "tag_sql")) %>% 
+    arrange(is.na(tag), tag_category, content_tag)
   
-  # check all tag_lookup.tag_sql in tags.tag_sql
-  tag_lookup_notin_tags <- anti_join(tag_lookup, tags, by="tag_sql")
-  stopifnot(tag_lookup_notin_tags == 0)
+  # table(!is.na(docs_tags_lookup$tag))
+  # View(docs_tags_lookup)
   
-  # write tags to db
-  dbWriteTable(con, "tags", tags, overwrite=T)
-  dbWriteTable(con, "tag_lookup", tag_lookup, overwrite=T)
-  #  dbListTables(con) %>% str_subset("^tag")
+  write_csv(docs_tags_lookup, here("data/docs_tags_lookup.csv"))
   
-  dbExecute(con, "CREATE EXTENSION IF NOT EXISTS ltree;")
-  dbExecute(con, "ALTER TABLE tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
-  dbExecute(con, "ALTER TABLE tag_lookup ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
-  dbExecute(con, "CREATE INDEX idx_tags_tag_sql ON tags USING GIST (tag_sql);")
-  dbExecute(con, "CREATE INDEX idx_tag_lookup_tag_sql ON tag_lookup USING GIST (tag_sql);")
+  # copy/pasted docs_tags_lookup.csv into gsheet
+  # TODO: finish Effect.* lookups
+  
+  tag_lookup <- get_gsheet_data("tag_lookup") %>% 
+    filter(content == "ferc_docs") %>% 
+    select(-content, -content_tag_extra)
+  # TODO: match Effect.* content_tag with tag_sql
+  
+  docs_tags <- docs_tags %>% 
+    left_join(
+      tag_lookup,
+      by = c("tag_category", "content_tag"))
+  
+  # TODO: check that all docs_tags.tag_sql in tags.tag_sql
+  tags <- tbl(con, "tags") %>% 
+    collect() %>% 
+    mutate(
+      tag_sql = as.character(tag_sql))
+  
+  # write tables to db
+  DBI::dbWriteTable(con, "ferc_docs", docs_ixns, overwrite=T)
+  # ferc_docs:      rowid | key_interaction_detail
+  #  1 to many with :
+  #   ferc_docs_tags: rowid | tag_sql
+  dbWriteTable(con, "ferc_doc_tags", docs_tags, overwrite=T)
+  dbExecute(con, "ALTER TABLE ferc_doc_tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
+  dbExecute(con, "CREATE INDEX idx_ferc_doc_tags_tag_sql ON ferc_doc_tags USING GIST (tag_sql);")
+  # TODO: add db relationship: ferc_doc_tags.tag_sql <-> tags.tag_sql
+  
+  # check table creation
+  # DBI::dbListTables(con) %>% sort() %>% stringr::str_subset("^shp_", negate=T)
 }
 
 update_tethys_docs <- function(){
