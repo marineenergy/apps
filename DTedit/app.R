@@ -12,9 +12,16 @@ if (!'books' %in% dbListTables(conn) || isTRUE(getOption("shiny.testmode"))) {
   # the sqlite file doesn't have the right data
   # OR we are running in test mode (test mode -> reset the data)
   books <- read.csv('https://raw.githubusercontent.com/DavidPatShuiFong/DTedit/master/inst/shiny_demo/books.csv', stringsAsFactors = FALSE)
+  
+  # sep str into indiv authors concatenated in c()
   books$Authors <- strsplit(books$Authors, ';')
+  
+  # strip ws
   books$Authors <- lapply(books$Authors, trimws) # Strip white space
+  
+  # unlist & single string per author combo
   books$Authors <- unlist(lapply(books$Authors, paste0, collapse = ';'))
+  
   books$id <- 1:nrow(books) # can also use 'seq_length(nrow(books))'
   books$Date <- paste0(books$Date, '-01-01')
   dbWriteTable(conn, "books", books, overwrite = TRUE)
@@ -54,7 +61,7 @@ books.update.callback <- function(data, olddata, row) {
                   "Publisher = '", as.character(data[row,]$Publisher), "' ",
                   "WHERE id = ", data[row,]$id)
   print(query) # For debugging
-  res <- dbSendQuery(conn, query)
+  res <- dbSendQuery(conn, query) 
   dbClearResult(res)
   return(getBooks())
 }
