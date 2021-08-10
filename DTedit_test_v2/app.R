@@ -16,126 +16,255 @@ shelf(DT, DBI, pool, DTedit, RSQLite)
 
 
 # WRITE MERGED DATA TO DB ----
-# * functions ----
+# (IF NOT ALREADY THERE)
+
+# fxn to concatenate tags per rowid
 mergeTags <- function(data) {
   data <- data %>% 
-    filter(!is.na(tag_sql)) %>% 
-    distinct(tag_sql, .keep_all = T)
+    filter(!is.na(content_tag)) %>% 
+    distinct(content_tag, .keep_all = T)
   data <- data %>% 
-    mutate(tag_sql_c = paste(data$tag_sql, collapse = ";")) %>% 
-    select(-tag_sql) %>% 
-    distinct(tag_sql_c, .keep_all = T)
+    mutate(Tags = paste(data$content_tag, collapse = ";")) %>% 
+    select(-content_tag) %>% 
+    distinct(Tags, .keep_all = T)
 }
 
-getLevels <- function(col) {
-  col %>% factor(levels = c(unique(col)))
-}
-
-getFerc <- function() {
-  conn <- poolCheckout(con)
-  dbBegin(conn)
-  
-  res  <- dbSendQuery(conn, "SELECT * FROM ferc")
-  ferc <- dbFetch(res)
-  dbClearResult(res)
-  
-  # strsplit tags
-  ferc <- ferc %>% 
-    mutate(
-      tag_sql  = tag_sql_c %>% strsplit(";"),
-      project  = project   %>% getLevels(),
-      doc.NAME = doc.NAME  %>% getLevels()) %>% 
-    select(-tag_sql_c)
-  
-  dbCommit(conn)
-  poolReturn(conn)
-  return(ferc)
-}
-
-# * write ferc data if not already there ----
+# write data if not there already 
 conn <- poolCheckout(con)
 dbBegin(conn)
 
 if (!"ferc" %in% dbListTables(conn)) {
-  ferc_docs     <- data.frame(tbl(conn, "ferc_docs"))
-  ferc_doc_tags <- data.frame(tbl(conn, "ferc_doc_tags"))
-  ferc_merged   <- ferc_docs %>% 
-    left_join(ferc_doc_tags, by = "rowid") %>% 
+  ferc_docs <- data.frame(tbl(conn, "ferc_docs")) %>% 
+    select(
+      rowid,
+      Detail     = key_interaction_detail,
+      Project    = project,
+      doc_name   = 'doc.NAME',
+      doc_attach = 'ATTACHMENT.NAME',
+      doc_url    = url,
+      ck_ixn     = presented_as_potential_interaction, 
+      ck_obs     = decribed_from_observations_at_the_project_site, 
+      ck_mp      = `monitoring_plan_.mp.`, 
+      ck_amp     = `adaptive_management_plan_.amp.`, 
+      ck_pme     = protection_mitigation_and_enhancement, 
+      ck_bmps    = bmps_applied) %>% 
+    mutate(
+      Doc = ifelse(
+        is.na(doc_attach),
+        doc_name,
+        paste0(doc_name, ": ", doc_attach)))
+  ferc_tags <- data.frame(tbl(conn, "ferc_doc_tags"))
+  ferc_docs_tags <- ferc_docs %>% left_join(ferc_tags, by = "rowid") %>%
     collect() %>% 
-    group_by(across(.cols = c(-tag_category, -content_tag, -tag_sql))) %>% 
-    select(-tag_category, -content_tag) 
-  d <- ferc_merged %>% 
+    distinct_all() %>% 
+    group_by(across(c(-tag_category, -content_tag, -tag_sql))) %>% 
+    select(-tag_category, -tag_sql) 
+  ferc_docs_tags <- ferc_docs_tags %>% 
+    na_if("NA") %>% 
     group_by(rowid) %>% 
-    group_modify(~ mergeTags(.x)) %>% 
+    group_modify(~mergeTags(.x)) %>% 
     data.frame()
-  # d <- d %>% mutate(id = 1:nrow(d)) 
-  dbWriteTable(conn, "ferc", d, overwrite = T)
+  dbWriteTable(conn, "ferc", ferc_docs_tags, overwrite = T)
+
+  # ferc_docs     <- data.frame(tbl(conn, "ferc_docs"))
+  # ferc_doc_tags <- data.frame(tbl(conn, "ferc_doc_tags"))
+  # ferc_merged   <- ferc_docs %>% 
+  #   left_join(ferc_doc_tags, by = "rowid") %>% 
+  #   collect() %>% 
+  #   group_by(across(.cols = c(-tag_category, -content_tag, -tag_sql))) %>% 
+  #   select(-tag_category, -tag_sql) 
+  # d <- ferc_merged %>% 
+  #   na_if("NA") %>% 
+  #   group_by(rowid) %>% 
+  #   group_modify(~ mergeTags(.x)) %>% 
+  #   data.frame()
+  # # d <- d %>% mutate(id = 1:nrow(d)) 
+  # dbWriteTable(conn, "ferc", d, overwrite = T)
 }
 
 dbCommit(conn)
 poolReturn(conn)
 
 
+# READ IN MERGED FERC TAGS DATA FROM DB ----
+getLevels <- function(col) {
+  col %>% factor(levels = c(unique(col)))
+}
+
+getFerc <- function() {
+  conn <- poolCheckout(con) 
+  dbBegin(conn)
+  
+  query <- "SELECT * from ferc"
+  res  <- dbSendQuery(conn, query)
+  ferc <- dbFetch(res)
+  # View(dbFetch(dbSendQuery(conn, "SELECT * FROM ferc")))
+  dbClearResult(res)
+  
+  # strsplit tags
+  ferc <- ferc %>% 
+    mutate(
+      Tags    = Tags    %>% strsplit(";"),
+      Project = Project %>% getLevels())
+  
+  ferc <- ferc %>% 
+    mutate(
+      across(starts_with("ck_"), as.character),
+      across(starts_with("ck_"), recode, "TRUE"="✓", "FALSE"="☐"),
+      Doc = case_when(
+        is.na(doc_url)  ~ Doc,
+        !is.na(doc_url) ~ as.character(glue('<a href="{doc_url}">{Doc}</a>')))) %>% 
+    select(
+      ID  = rowid, 
+      Project, Doc, Detail, Tags,
+      Ixn = ck_ixn, 
+      Obs = ck_obs, 
+      MP  = ck_mp, 
+      AMP = ck_amp, 
+      PME = ck_pme, 
+      BMP = ck_bmps)
+  
+  dbCommit(conn)
+  poolReturn(conn)
+  return(ferc)
+        
+ 
+      
+      # Doc = ifelse(
+      #   # if doc_attach is na, doc = doc_name. else, doc = doc_attach
+      #   is.na(doc_attach),
+      #   doc_name,
+      #   paste0(doc_name, ": ", doc_attach)),
+      # Doc = ifelse(
+      #   is.na(doc_url),
+      #   Doc,
+      #   glue("<a href='{doc_url}'>{Doc}</a>"))) %>% 
+
+
+}
+
 
 # CALLBACK FXNS ----
 ferc.insert.callback <- function(data, row) {
   query <- paste0(
-    "INSERT INTO ferc (rowid, key_interaction_detail, tag_sql, project) VALUES (",
-    "",  max(getFerc()$rowid) + 1, ", ",
-    "'", paste0(data[row,]$key_interaction_detail), "', ",
-    "'", paste0(data[row,]$tag_sql[[1]], collapse = ';'), "', ",
-    "'", as.character(data[row,]$project), "' ",
+    "INSERT INTO ferc (ID, Detail, Tags, Project) VALUES (",
+    "",  max(getFerc()$ID) + 1, ", ",
+    "'", paste0(data[row,]$Detail), "', ",
+    "'", paste0(data[row,]$Tags[[1]], collapse = ';'), "', ",
+    "'", as.character(data[row,]$Project), "' ",
     ")")
   print(query) # For debugging
+  
   res <- dbSendQuery(conn, query)
   dbClearResult(res)
+
   return(getFerc())
 }
 
 ferc.update.callback <- function(data, olddata, row) {
   query <- paste0(
     "UPDATE ferc SET ",
-    "key_interaction_detail = '", data[row,]$key_interaction_detail, "', ",
-    "tag_sql = '", paste0(data[row,]$tag_sql[[1]], collapse = ';'), "', ",
-    "project = '", as.character(data[row,]$project), "' ",
-    "WHERE rowid = '", data[row,]$rowid)
+    "Detail = '",   data[row,]$Detail, "', ",
+    "Tags = '",     paste0(data[row,]$Tags[[1]], collapse = ';'), "', ",
+    "Project = '",  as.character(data[row,]$Project), "' ",
+    "WHERE ID = '", data[row,]$ID)
   print(query) # For debugging
+  
   res <- dbSendQuery(conn, query) 
   dbClearResult(res)
+  
   return(getFerc())
 }
 
 ferc.delete.callback <- function(data, row) {
-  query <- paste0('DELETE FROM ferc WHERE rowid = ', data[row,]$rowid)
+  query <- paste0('DELETE FROM ferc WHERE ID = ', data[row,]$ID)
   print(query) # debug
+  
   res <- dbSendQuery(conn, query)
   dbClearResult(res)
+  
   return(getFerc())
 }
 
 
 # SHINY SERVER ----
 server <- function(input, output, session) {
+  project.types <- levels(ferc$Project)
+  # logical.types <- c("YES", "NO")
+  tags.types    <- unique(unlist(ferc$Tags))
   
   ferc <- data.frame(getFerc(), stringsAsFactors = F)
-  project.types <- levels(ferc$project)
+  
+  # style callback
+  style.callback <- c(
+    "$('#DataTables_Table_0_length select').css('background-color', 'gray');",
+    "$('#DataTables_Table_0_filter input').css('background-color', 'gray');")
+
+  
+  # project: selectize callback
+  # SLIDER = sapply(1:5, function(i) {
+  #   sprintf('<input type="text" id="Slider%d" name="slider" value="5;15" />', i)
+  # })
+  # 
+  # MULTIPLE_SELECT <- 
+  #   '<select id="mselect" class="form-control" multiple="multiple">
+  #     <option value=""></option>
+  #     <option value="A">A</option>
+  #     <option value="B">B</option>
+  #     <option value="C">C</option>
+  #    </select>'
+  # 
+  # js.selectize <- c(
+  #   "function(settings){",
+  #   "  $('[id^=Slider]').ionRangeSlider({",
+  #   "    type: 'double',",
+  #   "    grid: true,",
+  #   "    grid_num: 10,",
+  #   "    min: 0,",
+  #   "    max: 20",
+  #   "  });",
+  #   "  $('#mselect').selectize()",
+  #   "}"
+  # )
   
   fercdt <- dtedit(
     input, output,
-    name = 'ferc',
-    thedata = ferc,
-    view.cols = names(ferc)[c(1:4, 14)],
-    edit.cols = c('doc.NAME', 'key_interaction_detail', 'tag_sql', 'project'),
+    name      = 'ferc',
+    thedata   = ferc,
+    view.cols = names(ferc),
+    edit.cols = c(
+      'Project', 'Doc', 'Detail', 'Tags', 
+      'Ixn', 'Obs', 'MP', 'AMP', 'PME', 'BMP'),
+    # edit.cols = c('Doc', 'Detail', 'Tags', 'Project'),
     edit.label.cols = c(
-      'Doc Name', 'Key Interaction', 'Tags', 'Project'),
+      'Project', 'Doc', 'Key Interaction Detail', 'Tags',
+      'Presented as potential interaction?',
+      'Described from observations at the project site?',
+      'Monitoring plan (MP)?',
+      'Adaptive management plan (AMP)?',
+      'Protection mitigation and enhancement (PME)?',
+      'Best management practices (BMPs) applied?'),
     input.types = c(
-      key_interaction_detail = 'textAreaInput',
-      project  = 'selectInput',
-      doc.NAME = 'selectInput'),
+      Project = 'selectInput',
+      Doc     = 'textInput',
+      Detail  = 'textAreaInput',
+      Tags    = 'selectInputMultiple',
+      Ixn     = 'selectInput',
+      Obs     = 'selectInput',
+      MP      = 'selectInput',
+      AMP     = 'selectInput',
+      PME     = 'selectInput',
+      BMP     = 'selectInput'),
     input.choices = list(
-      tag_sql  = unique(unlist(ferc$tag_sql)),
-      project  = levels(ferc$project),
-      doc.NAME = levels(ferc$doc.NAME)),
+      Tags    = unique(unlist(ferc$Tags)),
+      Project = levels(ferc$Project),
+      Ixn     = c("YES", "NO"),
+      Obs     = c("YES", "NO"),
+      MP      = c("YES", "NO"),
+      AMP     = c("YES", "NO"),
+      PME     = c("YES", "NO"),
+      BMP     = c("YES", "NO")),
+
     
     # input.choices.reactive = list(
     #   project.types.list = project.types),
@@ -145,26 +274,90 @@ server <- function(input, output, session) {
       #   placeholder = "Please select an option below",
       #   onInitialize = I('function() { this.setValue(""); }')
       
-  
     
     # style
     datatable.rownames = F,
+    
     datatable.call = function(...) {
-      DT::datatable(...) %>%
-        DT::formatStyle(
-          'doc.NAME', fontWeight = 'bold'
-        )
+      arguments <- list(...)
+      arguments$escape   <- 1
+      arguments$class    <- 'display'
+      arguments$callback <- JS(callback = JS(style.callback))
+      arguments$selection <- 'none'
+      # arguments$options  <- 
+      #   # bind inputs to shiny in order to use values from the input
+      #   list(
+      #     initComplete    = JS(js.selectize),
+      #     preDrawCallback = JS('function() { Shiny.unbindAll(this.api().table().node()); }'),
+      #     drawCallback    = JS('function() { Shiny.bindAll(this.api().table().node()); } ')
+      #     )
+      
+      do.call(DT::datatable, arguments) %>%  
+        DT::formatStyle('Doc', fontWeight = 'bold')  
+          
+      # options(class = 'stripe hover') %>% 
+      # do.call(DT::datatable, arguments) %>%  
+      #   class    = 'display',
+      #   # filter   = 'top',
+      #   # colnames = c("ID", "Key interaction detail", "Project", "Doc name", "Tags"),
+      #   callback = DT::JS(callback = JS(style.callback))) %>% 
+      #   DT::formatStyle(
+      #     'Doc', 
+      #     # 'project',
+      #     fontWeight = 'bold')  
+          # backgroundColor = styleEqual(project.types, c('gray', 'pink'))) 
+        # DT::formatStyle(
+        #   'doc.NAME', 'project', 
+        #   backgroundColor = styleEqual(
+        #     project.types, 
+        #     c("gray", "pink"))
+        # DT::formatStyle(
+        #   'doc.NAME',
+        #   background = styleColorBar(range(ferc$rowid), color = 'lightblue'),
+        #   backgroundPosition = 'center')
     },
     
+    datatable.options = list(
+      searchHighlight = T,
+      initComplete = JS("
+        function(setings, json) {
+          $(this.api().table().header()).css({
+            'background-color': '#2b2d2f',
+            'color': '#fff'
+           });
+        }"),
+      autowidth  = T,
+      columnDefs = list(list(className = 'dt-center', targets = 0)),
+      pageLength = 5,
+      lengthMenu = c(5, 10, 25, 50, 100, nrow(ferc))),
+    
+    # datatable.options = list(
+    #   columnDefs = list(
+    #     list(
+    #       targets = "_all",
+    #       render  = JS(
+    #         "function(data, type, row, meta) {",
+    #         "return type === 'display' && data != null && data.length > 30 ?",
+    #         "'<span title=\"' + data + '\">' + data.substr(0, 200) + '...</span>' : data;",
+    #         "}")))),
+    
+    # class = "display",
+    # escape = F, selection = "multiple",
+    
     selectize = TRUE,
+    
     selectize.options = list(
-      project  = list(create = TRUE, maxItems = 1),
-      doc.NAME = list(create = TRUE, maxItems = 1)),
+      Project = list(
+        placeholder = "Please select an option below",
+        onInitialize = I('function() { this.setValue(""); }')
+      ),
+      # Project  = list(create = TRUE, maxItems = 1),
+      Doc      = list(create = TRUE, maxItems = 1)),
     
     modal.size      = 'm', 
     textarea.width  = '500px',
     textarea.height = '200px',
-    select.width    = '100%',
+    select.width    = '100%', 
 
     icon.delete     = icon("trash"),
     icon.edit       = icon("edit"),
@@ -173,23 +366,25 @@ server <- function(input, output, session) {
     
     title.delete    = 'Delete',
     title.edit      = 'Edit',
-    title.add       = 'Add new interaction',
+    title.add       = 'Add new',
     
     # callbacks
     callback.update = ferc.update.callback,
     callback.insert = ferc.insert.callback,
-    callback.delete = ferc.delete.callback,
+    callback.delete = ferc.delete.callback
     
     # options
     # datatable.options = list(pageLength = defaultPageLength)
   )
   
-  names <- data.frame(
-    Name = character(), Email = character(), Date = numeric(),
-    Type = factor(levels = c('Admin', 'User')),
-    stringsAsFactors = FALSE)
-  names$Date <- as.Date(names$Date, origin = '1970-01-01')
-  namesdt <- dtedit(input, output, name = 'names', thedata = names)
+  # test dt
+  # names <- data.frame(
+  #   Name = character(), Email = character(), Date = numeric(),
+  #   Type = factor(levels = c('Admin', 'User')),
+  #   stringsAsFactors = FALSE)
+  # names$Date <- as.Date(names$Date, origin = '1970-01-01')
+  # namesdt <- dtedit(input, output, name = 'names', thedata = names)
+  
   
   data_list <- list() # exported list for shinytest
  
@@ -215,10 +410,11 @@ server <- function(input, output, session) {
 
 # SHINY UI ----
 ui <- fluidPage(
-  h3('FERC Docs & Tags'),
+  h1('FERC docs detail'),
   uiOutput("ferc"),
-  hr(), h3('Email Addresses'),
-  uiOutput('names')
+  hr()
+  # hr(), h3('Email Addresses'),
+  # uiOutput('names')
 )
 
 
