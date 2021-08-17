@@ -1,6 +1,12 @@
 # https://rpubs.com/DavidFong/DTedit
 # https://github.com/DavidPatShuiFong/DTedit/blob/master/inst/shiny_demo/app.R
 
+# TODO: 
+# [ ] color code tags
+# [ ] fix db connex so can save added/updated/deleted ferc records 
+# [ ] option to add new prj (`create = T` not working)
+
+
 # DB CONNECTION ----
 dir_scripts <<- here::here("scripts")
 source(file.path(dir_scripts, "common_2.R"))
@@ -180,9 +186,9 @@ ferc.delete.callback <- function(data, row) {
   return(getFerc())
 }
 
-style.callback <- c(
-  "$('#DataTables_Table_0_length select').css('background-color', 'gray');",
-  "$('#DataTables_Table_0_filter input').css('background-color', 'gray');")
+# style.callback <- c(
+#   "$('#DataTables_Table_0_length select').css('background-color', 'gray');",
+#   "$('#DataTables_Table_0_filter input').css('background-color', 'gray');")
 
 
 # SHINY SERVER ----
@@ -281,7 +287,7 @@ server <- function(input, output, session) {
     input.choices = list(
       # Tags    = unique(unlist(ferc$Tags)),
       Tags    = tags_metadata$content_tag,
-      Project = levels(ferc$Project),
+      Project = project.types,
       Ixn     = c("YES", "NO"),
       Obs     = c("YES", "NO"),
       MP      = c("YES", "NO"),
@@ -295,7 +301,7 @@ server <- function(input, output, session) {
       arguments <- list(...)
       arguments$escape   <- 1
       arguments$class    <- 'display'
-      arguments$callback <- JS(callback = JS(style.callback))
+      # arguments$callback <- JS(callback = JS(style.callback))
       do.call(DT::datatable, arguments) %>%  
         DT::formatStyle('Doc',  fontWeight = 'bold') 
       # %>% 
@@ -789,10 +795,6 @@ shinyApp(ui, server)
 # d <- d_merged %>% bind_rows()
 
 
-# TODO: 
-# [x] remove tag_sql col & remove duplicate (unnecessary) rows
-# [x] join all docs back together, now 1:1 ratio of doc:tag
-# [ ] try DTedit again
 
 
 
