@@ -12,8 +12,9 @@ if (!require(librarian)){
   remotes::install_github("DesiQuintans/librarian")
   library(librarian)
 }
-shelf(DT, DBI, pool, DTedit, RSQLite)
-
+# remotes::install_github("DavidPatShuiFong/DTedit", force=TRUE)
+shelf(dplyr, DT, DBI, pool, DTedit, RSQLite)
+library(DTedit)
 
 # WRITE MERGED DATA TO DB ----
 # (IF NOT ALREADY THERE)
@@ -65,21 +66,6 @@ if (!"ferc" %in% dbListTables(conn)) {
     group_modify(~mergeTags(.x)) %>% 
     data.frame()
   dbWriteTable(conn, "ferc", ferc_docs_tags, overwrite = T)
-
-  # ferc_docs     <- data.frame(tbl(conn, "ferc_docs"))
-  # ferc_doc_tags <- data.frame(tbl(conn, "ferc_doc_tags"))
-  # ferc_merged   <- ferc_docs %>% 
-  #   left_join(ferc_doc_tags, by = "rowid") %>% 
-  #   collect() %>% 
-  #   group_by(across(.cols = c(-tag_category, -content_tag, -tag_sql))) %>% 
-  #   select(-tag_category, -tag_sql) 
-  # d <- ferc_merged %>% 
-  #   na_if("NA") %>% 
-  #   group_by(rowid) %>% 
-  #   group_modify(~ mergeTags(.x)) %>% 
-  #   data.frame()
-  # # d <- d %>% mutate(id = 1:nrow(d)) 
-  # dbWriteTable(conn, "ferc", d, overwrite = T)
 }
 
 dbCommit(conn)
@@ -94,54 +80,68 @@ getLevels <- function(col) {
 getFerc <- function() {
   conn <- poolCheckout(con) 
   dbBegin(conn)
-  
+
   query <- "SELECT * from ferc"
   res  <- dbSendQuery(conn, query)
   ferc <- dbFetch(res)
-  # View(dbFetch(dbSendQuery(conn, "SELECT * FROM ferc")))
   dbClearResult(res)
-  
-  # strsplit tags
+
   ferc <- ferc %>% 
     mutate(
       Tags    = Tags    %>% strsplit(";"),
       Project = Project %>% getLevels())
-  
   ferc <- ferc %>% 
     mutate(
       across(starts_with("ck_"), as.character),
       across(starts_with("ck_"), recode, "TRUE"="✓", "FALSE"="☐"),
       Doc = case_when(
         is.na(doc_url)  ~ Doc,
-        !is.na(doc_url) ~ as.character(glue('<a href="{doc_url}">{Doc}</a>')))) %>% 
+        !is.na(doc_url) ~ as.character(glue('<a href="{doc_url}">{Doc}</a>'))),
+      URL = doc_url) %>% 
     select(
       ID  = rowid, 
-      Project, Doc, Detail, Tags,
+      Project, Doc, URL, Detail, Tags,
+      Attachment = doc_attach,
       Ixn = ck_ixn, 
       Obs = ck_obs, 
       MP  = ck_mp, 
       AMP = ck_amp, 
       PME = ck_pme, 
       BMP = ck_bmps)
-  
+
+  # dbWriteTable(conn, "ferc_updated", ferc, overwrite = T)
   dbCommit(conn)
   poolReturn(conn)
   return(ferc)
-        
- 
-      
-      # Doc = ifelse(
-      #   # if doc_attach is na, doc = doc_name. else, doc = doc_attach
-      #   is.na(doc_attach),
-      #   doc_name,
-      #   paste0(doc_name, ": ", doc_attach)),
-      # Doc = ifelse(
-      #   is.na(doc_url),
-      #   Doc,
-      #   glue("<a href='{doc_url}'>{Doc}</a>"))) %>% 
-
-
 }
+
+
+# GET INPUT CHOICES ----
+
+# * project levels ----
+project.types <- levels(ferc$Project)
+
+# * tags options ----
+ferc_tags_unique <- data.frame(tbl(conn, "ferc_doc_tags")) %>% 
+  select(-rowid, -content) %>%
+  na_if("NA") %>% 
+  distinct_all() %>% 
+  mutate(tag_sql = tag_sql %>% as.character())
+ferc_tags_unique <- ferc_tags_unique %>% 
+  mutate(
+    tag_sql = case_when(
+      (is.na(tag_sql) & is.na(content_tag)) ~ glue("{tag_category}.{NA}") %>% 
+        as.character(),
+      (is.na(tag_sql)) ~ glue("{tag_category}.{content_tag}") %>% 
+        as.character(),
+      !(is.na(tag_sql)) ~ tag_sql)) 
+tags.types <- unique(unlist(ferc$Tags)) 
+
+tags_metadata <- list(content_tag = tags.types) %>% 
+  bind_rows() %>% 
+  left_join(ferc_tags_unique, by = "content_tag", copy = F) %>% 
+  group_by(tag_category) %>% 
+  arrange(content_tag, .by_group = TRUE)
 
 
 # CALLBACK FXNS ----
@@ -154,10 +154,8 @@ ferc.insert.callback <- function(data, row) {
     "'", as.character(data[row,]$Project), "' ",
     ")")
   print(query) # For debugging
-  
   res <- dbSendQuery(conn, query)
   dbClearResult(res)
-
   return(getFerc())
 }
 
@@ -169,37 +167,351 @@ ferc.update.callback <- function(data, olddata, row) {
     "Project = '",  as.character(data[row,]$Project), "' ",
     "WHERE ID = '", data[row,]$ID)
   print(query) # For debugging
-  
   res <- dbSendQuery(conn, query) 
   dbClearResult(res)
-  
   return(getFerc())
 }
 
 ferc.delete.callback <- function(data, row) {
   query <- paste0('DELETE FROM ferc WHERE ID = ', data[row,]$ID)
   print(query) # debug
-  
   res <- dbSendQuery(conn, query)
   dbClearResult(res)
-  
   return(getFerc())
 }
 
+style.callback <- c(
+  "$('#DataTables_Table_0_length select').css('background-color', 'gray');",
+  "$('#DataTables_Table_0_filter input').css('background-color', 'gray');")
+
 
 # SHINY SERVER ----
+
+
+# server side
 server <- function(input, output, session) {
-  project.types <- levels(ferc$Project)
-  # logical.types <- c("YES", "NO")
-  tags.types    <- unique(unlist(ferc$Tags))
-  
+
   ferc <- data.frame(getFerc(), stringsAsFactors = F)
   
-  # style callback
-  style.callback <- c(
-    "$('#DataTables_Table_0_length select').css('background-color', 'gray');",
-    "$('#DataTables_Table_0_filter input').css('background-color', 'gray');")
+  input.types.base <- 
+    c(Project = 'selectInput',
+      Doc     = 'textInput',
+      URL     = 'textInput',
+      Detail  = 'textAreaInput',
+      Tags    = 'selectInputMultiple',
+      Ixn     = 'selectInput',
+      Obs     = 'selectInput',
+      MP      = 'selectInput',
+      AMP     = 'selectInput',
+      PME     = 'selectInput',
+      BMP     = 'selectInput')
+  # 
+  # getAtmtInput <- function(input) {
+  #   if (is.null(input)) {
+  #     return(input.types.base)
+  #   } else if (!is.null(input$attachment_method)) {
+  #     if (input == "url") {
+  #       input.types <- c(input.types.base, "textInput")
+  #       return(input.types)
+  #     } else if (input$attachment_method == "file") {
+  #       input.types <- c(input.types.base, "fileInput")
+  #       return(input.types)
+  #     } 
+  #   }
+  # }
+  # 
+  # input.types <- reactive({
+  #   getAtmtInput(input = input$attachment_method)
+  # })
+  # 
+  # 
+  
+  
+  
+  #     Attachment = function(input){
+  #       if (!is.null(input$attachment_method)) {
+  #         if (input$attachment_method == "url") {
+  #           return("textInput")
+  #         } else if (input$attachment_method == "file") {
+  #           return("fileInput")
+  #         } 
+  #       }
+  #     }
+  #   )
+  #   
+  #   
+  # )
+  #   
 
+  attach.options <- reactiveVal(c("url", "file"))
+  
+  fercdt <- dtedit(
+    input, output,
+    name      = 'ferc',
+    thedata   = ferc,
+    view.cols = c(names(ferc %>% select(-URL))),
+    edit.cols = c(
+      'Project', 'Doc', 'URL', 'Attachment', 'Detail', 
+      'Tags', 'Ixn', 'Obs', 'MP', 'AMP', 'PME', 'BMP'),
+    # edit.cols = c('Doc', 'Detail', 'Tags', 'Project'),
+    edit.label.cols = c(
+      'Project', 'Doc name', 'Doc URL', 
+      'Upload document attachment',
+      'Key Interaction Detail', 'Tags',
+      'Presented as potential interaction?',
+      'Described from observations at the project site?',
+      'Monitoring plan (MP)?',
+      'Adaptive management plan (AMP)?',
+      'Protection mitigation and enhancement (PME)?',
+      'Best management practices (BMPs) applied?'),
+    input.types = c(
+      Project    = 'selectInput',
+      Doc        = 'textInput',
+      URL        = "textInput",
+      Attachment = 'fileInput',
+      Detail     = 'textAreaInput',
+      Tags       = 'selectInputMultiple',
+      Ixn        = 'selectInput',
+      Obs        = 'selectInput',
+      MP         = 'selectInput',
+      AMP        = 'selectInput',
+      PME        = 'selectInput',
+      BMP        = 'selectInput'
+      ),
+    input.choices = list(
+      # Tags    = unique(unlist(ferc$Tags)),
+      Tags    = tags_metadata$content_tag,
+      Project = levels(ferc$Project),
+      Ixn     = c("YES", "NO"),
+      Obs     = c("YES", "NO"),
+      MP      = c("YES", "NO"),
+      AMP     = c("YES", "NO"),
+      PME     = c("YES", "NO"),
+      BMP     = c("YES", "NO")),
+    # input.choices.reactive = list(attach.types.list = attach.options),
+    
+    datatable.rownames = F,
+    datatable.call = function(...) {
+      arguments <- list(...)
+      arguments$escape   <- 1
+      arguments$class    <- 'display'
+      arguments$callback <- JS(callback = JS(style.callback))
+      do.call(DT::datatable, arguments) %>%  
+        DT::formatStyle('Doc',  fontWeight = 'bold') 
+      # %>% 
+      #   DT::formatStyle(
+      #     'Tags', 
+      #     HTML("<div style='color: steelblue; font-size: 150%;'>steelblue 150%</div>"))
+
+    },
+    
+    datatable.options = list(
+      searchHighlight = T,
+      
+      # testing js formatting options
+      initComplete = JS("
+      function(setings, json) {
+        $(this.api().table().header()).css({
+          'background-color': '#2b2d2f',
+          'color': '#fff'
+         });
+      }"),
+      autowidth  = T,
+      columnDefs = list(list(className = 'dt-center', targets = 0)),
+      pageLength = 5,
+      lengthMenu = c(5, 10, 25, 50, 100, nrow(ferc))),
+    
+    selectize = TRUE,
+    selectize.options = list(
+      Project = list(
+        placeholder = "Please select an option below",
+        onInitialize = I('function() { this.setValue(""); }')),
+      Doc = list(create = TRUE, maxItems = 1)),
+    
+    modal.size      = 'm', 
+    textarea.width  = '500px',
+    textarea.height = '200px',
+    select.width    = '100%', 
+    
+    icon.delete     = icon("trash"),
+    icon.edit       = icon("edit"),
+    icon.add        = icon("plus"),
+    icon.copy       = icon("copy"),
+    
+    title.delete    = 'Delete',
+    title.edit      = 'Edit',
+    title.add       = 'Add new key interaction detail',
+    
+    # callbacks
+    callback.update = ferc.update.callback,
+    callback.insert = ferc.insert.callback,
+    callback.delete = ferc.delete.callback
+  )
+    
+    
+
+    
+
+    
+    # proxy
+    # fercdt_proxy <- DT::dataTableProxy("fercdt")
+    
+    # observeEvent(input$attachment_method, {
+    #   input <- input$attachment_method
+    #   if (input == "url") {
+    #     attach.options("url")
+    #   } else if (input == "file") {
+    #     attach.options("file")
+    #   }
+    # })
+  
+  
+  
+
+  # IMPORTANT
+  # observeEvent(input$attachment_method, {
+  #   input <- input$attachment_method
+  #   print(input)
+  #   print(fercdt$input.types)
+  #   
+  #   fercdt$input.types <- reactive({
+  #     if(!is.null(input)) {
+  #       if (input == "url") {
+  #         input_types <- c(input.types.2, Attachment = 'textInput') 
+  #       } else if (input == "file") {
+  #         input_types <- c(input.types.2, Attachment = 'fileInput')
+  #       } 
+  #       return(input_types)
+  #       browser()
+  #     }
+  #   })
+  # })
+
+  
+  
+  
+  
+    
+   
+    
+    
+    # input.choices.reactive = list(
+    #   project.types.list = project.types),
+    
+    
+    # project = list(
+    #   placeholder = "Please select an option below",
+    #   onInitialize = I('function() { this.setValue(""); }')
+    
+    
+      # arguments$selection <- 'none'
+      # arguments$options  <- 
+      #   # bind inputs to shiny in order to use values from the input
+      #   list(
+      #     initComplete    = JS(js.selectize),
+      #     preDrawCallback = JS('function() { Shiny.unbindAll(this.api().table().node()); }'),
+      #     drawCallback    = JS('function() { Shiny.bindAll(this.api().table().node()); } ')
+      #     )
+      
+  
+      
+      # options(class = 'stripe hover') %>% 
+      # do.call(DT::datatable, arguments) %>%  
+      #   class    = 'display',
+      #   # filter   = 'top',
+      #   # colnames = c("ID", "Key interaction detail", "Project", "Doc name", "Tags"),
+      #   callback = DT::JS(callback = JS(style.callback))) %>% 
+      #   DT::formatStyle(
+      #     'Doc', 
+      #     # 'project',
+      #     fontWeight = 'bold')  
+      # backgroundColor = styleEqual(project.types, c('gray', 'pink'))) 
+      # DT::formatStyle(
+      #   'doc.NAME', 'project', 
+      #   backgroundColor = styleEqual(
+      #     project.types, 
+      #     c("gray", "pink"))
+      # DT::formatStyle(
+      #   'doc.NAME',
+      #   background = styleColorBar(range(ferc$rowid), color = 'lightblue'),
+      #   backgroundPosition = 'center')
+   
+    
+    # datatable.options = list(
+    #   columnDefs = list(
+    #     list(
+    #       targets = "_all",
+    #       render  = JS(
+    #         "function(data, type, row, meta) {",
+    #         "return type === 'display' && data != null && data.length > 30 ?",
+    #         "'<span title=\"' + data + '\">' + data.substr(0, 200) + '...</span>' : data;",
+    #         "}")))),
+    
+    # class = "display",
+    # escape = F, selection = "multiple",
+    
+   
+  
+  
+  
+  
+  
+  # output$attachment_input <- renderUI({
+  #   input.types.2 <- getAttachmentInput(input$attachment_method)
+  # })
+  # 
+  
+  # getAttachmentInput <- function(input) {
+  #   if (is.null(input)) {
+  #     return() 
+  #   } else {
+  #     if (input == input$url) {
+  #       input.types.2 <- c(input.types.2, Attachment = 'textInput') 
+  #     } else if (input == input$file) {
+  #       input.types.2 <- c(input.types.2, Attachment = 'fileInput')
+  #     }
+  #     return(input.types.2)
+  #   }
+  # }
+  
+  # IMPORTANT
+  # observeEvent(input$attachment_method, {
+  #   
+  #   input.types.2 <<- reactive({
+  #     
+  #     need(validate(input$attachment_method))
+  #     
+  #     if(!is.null(input$attachment_method)) {
+  #       if (input$attachment_method == "url") {
+  #         input_types <- c(input.types.2, Attachment = 'textInput') 
+  #       } else if (input$attachment_method == "file") {
+  #         input_types <- c(input.types.2, Attachment = 'fileInput')
+  #       } 
+  #       return(input_types)
+  #       }
+  #   })
+  #   # browser()
+  # })
+ 
+
+  # observeEvent(input$attachment_method, {
+  #   # input.types.2 <- renderText(print(input$attachment_method))
+  #   input.types.2 <- getAttachmentInput(input$attachment_method)
+  # })
+  
+  # getInputChoices <- function(input) {
+  #   if (is.null(input)) {
+  #     return() 
+  #   } else {
+  #     if (input == input$url_link) {
+  #       input.choices.2 <- 
+  #     } else if (input == input$file_upload) {
+  #       input.types <- c(input.types.2, Attachment = 'fileInput')
+  #     }
+  #     return(input.types.2)
+  #   }
+  # }
+  # }
   
   # project: selectize callback
   # SLIDER = sapply(1:5, function(i) {
@@ -227,155 +539,6 @@ server <- function(input, output, session) {
   #   "}"
   # )
   
-  fercdt <- dtedit(
-    input, output,
-    name      = 'ferc',
-    thedata   = ferc,
-    view.cols = names(ferc),
-    edit.cols = c(
-      'Project', 'Doc', 'Detail', 'Tags', 
-      'Ixn', 'Obs', 'MP', 'AMP', 'PME', 'BMP'),
-    # edit.cols = c('Doc', 'Detail', 'Tags', 'Project'),
-    edit.label.cols = c(
-      'Project', 'Doc', 'Key Interaction Detail', 'Tags',
-      'Presented as potential interaction?',
-      'Described from observations at the project site?',
-      'Monitoring plan (MP)?',
-      'Adaptive management plan (AMP)?',
-      'Protection mitigation and enhancement (PME)?',
-      'Best management practices (BMPs) applied?'),
-    input.types = c(
-      Project = 'selectInput',
-      Doc     = 'textInput',
-      Detail  = 'textAreaInput',
-      Tags    = 'selectInputMultiple',
-      Ixn     = 'selectInput',
-      Obs     = 'selectInput',
-      MP      = 'selectInput',
-      AMP     = 'selectInput',
-      PME     = 'selectInput',
-      BMP     = 'selectInput'),
-    input.choices = list(
-      Tags    = unique(unlist(ferc$Tags)),
-      Project = levels(ferc$Project),
-      Ixn     = c("YES", "NO"),
-      Obs     = c("YES", "NO"),
-      MP      = c("YES", "NO"),
-      AMP     = c("YES", "NO"),
-      PME     = c("YES", "NO"),
-      BMP     = c("YES", "NO")),
-
-    
-    # input.choices.reactive = list(
-    #   project.types.list = project.types),
-    
-
-      # project = list(
-      #   placeholder = "Please select an option below",
-      #   onInitialize = I('function() { this.setValue(""); }')
-      
-    
-    # style
-    datatable.rownames = F,
-    
-    datatable.call = function(...) {
-      arguments <- list(...)
-      arguments$escape   <- 1
-      arguments$class    <- 'display'
-      arguments$callback <- JS(callback = JS(style.callback))
-      arguments$selection <- 'none'
-      # arguments$options  <- 
-      #   # bind inputs to shiny in order to use values from the input
-      #   list(
-      #     initComplete    = JS(js.selectize),
-      #     preDrawCallback = JS('function() { Shiny.unbindAll(this.api().table().node()); }'),
-      #     drawCallback    = JS('function() { Shiny.bindAll(this.api().table().node()); } ')
-      #     )
-      
-      do.call(DT::datatable, arguments) %>%  
-        DT::formatStyle('Doc', fontWeight = 'bold')  
-          
-      # options(class = 'stripe hover') %>% 
-      # do.call(DT::datatable, arguments) %>%  
-      #   class    = 'display',
-      #   # filter   = 'top',
-      #   # colnames = c("ID", "Key interaction detail", "Project", "Doc name", "Tags"),
-      #   callback = DT::JS(callback = JS(style.callback))) %>% 
-      #   DT::formatStyle(
-      #     'Doc', 
-      #     # 'project',
-      #     fontWeight = 'bold')  
-          # backgroundColor = styleEqual(project.types, c('gray', 'pink'))) 
-        # DT::formatStyle(
-        #   'doc.NAME', 'project', 
-        #   backgroundColor = styleEqual(
-        #     project.types, 
-        #     c("gray", "pink"))
-        # DT::formatStyle(
-        #   'doc.NAME',
-        #   background = styleColorBar(range(ferc$rowid), color = 'lightblue'),
-        #   backgroundPosition = 'center')
-    },
-    
-    datatable.options = list(
-      searchHighlight = T,
-      initComplete = JS("
-        function(setings, json) {
-          $(this.api().table().header()).css({
-            'background-color': '#2b2d2f',
-            'color': '#fff'
-           });
-        }"),
-      autowidth  = T,
-      columnDefs = list(list(className = 'dt-center', targets = 0)),
-      pageLength = 5,
-      lengthMenu = c(5, 10, 25, 50, 100, nrow(ferc))),
-    
-    # datatable.options = list(
-    #   columnDefs = list(
-    #     list(
-    #       targets = "_all",
-    #       render  = JS(
-    #         "function(data, type, row, meta) {",
-    #         "return type === 'display' && data != null && data.length > 30 ?",
-    #         "'<span title=\"' + data + '\">' + data.substr(0, 200) + '...</span>' : data;",
-    #         "}")))),
-    
-    # class = "display",
-    # escape = F, selection = "multiple",
-    
-    selectize = TRUE,
-    
-    selectize.options = list(
-      Project = list(
-        placeholder = "Please select an option below",
-        onInitialize = I('function() { this.setValue(""); }')
-      ),
-      # Project  = list(create = TRUE, maxItems = 1),
-      Doc      = list(create = TRUE, maxItems = 1)),
-    
-    modal.size      = 'm', 
-    textarea.width  = '500px',
-    textarea.height = '200px',
-    select.width    = '100%', 
-
-    icon.delete     = icon("trash"),
-    icon.edit       = icon("edit"),
-    icon.add        = icon("plus"),
-    icon.copy       = icon("copy"),
-    
-    title.delete    = 'Delete',
-    title.edit      = 'Edit',
-    title.add       = 'Add new',
-    
-    # callbacks
-    callback.update = ferc.update.callback,
-    callback.insert = ferc.insert.callback,
-    callback.delete = ferc.delete.callback
-    
-    # options
-    # datatable.options = list(pageLength = defaultPageLength)
-  )
   
   # test dt
   # names <- data.frame(
@@ -385,6 +548,10 @@ server <- function(input, output, session) {
   # names$Date <- as.Date(names$Date, origin = '1970-01-01')
   # namesdt <- dtedit(input, output, name = 'names', thedata = names)
   
+
+  # observeEvent(input$attachment_method, {
+  #   text <- renderText(print(input.types.2()))
+  # })
   
   data_list <- list() # exported list for shinytest
  
@@ -399,7 +566,24 @@ server <- function(input, output, session) {
   observeEvent(fercdt$thedata, {
     data_list[[length(data_list) + 1]] <<- fercdt$thedata
   })
+  # 
+  # observeEvent(input$url_link, {
+  #   input.types.2 <- getAttachmentInput(input$url_link)
+  # })
+  # 
+  # observeEvent(input$file_upload, {
+  #   input.types.2 <- getAttachmentInput(input$url_link)
+  # })
   
+  
+  # observeEvent(input$attachment_choice, {
+  #   if (input$attachment_choice == 1) {
+  #     attach.options(options_1)
+  #   } else {
+  #     attach.options(options_2)
+  #   }
+  # })
+
   shiny::exportTestValues(data_list = {data_list})
   
   cancel.onsessionEnded <- session$onSessionEnded(function() {
@@ -410,12 +594,177 @@ server <- function(input, output, session) {
 
 # SHINY UI ----
 ui <- fluidPage(
-  h1('FERC docs detail'),
-  uiOutput("ferc"),
-  hr()
+  tags$link(
+      rel  = "stylesheet",
+      type = "text/css",
+      href = "styles.css"),
+  titlePanel("Editable FERC Docs Table"),
+  div(
+    "Filters by:",
+    icon("tags"),
+    span(class="me-tag me-technology", "Technology"),
+    span(class="me-tag me-stressor",   "Stressor"),
+    span(class="me-tag me-receptor",   "Receptor"),
+    span(class="me-tag me-phase",      "Phase")),
+  helpText(
+    HTML("The FERC eLibrary contains environmental compliance project documents, 
+          of which excerpts have been manually tagged for reference.")),
+  # checkboxGroupInput(
+  #   "cks_docs", 
+  #   "Binary Filters:",
+  #   c(
+  #     "Ixn: Presented as potential interaction?"              = "ck_ixn",
+  #     "Obs: Described from observations at the project site?" = "ck_obs",
+  #     "MP: Monitoring Plan?"                                  = "ck_mp",
+  #     "AMP: Adaptive Management Plan?"                        = "ck_amp",
+  #     "PME: Protection, mitigation, and ehnhancement?"        = "ck_pme",
+  #     "BMP: Best Management Practices applied?")),
+  fluidRow(
+    column(
+      width = 12,
+      radioButtons(
+         "attachment_method",
+         "Select a method to attach document",
+         choiceValues = list("url", "file"),
+         choiceNames  = list(
+           tags$div(
+             span(tagList(icon("link"), "Attach URL link"))),
+           tags$div(
+             span(tagList(icon("upload"), "Upload file"))))),
+         # selected = NULL,
+         # inline = F,
+      hr())),
+  uiOutput("ferc"))
+    
+
+
+
+
+  # div("Filters by:", 
+  #     icon("tags"), 
+  #     span(class="me-tag me-technology", "Technology"),
+  #     # TODO: handle mismatched ferc_docs.tag_sql
+  #     #span(class="me-tag me-management", "Management missing in data"),
+  #     #span(class="me-tag me-effect?", "Effect missing in db.tags"),
+  #     span(class="me-tag me-stressor",   "Stressor"),
+  #     span(class="me-tag me-receptor",   "Receptor"),
+  #     span(class="me-tag me-phase",      "Phase")),
+  # helpText(
+  #   HTML("The FERC eLibrary contains environmental compliance project documents, 
+  #         of which excerpts have been manually tagged for reference.")),
+  # checkboxGroupInput(
+  #   "cks_docs", 
+  #   "Binary Filters:",
+  #   c(
+  #     "Ixn: Presented as potential interaction?"              = "ck_ixn",
+  #     "Obs: Described from observations at the project site?" = "ck_obs",
+  #     "MP: Monitoring Plan?"                                  = "ck_mp",
+  #     "AMP: Adaptive Management Plan?"                        = "ck_amp",
+  #     "PME: Protection, mitigation, and ehnhancement?"        = "ck_pme",
+  #     "BMP: Best Management Practices applied?"               = "ck_bmp")),
+  # fluidRow(
+  #   box(
+  #     title = uiOutput("box_docs", inline=T), width = 12,
+  #     dataTableOutput("tbl_docs")))),
+
+  
+#   h1('FERC docs detail'),
+#   
+#   # mainPanel(
+#     fluidRow(
+#       column(
+#         width = 12,
+#         box(
+#           status = "primary",
+#           solidHeader = TRUE,
+#           width = 12,
+#           radioButtons(
+#             "attachment_method",
+#             "Select a method to attach document",
+#             choiceValues = list("url", "file"),
+#             choiceNames  = list(
+#               tags$div(
+#                 span(tagList(icon("link"), "Attach URL link"))),
+#               tags$div(
+#                 span(tagList(icon("upload"), "Upload file")))),
+#             selected = NULL,
+#             inline = T)),
+#         hr(),
+#           h5("FERC docs table"),
+#           uiOutput("ferc")),
+#       fluid = TRUE),
+#   hr(), hr()
+# )
+
+    
+
+      
+      
+      
+      # shinyWidgets::radioGroupButtons(
+      #   "attachment_method",
+      #   "Select a method to attach document",
+      #   choiceValues  = list("url", "file"),
+      #   choiceNames = c("Add URL link", "Upload file"),
+      #   individual = T,
+      #   status = "primary",
+      #   checkIcon = list(
+      #     yes = icon("link"),
+      #     no = icon("upload")
+      #   )
+      # ),
+      # 
+      
+      
+      
+      
+      
+      
+   
+
+      
+      # radioButtons(
+      #   inputId = "attachment_method", 
+      #   label = "Select a method to attach document",
+      #   choiceValues = list("url", "file"),
+      #   choiceNames  = list(
+      #     fluidRow(
+      #       icon("link"),
+      #       h5("Add URL link"),
+      #       style = "display:inline; margin:0px;"
+      #     ), 
+      #     fluidRow(
+      #       icon("upload"),
+      #       h5("Upload file"),
+      #       style = "display:inline; margin:0px;"
+      #     )
+      #   ),
+      #   selected = NULL,
+      #   inline = T
+      # ),
+      # style = "display:inline-block"
+      #   # inline   = T
+      #   ,
+      
+      # h4("Select a method to attach document"),
+      # # 1. url link
+      # actionButton(
+      #   'url_link',
+      #   label = " Add URL link ",
+      #   icon  = icon("link")),
+      # # 2. file upload
+      # actionButton(
+      #   'file_upload', 
+      #   label = ' Upload file ',
+      #   icon  = icon("upload")),
+
+  
+        # choices = list("Upload url link" = 1, "Upload document file" = 2))
+ 
+  
   # hr(), h3('Email Addresses'),
   # uiOutput('names')
-)
+
 
 
 # SHINY APP ----
