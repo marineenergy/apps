@@ -2,9 +2,9 @@
 # https://github.com/DavidPatShuiFong/DTedit/blob/master/inst/shiny_demo/app.R
 
 # TODO: 
-# [ ] color code tags
-# [ ] fix db connex so can save added/updated/deleted ferc records 
-# [ ] option to add new prj (`create = T` not working)
+# - [ ] color code tags
+# - [ ] fix db connex so can save added/updated/deleted ferc records 
+# - [ ] option to add new prj (`create = T` not working)
 
 
 # DB CONNECTION ----
@@ -13,14 +13,9 @@ source(file.path(dir_scripts, "common_2.R"))
 source(file.path(dir_scripts, "db.R"))
 
 # LIBRARIES ----
-library(shiny)
-if (!require(librarian)){
-  remotes::install_github("DesiQuintans/librarian")
-  library(librarian)
-}
 # remotes::install_github("DavidPatShuiFong/DTedit", force=TRUE)
-shelf(dplyr, DT, DBI, pool, DTedit, RSQLite)
-library(DTedit)
+#shelf(dplyr, DT, DBI, pool, DTedit, RSQLite)
+shelf(DTedit, DT)
 
 # WRITE MERGED DATA TO DB ----
 # (IF NOT ALREADY THERE)
@@ -37,11 +32,12 @@ mergeTags <- function(data) {
 }
 
 # write data if not there already 
-conn <- poolCheckout(con)
-dbBegin(conn)
+# conn <- poolCheckout(con)
+# dbBegin(conn)
 
-if (!"ferc" %in% dbListTables(conn)) {
-  ferc_docs <- data.frame(tbl(conn, "ferc_docs")) %>% 
+# Don't need this step because taking directly from ferc_docs & ferc_tags in db
+if (!"ferc" %in% dbListTables(con)) {
+  ferc_docs <- data.frame(tbl(con, "ferc_docs")) %>% 
     select(
       rowid,
       Detail     = key_interaction_detail,
@@ -60,7 +56,7 @@ if (!"ferc" %in% dbListTables(conn)) {
         is.na(doc_attach),
         doc_name,
         paste0(doc_name, ": ", doc_attach)))
-  ferc_tags <- data.frame(tbl(conn, "ferc_doc_tags"))
+  ferc_tags <- data.frame(tbl(con, "ferc_doc_tags"))
   ferc_docs_tags <- ferc_docs %>% left_join(ferc_tags, by = "rowid") %>%
     collect() %>% 
     distinct_all() %>% 
@@ -71,12 +67,11 @@ if (!"ferc" %in% dbListTables(conn)) {
     group_by(rowid) %>% 
     group_modify(~mergeTags(.x)) %>% 
     data.frame()
-  dbWriteTable(conn, "ferc", ferc_docs_tags, overwrite = T)
+  dbWriteTable(con, "ferc", ferc_docs_tags, overwrite = T)
 }
 
-dbCommit(conn)
-poolReturn(conn)
-
+# dbCommit(con)
+# poolReturn(con)
 
 # READ IN MERGED FERC TAGS DATA FROM DB ----
 getLevels <- function(col) {
@@ -84,19 +79,21 @@ getLevels <- function(col) {
 }
 
 getFerc <- function() {
-  conn <- poolCheckout(con) 
-  dbBegin(conn)
+  # con <- poolCheckout(con) 
+  # dbBegin(con)
 
-  query <- "SELECT * from ferc"
-  res  <- dbSendQuery(conn, query)
-  ferc <- dbFetch(res)
-  dbClearResult(res)
-
-  ferc <- ferc %>% 
+  dbReadTable(con, "ferc_docs") %>% 
+    tibble() %>% 
+    left_join(
+      tbl(con, "ferc_doc_tags") %>% 
+        select(rowid, tag_sql) %>% 
+        collect() %>% 
+        tidyr::nest(tags = tag_sql) %>% 
+        mutate(
+          tags = as.vector(tags))) %>% 
     mutate(
-      Tags    = Tags    %>% strsplit(";"),
-      Project = Project %>% getLevels())
-  ferc <- ferc %>% 
+      #Tags    = Tags    %>% strsplit(";"), # TODO: left_join(tbl(con, "ferc_doc_tags"), by="rowid")
+      Project = Project %>% getLevels()) %>% 
     mutate(
       across(starts_with("ck_"), as.character),
       across(starts_with("ck_"), recode, "TRUE"="✓", "FALSE"="☐"),
@@ -114,13 +111,9 @@ getFerc <- function() {
       AMP = ck_amp, 
       PME = ck_pme, 
       BMP = ck_bmps)
-
-  # dbWriteTable(conn, "ferc_updated", ferc, overwrite = T)
-  dbCommit(conn)
-  poolReturn(conn)
-  return(ferc)
 }
 
+ferc <- getFerc()
 
 # GET INPUT CHOICES ----
 
@@ -128,11 +121,13 @@ getFerc <- function() {
 project.types <- levels(ferc$Project)
 
 # * tags options ----
-ferc_tags_unique <- data.frame(tbl(conn, "ferc_doc_tags")) %>% 
+ferc_tags_unique <- tbl(con, "ferc_doc_tags") %>% 
   select(-rowid, -content) %>%
   na_if("NA") %>% 
   distinct_all() %>% 
-  mutate(tag_sql = tag_sql %>% as.character())
+  mutate(tag_sql = tag_sql %>% as.character()) %>% 
+  # explain() # see SQL
+  collect() # collect query results from db
 ferc_tags_unique <- ferc_tags_unique %>% 
   mutate(
     tag_sql = case_when(
@@ -160,30 +155,33 @@ ferc.insert.callback <- function(data, row) {
     "'", as.character(data[row,]$Project), "' ",
     ")")
   print(query) # For debugging
-  res <- dbSendQuery(conn, query)
+  res <- dbSendQuery(con, query)
   dbClearResult(res)
-  return(getFerc())
+  getFerc()
 }
 
 ferc.update.callback <- function(data, olddata, row) {
   query <- paste0(
-    "UPDATE ferc SET ",
-    "Detail = '",   data[row,]$Detail, "', ",
-    "Tags = '",     paste0(data[row,]$Tags[[1]], collapse = ';'), "', ",
-    "Project = '",  as.character(data[row,]$Project), "' ",
-    "WHERE ID = '", data[row,]$ID)
+    "UPDATE ferc_docs SET ",
+    "key_interaction_detail = '",   data[row,]$Detail, "', ",
+    #"Tags = '",     paste0(data[row,]$Tags[[1]], collapse = ';'), "', ",
+    "project = '",  as.character(data[row,]$Project), "' ",
+    "WHERE rowid = ", data[row,]$ID)
   print(query) # For debugging
-  res <- dbSendQuery(conn, query) 
-  dbClearResult(res)
-  return(getFerc())
+  # browser()
+   # tbl(con, "ferc_docs")
+  res <- try(dbExecute(con, query))
+  if ("try-error" %in% class(res)) stop(res)
+  # dbClearResult(res)
+  getFerc()
 }
 
 ferc.delete.callback <- function(data, row) {
   query <- paste0('DELETE FROM ferc WHERE ID = ', data[row,]$ID)
   print(query) # debug
-  res <- dbSendQuery(conn, query)
+  res <- dbSendQuery(con, query)
   dbClearResult(res)
-  return(getFerc())
+  getFerc()
 }
 
 # style.callback <- c(
@@ -254,8 +252,8 @@ server <- function(input, output, session) {
   fercdt <- dtedit(
     input, output,
     name      = 'ferc',
-    thedata   = ferc,
-    view.cols = c(names(ferc %>% select(-URL))),
+    thedata   = getFerc(),
+    view.cols = names(ferc %>% select(-URL)),
     edit.cols = c(
       'Project', 'Doc', 'URL', 'Attachment', 'Detail', 
       'Tags', 'Ixn', 'Obs', 'MP', 'AMP', 'PME', 'BMP'),
@@ -593,7 +591,7 @@ server <- function(input, output, session) {
   shiny::exportTestValues(data_list = {data_list})
   
   cancel.onsessionEnded <- session$onSessionEnded(function() {
-    DBI::dbDisconnect(conn)
+    DBI::dbDisconnect(con)
   })
 } 
 
