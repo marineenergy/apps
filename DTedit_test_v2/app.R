@@ -6,7 +6,8 @@
 # - [ ] color code tags
 # - [ ] fix db connex so can save added/updated/deleted ferc records 
 # - [ ] option to add new prj (`create = T` not working)
-
+# - [ ] upgrade to forked copy with checkbox
+#       https://github.com/DavidPatShuiFong/DTedit/issues/12#issuecomment-715228402
 
 # DB CONNECTION ----
 dir_scripts <<- here::here("scripts")
@@ -15,7 +16,7 @@ source(file.path(dir_scripts, "db.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
 
 # LIBRARIES ----
-shelf(DTedit, DT, glue)
+shelf(DavidPatShuiFong/DTedit, DT, glue)
 
 # WRITE MERGED DATA TO DB ----
 # (IF NOT ALREADY THERE)
@@ -149,14 +150,11 @@ get_ferc <- function() {
     collect() %>% 
     left_join(
       tbl(con, "ferc_doc_tags") %>% 
+        select(rowid, tag_sql) %>% 
         collect() %>% 
         group_by(rowid) %>% 
         tidyr::nest(
-          Tag_sql = tag_sql,
-          Tag_category = tag_category,
-          Content_tag = content_tag)) %>% 
-      #   mutate(
-      #     tags = as.vector(tags))) %>% 
+          tag_sql = tag_sql)) %>% 
     na_if("NA") %>% 
     mutate(
       #Tags    = Tags    %>% strsplit(";"), # TODO: left_join(tbl(con, "ferc_doc_tags"), by="rowid")
@@ -302,7 +300,7 @@ ferc.insert.callback <- function(data, row) {
 
 ferc.update.callback <- function(data, olddata, row) {
   browser()
-  
+
   # row to be updated
   # dr <- data %>% slice(row)
   dr <- data %>% filter(ID == row)
@@ -310,16 +308,13 @@ ferc.update.callback <- function(data, olddata, row) {
   # row to be updated w/ tags unnested
   dr_tags <- dr %>% 
     filter(ID == row) %>% 
-    select(Tags) %>% 
-    tidyr::unnest(tag_sql = Tags) %>% 
-    select(-Tags)
+    select(Tag_sql) %>% 
+    tidyr::unnest(tag_sql = Tag_sql) %>% 
+    select(-Tag_sql)
   
   query_fd <- glue_data_sql(
     dr,
-    "DELETE FROM ferc_docs
-    WHERE rowid = {ID};
-    
-    UPDATE ferc_docs 
+    "UPDATE ferc_docs 
     SET
       key_interaction_detail = '{Detail}',
       project                = '{Project}'
@@ -342,7 +337,7 @@ ferc.update.callback <- function(data, olddata, row) {
     .con = conn)
   
   # ft <- tbl(con, "ferc_doc_tags") %>% collect()
-  # ft_filt <- ft %>% filter(rowid == row)
+  # ft_filt <- ft %>% filter(rowid == row) # to compare
   
   
   print(query_fd)
@@ -396,8 +391,12 @@ ferc.update.callback <- function(data, olddata, row) {
 
 
 ferc.delete.callback <- function(data, row) {
-  query <- paste0(
-    "DELETE FROM ferc_docs WHERE rowid = ", data[row,]$ID)
+  query <- glue_sql(
+    "DELETE FROM ferc_docs WHERE rowid = {ID};
+     DELETE FROM ferc_doc_tags WHERE rowid = {ID}", 
+    .con = conn)
+  
+    # "DELETE FROM ferc_docs WHERE rowid = ", data[row,]$ID)
   print(query) # debug
   # res <- dbSendQuery(con, query)
   res <- try(dbExecute(con, query))
