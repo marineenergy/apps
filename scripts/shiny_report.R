@@ -1,3 +1,5 @@
+shelf(glue, tidyr)
+
 get_tags <- function(){
   tbl(con, "tags") %>% 
     collect() %>% 
