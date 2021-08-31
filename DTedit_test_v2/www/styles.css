@@ -1,0 +1,98 @@
+.well {
+   padding: 5px;
+   margin-bottom: 5px;
+   background-color: #393839;
+   border: 0;
+}
+
+.logo {
+    padding-left: 5px !important;
+}
+
+.navbar-brand {
+    padding-left: 0;
+    padding-bottom: 5px;
+    padding-top: 5px;
+}
+
+.nav-item > .nav-link {
+  color: #fff;
+}
+
+.nav-item.active > a {
+  background-color: #255774 !important;
+}
+
+.nav-item a:hover { 
+  background-color: #255774 !important; 
+}
+
+.sidebar-menu>li>a {
+  padding: 10px 5px 10px 15px;
+}
+
+.sidebar-mini:not(.sidebar-mini-expand-feature).sidebar-collapse .sidebar-menu>li:hover>.treeview-menu,.sidebar-mini:not(.sidebar-mini-expand-feature).sidebar-collapse .sidebar-menu>li:hover>a>span:not(.pull-right) {
+  width: 310px;
+}
+
+/* colors for Tags from https://getbootstrap.com/docs/4.0/components/buttons/#examples
+   colors for Stressor - Receptor; color-blind safe purple-green from https://colorbrewer2.org/#type=diverging&scheme=PiYG&n=11 */
+.selectize-control.multi .selectize-input > div[data-value^='Technology.'] { 
+  color: #333333;
+  background-color: #d1e5f0; /*light blue*/
+  border-color: transparent;
+}
+.selectize-control.multi .selectize-input > div[data-value^='Receptor.'] { 
+  color: #333333;
+  background-color: #e6f5d0; /*light green*/
+  border-color: transparent;
+}
+.selectize-control.multi .selectize-input > div[data-value^='Stressor.'] { 
+  /* .btn-danger  */
+  color: #333333;
+  background-color: #fde0ef; /*light pink*/
+  border-color: transparent;
+}
+.selectize-control.multi .selectize-input > div[data-value^='Management.'] { 
+  /* .btn-secondary */
+  color: #333333;
+  background-color: #d8daeb; /*light purple*/
+  border-color: transparent;
+}
+.selectize-control.multi .selectize-input > div[data-value^='Phase.'] { 
+  /* .btn-secondary */
+  color: #333333;
+  background-color: #efefef; /*light gray*/
+  border-color: transparent;
+}
+
+.me-tag {
+  border-color: transparent;
+  border-radius: 3px;
+  margin: 0;
+  padding: 2px 2px;
+  box-sizing: border-box;
+  /* display: inline-block; */
+  /* line-height: 20px; */
+}
+
+.me-technology {
+  color: #333333;
+  background-color: #d1e5f0;
+}
+.me-receptor { 
+  color: #333333;
+  background-color: #e6f5d0; /*light green*/
+}
+.me-stressor { 
+  color: #333333;
+  background-color: #fde0ef; /*light pink*/
+}
+.me-management { 
+  color: #333333;
+  background-color: #d8daeb; /*light purple*/
+}
+.me-phase { 
+  color: #333333;
+  background-color: #efefef; /*light gray*/
+}
