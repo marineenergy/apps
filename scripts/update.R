@@ -187,36 +187,41 @@ update_tags <- function(){
 
 update_ferc_docs <- function(){
   
-  docs <- get_gsheet_data("documents") 
+  # original docs repeats the row of detail for multiple tag interactions (nrow=687)
+  docs <- get_gsheet_data("documents") %>% 
+    rename(detail = key_interaction_detail)
   
   # names(docs)[sapply(docs, class) == "logical"] %>% paste(collapse = ',\n') %>% cat()
   # across(docs, where(is.logical), )
   
+  # summarize the docs by the interaction detail (nrow=222)
   docs_ixns <- docs %>% 
-    group_by(key_interaction_detail) %>% 
+    group_by(detail) %>% 
     summarize(
-      project                                        = first(project), 
-      `doc NAME`                                     = first(`doc NAME`), 
-      `ATTACHMENT NAME`                              = first(`ATTACHMENT NAME`), 
-      url                                            = first(url), 
-      presented_as_potential_interaction             = first(presented_as_potential_interaction),
-      decribed_from_observations_at_the_project_site = first(decribed_from_observations_at_the_project_site),
-      `monitoring_plan_(mp)`                         = first(`monitoring_plan_(mp)`),
-      `adaptive_management_plan_(amp)`               = first(`adaptive_management_plan_(amp)`),
-      protection_mitigation_and_enhancement          = first(protection_mitigation_and_enhancement),
-      bmps_applied                                   = first(bmps_applied),
+      project            = first(project), 
+      prj_document       = first(`doc NAME`), 
+      prj_doc_attachment = first(`ATTACHMENT NAME`), 
+      prj_doc_attach_url = first(url), 
+      ck_ixn             = first(presented_as_potential_interaction),
+      ck_obs             = first(decribed_from_observations_at_the_project_site),
+      ck_mp              = first(`monitoring_plan_(mp)`),
+      ck_amp             = first(`adaptive_management_plan_(amp)`),
+      ck_pme             = first(protection_mitigation_and_enhancement),
+      ck_bmps            = first(bmps_applied),
       .groups = "drop") %>% 
     tibble::rownames_to_column("rowid") %>% 
     mutate(
       rowid = as.integer(rowid))
   
+  # assign rowid based on the summarized docs_ixns
   docs <- docs %>% 
     left_join(
       docs_ixns %>% 
-        select(rowid, key_interaction_detail), 
-      by = "key_interaction_detail") %>% 
+        select(rowid, detail), 
+      by = "detail") %>% 
     relocate(rowid)
   
+  # get all tags by category from wide to long (nrow=3,435)
   docs_tags <- bind_rows(
     docs %>% 
       mutate(
@@ -244,11 +249,13 @@ update_ferc_docs <- function(){
         tag_category = "Effect") %>% 
       select(content, rowid, tag_category, content_tag = key_effects))
   
+  # get authoritative tags
   tags <- tbl(con, "tags") %>% 
     collect() %>% 
     mutate(
       tag_sql = as.character(tag_sql))
   
+  # match based on lookup
   docs_tags_lookup <- docs_tags %>% 
     group_by(content, tag_category, content_tag) %>% 
     filter(!is.na(content_tag)) %>% 
@@ -264,7 +271,7 @@ update_ferc_docs <- function(){
   # table(!is.na(docs_tags_lookup$tag))
   # View(docs_tags_lookup)
   
-  write_csv(docs_tags_lookup, here("data/docs_tags_lookup.csv"))
+  readr::write_csv(docs_tags_lookup, here("data/docs_tags_lookup.csv"))
   
   # copy/pasted docs_tags_lookup.csv into gsheet
   # TODO: finish Effect.* lookups
