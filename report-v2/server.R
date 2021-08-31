@@ -354,6 +354,45 @@ server <- function(input, output, session) {
     get_docs()
   }, escape = F, rownames = F)
   
+  # publications ----
+  
+  #* get_pubs() ----
+  get_pubs <- reactive({
+    d <- d_pubs
+    if (length(values$ixns) > 0){
+      rowids <- sapply(values$ixns, get_rowids_with_ixn, db_tbl = "tethys_pub_tags") %>% 
+        unlist() %>% unique()
+      d <- d %>%
+        filter(rowid %in% !!rowids)
+    }
+
+    #browser()
+    d <- d_to_tags_html(d)
+    
+    d %>% 
+      mutate(
+        # TODO: include in scripts/update_tags.R:update_tags()
+        across(where(is.character), na_if, "NA"),
+        Title = glue("<a href='{uri}'>{title}</a>"))
+  })
+  
+  #* box_pubs ----
+  output$box_pubs <- renderText({
+    n_ixns <- length(values$ixns)
+    n_pubs <- nrow(get_pubs())
+    
+    ifelse(
+      n_ixns == 0,
+      HTML(glue("Tethys Publications <small>({d_pubs_n} rows)</small>")),
+      HTML(glue("Tethys Publications <small>({n_pubs} of {d_pubs_n} rows; filtered by {n_ixns} interactions</small>")))
+  })
+  
+  #* tbl_pubs ----
+  output$tbl_pubs <- renderDataTable({
+    get_pubs() %>% 
+      #select(-uri, -title, -tag)
+      select(ID, Title, Tags)
+  }, escape = F, rownames = F)
   
   # reports ----
   

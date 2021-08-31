@@ -306,10 +306,11 @@ update_ferc_docs <- function(){
   # DBI::dbListTables(con) %>% sort() %>% stringr::str_subset("^shp_", negate=T)
 }
 
-update_tethys_docs <- function(){
+update_tethys_pubs <- function(){
   # update db tables: tethys_pubs, tethys_pub_tags; plus data/tethys_docs.[json|csv]
   
-  shelf(jsonlite)
+  # source(here("scripts/common.R")); source(here("scripts/db.R"))
+  shelf(jsonlite, purrr, readr)
   
   tethys_docs_url  <- glue("https://tethys.pnnl.gov/api/primre_export")
   tethys_docs_json <- here("data/tethys_docs.json") # TODO: rm data/tethys.json
@@ -327,52 +328,62 @@ update_tethys_docs <- function(){
   # [11] "technologyType"   "tags"             "modifiedDate"     "signatureProject"
   # names(tethys_content[[1]]) %>% paste(collapse = " TEXT, ")
   # URI TEXT, type TEXT, landingPage TEXT, sourceURL TEXT, title TEXT, description TEXT, author TEXT, organization TEXT, originationDate TEXT, spatial TEXT, technologyType TEXT, tags TEXT, modifiedDate TEXT, signatureProject TEXT
-  
-  tethys_uris <- map_chr(tethys_content, "URI")
-  tethys_data <- map_chr(tethys_content, toJSON) %>% 
-    str_replace_all("'","''")
-  
-  tibble(
-    uri = tethys_uris,
-    data = tethys_data) %>% 
-    write_csv(tethys_docs_csv)
+  #  [1] "URI"              "type"             "landingPage"      "sourceURL"        "title"           
+  #  [6] "description"      "author"           "organization"     "originationDate"  "spatial"         
+  # [11] "technologyType"   "tags"             "modifiedDate"     "signatureProject"
+
+  d <- tibble(
+    uri   = map_chr(tethys_content, "URI"),
+    rowid = str_replace(uri, "https://tethys.pnnl.gov/node/", "") %>% as.integer(),
+    title = map_chr(tethys_content, "title"),
+    data  = map_chr(tethys_content, toJSON) %>% 
+      str_replace_all("'","''")) %>% 
+    relocate(rowid) %>% 
+    filter(!duplicated(uri))
+  write_csv(d, tethys_docs_csv)
   
   # TODO: rename table tethys_pubs -> tethys_docs and read fxns in Shiny report app
   # dbRemoveTable(con, "tethys_pubs")
   sql <- glue("
     CREATE TABLE IF NOT EXISTS tethys_pubs (
-  	  uri TEXT NOT NULL PRIMARY KEY,
+  	  rowid INTEGER NOT NULL PRIMARY KEY,
+  	  uri TEXT NOT NULL,
+  	  title TEXT,
   	  data JSON NOT NULL);")
   dbExecute(con, sql)
   dbExecute(con, "DELETE FROM tethys_pubs;")
+  #tbl(con, "tethys_pubs")
   
   # run once in Terminal to install software and test connection to database:
   #   sudo apt-get update; sudo apt-get install postgresql-client
   # pgpassword set at top:
   pass <- readLines("/share/.password_mhk-env.us")
   Sys.setenv(PGPASSWORD=pass) # for psql command line
-  cmd <- glue('cat {tethys_docs_csv} | psql -h postgis -p 5432 -U admin -c "COPY tethys_pubs (uri, data) FROM STDIN WITH (FORMAT CSV, HEADER TRUE);" gis')
+  cmd <- glue('cat {tethys_docs_csv} | psql -h postgis -p 5432 -U admin -c "COPY tethys_pubs (rowid, uri, title, data) FROM STDIN WITH (FORMAT CSV, HEADER TRUE);" gis')
   system(cmd)
   
-  #  [1] "URI"              "type"             "landingPage"      "sourceURL"        "title"           
-  #  [6] "description"      "author"           "organization"     "originationDate"  "spatial"         
-  # [11] "technologyType"   "tags"             "modifiedDate"     "signatureProject"
+  # dbExecute(con, "ALTER TABLE tethys_pubs ADD COLUMN title TEXT")
+  # # tbl(con, "tethys_pubs")
+  # dbExecute(con, "
+  #   UPDATE tethys_pubs 
+  #   SET
+  #     title = data -> 'title' ->> 0")
   
   # update tables for easier querying
   docs <- dbGetQuery(
     con, 
     "SELECT 
-     uri, 
-     data -> 'title'         ->> 0  AS title, 
+     rowid, uri, title,
      data -> 'tags'                 AS tags, 
      data -> 'technologyType'       AS technologyType
    FROM tethys_pubs") %>% 
-    arrange(uri) %>% 
+    arrange(rowid) %>% 
     tibble()
   # docs # 6,484 rows
   # docs %>% head(10) %>% View()
   
   # TODO: evaluate counts of tags, esp. "Environment"
+  # TODO: use rowid instead of uri, but affects old site
   doc_tags <- dbGetQuery(
     con, 
     "SELECT 
@@ -384,13 +395,45 @@ update_tethys_docs <- function(){
      uri, 
      json_array_elements(data->'technologyType') ->> 0 as tag
    FROM tethys_pubs") %>% 
-    arrange(uri, tag) %>% 
+    arrange(uri, tag) %>%
+    mutate(
+      rowid = str_replace(
+        uri, "https://tethys.pnnl.gov/node/", "") %>% 
+        as.integer()) %>% 
     tibble()
+  
+  tag_lookup <- get_gsheet_data("tag_lookup") %>% 
+    filter(content == "tethys_pubs") %>% 
+    select(-content, -content_tag_extra)
+  # TODO: match Effect.* content_tag with tag_sql
+  
+  doc_tags <- doc_tags %>% 
+    left_join(
+      tag_lookup,
+      by = c("tag" = "content_tag"))
   
   # TODO: rename table tethys_pub_tags -> tethys_doc_tags and read fxns in Shiny report app
   dbWriteTable(con, "tethys_pub_tags", doc_tags, overwrite=T)
+  dbExecute(con, "ALTER TABLE tethys_pub_tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
+  dbExecute(con, "CREATE INDEX idx_tethys_pub_tags_tag_sql ON tethys_pub_tags USING GIST (tag_sql);")
+  dbExecute(con, "CREATE INDEX idx_tethys_pub_rowid ON tethys_pub_tags USING BTREE (rowid);")
+  dbExecute(con, "CREATE INDEX idx_tethys_pubs_rowid ON tethys_pubs USING BTREE (rowid);")
   # doc_tags # 14,505 rows
   # doc_tags # 16,034 rows after UNION
+  
+  doc_tags %>% 
+    select(content_tag = tag) %>% 
+    group_by(content_tag) %>% 
+    summarize(
+      content_tag_extra = n(),
+      .groups = "drop") %>% 
+    mutate(
+      tag_category = "",
+      content      = "tethys_pubs", 
+      tag_sql      = "") %>% 
+    select(
+      content, tag_category, content_tag, content_tag_extra, tag_sql) %>% 
+    write_csv(here("data/tethys_pub_tag_lookup.csv"))
   
   # TODO: explore docs without tags
   # docs_tech <- dbGetQuery(
