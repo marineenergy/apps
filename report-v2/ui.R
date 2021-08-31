@@ -15,7 +15,7 @@ ui <- dashboardPage(
     tags$li(
       googleSignInUI_btn_signin("login"), class = "dropdown"),
     userOutput("user")),
-  
+
   #* sidebar ----
   dashboardSidebar(
     width = 310,
