@@ -7,11 +7,11 @@ ui <- dashboardPage(
     title = HTML("<a class='navbar-brand' href='#'><img alt='Brand' src='./images/logo-horizontal-square.svg' width='40px'></a>MarineEnergy.app"),
     titleWidth = 310,
     #** navbarMenu ----
-    leftUi = navbarMenu(
-      navbarTab(tabName = "tab_prj", "Projects"),
-      navbarTab(tabName = "tab_mgt", "Management"),
-      navbarTab(tabName = "tab_docs", "Documents"),
-      navbarTab(tabName = "tab_rpt", "Reports")),
+    # leftUi = navbarMenu(
+    #   navbarTab(tabName = "tab_prj", "Projects"),
+    #   navbarTab(tabName = "tab_mgt", "Management"),
+    #   navbarTab(tabName = "tab_docs", "Documents"),
+    #   navbarTab(tabName = "tab_rpt", "Reports")),
     tags$li(
       googleSignInUI_btn_signin("login"), class = "dropdown"),
     userOutput("user")),
@@ -36,7 +36,18 @@ ui <- dashboardPage(
             class="shiny-input-container",
             leafletOutput("map_side", height = 200)),
           actionButton(
-            "btn_mod_map", "Add", icon = icon("plus"), width = "263px"))))),
+            "btn_mod_map", "Add", icon = icon("plus"), width = "263px"))),
+      menuItem(
+        "Projects", 
+        tabName = "tab_prj", icon = icon("map")),
+      menuItem(
+        "Management", 
+        tabName = "tab_mgt", icon = icon("tasks")),
+      menuItem(
+        "Documents", 
+        tabName = "tab_docs", icon = icon("book"),
+        menuSubItem())
+      )),
   
   #* body ----
   dashboardBody(
@@ -109,32 +120,40 @@ ui <- dashboardPage(
       #** tab_docs ----
       tabItem(
         tabName = "tab_docs",
-        div("Filters by:", 
-            icon("tags"), 
-            span(class="me-tag me-technology", "Technology"),
-            # TODO: handle mismatched ferc_docs.tag_sql
-            #span(class="me-tag me-management", "Management missing in data"),
-            #span(class="me-tag me-effect?", "Effect missing in db.tags"),
-            span(class="me-tag me-stressor",   "Stressor"),
-            span(class="me-tag me-receptor",   "Receptor"),
-            span(class="me-tag me-phase",      "Phase")),
-        helpText(
-          HTML("The FERC eLibrary contains environmental compliance project documents, 
-          of which excerpts have been manually tagged for reference.")),
-        checkboxGroupInput(
-          "cks_docs", 
-          "Binary Filters:",
-          c(
-            "Ixn: Presented as potential interaction?"              = "ck_ixn",
-            "Obs: Described from observations at the project site?" = "ck_obs",
-            "MP: Monitoring Plan?"                                  = "ck_mp",
-            "AMP: Adaptive Management Plan?"                        = "ck_amp",
-            "PME: Protection, mitigation, and ehnhancement?"        = "ck_pme",
-            "BMP: Best Management Practices applied?"               = "ck_bmp")),
-        fluidRow(
-          box(
-            title = uiOutput("box_docs", inline=T), width = 12,
-            dataTableOutput("tbl_docs")))),
+        tabItems(
+          #** tab_prj ----
+          tabItem(
+            tabName = "FERC",
+            div("Filters by:", 
+                icon("tags"), 
+                span(class="me-tag me-technology", "Technology"),
+                # TODO: handle mismatched ferc_docs.tag_sql
+                #span(class="me-tag me-management", "Management missing in data"),
+                #span(class="me-tag me-effect?", "Effect missing in db.tags"),
+                span(class="me-tag me-stressor",   "Stressor"),
+                span(class="me-tag me-receptor",   "Receptor"),
+                span(class="me-tag me-phase",      "Phase")),
+            helpText(
+              HTML("The FERC eLibrary contains environmental compliance project documents, 
+              of which excerpts have been manually tagged for reference.")),
+            checkboxGroupInput(
+              "cks_docs", 
+              "Binary Filters:",
+              c(
+                "Ixn: Presented as potential interaction?"              = "ck_ixn",
+                "Obs: Described from observations at the project site?" = "ck_obs",
+                "MP: Monitoring Plan?"                                  = "ck_mp",
+                "AMP: Adaptive Management Plan?"                        = "ck_amp",
+                "PME: Protection, mitigation, and ehnhancement?"        = "ck_pme",
+                "BMP: Best Management Practices applied?"               = "ck_bmp")),
+            fluidRow(
+              box(
+                title = uiOutput("box_docs", inline=T), width = 12,
+                dataTableOutput("tbl_docs")))),
+          tabItem(
+            tabName = "Tethys",
+            helpText("[ToDo]"))
+          )),
       
       #** tab_reports ----
       tabItem(

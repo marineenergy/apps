@@ -13,151 +13,151 @@ librarian::shelf(
   shinydashboard, RinteRface/shinydashboardPlus, shiny, shinyjs, shinyWidgets)
 
 # navbar ----
-dashboardHeader <- function(
-  ..., title = NULL, titleWidth = NULL, 
-  disable = FALSE, .list = NULL, leftUi = NULL,
-  controlbarIcon = shiny::icon("gears"), fixed = FALSE) {
-  
-  # handle right menu items
-  items <- c(list(...), .list)
-  lapply(items, shinydashboardPlus:::tagAssert, type = "li", class = "dropdown")
-  
-  # handle left menu items
-  if (!is.null(leftUi)) {
-    left_menu_items <- leftUi
-    # left_menu_items <- lapply(seq_along(leftUi), FUN = function(i) {
-    #   left_menu_item <- leftUi[[i]]
-    #   name <- left_menu_item$name
-    #   class <- left_menu_item$attribs$class
-    #   
-    #   # if the left menu item is not a li tag and does not have
-    #   # the dropdown class, create a wrapper to make it work
-    #   if (name != "li" || !is.null(class) || class != "dropdown") {
-    #     dropdownTag <- shiny::tags$li(class = "dropdown")
-    #     left_menu_item <- shiny::tagAppendChild(dropdownTag, left_menu_item)
-    #     # add some custom css to make it nicer
-    #     left_menu_item <- shiny::tagAppendAttributes(
-    #       left_menu_item,
-    #       style = "margin-top: 7.5px; margin-left: 5px; margin-right: 5px;"
-    #     )
-    #   } else {
-    #     left_menu_item
-    #   }
-    # })
-    # when left_menu is null, left_menu_items are also NULL 
-  } else {
-    left_menu_items <- leftUi
-  }
-  
-  titleWidth <- shiny::validateCssUnit(titleWidth)
-  
-  # Set up custom CSS for custom width.
-  custom_css <- NULL
-  if (!is.null(titleWidth)) {
-    # This CSS is derived from the header-related instances of '230px' (the
-    # default sidebar width) from inst/AdminLTE/AdminLTE.css. One change is that
-    # instead making changes to the global settings, we've put them in a media
-    # query (min-width: 768px), so that it won't override other media queries
-    # (like max-width: 767px) that work for narrower screens.
-    custom_css <- shiny::tags$head(
-      shiny::tags$style(
-        shiny::HTML(
-          gsub(
-            "_WIDTH_", 
-            titleWidth, 
-            fixed = TRUE, 
-            '@media (min-width: 768px) {
-              .main-header > .navbar {
-                margin-left: _WIDTH_;
-              }
-              .main-header .logo {
-                width: _WIDTH_;
-              }
-             }
-              '
-          )
-        )
-      )
-    )
-  }
-  
-  shiny::tags$header(
-    class = "main-header",
-    custom_css,
-    style = if (disable) "display: none;",
-    # only hide on small screen devices when title is NULL
-    shiny::tags$span(class = if (is.null(title)) "logo hidden-xs" else "logo", title),
-    shiny::tags$nav(
-      class = paste0("navbar navbar-", if (fixed) "fixed" else "static", "-top"), 
-      role = "navigation",
-      # Embed hidden icon so that we get the font-awesome dependency
-      shiny::tags$span(shiny::icon("bars"), style = "display:none;"),
-      # Sidebar toggle button
-      shiny::tags$a(
-        href = "#", 
-        class = "sidebar-toggle", 
-        `data-toggle` = "offcanvas",
-        role = "button",
-        shiny::tags$span(class = "sr-only", "Toggle navigation")
-      ),
-      # left menu
-      shiny::tags$div(
-        class = "navbar-custom-menu",
-        style = "float: left; margin-left: 10px;",
-        shiny::tags$ul(
-          class = "nav navbar-nav",
-          left_menu_items
-        )
-      ),
-      # right menu
-      shiny::tags$div(
-        class = "navbar-custom-menu",
-        shiny::tags$ul(
-          class = "nav navbar-nav",
-          items,
-          # right sidebar
-          shiny::tags$li(
-            shiny::tags$a(
-              href = "#", 
-              `data-toggle` = "control-sidebar", 
-              controlbarIcon
-            )
-          )
-        )
-      )
-    )
-  )
-}
-
-# trick: [How to Show Tabpanels in bs4navbar() ? · Issue #108 · RinteRface/bs4Dash](https://github.com/RinteRface/bs4Dash/issues/108)
-
-navbarTab <- function(tabName, ..., icon = NULL) {
-  tags$li(
-    class = "nav-item",
-    tags$a(
-      class = "nav-link",
-      id = paste0("tab-", tabName),
-      href = paste0("#shiny-tab-", tabName),
-      `data-toggle` = "tab",
-      `data-value`  = tabName,
-      icon,
-      tags$p(...)))
-}
-
-
-navbarMenu <- function(..., id = NULL) {
-  if (is.null(id))
-    id <- paste0("tabs_", round(stats::runif(1, min = 0, max = 1e9)))
-  
-  tags$ul(
-    class = "navbar-nav dropdown sidebar-menu", 
-    role  = "menu",
-    ...,
-    div(
-      id = id,
-      class = "sidebarMenuSelectedTabItem",
-      `data-value` = "null"))
-}
+# dashboardHeader <- function(
+#   ..., title = NULL, titleWidth = NULL, 
+#   disable = FALSE, .list = NULL, leftUi = NULL,
+#   controlbarIcon = shiny::icon("gears"), fixed = FALSE) {
+#   
+#   # handle right menu items
+#   items <- c(list(...), .list)
+#   lapply(items, shinydashboardPlus:::tagAssert, type = "li", class = "dropdown")
+#   
+#   # handle left menu items
+#   if (!is.null(leftUi)) {
+#     left_menu_items <- leftUi
+#     # left_menu_items <- lapply(seq_along(leftUi), FUN = function(i) {
+#     #   left_menu_item <- leftUi[[i]]
+#     #   name <- left_menu_item$name
+#     #   class <- left_menu_item$attribs$class
+#     #   
+#     #   # if the left menu item is not a li tag and does not have
+#     #   # the dropdown class, create a wrapper to make it work
+#     #   if (name != "li" || !is.null(class) || class != "dropdown") {
+#     #     dropdownTag <- shiny::tags$li(class = "dropdown")
+#     #     left_menu_item <- shiny::tagAppendChild(dropdownTag, left_menu_item)
+#     #     # add some custom css to make it nicer
+#     #     left_menu_item <- shiny::tagAppendAttributes(
+#     #       left_menu_item,
+#     #       style = "margin-top: 7.5px; margin-left: 5px; margin-right: 5px;"
+#     #     )
+#     #   } else {
+#     #     left_menu_item
+#     #   }
+#     # })
+#     # when left_menu is null, left_menu_items are also NULL 
+#   } else {
+#     left_menu_items <- leftUi
+#   }
+#   
+#   titleWidth <- shiny::validateCssUnit(titleWidth)
+#   
+#   # Set up custom CSS for custom width.
+#   custom_css <- NULL
+#   if (!is.null(titleWidth)) {
+#     # This CSS is derived from the header-related instances of '230px' (the
+#     # default sidebar width) from inst/AdminLTE/AdminLTE.css. One change is that
+#     # instead making changes to the global settings, we've put them in a media
+#     # query (min-width: 768px), so that it won't override other media queries
+#     # (like max-width: 767px) that work for narrower screens.
+#     custom_css <- shiny::tags$head(
+#       shiny::tags$style(
+#         shiny::HTML(
+#           gsub(
+#             "_WIDTH_", 
+#             titleWidth, 
+#             fixed = TRUE, 
+#             '@media (min-width: 768px) {
+#               .main-header > .navbar {
+#                 margin-left: _WIDTH_;
+#               }
+#               .main-header .logo {
+#                 width: _WIDTH_;
+#               }
+#              }
+#               '
+#           )
+#         )
+#       )
+#     )
+#   }
+#   
+#   shiny::tags$header(
+#     class = "main-header",
+#     custom_css,
+#     style = if (disable) "display: none;",
+#     # only hide on small screen devices when title is NULL
+#     shiny::tags$span(class = if (is.null(title)) "logo hidden-xs" else "logo", title),
+#     shiny::tags$nav(
+#       class = paste0("navbar navbar-", if (fixed) "fixed" else "static", "-top"), 
+#       role = "navigation",
+#       # Embed hidden icon so that we get the font-awesome dependency
+#       shiny::tags$span(shiny::icon("bars"), style = "display:none;"),
+#       # Sidebar toggle button
+#       shiny::tags$a(
+#         href = "#", 
+#         class = "sidebar-toggle", 
+#         `data-toggle` = "offcanvas",
+#         role = "button",
+#         shiny::tags$span(class = "sr-only", "Toggle navigation")
+#       ),
+#       # left menu
+#       shiny::tags$div(
+#         class = "navbar-custom-menu",
+#         style = "float: left; margin-left: 10px;",
+#         shiny::tags$ul(
+#           class = "nav navbar-nav",
+#           left_menu_items
+#         )
+#       ),
+#       # right menu
+#       shiny::tags$div(
+#         class = "navbar-custom-menu",
+#         shiny::tags$ul(
+#           class = "nav navbar-nav",
+#           items,
+#           # right sidebar
+#           shiny::tags$li(
+#             shiny::tags$a(
+#               href = "#", 
+#               `data-toggle` = "control-sidebar", 
+#               controlbarIcon
+#             )
+#           )
+#         )
+#       )
+#     )
+#   )
+# }
+# 
+# # trick: [How to Show Tabpanels in bs4navbar() ? · Issue #108 · RinteRface/bs4Dash](https://github.com/RinteRface/bs4Dash/issues/108)
+# 
+# navbarTab <- function(tabName, ..., icon = NULL) {
+#   tags$li(
+#     class = "nav-item",
+#     tags$a(
+#       class = "nav-link",
+#       id = paste0("tab-", tabName),
+#       href = paste0("#shiny-tab-", tabName),
+#       `data-toggle` = "tab",
+#       `data-value`  = tabName,
+#       icon,
+#       tags$p(...)))
+# }
+# 
+# 
+# navbarMenu <- function(..., id = NULL) {
+#   if (is.null(id))
+#     id <- paste0("tabs_", round(stats::runif(1, min = 0, max = 1e9)))
+#   
+#   tags$ul(
+#     class = "navbar-nav dropdown sidebar-menu", 
+#     role  = "menu",
+#     ...,
+#     div(
+#       id = id,
+#       class = "sidebarMenuSelectedTabItem",
+#       `data-value` = "null"))
+# }
 
 # tag_choices ----
 d_tags <- get_tags()
