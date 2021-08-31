@@ -235,19 +235,22 @@ d_mgt_n <- tbl(con, "tethys_mgt") %>% summarize(n = n()) %>% pull(n)
 
 # documents ----
 d_docs <- tbl(con, "ferc_docs") %>% 
+  #collect() %>% names() %>% paste(collapse=", ")
+  # rowid, detail, project, prj_document, prj_doc_attachment, prj_doc_attach_url, 
+  # ck_ixn, ck_obs, ck_mp, ck_amp, ck_pme, ck_bmps
   select(
     rowid,
-    Detail     = key_interaction_detail,
+    Detail     = detail,
     Project    = project,
-    doc_name   = 'doc NAME',
-    doc_attach = 'ATTACHMENT NAME',
-    doc_url    = url,
-    ck_ixn     = presented_as_potential_interaction, 
-    ck_obs     = decribed_from_observations_at_the_project_site, 
-    ck_mp      = `monitoring_plan_(mp)`, 
-    ck_amp     = `adaptive_management_plan_(amp)`, 
-    ck_pme     = protection_mitigation_and_enhancement, 
-    ck_bmps    = bmps_applied) %>% 
+    doc_name   = prj_document,
+    doc_attach = prj_doc_attachment,
+    doc_url    = prj_doc_attach_url,
+    ck_ixn,
+    ck_obs, 
+    ck_mp, 
+    ck_amp, 
+    ck_pme, 
+    ck_bmps) %>% 
   mutate(
     Doc = ifelse(
       is.na(doc_attach),
