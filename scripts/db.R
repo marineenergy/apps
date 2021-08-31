@@ -20,14 +20,16 @@ db_params <- switch(machine, # common.R:machine
     user    = "admin",
     pwd_txt = "/share/.password_mhk-env.us"))
 
-# con <<- DBI::dbConnect(
-#   RPostgres::Postgres(),
-#   dbname   = db_params$dbname,
-#   host     = db_params$host,
-#   port     = 5432,
-#   user     = db_params$user,
-#   password = readLines(db_params$pwd_txt))
+# use conn only for special cases, like glue_data_sql() formatting
+conn <<- DBI::dbConnect(
+  RPostgres::Postgres(),
+  dbname   = db_params$dbname,
+  host     = db_params$host,
+  port     = 5432,
+  user     = db_params$user,
+  password = readLines(db_params$pwd_txt))
 
+# use con on all other functions
 con <<- pool::dbPool(
   drv      = RPostgres::Postgres(),
   dbname   = db_params$dbname,
@@ -37,7 +39,9 @@ con <<- pool::dbPool(
   password = readLines(db_params$pwd_txt))
 
 shiny::onStop(function() {
-  suppressWarnings(pool::poolClose(con))
+  suppressWarnings({
+    pool::poolClose(con)
+    DBI::dbDisconnect(conn)})
 })
 
 # use conn to preview SQL, but con for st_read() to get spatial geometries
