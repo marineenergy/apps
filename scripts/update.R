@@ -306,7 +306,7 @@ update_ferc_docs <- function(){
   # DBI::dbListTables(con) %>% sort() %>% stringr::str_subset("^shp_", negate=T)
 }
 
-update_tethys_docs <- function(){
+update_tethys_pubs <- function(){
   # update db tables: tethys_pubs, tethys_pub_tags; plus data/tethys_docs.[json|csv]
   
   # source(here("scripts/common.R")); source(here("scripts/db.R"))
@@ -395,11 +395,29 @@ update_tethys_docs <- function(){
      uri, 
      json_array_elements(data->'technologyType') ->> 0 as tag
    FROM tethys_pubs") %>% 
-    arrange(uri, tag) %>% 
+    arrange(uri, tag) %>%
+    mutate(
+      rowid = str_replace(
+        uri, "https://tethys.pnnl.gov/node/", "") %>% 
+        as.integer()) %>% 
     tibble()
+  
+  tag_lookup <- get_gsheet_data("tag_lookup") %>% 
+    filter(content == "tethys_pubs") %>% 
+    select(-content, -content_tag_extra)
+  # TODO: match Effect.* content_tag with tag_sql
+  
+  doc_tags <- doc_tags %>% 
+    left_join(
+      tag_lookup,
+      by = c("tag" = "content_tag"))
   
   # TODO: rename table tethys_pub_tags -> tethys_doc_tags and read fxns in Shiny report app
   dbWriteTable(con, "tethys_pub_tags", doc_tags, overwrite=T)
+  dbExecute(con, "ALTER TABLE tethys_pub_tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
+  dbExecute(con, "CREATE INDEX idx_tethys_pub_tags_tag_sql ON tethys_pub_tags USING GIST (tag_sql);")
+  dbExecute(con, "CREATE INDEX idx_tethys_pub_rowid ON tethys_pub_tags USING BTREE (rowid);")
+  dbExecute(con, "CREATE INDEX idx_tethys_pubs_rowid ON tethys_pubs USING BTREE (rowid);")
   # doc_tags # 14,505 rows
   # doc_tags # 16,034 rows after UNION
   

@@ -37,7 +37,7 @@ con <<- pool::dbPool(
   password = readLines(db_params$pwd_txt))
 
 shiny::onStop(function() {
-  pool::poolClose(con)
+  suppressWarnings(pool::poolClose(con))
 })
 
 # use conn to preview SQL, but con for st_read() to get spatial geometries
