@@ -10,27 +10,15 @@
 #       https://github.com/DavidPatShuiFong/DTedit/issues/12#issuecomment-715228402
 
 # DavidPatShuiFong/DTedit w/ support for checkboxInput
-# devtools::install_github("DavidPatShuiFong/DTedit@2.2.3")
-# devtools::install_github("DavidPatShuiFong/DTedit")
 # because of * [support for checkboxes / logical input · DavidPatShuiFong/DTedit@cffb3f7](https://github.com/DavidPatShuiFong/DTedit/commit/cffb3f75578605ea3ce97ea05cbc9a85484e1c95)
 #   devtools::install_github("DavidPatShuiFong/DTedit@develop")
 # still doesn't seem to be loading input.type = "checkboxInput" capability
-
-# devtools::install_github(
-#   "DavidPatShuiFong/DTedit",
-#   ref = "v2.2.3",
-#   force = TRUE)
-# devtools::install_github(
-#   "DavidPatShuiFong/DTedit@95467477baf4c5a2d76ff195901dc828965e49e7",
-#   force = TRUE)
-
 
 # DB CONNECTION ----
 dir_scripts <<- here::here("scripts")
 source(file.path(dir_scripts, "common_2.R"))
 source(file.path(dir_scripts, "db.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
-
 
 # LIBRARIES ----
 shelf(DavidPatShuiFong/DTedit, DT, glue)
@@ -674,103 +662,98 @@ server <- function(input, output, session) {
 } 
 
 
-# SHINY UI ----
-ui <- fluidPage(
-
+# UI ----
+ui <- tagList(
   # * css styling ----
-  includeCSS(path = here::here("DTedit_test_v2/www/styles.css")),
-  # shiny::tags$head(
-  #   shiny::tags$style(HTML("
-  #     .select-control.multi .select-input-multiple > div {
-  #       background: #d8544c;
-  #         color: #fdfdfd;
-  #     }
-  #   "))),
-  
-  
-  
-  titlePanel("Editable FERC Docs Table"),
-  div(
-    "Filters by:",
-    icon("tags"),
-    span(class="me-tag me-technology", "Technology"),
-    span(class="me-tag me-stressor",   "Stressor"),
-    span(class="me-tag me-receptor",   "Receptor"),
-    span(class="me-tag me-phase",      "Phase")),
-  helpText(
-    HTML("The FERC eLibrary contains environmental compliance project documents, 
+  includeCSS("www/styles.css"),
+  navbarPage(
+    "Edit",
+    
+    # shiny::tags$head(
+    #   shiny::tags$style(HTML("
+    #     .select-control.multi .select-input-multiple > div {
+    #       background: #d8544c;
+    #         color: #fdfdfd;
+    #     }
+    #   "))),
+    
+    tabPanel(
+      "Projects", #* Projects ----
+      h4("Edit input options"),
+      # selectInput(
+      #   "prj_select", "Select project", 
+      #   choices = prj_levels()),
+      # actionButton(
+      #   "create_new_prj",
+      #   "Add a new project",
+      #   icon = icon("plus")
+      # ),
+      # conditionalPanel(
+      #   condition = !is.null("input.create_new_prj"),
+      #   textInput(
+      #     "create_prj",
+      #     "Create a new project",
+      #     placeholder = paste(
+      #       "Existing projects:", 
+      #       paste(
+      #         ferc$project %>% unique() %>% sort() %>% na.omit(),
+      #         collapse = ", ")))),
+      # submitButton(
+      #   text = "Apply new project",
+      #   icon = icon("save")
+      # ),
+      textInput(
+        "add_prj",
+        "Create a new project",
+        placeholder = paste(
+          "Existing projects:",
+          paste(
+            ferc$project %>% unique() %>% sort() %>% na.omit(),
+            collapse = ", "))),
+      actionButton(
+        "submit",
+        "Submit",
+        icon("paper-plane"), 
+        style = "color: #fff; background-color: #337ab7; border-color: #2e6da4")),
+    
+    tabPanel(
+      "Documents", 
+      #* Documents ----
+      helpText("Editable FERC Documents"),
+      div(
+        "Filters by:",
+        icon("tags"),
+        span(class="me-tag me-technology", "Technology"),
+        span(class="me-tag me-stressor",   "Stressor"),
+        span(class="me-tag me-receptor",   "Receptor"),
+        span(class="me-tag me-phase",      "Phase")),
+      helpText(
+        HTML("The FERC eLibrary contains environmental compliance project documents, 
           of which excerpts have been manually tagged for reference.")),
-  
-  div(
-    DTOutput("ckbx_legend")),
-  
-  div(
-    h4("Edit input options"),
-    textInput(
-      "add_prj",
-      "Create a new project",
-      placeholder = paste(
-        "Existing projects:",
-        paste(
-          ferc$project %>% unique() %>% sort() %>% na.omit(),
-          collapse = ", "))),
-    actionButton(
-      "submit",
-      "Submit",
-      icon("paper-plane"), 
-      style = "color: #fff; background-color: #337ab7; border-color: #2e6da4")),
-  
-  # selectInput(
-  #   "prj_select", "Select project", 
-  #   choices = prj_levels()),
+      uiOutput("ferc_new")),
+    
+    tabPanel(
+      "Publications",
+      #* Publications ----
+      helpText("Editable Tethys Publications"))
+))
 
-   
-
-  
-  # actionButton(
-  #   "create_new_prj",
-  #   "Add a new project",
-  #   icon = icon("plus")
-  # ),
-  # 
-  # uiOutput(
-  #   "new", 
-  #   "New test",
-  # ),
-  
-  # conditionalPanel(
-  #   condition = !is.null("input.create_new_prj"),
-  #   textInput(
-  #     "create_prj",
-  #     "Create a new project",
-  #     placeholder = paste(
-  #       "Existing projects:", 
-  #       paste(
-  #         ferc$project %>% unique() %>% sort() %>% na.omit(),
-  #         collapse = ", ")))),
-  # submitButton(
-  #   text = "Apply new project",
-  #   icon = icon("save")
-  # ),
-  
-  
-  fluidRow(
-    column(
-      width = 12,
-      # radioButtons(
-      #    "attachment_method",
-      #    "Select a method to attach document",
-      #    choiceValues = list("url", "file"),
-      #    choiceNames  = list(
-      #      tags$div(
-      #        span(tagList(icon("link"), "Attach URL link"))),
-      #      tags$div(
-      #        span(tagList(icon("upload"), "Upload file"))))),
-         # selected = NULL,
-         # inline = F,
-      hr())),
-  # HTML(tag_html_choices[1]),
-  uiOutput("ferc_new"))
+# fluidRow(
+#   column(
+#     width = 12,
+#     # radioButtons(
+#     #    "attachment_method",
+#     #    "Select a method to attach document",
+#     #    choiceValues = list("url", "file"),
+#     #    choiceNames  = list(
+#     #      tags$div(
+#     #        span(tagList(icon("link"), "Attach URL link"))),
+#     #      tags$div(
+#     #        span(tagList(icon("upload"), "Upload file"))))),
+#     # selected = NULL,
+#     # inline = F,
+#     hr())),
+# HTML(tag_html_choices[1]),
 
 # SHINY APP ----
 shinyApp(ui, server)
