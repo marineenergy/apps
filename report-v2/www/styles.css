@@ -69,43 +69,70 @@
 }
 
 /* selectize dropdown option controls*/
+.selectize-dropdown-content .active[data-value^='Technology.'] {
+  background: #bcced8 !important;
+}
+.selectize-dropdown-content .active[data-value^='Receptor'] {
+  background: #cfdcbb !important;
+}
+.selectize-dropdown-content .active[data-value^='Stressor.'] {
+  background: #e3c9d7 !important;
+}
+.selectize-dropdown-content .active[data-value^='Management.'] {
+  background: #c2c4d3 !important;
+}
+.selectize-dropdown-content .active[data-value^='Phase.'] {
+  background: #d7d7d7 !important;
+}
+
 .option[data-value^='Technology.'] { 
   color: #333333;
   background-color: #d1e5f0; /*light blue*/
   border-color: transparent;
+  border-radius: 3px;
+  margin: 4px;
+  padding: 2px 10px 2px 10px;
+  box-sizing: border-box;
 }
 .option[data-value^='Receptor.'] { 
   color: #333333;
   background-color: #e6f5d0; /*light green*/
   border-color: transparent;
+  border-radius: 3px;
+  margin: 4px;
+  padding: 2px 10px 2px 10px;
+  box-sizing: border-box;
 }
 .option[data-value^='Stressor.'] { 
   /* .btn-danger  */
   color: #333333;
   background-color: #fde0ef; /*light pink*/
   border-color: transparent;
+  border-radius: 3px;
+  margin: 4px;
+  padding: 2px 10px 2px 10px;
+  box-sizing: border-box;
 }
 .option[data-value^='Management.'] { 
   /* .btn-secondary */
   color: #333333;
   background-color: #d8daeb; /*light purple*/
   border-color: transparent;
+  border-radius: 3px;
+  margin: 4px;
+  padding: 2px 10px 2px 10px;
+  box-sizing: border-box;
 }
 .option[data-value^='Phase.'] { 
   /* .btn-secondary */
   color: #333333;
   background-color: #efefef; /*light gray*/
   border-color: transparent;
+  border-radius: 3px;
+  margin: 4px;
+  padding: 2px 10px 2px 10px;
+  box-sizing: border-box;
 }
-
-/*
- .option[data-value^='Stressor.'] {
-    color: #333333;
-    background-color: #fde0ef;
-    border-color: transparent;
-  }
-  */
-  
 
 .me-tag {
   border-color: transparent;
