@@ -8,10 +8,10 @@ ui <- dashboardPage(
     titleWidth = 310,
     #** navbarMenu ----
     leftUi = navbarMenu(
-      navbarTab(tabName = "tab_prj", "Projects"),
-      navbarTab(tabName = "tab_mgt", "Management"),
+      navbarTab(tabName = "tab_prj",  "Projects"),
+      navbarTab(tabName = "tab_mgt",  "Management"),
       navbarTab(tabName = "tab_docs", "Documents"),
-      navbarTab(tabName = "tab_rpt", "Reports")),
+      navbarTab(tabName = "tab_rpt",  "Reports")),
     tags$li(
       googleSignInUI_btn_signin("login"), class = "dropdown"),
     userOutput("user")),
@@ -23,13 +23,57 @@ ui <- dashboardPage(
     sidebarMenu(
       menuItem(
         "Configure", 
-        tabName = "configure",icon = icon("gears"),
+        tabName = "configure", icon = icon("gears"),
         startExpanded = T,
         wellPanel(
           h5(icon("tags"), "Interactions"),
-          selectInput(
-            "sel_ixn_tags", "Tags", tag_choices, multiple = T),
-          uiOutput("ixn_btns")),
+          selectizeInput(
+            "sel_ixn_tags", "Tags", tag_choices,
+            multiple = T
+            # options  = list(render = I('{
+            #   option: function(item, escape){
+            #     return "<div><strong>" + escape(item) + "</strong>"
+            #   }
+            # }'))
+            ),
+            # options  = list(render = I('{
+            #   option: function(item, escape){
+            #     return "<div><strong>" + escape(item) + "</strong>"
+            #   }
+            # }'))),
+          # selectInput("sel_ixn_tags", "Tags", tag_choices, multiple = T),
+            # style = "background-color: red;"),
+          uiOutput("ixn_btns")
+          # selectInput(
+          #   "sel_ixn_tags", "Tags", tag_choices, multiple = T),
+          # uiOutput("ixn_btns"),
+          
+          # tags$label("for"="sel_ixn_tags", "Tags", class="input-label"),
+          # tags$select(
+          #   id = "sel_ixn_tag", 
+          #   # "onfocus"='this.size=13;', "onblur"='this.size=1;' ,
+          #   # "onchange"='this.size=1; this.blur();',
+          #   tags$option(value = "none", ""),
+          #   tags$optgroup("label"="Stressor",
+          #                 tags$option(value = "Stressor 1"),
+          #                 tags$option(value = "Stressor 2"),
+          #                 tags$option(value = "Stressor 3")),
+          #   tags$optgroup("label"="Technology",
+          #                 tags$option(value = "Tech 1"),
+          #                 tags$option(value = "Tech 2"),
+          #                 tags$option(value = "Tech 3"))
+            # input use as is in the ui or in the server (make sure id is linked in the css)
+          
+        ),
+
+        # tags$optgroup(tag_choices_html$Stressor),
+        # tags$optgroup(tag_choices_html$Receptor),
+        # tags$optgroup(tag_choices_html$Phase),
+        # tags$optgroup(tag_choices_html$Management),
+        # tags$optgroup(tag_choices_html$Consequence)
+            
+            # HTML(tag_choices_html))), 
+   
         wellPanel(
           h5(icon("map-marked"), "Location"),
           div(
@@ -42,7 +86,104 @@ ui <- dashboardPage(
   dashboardBody(
     tags$head(
       tags$link(rel = "stylesheet", type = "text/css", href = "styles.css"),
-      tags$link(rel = "shortcut icon", href = "favicon.ico")),
+      tags$link(rel = "shortcut icon", href = "favicon.ico"),
+      tags$style(htmltools::HTML("
+      
+        .selectize-dropdown-content .active[data-value^='Technology.'] {
+          background: #bcced8 !important;
+        }
+        .selectize-dropdown-content .active[data-value^='Receptor'] {
+          background: #cfdcbb !important;
+        }
+        .selectize-dropdown-content .active[data-value^='Stressor.'] {
+          background: #e3c9d7 !important;
+        }
+        .selectize-dropdown-content .active[data-value^='Management.'] {
+          background: #c2c4d3 !important;
+        }
+        .selectize-dropdown-content .active[data-value^='Phase.'] {
+          background: #d7d7d7 !important;
+        }
+
+        .option[data-value^='Technology.'] { 
+          color: #333333;
+          background-color: #d1e5f0; /*light blue*/
+          border-color: transparent;
+          border-radius: 3px;
+          margin: 4px;
+          padding: 2px 10px 2px 10px;
+          box-sizing: border-box;
+        }
+        .option[data-value^='Receptor.'] { 
+          color: #333333;
+          background-color: #e6f5d0; /*light green*/
+          border-color: transparent;
+          border-radius: 3px;
+          margin: 4px;
+          padding: 2px 10px 2px 10px;
+          box-sizing: border-box;
+        }
+        .option[data-value^='Stressor.'] { 
+          /* .btn-danger  */
+          color: #333333;
+          background-color: #fde0ef; /*light pink*/
+          border-color: transparent;
+          border-radius: 3px;
+          margin: 4px;
+          padding: 2px 10px 2px 10px;
+          box-sizing: border-box;
+        }
+        .option[data-value^='Management.'] { 
+          /* .btn-secondary */
+          color: #333333;
+          background-color: #d8daeb; /*light purple*/
+          border-color: transparent;
+          border-radius: 3px;
+          margin: 4px;
+          padding: 2px 10px 2px 10px;
+          box-sizing: border-box;
+        }
+        .option[data-value^='Phase.'] { 
+          /* .btn-secondary */
+          color: #333333;
+          background-color: #efefef; /*light gray*/
+          border-color: transparent;
+          border-radius: 3px;
+          margin: 4px;
+          padding: 2px 10px 2px 10px;
+          box-sizing: border-box;
+        }"))
+      
+      ),
+     
+      #   }
+      #   .item {
+      #     background: #2196f3 !important;
+      #     color: white !important;
+      #   }
+      #   .selectize-dropdown-content .active  {
+      #     background: #2196f3 !important;
+      #     color: white !important;
+      #   }"))
+      # ),
+      # 
+      # # counts from 2
+      # # tags$style("
+      # 
+      #   #sel_ixn_tags ~ .selectize-control {
+      #     
+      #   
+      #   }
+      #   #sel_ixn_tags ~ .selectize-control .option:nth-child(0) {
+      #     background-color: rgba(30,144,255,0.5);
+      #   }
+      #   #sel_ixn_tags ~ .selectize-control .option:nth-child(3) {
+      #     background-color: rgba(205,92,92,0.5);")
+
+
+      # tags$style(HTML(tags_dropdown_style))),
+
+  
     
     tabItems(
       

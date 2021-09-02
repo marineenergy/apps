@@ -174,6 +174,62 @@ for (category in unique(d_tags$category)){ # category = d_tags$category[1]
       category))
 }
 
+get_tag_option <- function(tag_group) {
+  # will map across each tag within each tag_group
+  glue("<option value='{tag_group %>% unlist}'>{tag_group %>% unlist}</option>")
+}
+
+get_tag_optgroup <- function(tag_group) {
+  # will map across each tag_group
+  # tag_html <-
+    glue(
+    "<optgroup label='{names(tag_group)}'
+    {paste(unlist(get_tag_option(tag_group)), sep='', collapse='\n')}
+    </optgroup>"
+    )
+}
+
+tags_dropdown_list <- list()
+for (i in 1:length(tag_choices)) {
+  tags_dropdown_list[i] <- get_tag_optgroup(tag_choices[i])
+}
+
+tags_dropdown <- paste(tags_dropdown_list, sep='', collapse='\n')
+
+
+tags_dropdown_style <- ("
+  #sel_ixn_tags ~ .selectize-control .option:nth-child(1:6) {
+    background-color: rgba(30,144,255,0.5);
+  }
+  #sel_ixn_tags ~ .selectize-control .option:nth-child(7:18) {
+    background-color: rgba(205,92,92,0.5);")
+
+
+
+
+
+  #color ~ .selectize-control.single .selectize-dropdown [data-value=blue] { color: blue }
+ #color ~ .selectize-control.single .selectize-dropdown [data-value=red] { color: red }
+
+
+       
+
+
+
+# tag_choices_html <- c(
+#   # add default option
+#   "<option value='none'></option>",    
+#   # turn groupnames into html optgroups
+#   sapply(names(tag_choices), function(x){
+#     paste0("optgroup label='",x,"'>", x, )
+#   })
+#   # turn choices into html options
+#   sapply(tag_choices, function(x){  
+#     paste0("<option value='",x,"'>", x, "<option/>")
+#     # paste0("<option value='",x,"'>", x, "<option>")
+#   })
+# )
+
 # googleAuthR ----
 
 # * [Client ID for Web application – APIs & Services – iea-uploader – Google API Console](https://console.developers.google.com/apis/credentials/oauthclient/596429062120-lsgv9f8pbas11o7ub9b9cm0earf1dpu5.apps.googleusercontent.com?authuser=3&project=iea-uploader)

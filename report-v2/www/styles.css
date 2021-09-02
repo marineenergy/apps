@@ -37,6 +37,8 @@
 
 /* colors for Tags from https://getbootstrap.com/docs/4.0/components/buttons/#examples
    colors for Stressor - Receptor; color-blind safe purple-green from https://colorbrewer2.org/#type=diverging&scheme=PiYG&n=11 */
+
+/* selectize input controls*/
 .selectize-control.multi .selectize-input > div[data-value^='Technology.'] { 
   color: #333333;
   background-color: #d1e5f0; /*light blue*/
@@ -65,6 +67,45 @@
   background-color: #efefef; /*light gray*/
   border-color: transparent;
 }
+
+/* selectize dropdown option controls*/
+.option[data-value^='Technology.'] { 
+  color: #333333;
+  background-color: #d1e5f0; /*light blue*/
+  border-color: transparent;
+}
+.option[data-value^='Receptor.'] { 
+  color: #333333;
+  background-color: #e6f5d0; /*light green*/
+  border-color: transparent;
+}
+.option[data-value^='Stressor.'] { 
+  /* .btn-danger  */
+  color: #333333;
+  background-color: #fde0ef; /*light pink*/
+  border-color: transparent;
+}
+.option[data-value^='Management.'] { 
+  /* .btn-secondary */
+  color: #333333;
+  background-color: #d8daeb; /*light purple*/
+  border-color: transparent;
+}
+.option[data-value^='Phase.'] { 
+  /* .btn-secondary */
+  color: #333333;
+  background-color: #efefef; /*light gray*/
+  border-color: transparent;
+}
+
+/*
+ .option[data-value^='Stressor.'] {
+    color: #333333;
+    background-color: #fde0ef;
+    border-color: transparent;
+  }
+  */
+  
 
 .me-tag {
   border-color: transparent;
