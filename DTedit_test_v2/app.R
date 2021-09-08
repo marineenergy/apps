@@ -10,20 +10,9 @@
 #       https://github.com/DavidPatShuiFong/DTedit/issues/12#issuecomment-715228402
 
 # DavidPatShuiFong/DTedit w/ support for checkboxInput
-# devtools::install_github("DavidPatShuiFong/DTedit@2.2.3")
-# devtools::install_github("DavidPatShuiFong/DTedit")
 # because of * [support for checkboxes / logical input · DavidPatShuiFong/DTedit@cffb3f7](https://github.com/DavidPatShuiFong/DTedit/commit/cffb3f75578605ea3ce97ea05cbc9a85484e1c95)
 #   devtools::install_github("DavidPatShuiFong/DTedit@develop")
 # still doesn't seem to be loading input.type = "checkboxInput" capability
-
-# devtools::install_github(
-#   "DavidPatShuiFong/DTedit",
-#   ref = "v2.2.3",
-#   force = TRUE)
-# devtools::install_github(
-#   "DavidPatShuiFong/DTedit@95467477baf4c5a2d76ff195901dc828965e49e7",
-#   force = TRUE)
-
 
 # DB CONNECTION ----
 dir_scripts <<- here::here("scripts")
@@ -32,252 +21,404 @@ source(file.path(dir_scripts, "db.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
 
 # LIBRARIES ----
-shelf(DavidPatShuiFong/DTedit, DT, glue)
-
-# WRITE MERGED DATA TO DB ----
-# (IF NOT ALREADY THERE)
-
-# for tags_tbl, containing 1 col called tag_sql
-merge_tags <- function(tag_list_col, tag_sql) {
-  tag_list_col %>% 
-    # filter(!is.na(col_name)) %>% 
-    distinct(tag_sql, .keep_all = TRUE) %>% 
-    pull(tag_sql)
-}
+shelf(DavidPatShuiFong/DTedit, DT, glue, purrr)
 
 
-#   ferc_docs_tags <- ferc_docs_tags %>% 
-#     na_if("NA") %>%
-#     group_by(rowid) %>%
-#     group_modify(~mergeTags(.x)) %>%
-#     data.frame()
-#   # t <- tibble(tags_string = paste(prj_tags$tag_sql, collapse = ";"))
-# 
-# 
-# ferc_test <- ferc_test %>% 
-#   mutate(Tags_collapsed = purrr::map(ferc_test$Tags, group_tags))
-# 
-# 
-# group_tags(ferc_test$Tags[[4]]) 
-# 
-# mapx <- purrr::map(ferc_test$Tags, group_tags)
-# 
-# 
-# 
-# View(ferc_test)
-
-
-
-# group_tags <- function(data) {
-#   data <- data %>%
-#     filter(!is.na(content_tag)) %>%
-#     distinct(content_tag, .keep_all = T)
-#   data <- data %>%
-#     mutate(Tags = paste(data$content_tag, collapse = ";")) %>%
-#     select(-content_tag) %>%
-#     distinct(Tags, .keep_all = T)
+# FXNS FOR get_ferc() ----
+# merge_tags <- function(tag_list_col, tag_sql) {
+#   tag_list_col %>%
+#     pull(tag_sql) %>%
+#     unlist(use.names = F) %>% 
+#     unique()
+#   # if (length(d) > 1) {
+#   #   d <- d %>% unique()
+#   # } 
+#   # d
 # }
 
-
-# READ IN MERGED FERC TAGS DATA FROM DB ----
-get_levels <- function(col) {
-  col %>% factor(levels = c(unique(col)))
+# tag_list_col = table$tag_sql[[1]]
+# tag = tag_sql
+#   
+merge_tags <- function(tag_list_col) {
+  # tag_list_col <- x
+  tag_list_col %>% 
+    #pull(tag_sql) %>% unique() 
+    unique() 
+    # unlist(use.names = F) %>% 
 }
 
 
-# test <- dbReadTable(con, "ferc_docs") %>% 
+
+
+table$tag_sql[[1]] %>% merge_tags()
+# 
+# purrr::map(table$tag_sql, merge_tags)
+# 
+# 
+# 
+# merge_tags(tag_list_col[[1]])
+# tag_list_col[[1]]
+#   
+  
+  
+  # tag_list_col %>% 
+  #   filter(tag_sql != "NA") %>% 
+  #   pull(tag_sql) %>% 
+  #   unlist() %>% 
+  #   na_if("NA") %>% 
+  #   unique() 
+  # 
+  
+    # na_if("NA") %>% 
+    # na_if(NULL) %>% 
+    # na_if("NULL") %>% 
+    # filter(!is.na(col_name)) %>% 
+  
+    # distinct(tag_sql, .keep_all = TRUE) %>% 
+    # pull(tag_sql)
+
+
+merge_tags_html <- function(tag_list_col, tag_html) {
+  tag_list_col %>% 
+    # pull(tag_html) %>% 
+    unlist() %>% unique() %>% 
+    paste(., collapse = "\n")
+}
+
+merge_tags_named <- function(tag_list_col, tag_named) {
+  tag_list_col %>% 
+    # pull(tag_named) %>%
+    unlist(recursive = F) %>% 
+    unlist(recursive = F, use.names = T) %>% 
+    # unlist(recursive = F) %>% 
+    unique() 
+    # na.omit()
+  # tag_list_col %>% 
+  #   pull(tag_named) %>% unlist() %>% unique() 
+}
+
+table %>% slice(1) %>%
+  merge_tags()
+#   
+#   
+#   merge_tags_named()
+# 
+# 
+# 
+# new<-table_row %>% 
+#   distinct(tag_named, .keep_all = T) %>% 
+#   pull(tag_named) %>% 
+#   purrr::map(
+#     
+#   )
+  
+  
+  
+  
+
+# data<-table_row %>% 
+#   filter(tag_sql != "NULL") %>% 
+#   filter(!is.na(tag_sql)) %>% 
+#   pull(tag_sql) %>% 
+#   unlist() %>% 
+#   unique() 
+# 
+# 
+# data2<- table_row %>% 
+#   filter(tag_named != "NULL") %>% 
+#   filter(!is.na(tag_named)) %>% 
+#   pull(tag_named) %>% 
+#   unlist() %>% 
+#   na_if("NA") %>% 
+#   unique()
+#   
+
+
+
+
+
+
+
+# tag_list_col <- dbReadTable(con, "ferc_docs") %>% 
 #   tibble() %>% 
 #   collect() %>% 
 #   left_join(
 #     tbl(con, "ferc_doc_tags") %>% 
-#       select(rowid, tag_sql) %>% 
+#       select(rowid, tag_sql) %>%
 #       collect() %>% 
-#       tidyr::nest(tags = tag_sql))
-#       # mutate(
-#       #   tags = as.vector(tags)))
+#       # new part starts/
+#       mutate(tag_sql_chr = tag_sql %>% as.character()) %>% 
+#       left_join(
+#         get_tags() %>% 
+#           select(tag_sql, tag_named, tag), 
+#         by = c("tag_sql_chr" = "tag_sql")) %>% 
+#       select(-tag_sql_chr) %>% 
+#       # /end new part
+#       group_by(rowid) %>% 
+#       tidyr::nest(
+#         tag_sql   = tag_sql,
+#         tag_named = tag_named,
+#         tag_html  = tag_html),
+#     by = "rowid") %>% 
+#   na_if("NA")
 
+
+# READ IN MERGED FERC TAGS DATA FROM DB ----
 get_ferc <- function() {
   
- dbReadTable(con, "ferc_docs") %>% 
-    tibble() %>% 
-    collect() %>% 
-    left_join(
-      tbl(con, "ferc_doc_tags") %>% 
-        select(rowid, tag_sql) %>%
-        collect() %>% 
+  # d_tags_2 <- get_tags() %>% 
+  #   select(category, tag_sql, tag_named)
+  # 
+  # 
+  # tag_choices <- list()
+  # for (category in unique(d_tags_2$category)){ # category = d_tags$category[1]
+  #   tag_choices <- append(
+  #     tag_choices,
+  #     setNames
+  #       list(
+  #         d_tags %>% 
+  #           filter(category == !!category) %>% 
+  #           pull(tag_named) %>% 
+  #           unlist()),
+  #       category))
+  # }
+  
+  
+  
+  
+  
+  
+  # table <- dbReadTable(con, "ferc_docs") %>% 
+  #   tibble() %>% collect() %>% 
+  #   na_if("NA") %>% 
+  #   left_join(
+  #     dbReadTable(con, "ferc_doc_tags") %>% 
+  #       # read in ferc_doc_tags
+  #       tibble() %>% collect() %>% 
+  #       mutate(tag_sql_chr = ifelse(
+  #         content_tag == "ALL",
+  #         glue("{tag_category}.{content_tag}") %>% as.character(),
+  #         tag_sql %>% as.character())) %>% 
+  #       filter(tag_sql != "NA") %>% 
+  #       select(-content, -tag_category, -content_tag) %>% 
+  #       # inner_join() with tags lookup to get tag_html & tag_named
+  #       inner_join(
+  #         get_tags() %>% 
+  #           mutate(
+  #             tag_html_nocat = glue(
+  #               "<span class='me-tag me-{cat}'>{tag_nocat}</span>")) %>% 
+  #           select(tag_sql, tag_named, tag_html_nocat) %>% 
+  #           rename(tag_html = tag_html_nocat),
+  #         by = c("tag_sql_chr" = "tag_sql")))
+        
+  # new approach using merge() to get rid of NULL values
+  dbReadTable(con, "ferc_docs") %>% 
+    tibble() %>% collect() %>% 
+    na_if("NA") %>%
+    merge(
+      dbReadTable(con, "ferc_doc_tags") %>% 
+        # read in ferc_doc_tags
+        tibble() %>% collect() %>% 
+        mutate(tag_sql_chr = ifelse(
+          content_tag == "ALL",
+          glue("{tag_category}.{content_tag}") %>% as.character(),
+          tag_sql %>% as.character())) %>% 
+        filter(tag_sql != "NA") %>% 
+        select(-content, -tag_category, -content_tag) %>% 
+        # inner_join() with tags lookup to get tag_html & tag_named
+        inner_join(
+          get_tags() %>% 
+            mutate(
+              tag_html_nocat = glue(
+                "<span class='me-tag me-{cat}'>{tag_nocat}</span>")) %>% 
+            select(tag_sql, tag_named, tag_html_nocat) %>% 
+            rename(tag_html = tag_html_nocat),
+          by = c("tag_sql_chr" = "tag_sql")) %>% 
+        
+        select(-tag_sql_chr) %>%
         group_by(rowid) %>% 
         tidyr::nest(
-          tag_sql = tag_sql),
-      by = "rowid") %>% 
-    na_if("NA") %>% 
-    # mutate(
-    #   #Tags    = Tags    %>% strsplit(";"), # TODO: left_join(tbl(con, "ferc_doc_tags"), by="rowid")
-    #   ID         = rowid,
-    #   Detail     = key_interaction_detail,
-    #   Project    = project %>% get_levels(),
-    #   doc_name   = `doc.NAME`,
-    #   doc_attach = `ATTACHMENT.NAME`,
-    #   URL        = url,
-    #   Tag_sql    = Tag_sql %>% purrr::map(merge_tags),
-    #   ck_ixn     = presented_as_potential_interaction,
-    #   ck_obs     = decribed_from_observations_at_the_project_site,
-    #   ck_mp      = `monitoring_plan_.mp.`,
-    #   ck_amp     = `adaptive_management_plan_.amp.`,
-    #   ck_pme     = protection_mitigation_and_enhancement,
-    #   ck_bmps    = bmps_applied) %>%
-    mutate(
-      # across(starts_with("ck_"), as.character),
-      # across(starts_with("ck_"), recode, "TRUE"="✓", "FALSE"="☐"),
-      tag_sql = tag_sql %>% purrr::map(merge_tags),
-      document = ifelse(
-        is.na(prj_doc_attachment),
-        prj_document,
-        glue("{prj_document} - {prj_doc_attachment}")),
-      document = ifelse(
-        is.na(prj_doc_attach_url),
-        document,
-        glue('<a href="{prj_doc_attach_url}">{document}</a>')),
-      document = as.character(document)) %>% 
-    relocate(rowid, document, project, detail, tag_sql) %>% 
-    # select(
-    #   ID  = rowid, 
-    #   Project, Doc, URL, Detail, Tag_sql, Tag_category, Content_tag,
-    #   Content    = content,
-    #   Attachment = doc_attach,
-    #   Ixn = ck_ixn, 
-    #   Obs = ck_obs, 
-    #   MP  = ck_mp, 
-    #   AMP = ck_amp, 
-    #   PME = ck_pme, 
-    #   BMP = ck_bmps) %>% 
+          tag_sql   = tag_sql,          # for UPDATING / storage
+          tag_named = tag_named,        # for EDIT INTERFACE
+          tag_html  = tag_html),        # for VIEW dtedit table
+      
+      # merge params
+      by.x = "rowid", by.y = "rowid", 
+      all.x = T, 
+      incomparables = NA) %>% 
+  mutate(
+    tag_sql   = map(tag_sql,   merge_tags),
+    tag_named = map(tag_named, merge_tags_named),
+    tag_html  = map(tag_html,  merge_tags_html),
+    document  = ifelse(
+      is.na(prj_doc_attachment),
+      prj_document,
+      glue("{prj_document} - {prj_doc_attachment}")),
+    document = ifelse(
+      is.na(prj_doc_attach_url),
+      document,
+      glue('<a href="{prj_doc_attach_url}">{document}</a>')),
+    document = as.character(document)) %>% 
+    relocate(
+      rowid, document, project, detail, 
+      tag_sql, tag_named, tag_html) %>% 
+    arrange(rowid) %>%
     data.frame()
-}
 
-# get_ferc <- function() {
-#   dbReadTable(con, "ferc_docs") %>% 
+        
+        
+        
+  
+                             
+                             
+    
+
+        
+      # tbl(con, "ferc_doc_tags") %>% 
+        # select(rowid, tag_sql) %>%
+      #   na_if("NA") %>% 
+      #   # collect() %>% 
+      #   # new part starts/
+      #   filter(!is.na(tag_sql)) %>% 
+      #   # mutate(tag_sql_chr = tag_sql %>% as.character()) %>% 
+      #   left_join(
+      #     tags<-get_tags() %>% 
+      #       mutate(
+      #         tag_html_nocat = glue(
+      #           "<span class='me-tag me-{cat}'>{tag_nocat}</span>")) %>% 
+      #       select(tag_sql, tag_named, tag_html_nocat), 
+      #     by = c("tag_sql_chr" = "tag_sql")) %>% 
+      #   rename(tag_html = tag_html_nocat) %>% 
+      #   # perhaps a better way to do this that doesn't remove NULL values
+      #   # filter(tag_named != "NULL") %>% 
+      #   # na_if('NULL')
+      #   select(-tag_sql_chr) %>% 
+      #   # /end new part
+      #   group_by(rowid) %>% 
+      #   tidyr::nest(
+      #     tag_sql   = tag_sql,          # for UPDATING / storage
+      #     tag_named = tag_named,        # for EDIT INTERFACE
+      #     tag_html  = tag_html),        # for VIEW dtedit table
+      # by = "rowid") %>% 
+    # mutate(
+    #   tag_sql   = tag_sql   %>% purrr::map(merge_tags),
+    #   tag_named = tag_named %>% purrr::map(merge_tags_named),
+    #   tag_html  = tag_html  %>% purrr::map(merge_tags_html),
+    #   document  = ifelse(
+    #     is.na(prj_doc_attachment),
+    #     prj_document,
+    #     glue("{prj_document} - {prj_doc_attachment}")),
+    #   document = ifelse(
+    #     is.na(prj_doc_attach_url),
+    #     document,
+    #     glue('<a href="{prj_doc_attach_url}">{document}</a>')),
+    #   document = as.character(document)) %>% 
+    # relocate(
+    #   rowid, document, project, detail, 
+    #   tag_sql, tag_named, tag_html) %>% 
+    # arrange(rowid) %>%
+    # data.frame()
+}
+  
+
+  
+  
+  
+  
+  
+  
+#  dbReadTable(con, "ferc_docs") %>% 
 #     tibble() %>% 
+#     collect() %>% 
 #     left_join(
-#       dbReadTable(con, "ferc_doc_tags") %>% 
-#         tibble() %>% 
-#         select(rowid, tag_sql) %>% 
+#       tbl(con, "ferc_doc_tags") %>% 
+#         select(rowid, tag_sql) %>%
 #         collect() %>% 
-#         tidyr::nest(tags = tag_sql) %>% 
-#         mutate(tags = as.vector(tags))) %>% 
-#     rename(
-#       ID         = rowid,
-#       Detail     = key_interaction_detail,
-#       Project    = project,
-#       doc_name   = `doc.NAME`,
-#       doc_attach = `ATTACHMENT.NAME`,
-#       ck_ixn     = presented_as_potential_interaction, 
-#       ck_obs     = decribed_from_observations_at_the_project_site, 
-#       ck_mp      = `monitoring_plan_.mp.`, 
-#       ck_amp     = `adaptive_management_plan_.amp.`, 
-#       ck_pme     = protection_mitigation_and_enhancement, 
-#       ck_bmps    = bmps_applied) %>% 
+#         # new part starts/
+#         mutate(tag_sql_chr = tag_sql %>% as.character()) %>% 
+#         left_join(
+#           get_tags() %>% select(tag_sql, tag_html), 
+#           by = c("tag_sql_chr" = "tag_sql")) %>% 
+#         select(-tag_sql_chr) %>% 
+#         # /end new part
+#         group_by(rowid) %>% 
+#         tidyr::nest(
+#           tag_sql  = tag_sql,
+#           tag_html = tag_html),
+#       by = "rowid") %>% 
+#     na_if("NA") %>% 
 #     mutate(
-#       across(starts_with("ck_"), as.character),
-#       across(starts_with("ck_"), recode, "TRUE"="✓", "FALSE"="☐"),
-#       Doc = case_when(
-#         is.na(url)  ~ doc_name,
-#         !is.na(url) ~ as.character(glue('<a href="{url}">{doc_name}</a>')))) %>% 
-#     select(
-#       ID, Project, Doc, Detail,
-#       URL        = url, 
-#       Attachment = doc_attach,
-#       Tags       = tags,
-#       Ixn        = ck_ixn, 
-#       Obs        = ck_obs, 
-#       MP         = ck_mp, 
-#       AMP        = ck_amp, 
-#       PME        = ck_pme, 
-#       BMP        = ck_bmps) %>%
-#     collect()
+#       tag_sql  = tag_sql  %>% purrr::map(merge_tags),
+#       tag_html = tag_html %>% purrr::map(merge_tags_html),
+#       document = ifelse(
+#         is.na(prj_doc_attachment),
+#         prj_document,
+#         glue("{prj_document} - {prj_doc_attachment}")),
+#       document = ifelse(
+#         is.na(prj_doc_attach_url),
+#         document,
+#         glue('<a href="{prj_doc_attach_url}">{document}</a>')),
+#       document = as.character(document)) %>% 
+#     relocate(rowid, document, project, detail, tag_sql, tag_html) %>% 
+#     arrange(rowid) %>%
+#     data.frame()
 # }
 
 
-# conn <- poolCheckout(con)
-# dbBegin(con)
-
-# dbCommit(conn)
-# poolReturn(conn)
-
-# GET INPUT CHOICES ----
-unique.tags <- get_tags() %>% pull(tag_sql)
-
-
-
-
-# * tags options ----
-# ferc_tags_unique <- dbReadTable(con, "ferc_doc_tags") %>% 
-#   tibble() %>% 
-#   collect() %>% 
-#   select(-rowid, -content) %>%
-#   na_if("NA") %>% 
-#   distinct_all() %>% 
-#   mutate(tag_sql = tag_sql %>% as.character()) 
-#   # explain() # see SQL
-# ferc_tags_unique <- ferc_tags_unique %>% 
-#   mutate(
-#     tag_sql = case_when(
-#       (is.na(tag_sql) & is.na(content_tag)) ~ glue("{tag_category}.{NA}") %>% 
-#         as.character(),
-#       (is.na(tag_sql)) ~ glue("{tag_category}.{content_tag}") %>% 
-#         as.character(),
-#       !(is.na(tag_sql)) ~ tag_sql)) %>% 
-#   group_by(tag_category) %>% 
-#   arrange(content_tag, .by_group = TRUE)
-# 
-# tags.types <- ferc$Tags %>% bind_rows() %>% unique() %>% tibble() %>% 
-#   mutate(tag_sql = tag_sql %>% as.character()) %>% 
-#   left_join(ferc_tags_unique, by = "tag_sql", copy = F) %>% 
-#   group_by(tag_category) %>% 
-#   arrange(content_tag, .by_group = TRUE)
-# 
-# tags_metadata <- list(content_tag = tags.types) %>% 
-#   bind_rows() %>% 
-#   left_join(ferc_tags_unique, by = "content_tag", copy = F) %>% 
-#   group_by(tag_category) %>% 
-#   arrange(content_tag, .by_group = TRUE)
-
-
-
-# FXNS REFRENCES IN CALLBACKS ----
+# FXNS REFRENCED IN CALLBACKS ----
 get_new_docs <- function(d, flds = ferc_doc_names) {
   d %>% 
-    select(-document, -tag_sql) %>% 
+    select(-document, -tag_sql, -tag_named, -tag_html) %>% 
     relocate(flds)
+  # d %>% 
+  #   select(-document, -tag_sql) %>% 
+  #   relocate(flds)
 }
 
 get_new_tags <- function(d, flds = ferc_tag_names) {
   d %>% 
-    unnest(tag_sql = tag_sql) %>% 
-    select(rowid, tag_sql) %>% 
+    select(-tag_html, -tag_sql) %>% 
+    unnest(tag_named = tag_named) %>% 
+    select(rowid, tag_named) %>% 
     left_join(
       tags %>% 
         rename(
           tag_category = category,
           content_tag  = tag_nocat) %>% 
         select(
-          tag_category,
+          tag_category, 
           content_tag,
-          tag_sql), 
-      by = c("tag_sql")) %>% 
+          tag_named,
+          tag_sql) %>% 
+        mutate(tag_named = as.character(tag_named)),
+      by = "tag_named") %>% 
     mutate(content = "ferc_docs") %>% 
+    select(-tag_named) %>% 
     relocate(flds)
-    # relocate(
-    #   content,
-    #   rowid,
-    #   tag_category,
-    #   content_tag)
+  # d %>% 
+  #   unnest(tag_sql = tag_sql) %>% 
+  #   select(rowid, tag_sql) %>% 
+  #   left_join(
+  #     tags %>% 
+  #       rename(
+  #         tag_category = category,
+  #         content_tag  = tag_nocat) %>% 
+  #       select(
+  #         tag_category,
+  #         content_tag,
+  #         tag_sql), 
+  #     by = c("tag_sql")) %>% 
+  #   mutate(content = "ferc_docs") %>% 
+  #   relocate(flds)
 }
+
 
 # CALLBACK FXNS ----
 ferc.insert.callback <- function(data, row) {
   browser()
   
   d <- data %>% slice(row) %>% 
-    na_if("NA") %>% na_if("") %>% 
+    na_if("NA") %>% na_if("") %>% na_if(NULL) %>% 
     mutate(rowid = max(get_ferc()$rowid) + 1)
   
   d_docs <- d %>% get_new_docs(dbReadTable(con, "ferc_docs") %>% names())
@@ -310,62 +451,25 @@ ferc.insert.callback <- function(data, row) {
   if ("try-error" %in% class(res)) stop(res)
   dbClearResult(res)
   
-  # dbAppendTable(con, "ferc_doc_tags", dr_tags)
   get_ferc()
-  
-  # query <- paste0(
-  #   "INSERT INTO ferc_docs (rowid, key_interaction_detail, project) VALUES (",
-  #   "",  max(get_ferc()$ID) + 1, ", ",
-  #   "'", paste0(data[row,]$Detail), "', ",
-  #   # "'", paste0(data[row,]$Tags[[1]], collapse = ';'), "', ",
-  #   "'", as.character(data[row,]$Project), "' ",
-  #   ")")
-  # print(query) # For debugging
-  # res <- dbSendQuery
-  
-  # res <- try(dbExecute(con, query))
-  # if ("try-error" %in% class(res)) stop(res)
-  # dbClearResult(res)
-  # get_ferc()
 }
 
 ferc.update.callback <- function(data, olddata, row) {
-  #browser()
+  browser()
 
   d <- data %>% slice(row) %>% 
     tibble() %>% 
     mutate(
       across(starts_with("ck_"), as.logical)) %>% 
     na_if("NA") %>% 
-    na_if("")
+    na_if("") %>% 
+    na_if(NULL)
   
-  # data to be INSERTED into ferc_docs
+  # data to UPDATE ferc_docs
   d_docs <- d %>% get_new_docs()
-  # d_docs <- d %>% 
-  #   select(-document, -tag_sql) %>% 
-  #   relocate(names(ferc_docs))
   
-  # data to be INSERTED into ferc_doc_tags
+  # data to be APPENDED to ferc_doc_tags
   d_tags <- d %>% get_new_tags()
-  # d_tags <- d %>% 
-  #   unnest(tag_sql = tag_sql) %>% 
-  #   select(rowid, tag_sql) %>% 
-  #   left_join(
-  #     tags %>% 
-  #       rename(
-  #         tag_category = category,
-  #         content_tag  = tag_nocat) %>% 
-  #       select(
-  #         tag_category,
-  #         content_tag,
-  #         tag_sql), 
-  #     by = c("tag_sql")) %>% 
-  #   mutate(content = "ferc_docs") %>% 
-  #   relocate(
-  #     content,
-  #     rowid,
-  #     tag_category,
-  #     content_tag)
   
   sql_update_docs <- glue_data_sql(
     d_docs,
@@ -388,20 +492,6 @@ ferc.update.callback <- function(data, olddata, row) {
   
   sql_delete_tags <- glue("
     DELETE FROM ferc_doc_tags WHERE rowid = {d$rowid};")
-  # sql_update_tags <- glue_data_sql(
-  #   d_tags,
-  #   "
-  #   INSERT INTO ferc_doc_tags 
-  #     (rowid, content, tag_category, content_tag, tag_sql)
-  #   VALUES 
-  #     ({rowid}, {content}, {tag_category}, {content_tag}, {tag_sql});",
-  #   .con = conn)
-  #sql_update_tags <- paste(sql_update_tags, collapse="\n")
-  # cat(sql_update_tags)
-  
-  # for debugging
-  print(sql_update_docs)
-  # print(sql_update_tags)
   
   res <- try(dbExecute(con, sql_update_docs))
   if ("try-error" %in% class(res)) stop(res)
@@ -412,33 +502,9 @@ ferc.update.callback <- function(data, olddata, row) {
   #res <- try(dbExecute(con, sql_update_tags))
   #if ("try-error" %in% class(res)) stop(res)
   DBI::dbAppendTable(conn, "ferc_doc_tags", d_tags)
-  
   get_ferc()
-  # TODO: add index so rowid&tag_sql always unique
 }
   
-  
-  
-  
-  
-
-  
-  # query <- paste0(
-  #   "UPDATE ferc_docs fd, ferc_doc_tags ft ",
-  #   "SET ",
-  #   "T1.key_interaction_detail = '",   data[row,]$Detail, "', ",
-  #   #"Tags = '",     paste0(data[row,]$Tags[[1]], collapse = ';'), "', ",
-  #   "T1.project = '", as.character(data[row,]$Project), "' ",
-  #   # NEED TO FIX THIS
-  #   "T2.tag_sql = '", paste0(data[row,]$Tags[[1]], collapse = ';'),
-  #   "WHERE rowid = ", data[row,]$ID)
-  # query <- paste0(
-  #   "UPDATE ferc_docs SET ",
-  #   "key_interaction_detail = '",   data[row,]$Detail, "', ",
-  #   #"Tags = '",     paste0(data[row,]$Tags[[1]], collapse = ';'), "', ",
-  #   "project = '",    as.character(data[row,]$Project), "' ",
-  #   "WHERE rowid = ", data[row,]$ID)
-
 
 ferc.delete.callback <- function(data, row) {
   browser()
@@ -462,124 +528,94 @@ ferc.delete.callback <- function(data, row) {
 
 #* get data ----
 ferc <- get_ferc() 
-tags <- get_tags()
+tags <- get_tags() # contains tag_html
+tag_lookup     <- dbReadTable(con, "tag_lookup")
 ferc_doc_names <- dbReadTable(con, "ferc_docs") %>% names()
 ferc_tag_names <- dbReadTable(con, "ferc_doc_tags") %>% names()
 
+d_tags <- get_tags()
+tag_choices <- list()
+for (category in unique(d_tags$category)){ # category = d_tags$category[1]
+  tag_choices <- append(
+    tag_choices,
+    setNames(
+      list(
+        d_tags %>% 
+          filter(category == !!category) %>% 
+          pull(tag_named) %>% 
+          unlist()),
+      category))
+}
+
 # SHINY SERVER ----
 server <- function(input, output, session) {
+  
+  
+  # prj_levels <- eventReactive(input$create_prj, {
+  #   c(input$create_prj, 
+  #     ferc$project %>% 
+  #       unique() %>% sort() %>% na.omit())
+  # })
+  
+  prj_levels <- get_ferc()$project %>% unique() %>% sort() %>% na.omit()
+  
+  
+  # for server:
+  observeEvent(input$submit, {
+    browser()
+    input <- input$add_prj
+    updateSelectInput(
+      session, "prj_select",
+      choices = as.character(c(
+        ferc$project %>% unique() %>% sort() %>% na.omit(),
+        input)))
+  })
+
+  
+  # observeEvent(input$create_prj, {
+  #   need(validate(input$create_prj))
+  #   new_prj <- input$create_prj
+  #   
+  #   prj_levels <- c(
+  #     ferc$project %>% unique() %>% sort() %>% na.omit(),
+  #     new_prj)
+  #   return(prj_levels)
+  # })
   
   #* get labels ----
   labels <- tibble(
     # actual names as stored in ferc, ferc_docs, and ferc_doc_tags
     ferc_col_names = names(ferc),
-    view_col_names = c(
-      rowid              = "ID",
-      document           = "Docs",
-      project            = "Project",
-      detail             = "Detail",
-      tag_sql            = "Tags",
-      prj_document       = NA,
-      prj_doc_attachment = "Attachment",
-      prj_doc_attach_url = NA, 
-      ck_ixn             = "Potential interaction",
-      ck_obs             = "Described from observations",
-      ck_mp              = "MP",
-      ck_amp             = "AMP",
-      ck_pme             = "PME",
-      ck_bmps            = "BMPs applied")) %>% 
+    view_col_names = 
+      c("ID", "Document", "Project", "Detail", NA, "Tags", 
+        NA, NA, "Attachment", NA,
+        "Ixn", "Obs", "MP?", "AMP?", "PME?", "BMPs?")) %>%
     mutate(
       view_col = ifelse(is.na(view_col_names), FALSE, TRUE),
       edit_col_names = c(
-        rowid              = "ID",
-        document           = NA,
-        project            = "Project",
-        detail             = "Key interaction detail",
-        tag_sql            = "Tags",
-        prj_document       = NA,
-        prj_doc_attachment = "Upload document attachment",
-        prj_doc_attach_url = "Attach URL link", 
-        ck_ixn             = "Presented as potential interaction?",
-        ck_obs             = "Described from observations at the project site?",
-        ck_mp              = "Monitoring plan (MP)?",
-        ck_amp             = "Adaptive management plan (AMP)?",
-        ck_pme             = "Protection mitigation and enhancement (PME)?",
-        ck_bmps            = "Best management practices (BMPs) applied?"),
-      edit_col = ifelse(ferc_col_names == "document", FALSE, TRUE))
+        "ID",
+        NA,
+        'Project', 
+        'Key interaction detail', 
+        NA,
+        'Tags',
+        NA,
+        'Document name',
+        'Upload document attachment',
+        'Upload document URL link',
+        'Presented as potential interaction?',
+        'Described from observations at the project site?',
+        'Monitoring plan (MP)?',
+        'Adaptive management plan (AMP)?',
+        'Protection mitigation and enhancement (PME)?',
+        'Best management practices (BMPs) applied?'),
+      edit_col = ifelse(
+        ferc_col_names %in% c("document", "tag_sql", "tag_html"), FALSE, TRUE))
 
-      
-      
-        
-    #   
-    # ))
-    # 
-    # dt_display = c(
-    #   rowid              = TRUE,
-    #   document           = TRUE,
-    #   project            = TRUE,
-    #   detail             = TRUE,
-    #   tag_sql            = TRUE,
-    #   prj_document       = FALSE, #*
-    #   prj_doc_attachment = TRUE,
-    #   prj_doc_attach_url = FALSE, #*
-    #   ck_ixn             = TRUE,
-    #   ck_obs             = TRUE,
-    #   ck_mp              = TRUE,
-    #   ck_amp             = TRUE,
-    #   ck_pme             = TRUE,
-    #   ck_bmps            = TRUE),
-    # edit_dt_names  = c(
-    #   rowid              = "ID",
-    #   detail             = "Key interaction detail",
-    #   project            = "Project",
-    #   prj_document       = "Document name",
-    #   prj_doc_attachment = "Upload document attachment",
-    #   prj_doc_attach_url = "Upload document URL link",
-    #   ck_ixn             = "Presented as potential interaction?",
-    #   ck_obs             = "Described from observations at the project site?",
-    #   ck_mp              = "Monitoring plan (MP)?",
-    #   ck_amp             = "Adaptive management plan (AMP)?",
-    #   ck_pme             = "Protection mitigation and enhancement (PME)?",
-    #   ck_bmps            = "Best management practices (BMPs) applied?",
-    #   tag_sql            = "Tags",
-    #   document           = NA),
-    #   
-      # "ID",
-      # "Key interaction detail",
-      # "Project",
-      # "Document name",
-      # "Upload document attachment",
-      # "Upload document URL link",
-      # "Presented as potential interaction?",
-      # "Described from observations at the project site?",
-      # "Monitoring plan (MP)?",
-      # "Adaptive management plan (AMP)?",
-      # "Protection mitigation and enhancement (PME)?",
-      # "Best management practices (BMPs) applied?",
-      # "Tags",
-      # "Document and link"),
-#     edit_display = c(
-#       FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE,
-#       TRUE,  TRUE, TRUE, TRUE, TRUE, TRUE, FALSE),
-#     input_types = c(
-#       rowid              = NA,
-#       detail             = "textAreaInput" ,
-#       project            = "selectInput",
-#       prj_document       = "textInput",
-#       prj_doc_attachment = "fileInput",
-#       prj_doc_attach_url = "textInput",
-#       ck_ixn             = "selectInput",
-#       ck_obs             = "selectInput",
-#       ck_mp              = "selectInput",
-#       ck_amp             = "selectInput",
-#       ck_pme             = "selectInput",
-#       ck_bmps            = "selectInput",
-#       tag_sql            = "selectInputMultiple",
-#       document           = NA)
-# )
+  
+  tag_html_choices <- tags %>% 
+    pull(tag_html) 
 
-
-    
   
   #* dtedit() object ----
   fercdt <- dtedit(
@@ -589,14 +625,16 @@ server <- function(input, output, session) {
     # view.cols = labels %>% 
     #   filter(dt_display == TRUE) %>% 
     #   pull(ferc_col_names),
-    view.cols = labels %>% filter(view_col == T) %>% pull(ferc_col_names),
-    # view.cols = names(ferc %>% select(-prj_document, -prj_doc_attach_url)),
+    # view.cols = labels %>% filter(view_col == T) %>% pull(ferc_col_names),
+    view.cols = names(
+      ferc %>%
+        select(-prj_document, -prj_doc_attach_url, -tag_sql, -tag_named)),
     # edit.cols = labels %>% 
     #   filter(edit_display == TRUE) %>% 
     #   pull(ferc_col_names),
     edit.cols = c(
       'project', 'prj_document', 'prj_doc_attachment', 'prj_doc_attach_url', 
-      'detail', 'tag_sql', 
+      'detail', 'tag_named', 
       'ck_ixn', 'ck_obs', 'ck_mp', 'ck_amp', 'ck_pme', 'ck_bmps'),
     # edit.cols = c('Doc', 'Detail', 'Tags', 'Project'),
     # edit.label.cols = labels %>% 
@@ -621,36 +659,29 @@ server <- function(input, output, session) {
       prj_doc_attachment = "fileInput",
       prj_doc_attach_url = "textInput",
       detail             = "textAreaInput",
-      tag_sql            = "selectInputMultiple",
+      tag_named          = "selectInputMultiple",
       ck_ixn             = "selectInput",
       ck_obs             = "selectInput",
       ck_mp              = "selectInput",
       ck_amp             = "selectInput",
       ck_pme             = "selectInput",
       ck_bmps            = "selectInput"),
-      # c(
-      # Project     = 'selectInput',
-      # Doc         = 'textInput',
-      # URL         = 'textInput',
-      # Attachment  = 'fileInput',
-      # Detail      = 'textAreaInput',
-      # Tag_sql     = 'selectInputMultiple',
-      # Ixn         = 'selectInput',
-      # Obs         = 'selectInput',
-      # MP          = 'selectInput',
-      # AMP         = 'selectInput',
-      # PME         = 'selectInput',
-      # BMP         = 'selectInput'),
     input.choices = list(
       # TODO: add tab to app for editing projects and associated documents, attachments and urls
+      # project = ferc$project %>% unique() %>% sort() %>% na.omit(),
       project = ferc$project %>% unique() %>% sort() %>% na.omit(),
-      ck_ixn  = c(TRUE, FALSE),
-      ck_obs  = c(TRUE, FALSE),
-      ck_mp   = c(TRUE, FALSE),
-      ck_amp  = c(TRUE, FALSE),
-      ck_pme  = c(TRUE, FALSE),
-      ck_bmps = c(TRUE, FALSE),
-      tag_sql = tags$tag_sql),
+      # project = ifelse(
+      #   exists(prj_levels), prj_levels,
+      #   ferc$project %>% unique() %>% sort() %>% na.omit()),
+      ck_ixn    = c(TRUE, FALSE),
+      ck_obs    = c(TRUE, FALSE),
+      ck_mp     = c(TRUE, FALSE), 
+      ck_amp    = c(TRUE, FALSE),
+      ck_pme    = c(TRUE, FALSE),
+      ck_bmps   = c(TRUE, FALSE),
+      tag_named = tag_choices
+    ), 
+      # tag_sql = tags$tag_sql),
             
        # tags %>% pull(tag_sql),
       # Tags    = tags$tag_sql,
@@ -664,40 +695,31 @@ server <- function(input, output, session) {
     # input.choices.reactive = list(attach.types.list = attach.options),
     
     datatable.rownames = F,
-    datatable.call     = function(...) {
+    
+    datatable.call = function(...) {
       arguments <- list(...)
       arguments$escape   <- 0
-        # labels %>% 
-        #   filter(dt_display == TRUE) %>% 
-        #   filter(ferc_col_names != "document") %>% 
-        #   pull(ferc_col_names) 
       arguments$class    <- 'display'
-      arguments$colnames <- c(
-        "ID",
-        "Document",
-        "Project",
-        "Detail",
-        "Tags",
-        "Attachment",
-        # prj_doc_attach_url = NA,
-        "Potential interaction?",
-        "Described from observations?",
-        "MP?",
-        "AMP?",
-        "PME?",
-        "BMPs?")
-        
-      # arguments$callback <- JS(callback = JS(style.callback))
+      arguments$colnames <- labels %>% 
+        filter(view_col == TRUE) %>% 
+        pull(view_col_names)
+        # c(
+        # "ID", "Document", "Project", "Detail", "Tags", "Attachment", 
+        # "Ixn", "Obs", "MP?", "AMP?", "PME?", "BMPs?")
       do.call(DT::datatable, arguments) %>%
         DT::formatStyle('document',  fontWeight = 'bold')
     },
-
+    
+    # datatable.options ----
     datatable.options = list(
-      colnames = labels %>%
-        filter(view_col == TRUE) %>%
-        pull(view_col_names),
+      colnames = c(
+        "ID", "Document", "Project", "Detail", "Tags", "Attachment",
+        "Ixn", "Obs", "MP?", "AMP?", "PME?", "BMPs?"),
       columnDefs = list(
-        list(className = 'dt-center', targets = 0),
+        # centered rowid
+        list(targets = c(0, 6, 7, 8, 9, 10, 11),
+             className = 'dt-center'),
+        # in-row checkboxes
         list(targets = c(6, 7, 8, 9, 10, 11),
              render = DT::JS(
                "function(data, type, row) {
@@ -706,34 +728,21 @@ server <- function(input, output, session) {
                   } else if (data == false) {
                     data = '<div class=\"text-danger\"><span class=\"glyphicon glyphicon-remove-circle\"></span></div>';
                   } return data}"))),
-      # testing js formatting options
+      # black heading background
       initComplete = JS("
-        function(setings, json) {
+        function(settings, json) {
           $(this.api().table().header()).css({
             'background-color': '#2b2d2f',
             'color': '#fff'
-           });
+          })
         }"),
-      
       searchHighlight = T,
       autowidth  = T,
       pageLength = 5,
       lengthMenu = c(5, 10, 25, 50, 100, nrow(ferc))
     ),
-
       
-      # columnDefs = list(
-      #   list(
-      #     className = 'dt-center', targets = 0)),
-        # list(
-        #   targets = 9,
-        #   render = DT::JS(
-        #   "function(data, type, row) {",
-        #     "if (data == true) {data = '<div class=\"text-success\"><span class=\"glyphicon glyphicon-ok-circle\"></span></div>';}",
-        #   "else if (data == false) {data = '<div class=\"text-danger\"><span class=\"glyphicon glyphicon-remove-circle\"></span></div>';}",
-        #   "return data}"))),
-      
-    selectize = TRUE,
+    selectize = T, # selectInputMultiple
     # selectize.options = list(
     #   Project = list(
     #     placeholder = "Please select an option below",
@@ -741,9 +750,10 @@ server <- function(input, output, session) {
     # Doc = list(create = TRUE, maxItems = 1)),
     
     modal.size      = 'm', 
-    textarea.width  = '500px',
-    textarea.height = '200px',
-    select.width    = '100%', 
+    text.width      = '100%',
+    textarea.width  = '535px',
+    textarea.height = '300px',
+    select.width    = '100%',
     
     icon.delete     = icon("trash"),
     icon.edit       = icon("edit"),
@@ -754,6 +764,9 @@ server <- function(input, output, session) {
     title.edit      = 'Edit',
     title.add       = 'Add new key interaction detail',
     
+    text.delete.modal = HTML(
+      "<span><b>Are you sure you want to delete this record?</b></span>"),
+  
     # callbacks
     callback.update = ferc.update.callback,
     callback.insert = ferc.insert.callback,
@@ -975,55 +988,98 @@ server <- function(input, output, session) {
 } 
 
 
-# SHINY UI ----
-ui <- fluidPage(
-  # tags$head(
-  #   tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")),
-  titlePanel("Editable FERC Docs Table"),
-  div(
-    "Filters by:",
-    icon("tags"),
-    span(class="me-tag me-technology", "Technology"),
-    span(class="me-tag me-stressor",   "Stressor"),
-    span(class="me-tag me-receptor",   "Receptor "),
-    span(class="me-tag me-phase",      "Phase")),
-  helpText(
-    HTML("The FERC eLibrary contains environmental compliance project documents, 
+# UI ----
+ui <- tagList(
+  # * css styling ----
+  includeCSS("www/styles.css"),
+  navbarPage(
+    "Edit",
+    
+    # shiny::tags$head(
+    #   shiny::tags$style(HTML("
+    #     .select-control.multi .select-input-multiple > div {
+    #       background: #d8544c;
+    #         color: #fdfdfd;
+    #     }
+    #   "))),
+    
+    tabPanel(
+      "Projects", #* Projects ----
+      h4("Edit input options"),
+      # selectInput(
+      #   "prj_select", "Select project", 
+      #   choices = prj_levels()),
+      # actionButton(
+      #   "create_new_prj",
+      #   "Add a new project",
+      #   icon = icon("plus")
+      # ),
+      # conditionalPanel(
+      #   condition = !is.null("input.create_new_prj"),
+      #   textInput(
+      #     "create_prj",
+      #     "Create a new project",
+      #     placeholder = paste(
+      #       "Existing projects:", 
+      #       paste(
+      #         ferc$project %>% unique() %>% sort() %>% na.omit(),
+      #         collapse = ", ")))),
+      # submitButton(
+      #   text = "Apply new project",
+      #   icon = icon("save")
+      # ),
+      textInput(
+        "add_prj",
+        "Create a new project",
+        placeholder = paste(
+          "Existing projects:",
+          paste(
+            ferc$project %>% unique() %>% sort() %>% na.omit(),
+            collapse = ", "))),
+      actionButton(
+        "submit",
+        "Submit",
+        icon("paper-plane"), 
+        style = "color: #fff; background-color: #337ab7; border-color: #2e6da4")),
+    
+    tabPanel(
+      "Documents", 
+      #* Documents ----
+      helpText("Editable FERC Documents"),
+      div(
+        "Filters by:",
+        icon("tags"),
+        span(class="me-tag me-technology", "Technology"),
+        span(class="me-tag me-stressor",   "Stressor"),
+        span(class="me-tag me-receptor",   "Receptor"),
+        span(class="me-tag me-phase",      "Phase")),
+      helpText(
+        HTML("The FERC eLibrary contains environmental compliance project documents, 
           of which excerpts have been manually tagged for reference.")),
-  fluidRow(
-    column(
-      width = 12,
-      # radioButtons(
-      #    "attachment_method",
-      #    "Select a method to attach document",
-      #    choiceValues = list("url", "file"),
-      #    choiceNames  = list(
-      #      tags$div(
-      #        span(tagList(icon("link"), "Attach URL link"))),
-      #      tags$div(
-      #        span(tagList(icon("upload"), "Upload file"))))),
-         # selected = NULL,
-         # inline = F,
-      hr())),
-  uiOutput("ferc_new"))
+      uiOutput("ferc_new")),
+    
+    tabPanel(
+      "Publications",
+      #* Publications ----
+      helpText("Tethys Publications are automatically imported."))
+))
 
-# GLOBAL ----
-
-# global <- function() {
-#   con <<- pool::dbPool(
-#     drv      = RPostgres::Postgres(),
-#     dbname   = db_params$dbname,
-#     host     = db_params$host,
-#     port     = 5432,
-#     user     = db_params$user,
-#     password = readLines(db_params$pwd_txt))
-#   onStop(function() {
-#     message("before close: is valid? ", dbIsValid(con))
-#     pool::poolClose(con)
-#     message("after close: is valid? ", dbIsValid(con))
-#   })
-# }
-  
+# fluidRow(
+#   column(
+#     width = 12,
+#     # radioButtons(
+#     #    "attachment_method",
+#     #    "Select a method to attach document",
+#     #    choiceValues = list("url", "file"),
+#     #    choiceNames  = list(
+#     #      tags$div(
+#     #        span(tagList(icon("link"), "Attach URL link"))),
+#     #      tags$div(
+#     #        span(tagList(icon("upload"), "Upload file"))))),
+#     # selected = NULL,
+#     # inline = F,
+#     hr())),
+# HTML(tag_html_choices[1]),
 
 # SHINY APP ----
 shinyApp(ui, server)
@@ -1051,7 +1107,7 @@ shinyApp(ui, server)
 
 
 # tbl_ferc_docs     <- tbl(con, "ferc_docs")     # main field: key_interaction
-# tbl_ferc_doc_tags <- tbl(con, "ferc_doc_tags") # linked by rowid
+# tbl_ferc_doc_%>% <- tbl(con, "ferc_doc_tags") # linked by rowid
 
 # join ferc_docs & ferc_doc_tags
 # d_ferc_docs <- tbl_ferc_docs %>% 

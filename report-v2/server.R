@@ -89,10 +89,12 @@ server <- function(input, output, session) {
     
     values$ixns <- append(values$ixns, list(input$sel_ixn_tags))
     
-    updateSelectInput(
-      session, 
-      "sel_ixn_tags",
-      selected = "")
+    updateSelectizeInput(
+      session, "sel_ixn_tags", selected = "")
+    # updateSelectInput(
+    #   session, 
+    #   "sel_ixn_tags",
+    #   selected = "")
   })
   
   #* btn_mod_ixns ----

@@ -8,15 +8,15 @@ ui <- dashboardPage(
     titleWidth = 310,
     #** navbarMenu ----
     leftUi = navbarMenu(
-      navbarTab(tabName = "tab_prj", "Projects"),
-      navbarTab(tabName = "tab_mgt", "Management"),
+      navbarTab(tabName = "tab_prj",  "Projects"),
+      navbarTab(tabName = "tab_mgt",  "Management"),
       navbarTab(tabName = "tab_docs", "Documents"),
       navbarTab(tabName = "tab_pubs", "Publications"),
       navbarTab(tabName = "tab_rpt", "Reports")),
     tags$li(
       googleSignInUI_btn_signin("login"), class = "dropdown"),
     userOutput("user")),
-  
+
   #* sidebar ----
   dashboardSidebar(
     width = 310,
@@ -24,13 +24,57 @@ ui <- dashboardPage(
     sidebarMenu(
       menuItem(
         "Configure", 
-        tabName = "configure",icon = icon("gears"),
+        tabName = "configure", icon = icon("gears"),
         startExpanded = T,
         wellPanel(
           h5(icon("tags"), "Interactions"),
-          selectInput(
-            "sel_ixn_tags", "Tags", tag_choices, multiple = T),
-          uiOutput("ixn_btns")),
+          selectizeInput(
+            "sel_ixn_tags", "Tags", tag_choices,
+            multiple = T
+            # options  = list(render = I('{
+            #   option: function(item, escape){
+            #     return "<div><strong>" + escape(item) + "</strong>"
+            #   }
+            # }'))
+            ),
+            # options  = list(render = I('{
+            #   option: function(item, escape){
+            #     return "<div><strong>" + escape(item) + "</strong>"
+            #   }
+            # }'))),
+          # selectInput("sel_ixn_tags", "Tags", tag_choices, multiple = T),
+            # style = "background-color: red;"),
+          uiOutput("ixn_btns")
+          # selectInput(
+          #   "sel_ixn_tags", "Tags", tag_choices, multiple = T),
+          # uiOutput("ixn_btns"),
+          
+          # tags$label("for"="sel_ixn_tags", "Tags", class="input-label"),
+          # tags$select(
+          #   id = "sel_ixn_tag", 
+          #   # "onfocus"='this.size=13;', "onblur"='this.size=1;' ,
+          #   # "onchange"='this.size=1; this.blur();',
+          #   tags$option(value = "none", ""),
+          #   tags$optgroup("label"="Stressor",
+          #                 tags$option(value = "Stressor 1"),
+          #                 tags$option(value = "Stressor 2"),
+          #                 tags$option(value = "Stressor 3")),
+          #   tags$optgroup("label"="Technology",
+          #                 tags$option(value = "Tech 1"),
+          #                 tags$option(value = "Tech 2"),
+          #                 tags$option(value = "Tech 3"))
+            # input use as is in the ui or in the server (make sure id is linked in the css)
+          
+        ),
+
+        # tags$optgroup(tag_choices_html$Stressor),
+        # tags$optgroup(tag_choices_html$Receptor),
+        # tags$optgroup(tag_choices_html$Phase),
+        # tags$optgroup(tag_choices_html$Management),
+        # tags$optgroup(tag_choices_html$Consequence)
+            
+            # HTML(tag_choices_html))), 
+   
         wellPanel(
           h5(icon("map-marked"), "Location"),
           div(
@@ -44,7 +88,7 @@ ui <- dashboardPage(
     tags$head(
       tags$link(rel = "stylesheet", type = "text/css", href = "styles.css"),
       tags$link(rel = "shortcut icon", href = "favicon.ico")),
-    
+
     tabItems(
       
       #** tab_prj ----
