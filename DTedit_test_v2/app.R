@@ -21,7 +21,7 @@ source(file.path(dir_scripts, "db.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
 
 # LIBRARIES ----
-shelf(DavidPatShuiFong/DTedit, DT, glue)
+shelf(DavidPatShuiFong/DTedit, DT, glue, purrr)
 
 
 # FXNS FOR get_ferc() ----
@@ -40,12 +40,17 @@ shelf(DavidPatShuiFong/DTedit, DT, glue)
 # tag = tag_sql
 #   
 merge_tags <- function(tag_list_col) {
+  # tag_list_col <- x
   tag_list_col %>% 
-    pull(tag_sql) %>% unique() 
+    #pull(tag_sql) %>% unique() 
+    unique() 
     # unlist(use.names = F) %>% 
 }
 
-# table$tag_sql[[1]] %>% merge_tags()
+
+
+
+table$tag_sql[[1]] %>% merge_tags()
 # 
 # purrr::map(table$tag_sql, merge_tags)
 # 
@@ -75,13 +80,14 @@ merge_tags <- function(tag_list_col) {
 
 merge_tags_html <- function(tag_list_col, tag_html) {
   tag_list_col %>% 
-    pull(tag_html) %>% unlist() %>% unique() %>% 
+    # pull(tag_html) %>% 
+    unlist() %>% unique() %>% 
     paste(., collapse = "\n")
 }
 
 merge_tags_named <- function(tag_list_col, tag_named) {
   tag_list_col %>% 
-    pull(tag_named) %>%
+    # pull(tag_named) %>%
     unlist(recursive = F) %>% 
     unlist(recursive = F, use.names = T) %>% 
     # unlist(recursive = F) %>% 
@@ -91,8 +97,8 @@ merge_tags_named <- function(tag_list_col, tag_named) {
   #   pull(tag_named) %>% unlist() %>% unique() 
 }
 
-# table %>% slice(223) %>% 
-#   merge_tags()
+table %>% slice(1) %>%
+  merge_tags()
 #   
 #   
 #   merge_tags_named()
@@ -206,7 +212,7 @@ get_ferc <- function() {
   #         by = c("tag_sql_chr" = "tag_sql")))
         
   # new approach using merge() to get rid of NULL values
-  table <- dbReadTable(con, "ferc_docs") %>% 
+  dbReadTable(con, "ferc_docs") %>% 
     tibble() %>% collect() %>% 
     na_if("NA") %>%
     merge(
@@ -241,9 +247,9 @@ get_ferc <- function() {
       all.x = T, 
       incomparables = NA) %>% 
   mutate(
-    tag_sql   = tag_sql   %>% purrr::map(merge_tags),
-    tag_named = tag_named %>% purrr::map(merge_tags_named),
-    tag_html  = tag_html  %>% purrr::map(merge_tags_html),
+    tag_sql   = map(tag_sql,   merge_tags),
+    tag_named = map(tag_named, merge_tags_named),
+    tag_html  = map(tag_html,  merge_tags_html),
     document  = ifelse(
       is.na(prj_doc_attachment),
       prj_document,
