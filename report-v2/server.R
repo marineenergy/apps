@@ -305,17 +305,50 @@ server <- function(input, output, session) {
       d <- d %>%
         filter(rowid %in% !!rowids)
     }
+    if (length(input$cks_docs) > 0){
+      for (col_bln in input$cks_docs){
+        d <- d %>% 
+          filter(.data[[col_bln]] == TRUE) # %>% collect() %>% nrow()
+        message(glue("ck_docs == `{col_bln}` nrow: {d %>% collect() %>% nrow()}"))
+      }
+    }
     
-    d_to_tags_html(d)
+    d <- d_to_tags_html(d)
+    
+    d %>% 
+      mutate(
+        # TODO: include in scripts/update_tags.R:update_tags()
+        across(where(is.character), na_if, "NA"),
+        across(starts_with("ck_"), as.character),
+        across(starts_with("ck_"), recode, "TRUE"="✓", "FALSE"="☐"),
+        Doc = ifelse(
+          is.na(doc_attach),
+          doc_name,
+          paste0(doc_name, ": ", doc_attach)),
+        Doc = ifelse(
+          is.na(doc_url),
+          Doc,
+          glue("<a href='{doc_url}'>{Doc}</a>"))) %>% 
+      select(
+        ID, Project, Doc, Detail, Tags,
+        Ixn = ck_ixn, 
+        Obs = ck_obs, 
+        MP  = ck_mp, 
+        AMP = ck_amp, 
+        PME = ck_pme, 
+        BMP = ck_bmps)
   })
   
   #* box_docs ----
   output$box_docs <- renderText({
     n_ixns <- length(values$ixns)
+    n_cks  <- length(input$cks_docs)
+    n_docs <- nrow(get_docs())
+    
     ifelse(
-      n_ixns == 0,
+      n_ixns == 0 & n_cks == 0,
       HTML(glue("FERC Documents <small>({d_docs_n} rows)</small>")),
-      HTML(glue("FERC Documents <small>({nrow(get_docs())} of {d_docs_n} rows; filtered by {n_ixns} interactions)</small>")))
+      HTML(glue("FERC Documents <small>({n_docs} of {d_docs_n} rows; filtered by {n_ixns} interactions & {n_cks} checkboxes </small>")))
   })
   
   #* tbl_docs ----
@@ -323,6 +356,45 @@ server <- function(input, output, session) {
     get_docs()
   }, escape = F, rownames = F)
   
+  # publications ----
+  
+  #* get_pubs() ----
+  get_pubs <- reactive({
+    d <- d_pubs
+    if (length(values$ixns) > 0){
+      rowids <- sapply(values$ixns, get_rowids_with_ixn, db_tbl = "tethys_pub_tags") %>% 
+        unlist() %>% unique()
+      d <- d %>%
+        filter(rowid %in% !!rowids)
+    }
+
+    #browser()
+    d <- d_to_tags_html(d)
+    
+    d %>% 
+      mutate(
+        # TODO: include in scripts/update_tags.R:update_tags()
+        across(where(is.character), na_if, "NA"),
+        Title = glue("<a href='{uri}'>{title}</a>"))
+  })
+  
+  #* box_pubs ----
+  output$box_pubs <- renderText({
+    n_ixns <- length(values$ixns)
+    n_pubs <- nrow(get_pubs())
+    
+    ifelse(
+      n_ixns == 0,
+      HTML(glue("Tethys Publications <small>({d_pubs_n} rows)</small>")),
+      HTML(glue("Tethys Publications <small>({n_pubs} of {d_pubs_n} rows; filtered by {n_ixns} interactions</small>")))
+  })
+  
+  #* tbl_pubs ----
+  output$tbl_pubs <- renderDataTable({
+    get_pubs() %>% 
+      #select(-uri, -title, -tag)
+      select(ID, Title, Tags)
+  }, escape = F, rownames = F)
   
   # reports ----
   

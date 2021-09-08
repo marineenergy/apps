@@ -14,10 +14,8 @@ shelf(
 
 source(here("functions.R")) # connection object
 
-# datasets_gsheet2db()
-
 # update db tables tethys_pubs, tethys_pub_tags; data/tethys_docs.[json|csv]
-update_tethys_docs()
+update_tethys_pubs()
 
 # update data/tethys_mgt.csv
 update_tethys_mgt()
@@ -33,6 +31,9 @@ update_project_sites()
 
 # update data/project_permits.csv, data/project_times.csv
 update_project_timelines()
+
+# update ferc docs
+update_ferc_docs()
 
 # dev cron for updating: tethys_docs, tethys_mgt, tethys_tags, tethys_intxns, ferc_docs
 

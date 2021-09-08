@@ -11,7 +11,8 @@ ui <- dashboardPage(
       navbarTab(tabName = "tab_prj",  "Projects"),
       navbarTab(tabName = "tab_mgt",  "Management"),
       navbarTab(tabName = "tab_docs", "Documents"),
-      navbarTab(tabName = "tab_rpt",  "Reports")),
+      navbarTab(tabName = "tab_pubs", "Publications"),
+      navbarTab(tabName = "tab_rpt", "Reports")),
     tags$li(
       googleSignInUI_btn_signin("login"), class = "dropdown"),
     userOutput("user")),
@@ -165,10 +166,39 @@ ui <- dashboardPage(
         helpText(
           HTML("The FERC eLibrary contains environmental compliance project documents, 
           of which excerpts have been manually tagged for reference.")),
+        checkboxGroupInput(
+          "cks_docs", 
+          "Binary Filters:",
+          c(
+            "Ixn: Presented as potential interaction?"              = "ck_ixn",
+            "Obs: Described from observations at the project site?" = "ck_obs",
+            "MP: Monitoring Plan?"                                  = "ck_mp",
+            "AMP: Adaptive Management Plan?"                        = "ck_amp",
+            "PME: Protection, mitigation, and ehnhancement?"        = "ck_pme",
+            "BMP: Best Management Practices applied?"               = "ck_bmp")),
         fluidRow(
           box(
             title = uiOutput("box_docs", inline=T), width = 12,
             dataTableOutput("tbl_docs")))),
+      
+      
+      #** tab_pubs ----
+      tabItem(
+        tabName = "tab_pubs",
+        div("Filters by:", 
+            icon("tags"), 
+            span(class="me-tag me-technology", "Technology"),
+            span(class="me-tag me-stressor",   "Stressor"),
+            span(class="me-tag me-receptor",   "Receptor"),
+            span(class="me-tag me-phase",      "Phase")),
+        helpText(
+          "The", a("Tethys Marine Energy Knowledge Base", 
+                   href="https://tethys.pnnl.gov/knowledge-base-marine-energy"),
+          "contains curated white and gray literature."),
+        fluidRow(
+          box(
+            title = uiOutput("box_pubs", inline=T), width = 12,
+            dataTableOutput("tbl_pubs")))),
       
       #** tab_reports ----
       tabItem(
