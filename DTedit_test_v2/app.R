@@ -48,9 +48,7 @@ merge_tags <- function(tag_list_col) {
 }
 
 
-
-
-table$tag_sql[[1]] %>% merge_tags()
+#table$tag_sql[[1]] %>% merge_tags()
 # 
 # purrr::map(table$tag_sql, merge_tags)
 # 
@@ -97,8 +95,8 @@ merge_tags_named <- function(tag_list_col, tag_named) {
   #   pull(tag_named) %>% unlist() %>% unique() 
 }
 
-table %>% slice(1) %>%
-  merge_tags()
+# table %>% slice(1) %>%
+#   merge_tags()
 #   
 #   
 #   merge_tags_named()
@@ -415,10 +413,10 @@ get_new_tags <- function(d, flds = ferc_tag_names) {
 
 # CALLBACK FXNS ----
 ferc.insert.callback <- function(data, row) {
-  browser()
+  #browser()
   
   d <- data %>% slice(row) %>% 
-    na_if("NA") %>% na_if("") %>% na_if(NULL) %>% 
+    na_if("NA") %>% na_if("") %>% # na_if(NULL) %>% 
     mutate(rowid = max(get_ferc()$rowid) + 1)
   
   d_docs <- d %>% get_new_docs(dbReadTable(con, "ferc_docs") %>% names())
@@ -455,21 +453,21 @@ ferc.insert.callback <- function(data, row) {
 }
 
 ferc.update.callback <- function(data, olddata, row) {
-  browser()
+  #browser()
 
   d <- data %>% slice(row) %>% 
     tibble() %>% 
     mutate(
       across(starts_with("ck_"), as.logical)) %>% 
     na_if("NA") %>% 
-    na_if("") %>% 
-    na_if(NULL)
+    na_if("") #%>% 
+    #na_if(NULL)
   
   # data to UPDATE ferc_docs
-  d_docs <- d %>% get_new_docs()
+  d_docs <- get_new_docs(d)
   
   # data to be APPENDED to ferc_doc_tags
-  d_tags <- d %>% get_new_tags()
+  d_tags <- get_new_tags(d)
   
   sql_update_docs <- glue_data_sql(
     d_docs,
@@ -507,7 +505,7 @@ ferc.update.callback <- function(data, olddata, row) {
   
 
 ferc.delete.callback <- function(data, row) {
-  browser()
+  # browser()
   
   d <- data %>% slice(row) %>% na_if("NA") %>% na_if("")
 
@@ -562,7 +560,7 @@ server <- function(input, output, session) {
   
   # for server:
   observeEvent(input$submit, {
-    browser()
+    #browser()
     input <- input$add_prj
     updateSelectInput(
       session, "prj_select",
