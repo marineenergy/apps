@@ -285,15 +285,52 @@ load_projects()
 d_mgt_tags <- tbl(con, "tethys_mgt") %>% 
   select(rowid, Interaction, `Specific Management Measures`, `Implications of Measure`) %>% 
   left_join(
-    tbl(con, "tethys_mgt_tags"), by = "rowid")
+    tbl(con, "tethys_mgt_tags"), by = "rowid") %>% 
+  distinct_all()
 d_mgt_n <- tbl(con, "tethys_mgt") %>% summarize(n = n()) %>% pull(n)
 
 # documents ----
 d_docs <- tbl(con, "ferc_docs") %>% 
+  #collect() %>% names() %>% paste(collapse=", ")
+  # rowid, detail, project, prj_document, prj_doc_attachment, prj_doc_attach_url, 
+  # ck_ixn, ck_obs, ck_mp, ck_amp, ck_pme, ck_bmps
+  select(
+    rowid,
+    Detail     = detail,
+    Project    = project,
+    doc_name   = prj_document,
+    doc_attach = prj_doc_attachment,
+    doc_url    = prj_doc_attach_url,
+    ck_ixn,
+    ck_obs, 
+    ck_mp, 
+    ck_amp, 
+    ck_pme, 
+    ck_bmps) %>% 
+  mutate(
+    Doc = ifelse(
+      is.na(doc_attach),
+      doc_name,
+      paste0(doc_name, ": ", doc_attach))) %>% 
   left_join(
     tbl(con, "ferc_doc_tags"),
-    by = "rowid")
+    by = "rowid") %>% 
+  distinct_all()
+
+# tbl(con, "ferc_docs") %>% collect() %>% names() %>% paste(collapse = ", ")
 d_docs_n <- tbl(con, "ferc_docs") %>% summarize(n = n()) %>% pull(n)
+
+# publications ----
+d_pubs <- tbl(con, "tethys_pubs") %>% 
+  select(rowid, uri, title) %>% 
+  left_join(
+    tbl(con, "tethys_pub_tags") %>% 
+      select(-uri),
+    by = "rowid") %>% 
+  distinct_all()
+
+# tbl(con, "tethys_pubs") %>% collect() %>% names() %>% paste(collapse = ", ")
+d_pubs_n <- tbl(con, "tethys_pubs") %>% summarize(n = n()) %>% pull(n)
 
 # reports ----
 dir_rpt_pfx <- "/share/user_reports"
@@ -357,15 +394,15 @@ df_tags  <- tbl(con, "tags") %>%
 d_to_tags_html <- function(d){
   y <- d %>% 
     left_join(
-      tbl_tags %>% 
+      tbl_tags %>%
         select(tag_sql, cat, tag_nocat),
-      by = "tag_sql") %>% 
+      by = "tag_sql") %>%
     mutate(
       tag_html = paste0("<span class='me-tag me-", cat, "'>", tag_nocat, "</span>")) %>% 
     arrange(rowid, desc(cat), tag_nocat) %>% 
     select(-tag_sql, -cat, -tag_nocat)
   
-  cols_grpby <- setdiff(colnames(y), "tag_html")
+  cols_grpby <- setdiff(colnames(y), c("tag_html","content","tag_category", "content_tag", "tag"))
   
   y %>% 
     group_by(

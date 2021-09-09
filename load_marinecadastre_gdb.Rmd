@@ -81,38 +81,13 @@ load_mc_gdb <- function(df, csv, dir, gdb) {
       message(glue('SUCCESS: {lyr} -> {tbl}'))
       df[1,] = c(dir, gdb, lyr, tbl, T, T, T)
     } else {
-      message(glue('FAILES: {lyr} -> {tbl}'))
+      message(glue('FAILED: {lyr} -> {tbl}'))
       df[1,] = c(dir, gdb, lyr, tbl, F, F, T)
     }
     write.table(df, csv, append=T, sep=",", col.names=F, row.names=F, quote=F)
   }
 }
 ```
-
----
-# (r) Compile list of GDBs to load
-```{r eval=F}
-library(here)
-
-#Define folder structure for moving between directories
-folder_from <- "~/github/apps"
-folder_to <- "~/data/marinecadastre.gov"
-
-#Search for .gdb and .lyr files and create full path
-fi_list <- fi_list_temp <- c()
-# for(i in c(".gdb$", ".lyr$")){
-for(i in c(".gdb$")){
-  # fi_list_temp <- list.files(pattern = i, path = gsub(folder_from, folder_to, here()), full.name = T, recursive = TRUE)
-  # fi_list_temp <- list.files(pattern = "\\.gdb$", path = "/share/data/marinecadastre.gov", full.name = T, recursive = TRUE)
-  fi_list_temp <- list.files(pattern = Sys.glob(".gdb$"), path = "/share/data/marinecadastre.gov", full.name = T, recursive = T)
-  fi_list <- c(fi_list, fi_list_temp)
-}
-
-#Create dataframe of links to .gdb and .lyr files
-fi_dataframe <- data.frame(file_folderpath = fi_list)
-fi_dataframe
-```
-
 
 # (python) Compile list of GDBs to load
 
