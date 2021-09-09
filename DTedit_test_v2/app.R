@@ -290,7 +290,7 @@ server <- function(input, output, session) {
       'Best management practices (BMPs) applied?'),
     input.types = c(
       project            = "selectInput",
-      prj_document       = "textInput",
+      prj_document       = "textAreaInput",
       prj_doc_attachment = "fileInput",
       prj_doc_attach_url = "textInput",
       detail             = "textAreaInput",
