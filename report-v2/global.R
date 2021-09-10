@@ -174,62 +174,6 @@ for (category in unique(d_tags$category)){ # category = d_tags$category[1]
       category))
 }
 
-get_tag_option <- function(tag_group) {
-  # will map across each tag within each tag_group
-  glue("<option value='{tag_group %>% unlist}'>{tag_group %>% unlist}</option>")
-}
-
-get_tag_optgroup <- function(tag_group) {
-  # will map across each tag_group
-  # tag_html <-
-    glue(
-    "<optgroup label='{names(tag_group)}'
-    {paste(unlist(get_tag_option(tag_group)), sep='', collapse='\n')}
-    </optgroup>"
-    )
-}
-
-tags_dropdown_list <- list()
-for (i in 1:length(tag_choices)) {
-  tags_dropdown_list[i] <- get_tag_optgroup(tag_choices[i])
-}
-
-tags_dropdown <- paste(tags_dropdown_list, sep='', collapse='\n')
-
-
-tags_dropdown_style <- ("
-  #sel_ixn_tags ~ .selectize-control .option:nth-child(1:6) {
-    background-color: rgba(30,144,255,0.5);
-  }
-  #sel_ixn_tags ~ .selectize-control .option:nth-child(7:18) {
-    background-color: rgba(205,92,92,0.5);")
-
-
-
-
-
-  #color ~ .selectize-control.single .selectize-dropdown [data-value=blue] { color: blue }
- #color ~ .selectize-control.single .selectize-dropdown [data-value=red] { color: red }
-
-
-       
-
-
-
-# tag_choices_html <- c(
-#   # add default option
-#   "<option value='none'></option>",    
-#   # turn groupnames into html optgroups
-#   sapply(names(tag_choices), function(x){
-#     paste0("optgroup label='",x,"'>", x, )
-#   })
-#   # turn choices into html options
-#   sapply(tag_choices, function(x){  
-#     paste0("<option value='",x,"'>", x, "<option/>")
-#     # paste0("<option value='",x,"'>", x, "<option>")
-#   })
-# )
-
 # googleAuthR ----
 
 # * [Client ID for Web application – APIs & Services – iea-uploader – Google API Console](https://console.developers.google.com/apis/credentials/oauthclient/596429062120-lsgv9f8pbas11o7ub9b9cm0earf1dpu5.apps.googleusercontent.com?authuser=3&project=iea-uploader)
@@ -285,52 +229,15 @@ load_projects()
 d_mgt_tags <- tbl(con, "tethys_mgt") %>% 
   select(rowid, Interaction, `Specific Management Measures`, `Implications of Measure`) %>% 
   left_join(
-    tbl(con, "tethys_mgt_tags"), by = "rowid") %>% 
-  distinct_all()
+    tbl(con, "tethys_mgt_tags"), by = "rowid")
 d_mgt_n <- tbl(con, "tethys_mgt") %>% summarize(n = n()) %>% pull(n)
 
 # documents ----
 d_docs <- tbl(con, "ferc_docs") %>% 
-  #collect() %>% names() %>% paste(collapse=", ")
-  # rowid, detail, project, prj_document, prj_doc_attachment, prj_doc_attach_url, 
-  # ck_ixn, ck_obs, ck_mp, ck_amp, ck_pme, ck_bmps
-  select(
-    rowid,
-    Detail     = detail,
-    Project    = project,
-    doc_name   = prj_document,
-    doc_attach = prj_doc_attachment,
-    doc_url    = prj_doc_attach_url,
-    ck_ixn,
-    ck_obs, 
-    ck_mp, 
-    ck_amp, 
-    ck_pme, 
-    ck_bmps) %>% 
-  mutate(
-    Doc = ifelse(
-      is.na(doc_attach),
-      doc_name,
-      paste0(doc_name, ": ", doc_attach))) %>% 
   left_join(
     tbl(con, "ferc_doc_tags"),
-    by = "rowid") %>% 
-  distinct_all()
-
-# tbl(con, "ferc_docs") %>% collect() %>% names() %>% paste(collapse = ", ")
+    by = "rowid")
 d_docs_n <- tbl(con, "ferc_docs") %>% summarize(n = n()) %>% pull(n)
-
-# publications ----
-d_pubs <- tbl(con, "tethys_pubs") %>% 
-  select(rowid, uri, title) %>% 
-  left_join(
-    tbl(con, "tethys_pub_tags") %>% 
-      select(-uri),
-    by = "rowid") %>% 
-  distinct_all()
-
-# tbl(con, "tethys_pubs") %>% collect() %>% names() %>% paste(collapse = ", ")
-d_pubs_n <- tbl(con, "tethys_pubs") %>% summarize(n = n()) %>% pull(n)
 
 # reports ----
 dir_rpt_pfx <- "/share/user_reports"
@@ -394,15 +301,15 @@ df_tags  <- tbl(con, "tags") %>%
 d_to_tags_html <- function(d){
   y <- d %>% 
     left_join(
-      tbl_tags %>%
+      tbl_tags %>% 
         select(tag_sql, cat, tag_nocat),
-      by = "tag_sql") %>%
+      by = "tag_sql") %>% 
     mutate(
       tag_html = paste0("<span class='me-tag me-", cat, "'>", tag_nocat, "</span>")) %>% 
     arrange(rowid, desc(cat), tag_nocat) %>% 
     select(-tag_sql, -cat, -tag_nocat)
   
-  cols_grpby <- setdiff(colnames(y), c("tag_html","content","tag_category", "content_tag", "tag"))
+  cols_grpby <- setdiff(colnames(y), "tag_html")
   
   y %>% 
     group_by(
