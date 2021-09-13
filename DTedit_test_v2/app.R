@@ -1,88 +1,14 @@
-# DB CONNECTION ----
+# DB CONNECTION & SCRIPTS ----
 dir_scripts <<- here::here("scripts")
 source(file.path(dir_scripts, "common_2.R"))
 source(file.path(dir_scripts, "db.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
-
+source(file.path(dir_scripts, "update.R"))
 
 # LIBRARIES ----
 shelf(DavidPatShuiFong/DTedit, DBI, DT, glue, purrr)
 
-
-# FXNS FOR get_ferc() ----
-merge_tags <- function(tag_list_col) {
-  tag_list_col %>% 
-    unlist() %>% 
-    unique() 
-}
-merge_tags_html <- function(tag_list_col) {
-  tag_list_col %>% 
-    unlist() %>% unique() %>% 
-    paste(., collapse = "\n")
-}
-merge_tags_named <- function(tag_list_col) {
-  tag_list_col %>% 
-    unlist(recursive = F) %>% 
-    unlist(recursive = F, use.names = T) %>% 
-    unique() 
-}
-
-
 # FXNS REFERENCED IN CALLBACKS ----
-
-# read in & merge ferc_docs & ferc_doc_tags from db
-get_ferc <- function() {
-  # read in ferc_docs and merge w/ table created by inner join b/w
-  # ferc_doc_tags and tags lookup
-  dbReadTable(con, "ferc_docs") %>% 
-    tibble() %>% collect() %>% 
-    na_if("NA") %>%
-    merge(
-      # read in ferc_doc_tags
-      dbReadTable(con, "ferc_doc_tags") %>% 
-        tibble() %>% collect() %>% 
-        mutate(tag_sql_chr = ifelse(
-          content_tag == "ALL",
-          glue("{tag_category}.{content_tag}") %>% as.character(),
-          tag_sql %>% as.character())) %>% 
-        filter(tag_sql != "NA") %>% 
-        select(-content, -tag_category, -content_tag) %>% 
-        # inner_join() with tags lookup to get tag_html & tag_named
-        inner_join(
-          get_tags() %>% 
-            mutate(
-              tag_html_nocat = glue(
-                "<span class='me-tag me-{cat}'>{tag_nocat}</span>")) %>% 
-            select(tag_sql, tag_named, tag_html_nocat) %>% 
-            rename(tag_html = tag_html_nocat),
-          by = c("tag_sql_chr" = "tag_sql")) %>% 
-        select(-tag_sql_chr) %>%
-        group_by(rowid) %>% 
-        tidyr::nest(
-          tag_sql   = tag_sql,          # for UPDATING / storage
-          tag_named = tag_named,        # for EDIT INTERFACE
-          tag_html  = tag_html),        # for VIEW dtedit table
-      # merge params
-      by.x = "rowid", by.y = "rowid", all.x = T, incomparables = NA) %>% 
-  mutate(
-    tag_sql   = map(tag_sql,   merge_tags),
-    tag_named = map(tag_named, merge_tags_named),
-    tag_html  = map(tag_html,  merge_tags_html),
-    document  = ifelse(
-      is.na(prj_doc_attachment),
-      prj_document,
-      glue("{prj_document} - {prj_doc_attachment}")),
-    document = ifelse(
-      is.na(prj_doc_attach_url),
-      document,
-      glue('<a href="{prj_doc_attach_url}">{document}</a>')),
-    document = as.character(document)) %>% 
-    relocate(
-      rowid, document, project, detail, 
-      tag_sql, tag_named, tag_html) %>% 
-    arrange(rowid) %>%
-    data.frame()
-}
 
 # convert data from dtedit to ferc_docs format  
 get_new_docs <- function(d, flds = ferc_doc_names) {
@@ -232,8 +158,130 @@ server <- function(input, output, session) {
         ferc$project %>% unique() %>% sort() %>% na.omit(),
         input)))
   })
+  
+  # ADD PRJ TABLE ----
+  # * get data ----
+  ferc     <- get_ferc()
+  
+  library(stringr)
+  
+  # match_prj <- function(d_projects, d_doc) {
+  #   prj_match <- d_doc$prj_document %>% 
+  #     str_extract(
+  #       regex(
+  #         projects$project %>% 
+  #           str_replace_all("-", " ") %>% 
+  #           str_sub(), 
+  #         ignore_case = T, skip_word_none = T)) %>% 
+  #     na.omit() %>% 
+  #     unlist(recursive = T) %>% 
+  #     first()
+  #   if (is.na(prj_match)) {
+  #     prj_match <- d_doc$prj_document %>% 
+  #       str_extract(
+  #         regex(
+  #           projects$project_alt_name %>% 
+  #             str_replace_all("-", " ") %>% 
+  #             str_sub(), 
+  #           ignore_case = T, skip_word_none = T)) %>% 
+  #       na.omit() %>% 
+  #       unlist(recursive = T) %>% 
+  #       first()
+  #   }
+  #   prj_match
+  # }
+  
+  # d_prjs = tbl of prjs & alt prj names
+  # d_doc  = 1 row of tbl of prj_docs$prj_document
+  
+  match_prj <- function(
+    prj_doc, 
+    prj_names     = projects$project, 
+    alt_prj_names = projects$project_alt_name) {
+    
+      prj_match <- prj_doc %>% 
+        str_extract(
+          regex(
+            prj_names %>% 
+              str_replace_all("-", " ") %>% 
+              str_sub(), 
+            ignore_case = T)) %>% 
+        na.omit() %>% 
+        unlist(recursive = T) %>% 
+        first()
+      if (is.na(prj_match)) {
+        prj_match <- prj_doc %>% 
+          str_extract(
+            regex(
+              alt_prj_names %>% 
+                str_replace_all("-", " ") %>% 
+                str_sub(), 
+              ignore_case = T)) %>% 
+            na.omit() %>% 
+            unlist(recursive = T) %>% 
+            first()
+      }
+      prj_match
+    }
+  
+  projects <- update_projects() %>% 
+    mutate(
+      project_alt_name = case_when(
+        project == "OPT Reedsport" ~ "REEDSPORT OPT",
+        project == "Pacwave-N"     ~ "Pacwave North",
+        project == "Pacwave-S"     ~ "Pacwave South",
+        project == "RITE"          ~ "Roosevelt Island Tidal Energy")) %>% 
+    select(project, project_alt_name)
+  
+  prj_docs <- ferc %>%
+    select(prj_document, prj_doc_attachment, prj_doc_attach_url) %>% 
+    distinct() %>% 
+    mutate(project = map(prj_docs$prj_document, match_prj)) %>% 
+    relocate(project) %>% 
+    arrange(project)
+  
+  
+  
+  
 
-  #* get labels ----
+  
+
+  
+    
+    
+    
+
+
+  
+  
+  
+  
+
+  
+  
+ 
+
+
+  
+  
+  
+  
+  
+  output$prj_docs_table <- renderDT(
+    
+  )
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  # DTEDIT ----
+  #* get labels for dtedit ----
   labels <- 
     tibble(
       # actual names as stored in ferc, ferc_docs, and ferc_doc_tags
@@ -401,11 +449,12 @@ ui <- tagList(
   
   navbarPage(
     "Edit",
+    
     tabPanel(
       "Documents", 
       #* Documents ----
       helpText(
-        "Editable FERC Documents",br(),
+        "Editable FERC Documents", br(),
         "Please add a new project in ", 
         a("data | marineenergy.app - Google Sheet", 
           href="https://docs.google.com/spreadsheets/d/1MTlWQgBeV4eNbM2JXNXU3Y-_Y6QcOOfjWFyKWfdMIQM/edit#gid=5178015", 
@@ -420,7 +469,15 @@ ui <- tagList(
       helpText(
         HTML("The FERC eLibrary contains environmental compliance project documents, 
           of which excerpts have been manually tagged for reference.")),
-      uiOutput("ferc_dt_edit"))
+      uiOutput("ferc_dt_edit")
+    ),
+    
+    tabPanel(
+      "Add new project"
+      
+    )
+      
+      
 ))
 
 # SHINY APP ----
