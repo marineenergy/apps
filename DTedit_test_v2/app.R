@@ -6,6 +6,7 @@ source(file.path(dir_scripts, "shiny_report.R"))
 source(file.path(dir_scripts, "update.R"))
 
 # LIBRARIES ----
+# devtools::install_github("DavidPatShuiFong/DTedit@f1617e253d564bce9b2aa67e0662d4cf04d7931f")
 shelf(DavidPatShuiFong/DTedit, DBI, DT, glue, purrr)
 
 # FXNS REFERENCED IN CALLBACKS ----
@@ -161,10 +162,10 @@ server <- function(input, output, session) {
   
   # ADD PRJ TABLE ----
   # * get data ----
-  ferc     <- get_ferc()
-  
-  library(stringr)
-  
+  # ferc     <- get_ferc()
+  # 
+  # library(stringr)
+  # 
   # match_prj <- function(d_projects, d_doc) {
   #   prj_match <- d_doc$prj_document %>% 
   #     str_extract(
@@ -194,87 +195,55 @@ server <- function(input, output, session) {
   # d_prjs = tbl of prjs & alt prj names
   # d_doc  = 1 row of tbl of prj_docs$prj_document
   
-  match_prj <- function(
-    prj_doc, 
-    prj_names     = projects$project, 
-    alt_prj_names = projects$project_alt_name) {
-    
-      prj_match <- prj_doc %>% 
-        str_extract(
-          regex(
-            prj_names %>% 
-              str_replace_all("-", " ") %>% 
-              str_sub(), 
-            ignore_case = T)) %>% 
-        na.omit() %>% 
-        unlist(recursive = T) %>% 
-        first()
-      if (is.na(prj_match)) {
-        prj_match <- prj_doc %>% 
-          str_extract(
-            regex(
-              alt_prj_names %>% 
-                str_replace_all("-", " ") %>% 
-                str_sub(), 
-              ignore_case = T)) %>% 
-            na.omit() %>% 
-            unlist(recursive = T) %>% 
-            first()
-      }
-      prj_match
-    }
-  
-  projects <- update_projects() %>% 
-    mutate(
-      project_alt_name = case_when(
-        project == "OPT Reedsport" ~ "REEDSPORT OPT",
-        project == "Pacwave-N"     ~ "Pacwave North",
-        project == "Pacwave-S"     ~ "Pacwave South",
-        project == "RITE"          ~ "Roosevelt Island Tidal Energy")) %>% 
-    select(project, project_alt_name)
-  
-  prj_docs <- ferc %>%
-    select(prj_document, prj_doc_attachment, prj_doc_attach_url) %>% 
-    distinct() %>% 
-    mutate(project = map(prj_docs$prj_document, match_prj)) %>% 
-    relocate(project) %>% 
-    arrange(project)
-  
-  
-  
-  
-
-  
-
-  
-    
-    
-    
-
-
-  
-  
-  
-  
-
-  
-  
  
-
-
   
   
-  
-  
-  
-  output$prj_docs_table <- renderDT(
-    
-  )
-
-  
-  
-  
-  
+  #  match_prj <- function(
+  #   prj_doc, 
+  #   prj_names     = projects$project, 
+  #   alt_prj_names = projects$project_alt_name) {
+  #   
+  #     prj_match <- prj_doc %>% 
+  #       str_extract(
+  #         regex(
+  #           prj_names %>% 
+  #             str_replace_all("-", " ") %>% 
+  #             str_sub(), 
+  #           ignore_case = T)) %>% 
+  #       na.omit() %>% 
+  #       unlist(recursive = T) %>% 
+  #       first()
+  #     if (is.na(prj_match)) {
+  #       prj_match <- prj_doc %>% 
+  #         str_extract(
+  #           regex(
+  #             alt_prj_names %>% 
+  #               str_replace_all("-", " ") %>% 
+  #               str_sub(), 
+  #             ignore_case = T)) %>% 
+  #           na.omit() %>% 
+  #           unlist(recursive = T) %>% 
+  #           first()
+  #     }
+  #     prj_match
+  #   }
+  # 
+  # projects <- update_projects() %>% 
+  #   mutate(
+  #     project_alt_name = case_when(
+  #       project == "OPT Reedsport" ~ "REEDSPORT OPT",
+  #       project == "Pacwave-N"     ~ "Pacwave North",
+  #       project == "Pacwave-S"     ~ "Pacwave South",
+  #       project == "RITE"          ~ "Roosevelt Island Tidal Energy")) %>% 
+  #   select(project, project_alt_name)
+  # 
+  # prj_docs <- ferc %>%
+  #   select(prj_document, prj_doc_attachment, prj_doc_attach_url) %>% 
+  #   distinct() %>% 
+  #   mutate(project = map(prj_docs$prj_document, match_prj)) %>% 
+  #   relocate(project) %>% 
+  #   arrange(project)
+  # 
   
   
   
@@ -337,21 +306,22 @@ server <- function(input, output, session) {
       'Protection mitigation and enhancement (PME)?',
       'Best management practices (BMPs) applied?'),
     input.types = c(
-      project            = "selectInput",
+      project            = "selectizeInput",     # "selectizeInput"
       prj_document       = "textAreaInput",
       prj_doc_attachment = "fileInput",
       prj_doc_attach_url = "textInput",
       detail             = "textAreaInput",
       tag_named          = "selectInputMultiple",
-      ck_ixn             = "selectInput",
-      ck_obs             = "selectInput",
-      ck_mp              = "selectInput",
-      ck_amp             = "selectInput",
-      ck_pme             = "selectInput",
-      ck_bmps            = "selectInput"),
+      ck_ixn             = "checkboxInput",
+      ck_obs             = "checkboxInput",
+      ck_mp              = "checkboxInput",
+      ck_amp             = "checkboxInput",
+      ck_pme             = "checkboxInput",
+      ck_bmps            = "checkboxInput"),
     input.choices = list(
       # TODO: add tab/link to app for editing projects and associated documents, attachments and urls
-      project   = ferc$project %>% unique() %>% sort() %>% na.omit(),
+      # project   = ferc$project %>% unique() %>% sort() %>% na.omit(),
+      project   = get_ferc()$project %>% unique() %>% sort() %>% na.omit(),
       ck_ixn    = c(TRUE, FALSE),
       ck_obs    = c(TRUE, FALSE),
       ck_mp     = c(TRUE, FALSE), 
@@ -360,6 +330,9 @@ server <- function(input, output, session) {
       ck_bmps   = c(TRUE, FALSE),
       tag_named = tag_choices
     ), 
+    
+    selectize          = T, 
+    selectize.options  = list(create = 'multiple'),
     
     datatable.rownames = F,
     
@@ -402,8 +375,6 @@ server <- function(input, output, session) {
       lengthMenu      = c(5, 10, 25, 50, 100, nrow(ferc))
     ),
       
-    selectize       = T, 
-    
     modal.size      = 'm', 
     text.width      = '100%',
     textarea.width  = '535px',
