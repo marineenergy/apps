@@ -17,45 +17,53 @@ source(file.path(dir_scripts, "update.R"))
 update_projects() # update prj_sites_csv
 prj_sites_csv <- here("data/project_sites.csv")
 
-# prep data
-match_prj <- function(
-  prj_doc, 
-  prj_names     = projects$project, 
-  alt_prj_names = projects$project_alt_name) {
-  
-  prj_match <- prj_doc %>% 
-    str_extract(
-      regex(
-        prj_names %>% 
-          str_replace_all("-", " ") %>% 
-          str_sub(), 
-        ignore_case = T)) %>% 
-    na.omit() %>% 
-    unlist(recursive = T) %>% 
-    first()
-  if (is.na(prj_match)) {
-    prj_match <- prj_doc %>% 
-      str_extract(
-        regex(
-          alt_prj_names %>% 
-            str_replace_all("-", " ") %>% 
-            str_sub(), 
-          ignore_case = T)) %>% 
-      na.omit() %>% 
-      unlist(recursive = T) %>% 
-      first()
-  }
-  prj_match
-}
-
-projects <- read_csv(prj_sites_csv) %>% 
+prjs <- read_csv(prj_sites_csv) %>% 
   mutate(
     project_alt_name = case_when(
       project == "OPT Reedsport" ~ "REEDSPORT OPT",
       project == "Pacwave-N"     ~ "Pacwave North",
       project == "Pacwave-S"     ~ "Pacwave South",
       project == "RITE"          ~ "Roosevelt Island Tidal Energy")) %>% 
-  select(project, project_alt_name)
+  select(prj = project, prj_alt = project_alt_name)
+
+
+# prep data
+match_prj <- function(
+  prj_doc, prj_names = prjs$prj, alt_prj_names = prjs$prj_alt) {
+
+    prj_index <- prj_doc %>% 
+      str_detect(
+        coll(
+          prj_names %>%
+            str_replace_all("-", " "),
+          ignore_case = T)) %>% 
+      unlist(recursive = T)
+    
+    if (!(TRUE %in% prj_index)) {
+      prj_index <- list()
+      prj_index <- prj_doc %>% 
+        str_detect(
+          coll(
+            alt_prj_names %>%
+              str_replace_all("-", " "),
+            ignore_case = T)) %>% 
+        unlist(recursive = T)
+    }
+    
+    # get prj name that matches prj
+    if (!(TRUE %in% prj_index)) {
+      prj_index <- NA
+    } else {
+      prj_index <- which(prj_index == TRUE)
+    }
+    if (!(is.na(prj_index))) {
+      prj_name <- prj_names[prj_index]
+    } else {
+      prj_name <- NA
+    }
+    prj_name
+
+}
 
 prj_docs <- get_ferc() %>%
   select(prj_document, prj_doc_attachment, prj_doc_attach_url) %>% 
@@ -63,6 +71,51 @@ prj_docs <- get_ferc() %>%
   mutate(project = map(prj_document, match_prj)) %>% 
   relocate(project) %>% 
   arrange(project)
+
+ferc_prj <- ferc %>% select(-project)
+  left_join(
+    prj_docs %>% select(project, prj_document), 
+    by = c("document" = "prj_document"))
+
+
+
+
+```
+
+
+```{r}
+#   prj_match <- prj_doc %>%
+  #     str_extract(
+  #       coll(
+  #         prj_names %>%
+  #           str_replace_all("-", " ") %>%
+  #           str_sub(),
+  #         ignore_case = T)) %>%
+  #     na.omit() %>%
+  #     unlist(recursive = T) %>%
+  #     first()
+  #   if (is.na(prj_match)) {
+  #     prj_match <- prj_doc %>%
+  #       str_extract(
+  #         coll(
+  #           alt_prj_names %>%
+  #               str_replace_all("-", " ") %>%
+  #               str_sub(),
+  #             ignore_case = T)) %>%
+  #       na.omit() %>%
+  #       unlist(recursive = T) %>%
+  #       first()
+  #   }
+  #   prj_match
+  # }
+
+
+prj_docs %>% slice(30) %>% match_prj
+
+  mutate(project = map(prj_document, match_prj)) %>% 
+  relocate(project) %>% 
+  arrange(project)
+
 ```
 
 ```{r}

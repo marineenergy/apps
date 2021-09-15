@@ -1,9 +1,5 @@
 # DB CONNECTION & SCRIPTS ----
-dir_scripts <<- here::here("scripts")
-source(file.path(dir_scripts, "common_2.R"))
-source(file.path(dir_scripts, "db.R"))
-source(file.path(dir_scripts, "shiny_report.R"))
-source(file.path(dir_scripts, "update.R"))
+
 
 # LIBRARIES ----
 # devtools::install_github("DavidPatShuiFong/DTedit@f1617e253d564bce9b2aa67e0662d4cf04d7931f")
@@ -277,6 +273,7 @@ server <- function(input, output, session) {
       edit_col = ifelse(
         ferc_col_names %in% c("rowid", "document", "tag_sql", "tag_html"), 
         FALSE, TRUE))
+  
 
   #* dtedit() object ----
   fercdt <- dtedit(
@@ -293,7 +290,7 @@ server <- function(input, output, session) {
       "detail", "tag_named", 
       "ck_ixn", "ck_obs", "ck_mp", "ck_amp", "ck_pme", "ck_bmps"),
     edit.label.cols = c(
-      'Project', 
+      "Project: Select project below or type to add new project",
       'Document name',
       'Upload document attachment',
       'Upload document URL link',
@@ -306,7 +303,7 @@ server <- function(input, output, session) {
       'Protection mitigation and enhancement (PME)?',
       'Best management practices (BMPs) applied?'),
     input.types = c(
-      project            = "selectizeInput",     # "selectizeInput"
+      project            = "selectizeInput",    
       prj_document       = "textAreaInput",
       prj_doc_attachment = "fileInput",
       prj_doc_attach_url = "textInput",
@@ -331,9 +328,21 @@ server <- function(input, output, session) {
       tag_named = tag_choices
     ), 
     
-    selectize          = T, 
-    selectize.options  = list(create = 'multiple'),
-    
+    selectize = T, 
+    selectize.options  = list(
+
+      project = list(
+        create   = T,
+        maxItems = 1, 
+        selectize = T
+        # ideally would display project name if it exists & if null, then ""
+        # onInitialize = I('
+        #   function() {
+        #     this.setValue("");
+        #   }'),
+        # placeholder  = "Select project below or type to add new project")
+      )),
+      
     datatable.rownames = F,
     
     datatable.call = function(...) {
