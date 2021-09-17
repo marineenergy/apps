@@ -239,6 +239,18 @@ d_docs <- tbl(con, "ferc_docs") %>%
     by = "rowid")
 d_docs_n <- tbl(con, "ferc_docs") %>% summarize(n = n()) %>% pull(n)
 
+# publications ----
+d_pubs <- tbl(con, "tethys_pubs") %>% 
+  select(rowid, uri, title) %>% 
+  left_join(
+    tbl(con, "tethys_pub_tags") %>% 
+      select(-uri),
+    by = "rowid") %>% 
+  distinct_all()
+
+# tbl(con, "tethys_pubs") %>% collect() %>% names() %>% paste(collapse = ", ")
+d_pubs_n <- tbl(con, "tethys_pubs") %>% summarize(n = n()) %>% pull(n)
+
 # reports ----
 dir_rpt_pfx <- "/share/user_reports"
 url_rpt_pfx <- "https://api.marineenergy.app/report"

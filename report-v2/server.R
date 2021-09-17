@@ -322,15 +322,16 @@ server <- function(input, output, session) {
         across(starts_with("ck_"), as.character),
         across(starts_with("ck_"), recode, "TRUE"="✓", "FALSE"="☐"),
         Doc = ifelse(
-          is.na(doc_attach),
-          doc_name,
-          paste0(doc_name, ": ", doc_attach)),
+          is.na(prj_doc_attachment),
+          prj_document,
+          paste0(prj_document, ": ", prj_doc_attachment)),
         Doc = ifelse(
-          is.na(doc_url),
+          is.na(prj_doc_attach_url),
           Doc,
-          glue("<a href='{doc_url}'>{Doc}</a>"))) %>% 
+          glue("<a href='{prj_doc_attach_url}'>{Doc}</a>"))) %>% 
+      #names()
       select(
-        ID, Project, Doc, Detail, Tags,
+        ID, Project=project, Document=Doc, Detail=detail, Tags,
         Ixn = ck_ixn, 
         Obs = ck_obs, 
         MP  = ck_mp, 
