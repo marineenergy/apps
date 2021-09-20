@@ -82,6 +82,9 @@ update_projects <- function(){
   write_csv(projects       , prj_times_csv)
   write_csv(project_permits, prj_permits_csv)
   
+  dbWriteTable(con, "projects", projects, overwrite = T)
+  dbWriteTable(con, "project_permits", project_permits, overwrite = T)
+  #dbListTables(con) %>% sort() %>% str_extract("proj.*") %>% na.omit()
   
   md2html <- function(x){
     markdownToHTML(text = x, fragment.only = T, options = c())}
@@ -116,6 +119,9 @@ update_projects <- function(){
   prj_sites %>% 
     st_drop_geometry() %>% 
     write_csv(prj_sites_csv)
+  
+  # project_sites used by Projects - Map for popup listing permits by site
+  dbWriteTable(con, "project_permits", project_permits, overwrite = T)
 }
 
 update_tags <- function(){

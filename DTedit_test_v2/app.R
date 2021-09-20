@@ -5,8 +5,6 @@ source(file.path(dir_scripts, "db.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
 source(file.path(dir_scripts, "update.R"))
 
-
-
 # LIBRARIES ----
 # devtools::install_github("DavidPatShuiFong/DTedit@f1617e253d564bce9b2aa67e0662d4cf04d7931f")
 shelf(DavidPatShuiFong/DTedit, DBI, DT, glue, purrr, readr)
@@ -179,7 +177,7 @@ server <- function(input, output, session) {
   
   
   observe({
-    # UPDATE DOC OPTIONS ~ PRJ SELECTION
+    # UPDATE DOC OPTIONS 
     updateSelectizeInput(
       session, 
       "sel_prj_doc", 
@@ -190,7 +188,7 @@ server <- function(input, output, session) {
   })
    
   observe({ 
-    # UPDATE SECTION OPTIONS ~ DOC SELECTION ~ PRJ SELECTION
+    # UPDATE SECTION OPTIONS 
     updateSelectizeInput(
       session, 
       "sel_prj_doc_sec",
@@ -203,7 +201,7 @@ server <- function(input, output, session) {
   })
   
   observe({ 
-    # UPDATE URL OPTIONS ~ SECTION SELECTION ~ DOC SELECTION ~ PRJ SELECTION
+    # UPDATE URL OPTIONS 
     updateSelectizeInput(
       session, 
       "sel_prj_doc_sec_url",
@@ -237,8 +235,8 @@ server <- function(input, output, session) {
     prj_values_df <- as.data.frame(prj_values$data) %>% tibble()
     # will update projects with this data via SQL 
     # so it can be displayed in ferc docs table on other tab
-    
   })
+  
   
   # for debugging:
   output$prj_table <- renderTable(
@@ -565,7 +563,8 @@ server <- function(input, output, session) {
   shiny::exportTestValues(data_list = {data_list})
   
   cancel.onsessionEnded <- session$onSessionEnded(function() {
-    DBI::dbDisconnect(con)
+    pool::poolClose(con)
+    DBI::dbDisconnect(conn)
   })
 } 
 
