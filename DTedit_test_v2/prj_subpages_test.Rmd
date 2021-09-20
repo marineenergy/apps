@@ -20,6 +20,7 @@ prj_sites_csv <- here("data/project_sites.csv")
 prjs <- read_csv(prj_sites_csv) %>% 
   mutate(
     project_alt_name = case_when(
+      project == "Igiugig"       ~ "Iguigig",
       project == "OPT Reedsport" ~ "REEDSPORT OPT",
       project == "Pacwave-N"     ~ "Pacwave North",
       project == "Pacwave-S"     ~ "Pacwave South",
@@ -68,15 +69,30 @@ match_prj <- function(
 prj_docs <- get_ferc() %>%
   select(prj_document, prj_doc_attachment, prj_doc_attach_url) %>% 
   distinct() %>% 
-  mutate(project = map(prj_document, match_prj)) %>% 
+  mutate(project = map_chr(prj_document, match_prj)) %>% 
   relocate(project) %>% 
   arrange(project)
 
-ferc_prj <- ferc %>% select(-project)
+ferc_prj <- ferc %>% select(-project) %>% 
   left_join(
     prj_docs %>% select(project, prj_document), 
-    by = c("document" = "prj_document"))
+    by = c("prj_document" = "prj_document")) %>% 
+  relocate(rowid, document, project)
 
+
+ferc_prj_doc_sec <- ferc_prj %>% 
+  select(
+    prj = project, prj_doc = prj_document, 
+    prj_doc_sec = prj_doc_attachment, prj_doc_sec_url = prj_doc_attach_url) %>% 
+  group_by(prj, prj_doc, prj_doc_sec, prj_doc_sec_url) %>% 
+  summarize()
+ferc_prj_doc_sec %>% write_csv(here("data/project_doc_sec.csv"))
+
+ferc_prj_doc <- ferc_prj_doc_sec %>% 
+  group_by(prj, prj_doc) %>% 
+  summarize()
+ferc_prj_doc %>% write_csv(here("data/project_doc.csv"))
+# View(ferc_prj)
 
 
 
