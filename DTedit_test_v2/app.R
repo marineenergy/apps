@@ -12,6 +12,7 @@ shelf(DavidPatShuiFong/DTedit, DBI, DT, glue, purrr, readr)
 # FXNS REFERENCED IN CALLBACKS ----
 
 # convert data from dtedit to ferc_docs format  
+
 get_new_docs <- function(d, flds = ferc_doc_names) {
   d %>% 
     select(-document, -tag_sql, -tag_named, -tag_html) %>% 
@@ -22,15 +23,6 @@ get_new_docs <- function(d, flds = ferc_doc_names) {
 d_prj_doc_sec   <- read_csv(here("data/project_doc_sec.csv"))
 d_prj_doc       <- read_csv(here("data/project_doc.csv"))
 d_prj           <- read_csv(here("data/project_sites.csv")) %>% arrange(project)
-
-# first prj
-prj_1           <- d_prj$project[1]
-# all prj docs for first prj
-d_prj_doc_1     <- d_prj_doc %>% filter(prj == prj_1)
-# first prj doc for first prj
-prj_doc_1       <- d_prj_doc_1$prj_doc[1]
-# all prj doc sections for first prj doc for first prj
-d_prj_doc_sec_1 <- d_prj_doc %>% filter(prj == prj_1, prj_doc == prj_doc_1)
 
 
 # convert data from dtedit to ferc_doc_tags format
@@ -156,28 +148,17 @@ for (category in unique(tags$category)){ # category = tags$category[1]
           filter(category == !!category) %>% 
           pull(tag_named) %>% 
           unlist()),
-      category))
+      category)) 
 }
 
 # SHINY SERVER ----
 server <- function(input, output, session) {
+
+  # PROJECT DOCS PAGE ----
   
-  prj_levels <- get_ferc()$project %>% unique() %>% sort() %>% na.omit()
-  
-  # for server:
-  observeEvent(input$submit, {
-    #browser()
-    input <- input$add_prj
-    updateSelectInput(
-      session, "prj_select",
-      choices = as.character(c(
-        ferc$project %>% unique() %>% sort() %>% na.omit(),
-        input)))
-  })
-  
-  
+  # * observe prj selection ----
+  # update doc choices
   observe({
-    # UPDATE DOC OPTIONS 
     updateSelectizeInput(
       session, 
       "sel_prj_doc", 
@@ -186,9 +167,9 @@ server <- function(input, output, session) {
         pull(prj_doc),
       server = T)
   })
-   
+  # * observe doc selection ----
+  # update section choices
   observe({ 
-    # UPDATE SECTION OPTIONS 
     updateSelectizeInput(
       session, 
       "sel_prj_doc_sec",
@@ -199,9 +180,9 @@ server <- function(input, output, session) {
         pull(prj_doc_sec),
       server = T)
   })
-  
+  # * observe section selection ----
+  # update url choices
   observe({ 
-    # UPDATE URL OPTIONS 
     updateSelectizeInput(
       session, 
       "sel_prj_doc_sec_url",
@@ -213,30 +194,37 @@ server <- function(input, output, session) {
       server = T)
   })
   
+  
+  # STORING & UPDATING INPUT CHOICES ----
 
+  # prjs        <- d_prj$project 
+  prj_choices <- reactiveVal(d_prj_doc_sec$prj %>% sort() %>% unique())
+
+    
+  #old: works for storage/updating
   prj_values <- reactiveValues()
   prj_values$data <- d_prj_doc_sec 
   
-  observeEvent(input$save_sel, {
-    browser()
-  
-    # create new row to be added from inputs
-    new_input <- isolate(c(
-      input$sel_prj,
-      input$sel_prj_doc,
-      input$sel_prj_doc_sec,
-      input$sel_prj_doc_sec_url))
-    # update data with new row
-    isolate(
-      prj_values$data <- rbind(
-        as.matrix(prj_values$data), unlist(new_input)) %>% 
-        unique())
-    
-    prj_values_df <- as.data.frame(prj_values$data) %>% tibble()
-    # will update projects with this data via SQL 
-    # so it can be displayed in ferc docs table on other tab
-  })
-  
+  # observeEvent(input$save_sel, {
+  #   browser()
+  # 
+  #   # create new row to be added from inputs
+  #   new_input <- isolate(c(
+  #     input$sel_prj,
+  #     input$sel_prj_doc,
+  #     input$sel_prj_doc_sec,
+  #     input$sel_prj_doc_sec_url))
+  #   # update data with new row
+  #   isolate(
+  #     prj_values$data <- rbind(
+  #       as.matrix(prj_values$data), unlist(new_input)) %>% 
+  #       unique())
+  #   
+  #   prj_values_df <<- as.data.frame(prj_values$data) %>% tibble()
+  #   # will update projects with this data via SQL 
+  #   # so it can be displayed in ferc docs table on other tab
+  # })
+  # 
   
   # for debugging:
   output$prj_table <- renderTable(
@@ -450,7 +438,8 @@ server <- function(input, output, session) {
       'Protection mitigation and enhancement (PME)?',
       'Best management practices (BMPs) applied?'),
     input.types = c(
-      project            = "selectizeInput",    
+      # project            = "selectizeInput",    
+      project            = "selectizeInputReactive",  
       prj_document       = "textAreaInput",
       prj_doc_attachment = "fileInput",
       prj_doc_attach_url = "textInput",
@@ -465,15 +454,16 @@ server <- function(input, output, session) {
     input.choices = list(
       # TODO: add tab/link to app for editing projects and associated documents, attachments and urls
       # project   = ferc$project %>% unique() %>% sort() %>% na.omit(),
-      project   = get_ferc()$project %>% unique() %>% sort() %>% na.omit(),
+      # project   = get_ferc()$project %>% unique() %>% sort() %>% na.omit(),
+      project   = 'project.choices.list',
       ck_ixn    = c(TRUE, FALSE),
       ck_obs    = c(TRUE, FALSE),
       ck_mp     = c(TRUE, FALSE), 
       ck_amp    = c(TRUE, FALSE),
       ck_pme    = c(TRUE, FALSE),
       ck_bmps   = c(TRUE, FALSE),
-      tag_named = tag_choices
-    ), 
+      tag_named = tag_choices), 
+    input.choices.reactive = list(project.choices.list = prj_choices),
     
     selectize = T, 
     selectize.options  = list(
@@ -554,7 +544,170 @@ server <- function(input, output, session) {
     callback.delete = ferc.delete.callback
   )
   
-  # update data according to dtedit data
+  
+  # observeEvent(input$refresh, {
+  #   if (is.null(input$save_sel)) {
+  #     project_choices <- get_ferc()$project %>% unique() %>% sort() %>% na.omit()
+  #   } else {
+  #     project_choices <- prj_values_df$prj %>% unique() %>% sort() %>% na.omit()
+  #   }
+  # })
+  
+  
+  # observe prj updates ----
+  observeEvent(input$save_sel, {
+    # browser()
+    
+    # create new row to be added from inputs
+    new_input <- isolate(c(
+      input$sel_prj,
+      input$sel_prj_doc,
+      input$sel_prj_doc_sec,
+      input$sel_prj_doc_sec_url))
+    # update data with new row
+    isolate(
+      prj_values$data <- rbind(
+        as.matrix(prj_values$data), unlist(new_input)) %>% 
+        unique())
+    
+    prj_values_df <<- as.data.frame(prj_values$data) %>% tibble()
+  
+    
+    
+    
+    # modal to add another prj doc or return to ferc docs page
+    # modal_controls <- glideControls(
+    #   list(
+    #     prevButton(),
+    #     firstButton(
+    #       class = "btn btn-primary",
+    #       `data-dismiss` = "modal",
+    #       "Add more project input choices"
+    #     )
+    #   ),
+    #   list(
+    #     nextButton(),
+    #     lastButton(
+    #       class = "btn btn-primary",
+    #       `data-dismiss`= "modal",
+    #       "Return to FERC docs table"
+    #     )
+    #   )
+    # )
+    
+   
+    prj_input_modal <- modalDialog(
+      title = "Success!",
+      HTML(paste(
+        "<strong>You have added the following input choices:</strong><br>", 
+        paste(new_input, collapse = "<br>"))), 
+      easyClose = TRUE,
+      size = "m",
+      footer = fluidRow(
+        tagList(
+          column(
+            width = 5,
+            modalButton(
+              "Add more input choices")),
+          column(
+            width = 6,
+            actionButton(
+              "return_to_ferc_docs", 
+              "Return to FERC docs table", 
+              class   = "btn btn-primary",
+              onclick = " {
+                customHref('docs')
+              } "
+            )
+          )
+        )
+      )
+    )
+    
+    showModal(prj_input_modal)
+    
+    observeEvent(input$return_to_ferc_docs, {
+      removeModal()
+    })
+        
+      
+    
+  # shinyglide::glide(
+  #   custom_controls = modal_controls,
+  #   screen(
+  #     next_label = "Continue etc.",
+  #     p("ok")),
+  #   screen(
+  #     p("no")),
+  #   screen(
+  #     p("next"))
+    
+    
+    # showModal(modalDialog(
+    #   title = "Success!",
+    #   HTML(paste(
+    #     "<strong>You have added the following input choices:</strong><br>", 
+    #     paste(new_input, collapse = "<br>"))), 
+    #   easyClose = TRUE,
+    #   footer = modalButton("Continue")
+    #   
+    # ))
+    
+    
+    # shinyalert::shinyalert(
+    #   title = "Success!",
+    #   size = "s",
+    #   closeOnEsc = TRUE,
+    #   closeOnClickOutside = TRUE,
+    #   type = "success",
+    
+    #   showConfirmButton = TRUE,
+    #   confirmButtonText = "Continue",
+    #   animation = TRUE
+    # )
+    
+    # clear selections
+    updateSelectizeInput(
+      session, "sel_prj",
+      choices = d_prj$project,
+      server = T, selected = character(0)
+    )
+    updateSelectizeInput(
+      session, 
+      "sel_prj_doc", 
+      choices = d_prj_doc %>% 
+        filter(prj == input$sel_prj) %>% 
+        pull(prj_doc),
+      server = T, selected = character(0))
+    
+    
+    
+    # prj_choices$prj <- prj_values_df$prj %>% unique()
+    # prj_choices$prj_doc <- prj_values_df$prj_doc %>% unique()
+    # prj_choices$prj_doc_sec <- prj_values_df$prj_doc_sec %>% unique()
+    # prj_choices$prj_doc_url <- prj_values_df$prj_doc_sec_url %>% unique()
+    # will update projects with this data via SQL 
+    # so it can be displayed in ferc docs table on other tab
+  })
+  
+  observeEvent(input$refresh_btn, {
+    # browser()
+    prj_choices(prj_values_df$prj %>% sort() %>% unique())
+    showModal(
+      modalDialog(
+        "Input choices have been refreshed from those added on project docs page.",
+        footer    = modalButton("Continue"),
+        easyClose = TRUE,
+        size      = "s",
+        fade      = TRUE,
+        style     = "font-weight: bold;"))
+  })
+  
+
+  
+  
+  
+  # update data according to dtedit data ----
   data_list <- list() 
   observeEvent(fercdt$thedata, {
     data_list[[length(data_list) + 1]] <<- fercdt$thedata
@@ -573,36 +726,94 @@ server <- function(input, output, session) {
 ui <- tagList(
   # * css styling ----
   includeCSS("www/styles.css"),
-  shiny::tags$head(shiny::tags$style(HTML("
-    .selectize-input { word-wrap: break-word; }
-    .selectize-input { word-break: break-word; }
-    .selectize-input { padding: 10px }
-    .selectize-dropdown { word-wrap: break-word; }
-    .selectize-dropdown { padding: 10px }
-      #sel_prj+ div>.selectize-dropdown{width: 535px !important;}
-      #sel_prj_doc+ div>.selectize-dropdown{width: 535px !important;}
-      #sel_prj_doc_sec+ div>.selectize-dropdown{width: 535px !important;}
-      #sel_prj+ div>.selectize-input{width: 535px !important;}
-      #sel_prj_doc+ div>.selectize-input{width: 535px !important;}
-      #sel_prj_doc_sec+ div>.selectize-input{width: 535px !important;} 
-      #sel_prj_doc_sec_url+ div>.selectize-input{width: 535px !important;} 
+  shiny::tags$head(
+    shiny::tags$script(
+      src = "js/index.js"),
+    shiny::tags$style(HTML("
+      ::placeholder { 
+        word-wrap: break-word;
+        white-space: pre-line;
+        position: relative;
+        padding: 30px 30px 10px 5px !important;
+      }
+      .selectize-input { 
+        word-wrap: break-word; 
+        word-break: break-word; 
+        padding: 10px;
+        min-height: 60px;
+      }
+      .selectize-dropdown {
+        word-wrap: break-word; 
+        padding: 10px;
+        min-height: 60px;
+      }
       
-  "))),
-  
+      /* prj dropdown menus */
+      #sel_prj+ div>.selectize-dropdown, 
+      #sel_prj_doc+ div>.selectize-dropdown,
+      #sel_prj_doc_sec+ div>.selectize-dropdown,
+      #sel_prj_doc_sec_url+ div>.selectize-dropdown,
+      
+      /* prj inputs */
+      #sel_prj+ div>.selectize-input,
+      #sel_prj_doc+ div>.selectize-input,
+      #sel_prj_doc_sec+ div>.selectize-input,
+      #sel_prj_doc_sec_url+ div>.selectize-input {
+      
+        width: 100% !important;
+        
+      }
+     
+      .btn-primary:hover {
+        color: #fff;
+        background-color: #0069d9 !important;
+        border-color: #0069d9 !important;
+      }
+    
+      .btn-primary:active, .btn-primary:focus {
+        background-color: #0069d9 !important;
+        border-color: #00397 !important;
+        background-blend-mode: darken !important;
+        box-shadow: inset 0px 0px 400px 110px rgba(0, 0, 0, .7) !important;
+      }
+      #refresh_btn {
+        display: inline;
+        float: right;
+        right: 10vw;
+        text-align: center;
+        height: 60px;
+        width: 300px;
+        margin: 5px;
+        top: 10px;
+        right: 10px;
+        font-size: 16px;
+      
+     "))
+    ),
+
   navbarPage(
     "Edit",
     
+    #* Documents ----
     tabPanel(
-      "Documents", 
-      #* Documents ----
+      "Documents", value = "docs",
+      span(
+        span(
+          actionButton(
+            "refresh_btn",
+            "Refresh FERC docs table",
+            icon  = icon("refresh"),
+            class = "btn-primary")),
+        span(
+          h3("Editable FERC Documents"))),
       helpText(
-        "Editable FERC Documents", br(),
-        "Please add a new project in ", 
-        a("data | marineenergy.app - Google Sheet", 
-          href="https://docs.google.com/spreadsheets/d/1MTlWQgBeV4eNbM2JXNXU3Y-_Y6QcOOfjWFyKWfdMIQM/edit#gid=5178015", 
-          target="_blank")),
+        span(
+          span("Please add a new project, project document, or document section on "),
+          shiny::tags$a("Project Docs page", onclick="customHref('prj_docs')"))),
+          # span(actionLink("link_to_prj_docs", "Project Docs page")))),
+      hr(),
       div(
-        "Filters by:",
+        "Tags filter by:",
         icon("tags"),
         span(class="me-tag me-technology", "Technology"),
         span(class="me-tag me-stressor",   "Stressor"),
@@ -611,72 +822,94 @@ ui <- tagList(
       helpText(
         HTML("The FERC eLibrary contains environmental compliance project documents, 
           of which excerpts have been manually tagged for reference.")),
-      uiOutput("ferc_dt_edit")
+      hr(), 
+      # DTEDIT TABLE
+      div(
+        id = "ferc_docs_table",
+        shinycssloaders::withSpinner(
+          uiOutput("ferc_dt_edit"),
+          # loading spinner:
+          type = 8, color = "#007BFE"),
+        style = "padding: 5px;")
     ),
     
     #* Project Docs ----
     tabPanel(
-      "Project Docs",
+      "Project Docs", value = "prj_docs",
       
-      # PROJECT
-      selectizeInput(
-        "sel_prj",
-        "Project",
-        d_prj$project,
-        options = list(
-          create = T,
-          onInitialize = I(
-            'function() { this.setValue("") }'),
-          placeholder = 
-            "Select project from menu or type to add new project")),
-      # TODO: (BB did for ecoidx-up) if new project, update google sheet [data | marineenergy.app - Google Sheets](https://docs.google.com/spreadsheets/d/1MTlWQgBeV4eNbM2JXNXU3Y-_Y6QcOOfjWFyKWfdMIQM/edit#gid=5178015)
+      fluidRow(
+        
+        div(
+          style = "border-color: black;",
+          column(
+          width = 5,
+          
+          
+        
+          # PROJECT
+          selectizeInput(
+            "sel_prj",
+            "Project",
+            d_prj$project,
+            options = list(
+              create = T,
+              onInitialize = I(
+                'function() { this.setValue("") }'),
+              placeholder = 
+                "Select from menu or type to add new project")),
+          # TODO: (BB did for ecoidx-up) if new project, update google sheet [data | marineenergy.app - Google Sheets](https://docs.google.com/spreadsheets/d/1MTlWQgBeV4eNbM2JXNXU3Y-_Y6QcOOfjWFyKWfdMIQM/edit#gid=5178015)
+          
+          # DOC
+          selectizeInput(
+            "sel_prj_doc",
+            "Project Document", 
+            d_prj_doc$prj_doc, 
+            options = list(
+              create = T,
+              onInitialize = I(
+                'function() { this.setValue("") }'),
+              placeholder = 
+                "Select from menu or type to add new doc")),
+          
+          # SECTION
+          selectizeInput(
+            "sel_prj_doc_sec",
+            "Project Document Section",
+            d_prj_doc_sec$prj_doc_sec,
+            options = list(
+              create = T,
+              onInitialize = I(
+                'function() { this.setValue("") }'),
+              placeholder = 
+                "Select from menu or type to add new section")),
+          
+          # URL
+          selectizeInput(
+            "sel_prj_doc_sec_url",
+            "Project Document Section URL",
+            d_prj_doc_sec$prj_doc_sec_url,
+            options = list(
+              create = T,
+              onInitialize = I(
+                'function() { this.setValue("") }'),
+              placeholder = 
+                "Select from menu or type to add URL")),
+          
+          # SAVE/UPDATE
+          actionButton(
+            "save_sel",
+            "Save",
+            icon = icon("save"),
+            class = "btn-primary"),
+          br()
+        )), 
       
-      # DOC
-      selectizeInput(
-        "sel_prj_doc",
-        "Project Document", 
-        d_prj_doc$prj_doc, 
-        options = list(
-          create = T,
-          onInitialize = I(
-            'function() { this.setValue("") }'),
-          placeholder = 
-            "Select project doc from menu or type to add new doc")),
-      
-      # SECTION
-      selectizeInput(
-        "sel_prj_doc_sec",
-        "Project Document Section",
-        d_prj_doc_sec$prj_doc_sec,
-        options = list(
-          create = T,
-          onInitialize = I(
-            'function() { this.setValue("") }'),
-          placeholder = 
-            "Select project doc section from menu or type to add new section")),
-      
-      # URL
-      selectizeInput(
-        "sel_prj_doc_sec_url",
-        "Project Document Section URL",
-        d_prj_doc_sec$prj_doc_sec_url,
-        options = list(
-          create = T,
-          onInitialize = I(
-            'function() { this.setValue("") }'),
-          placeholder = 
-            "Select project doc section URL from menu or type to add URL")),
-      
-      # SAVE/UPDATE
-      actionButton(
-        "save_sel",
-        "Save",
-        icon = icon("save"),
-        style = "background-color:#0073CC; color:white;"),
-      
-      # for debugging: visualize updates
-      br(),
-      tableOutput("prj_table")
+        # for debugging: visualize updates
+        column(
+          width = 7,
+          tableOutput("prj_table")
+        )
+      )
     )
     
     

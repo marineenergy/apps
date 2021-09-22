@@ -121,7 +121,7 @@ update_projects <- function(){
     write_csv(prj_sites_csv)
   
   # project_sites used by Projects - Map for popup listing permits by site
-  dbWriteTable(con, "project_permits", project_permits, overwrite = T)
+  dbWriteTable(con, "project_sites", prj_sites, overwrite = T)
 }
 
 update_tags <- function(){
