@@ -47,8 +47,8 @@ get_ferc <- function() {
         document,
         glue('<a href="{prj_doc_attach_url}">{document}</a>')),
       document = as.character(document)) %>% 
-    select(-project) %>% 
-    mutate(project = map_chr(prj_document, match_prj)) %>% 
+    # select(-project) %>% 
+    # mutate(project = map_chr(prj_document, match_prj)) %>% 
     relocate(
       rowid, document, project, detail, 
       tag_sql, tag_named, tag_html) %>% 

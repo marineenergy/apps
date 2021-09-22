@@ -495,17 +495,19 @@ server <- function(input, output, session) {
     datatable.options = list(
       columnDefs = list(
         # centered rowid
-        list(targets = c(0, 6, 7, 8, 9, 10, 11),
+        list(targets = c(0, 2, 6, 7, 8, 9, 10, 11),
              className = 'dt-center'),
         # in-row checkboxes
         list(targets = c(6, 7, 8, 9, 10, 11),
-             render = DT::JS(
+             render = JS(
                "function(data, type, row) {
                   if (data == true) {
                     data = '<div class=\"text-success\"><span class=\"glyphicon glyphicon-ok-circle\"></span></div>';
                   } else if (data == false) {
                     data = '<div class=\"text-danger\"><span class=\"glyphicon glyphicon-remove-circle\"></span></div>';
-                  } return data}"))),
+                  } return data}")),
+        list(targets = 1,
+             className = "dt-right cell-border-right")),
       # header: black background
       initComplete = JS("
         function(settings, json) {
@@ -570,12 +572,9 @@ server <- function(input, output, session) {
         as.matrix(prj_values$data), unlist(new_input)) %>% 
         unique())
     
+    # tbl of all prj data, including new inputs
     prj_values_df <<- as.data.frame(prj_values$data) %>% tibble()
-  
-    
-    
-    
-    # modal to add another prj doc or return to ferc docs page
+
     # modal_controls <- glideControls(
     #   list(
     #     prevButton(),
@@ -595,7 +594,7 @@ server <- function(input, output, session) {
     #   )
     # )
     
-   
+    # modal to add another prj doc or return to ferc docs page
     prj_input_modal <- modalDialog(
       title = "Success!",
       HTML(paste(
@@ -615,17 +614,8 @@ server <- function(input, output, session) {
               "return_to_ferc_docs", 
               "Return to FERC docs table", 
               class   = "btn btn-primary",
-              onclick = " {
-                customHref('docs')
-              } "
-            )
-          )
-        )
-      )
-    )
-    
+              onclick = "customHref('docs')")))))
     showModal(prj_input_modal)
-    
     observeEvent(input$return_to_ferc_docs, {
       removeModal()
     })
@@ -641,30 +631,6 @@ server <- function(input, output, session) {
   #     p("no")),
   #   screen(
   #     p("next"))
-    
-    
-    # showModal(modalDialog(
-    #   title = "Success!",
-    #   HTML(paste(
-    #     "<strong>You have added the following input choices:</strong><br>", 
-    #     paste(new_input, collapse = "<br>"))), 
-    #   easyClose = TRUE,
-    #   footer = modalButton("Continue")
-    #   
-    # ))
-    
-    
-    # shinyalert::shinyalert(
-    #   title = "Success!",
-    #   size = "s",
-    #   closeOnEsc = TRUE,
-    #   closeOnClickOutside = TRUE,
-    #   type = "success",
-    
-    #   showConfirmButton = TRUE,
-    #   confirmButtonText = "Continue",
-    #   animation = TRUE
-    # )
     
     # clear selections
     updateSelectizeInput(
@@ -759,8 +725,7 @@ ui <- tagList(
       #sel_prj_doc+ div>.selectize-input,
       #sel_prj_doc_sec+ div>.selectize-input,
       #sel_prj_doc_sec_url+ div>.selectize-input {
-      
-        width: 100% !important;
+        width: 350px !important;
         
       }
      
@@ -785,9 +750,12 @@ ui <- tagList(
         width: 300px;
         margin: 5px;
         top: 10px;
-        right: 10px;
         font-size: 16px;
+      }
       
+      .cell-border-right {
+        border-right: 0.75px solid #ddd;
+      }
      "))
     ),
 
@@ -839,76 +807,84 @@ ui <- tagList(
       
       fluidRow(
         
-        div(
-          style = "border-color: black;",
-          column(
-          width = 5,
+        column(
+          width = 4,
+          div(
+            style = "
+              display: inline;
+              float: right;
+              padding: 10px;
+              display: inline;
+              margin: 10px 10px 20px 10px;
+            ",
+            helpText(
+              "Add new projects, project docs, and project doc sections below."),
           
-          
-        
-          # PROJECT
-          selectizeInput(
-            "sel_prj",
-            "Project",
-            d_prj$project,
-            options = list(
-              create = T,
-              onInitialize = I(
-                'function() { this.setValue("") }'),
-              placeholder = 
-                "Select from menu or type to add new project")),
-          # TODO: (BB did for ecoidx-up) if new project, update google sheet [data | marineenergy.app - Google Sheets](https://docs.google.com/spreadsheets/d/1MTlWQgBeV4eNbM2JXNXU3Y-_Y6QcOOfjWFyKWfdMIQM/edit#gid=5178015)
-          
-          # DOC
-          selectizeInput(
-            "sel_prj_doc",
-            "Project Document", 
-            d_prj_doc$prj_doc, 
-            options = list(
-              create = T,
-              onInitialize = I(
-                'function() { this.setValue("") }'),
-              placeholder = 
-                "Select from menu or type to add new doc")),
-          
-          # SECTION
-          selectizeInput(
-            "sel_prj_doc_sec",
-            "Project Document Section",
-            d_prj_doc_sec$prj_doc_sec,
-            options = list(
-              create = T,
-              onInitialize = I(
-                'function() { this.setValue("") }'),
-              placeholder = 
-                "Select from menu or type to add new section")),
-          
-          # URL
-          selectizeInput(
-            "sel_prj_doc_sec_url",
-            "Project Document Section URL",
-            d_prj_doc_sec$prj_doc_sec_url,
-            options = list(
-              create = T,
-              onInitialize = I(
-                'function() { this.setValue("") }'),
-              placeholder = 
-                "Select from menu or type to add URL")),
-          
-          # SAVE/UPDATE
-          actionButton(
-            "save_sel",
-            "Save",
-            icon = icon("save"),
-            class = "btn-primary"),
-          br()
-        )), 
+            # PROJECT
+            selectizeInput(
+              "sel_prj",
+              "Project",
+              d_prj$project,
+              options = list(
+                create = T,
+                onInitialize = I(
+                  'function() { this.setValue("") }'),
+                placeholder = 
+                  "Select from menu or type to add new project")),
+            # TODO: (BB did for ecoidx-up) if new project, update google sheet [data | marineenergy.app - Google Sheets](https://docs.google.com/spreadsheets/d/1MTlWQgBeV4eNbM2JXNXU3Y-_Y6QcOOfjWFyKWfdMIQM/edit#gid=5178015)
+            
+            # DOC
+            selectizeInput(
+              "sel_prj_doc",
+              "Project Document", 
+              d_prj_doc$prj_doc, 
+              options = list(
+                create = T,
+                onInitialize = I(
+                  'function() { this.setValue("") }'),
+                placeholder = 
+                  "Select from menu or type to add new doc")),
+            
+            # SECTION
+            selectizeInput(
+              "sel_prj_doc_sec",
+              "Project Document Section",
+              d_prj_doc_sec$prj_doc_sec,
+              options = list(
+                create = T,
+                onInitialize = I(
+                  'function() { this.setValue("") }'),
+                placeholder = 
+                  "Select from menu or type to add new section")),
+            
+            # URL
+            selectizeInput(
+              "sel_prj_doc_sec_url",
+              "Project Document Section URL",
+              d_prj_doc_sec$prj_doc_sec_url,
+              options = list(
+                create = T,
+                onInitialize = I(
+                  'function() { this.setValue("") }'),
+                placeholder = 
+                  "Select from menu or type to add URL")),
+            
+            # SAVE/UPDATE
+            actionButton(
+              "save_sel",
+              "Save",
+              icon = icon("save"),
+              class = "btn-primary"),
+            br()
+          )), 
       
         # for debugging: visualize updates
         column(
-          width = 7,
-          tableOutput("prj_table")
-        )
+          width = 8,
+          div(
+            h3("Existing projects"),
+            withSpinner(tableOutput("prj_table"), type = 8, color = "#007BFE")
+        ))
       )
     )
     

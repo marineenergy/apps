@@ -215,6 +215,7 @@ update_ferc_docs <- function(){
       ck_pme             = first(protection_mitigation_and_enhancement),
       ck_bmps            = first(bmps_applied),
       .groups = "drop") %>% 
+    mutate(project = map_chr(prj_document, match_prj)) %>% 
     tibble::rownames_to_column("rowid") %>% 
     mutate(
       rowid = as.integer(rowid))
