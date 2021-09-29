@@ -1,207 +1,5 @@
-# DB CONNECTION & SCRIPTS ----
-dir_scripts <<- here::here("scripts")
-source(file.path(dir_scripts, "common_2.R"))
-source(file.path(dir_scripts, "db.R"))
-source(file.path(dir_scripts, "shiny_report.R"))
-source(file.path(dir_scripts, "update.R"))
-
-# LIBRARIES ----
-# devtools::install_github("DavidPatShuiFong/DTedit@f1617e253d564bce9b2aa67e0662d4cf04d7931f")
-shelf(
-  DavidPatShuiFong/DTedit, DBI, DT, 
-  glue, purrr, readr, tidyr,
-  shiny, shinycssloaders)
-
-# FXNS REFERENCED IN CALLBACKS ----
-
-# convert data from dtedit to ferc_docs format  
-get_new_docs <- function(d, flds = ferc_doc_names) {
-  d %>%
-    separate(
-      prj_doc_sec,
-      into = c('project', 'prj_document', 'prj_doc_attachment'),
-      sep  = ";;") %>% 
-    select(flds) %>% 
-    relocate(flds)
-} 
-
-# convert data from dtedit to ferc_doc_tags format
-get_new_tags <- function(d, flds = ferc_tag_names) {
-  d %>% 
-    select(-tag_html, -tag_sql) %>% 
-    unnest(tag_named = tag_named) %>% 
-    select(rowid, tag_named) %>% 
-    left_join(
-      tags %>% 
-        rename(
-          tag_category = category,
-          content_tag  = tag_nocat) %>% 
-        select(
-          tag_category, 
-          content_tag,
-          tag_named,
-          tag_sql) %>% 
-        mutate(tag_named = as.character(tag_named)),
-      by = "tag_named") %>% 
-    mutate(content = "ferc_docs") %>% 
-    select(-tag_named) %>% 
-    relocate(flds)
-}
-
-
-# TODO: find home for creation of these in db, borrowing from prj_subpages_test.Rmd
-d_prj_doc_sec   <- read_csv(here("data/project_doc_sec.csv"))
-d_prj_doc       <- read_csv(here("data/project_doc.csv"))
-d_prj           <- read_csv(here("data/project_sites.csv")) %>% arrange(project)
-
-# ferc_prj <- get_ferc() %>% tibble() %>%  select(-project) %>% 
-#   left_join(
-#     prj_docs %>% select(project, prj_document),
-#     by = c("prj_document" = "prj_document")) %>% 
-#   relocate(rowid, document, project)
-# # fix this: not working:
-# # dbWriteTable(con, "ferc_prj", ferc_prj, overwrite = T)
-# 
-# ferc_prj_doc_sec <- ferc_prj %>% 
-#   select(
-#     prj = project, prj_doc = prj_document, 
-#     prj_doc_sec = prj_doc_attachment, prj_doc_sec_url = prj_doc_attach_url) %>% 
-#   group_by(prj, prj_doc, prj_doc_sec, prj_doc_sec_url) %>% 
-#   summarize()
-# # dbWriteTable(con, "ferc_prj_doc_sec", ferc_prj_doc_sec)
-# 
-# ferc_prj_doc <- ferc_prj_doc_sec %>% 
-#   group_by(prj, prj_doc) %>% 
-#   summarize()
-# ferc_prj_doc %>% write_csv(here("data/project_doc.csv"))
-
-
-# d_prj <- dbReadTable(con, "project_sites") %>% 
-#   collect() %>% tibble() %>% arrange(project)
-
-
-# CALLBACK FXNS ----
-
-# INSERT
-ferc.insert.callback <- function(data, row) {
-  browser()
-  d <- data %>% slice(row) %>% 
-    na_if("NA") %>% na_if("") %>% 
-    mutate(rowid = max(get_ferc()$rowid) + 1)
-  d_docs <- get_new_docs(d)  # data to INSERT into ferc_docs
-  d_tags <- get_new_tags(d)  # data to INSERT into ferc_doc_tags
-
-  sql_insert_docs <- glue_data_sql(
-    d_docs,
-    "INSERT INTO ferc_docs VALUES
-      ({rowid}, {detail}, {project},
-      {prj_document}, {prj_doc_attachment}, {prj_doc_attach_url},
-      {ck_ixn}, {ck_obs}, {ck_mp}, {ck_amp}, {ck_pme}, {ck_bmps})",
-    .con = conn)
-  res <- try(dbExecute(con, sql_insert_docs))
-  if ("try-error" %in% class(res)) stop(res)
+shinyServer(function(input, output, session) {
   
-  DBI::dbAppendTable(conn, "ferc_doc_tags", d_tags)
-  
-  get_ferc()
-}
-
-# UPDATE
-ferc.update.callback <- function(data, olddata, row) {
-  browser()
-  d <- data %>% slice(row) %>% 
-    tibble() %>% 
-    mutate(
-      across(starts_with("ck_"), as.logical)) %>% 
-    na_if("NA") %>% 
-    na_if("") 
-  d_docs <- get_new_docs(d)  # data to UPDATE ferc_docs
-  d_tags <- get_new_tags(d)  # data to be APPENDED to ferc_doc_tags
-  
-  sql_update_docs <- glue_data_sql(
-    d_docs,
-    "UPDATE ferc_docs 
-      SET
-        rowid              = {rowid}, 
-        detail             = {detail}, 
-        project            = {project},
-        prj_document       = {prj_document}, 
-        prj_doc_attachment = {prj_doc_attachment}, 
-        prj_doc_attach_url = {prj_doc_attach_url},
-        ck_ixn             = {ck_ixn}, 
-        ck_obs             = {ck_obs}, 
-        ck_mp              = {ck_mp}, 
-        ck_amp             = {ck_amp}, 
-        ck_pme             = {ck_pme}, 
-        ck_bmps            = {ck_bmps}
-      WHERE rowid = {rowid}",
-    .con = conn)
-  
-  sql_delete_tags <- glue("
-    DELETE FROM ferc_doc_tags WHERE rowid = {d$rowid};")
-  
-  res <- try(dbExecute(con, sql_update_docs))
-  if ("try-error" %in% class(res)) stop(res)
-
-  res <- try(dbExecute(con, sql_delete_tags))
-  if ("try-error" %in% class(res)) stop(res)
-  DBI::dbAppendTable(conn, "ferc_doc_tags", d_tags)
-  
-  get_ferc()
-}
-  
-# DELETE
-ferc.delete.callback <- function(data, row) {
-  browser()
-  d <- data %>% slice(row) %>% na_if("NA") %>% na_if("")
-  sql_delete_docs <- glue("DELETE FROM ferc_docs WHERE rowid = {d$rowid};")
-  sql_delete_tags <- glue("DELETE FROM ferc_doc_tags WHERE rowid = {d$rowid}")
-  
-  res <- try(dbExecute(con, sql_delete_docs))
-  if ("try-error" %in% class(res)) stop(res)
-  
-  res <- try(dbExecute(con, sql_delete_tags))
-  if ("try-error" %in% class(res)) stop(res)
-  
-  get_ferc()
-}
-
-#* get additional data ----
-ferc <- get_ferc() 
-tags <- get_tags() 
-ferc_doc_names <- dbReadTable(con, "ferc_docs") %>% names()
-ferc_tag_names <- dbReadTable(con, "ferc_doc_tags") %>% names()
-
-# * get input choices ----
-tag_choices <- list()
-for (category in unique(tags$category)){ # category = tags$category[1]
-  tag_choices <- append(
-    tag_choices,
-    setNames(
-      list(
-        tags %>% 
-          filter(category == !!category) %>% 
-          pull(tag_named) %>% 
-          unlist()),
-      category)) 
-}
-
-prj_doc_sec_choices <- list()
-for (project in unique(get_ferc()$project)){ 
-  prj_doc_sec_choices <- append(
-    prj_doc_sec_choices,
-    setNames(
-      list(
-        ferc %>% 
-          filter(project == !!project) %>% 
-          pull(prj_doc_sec) %>% 
-          unlist()),
-      project)) 
-}
-
-# SHINY SERVER ----
-server <- function(input, output, session) {
-
   # PROJECT DOCS PAGE ----
   
   # * observe prj selection ----
@@ -244,7 +42,7 @@ server <- function(input, output, session) {
   
   
   # STORING & UPDATING INPUT CHOICES ----
-
+  
   # prjs        <- d_prj$project 
   prj_choices <- reactiveVal(
     d_prj_doc_sec$prj %>% 
@@ -260,7 +58,7 @@ server <- function(input, output, session) {
   prj_doc_attach_choices <- reactiveVal(
     d_prj_doc_sec$prj_doc_sec %>% 
       sort() %>% unique())
-    
+  
   #old: works for storage/updating
   prj_values <- reactiveValues()
   prj_values$data <- d_prj_doc_sec 
@@ -301,7 +99,7 @@ server <- function(input, output, session) {
         list(targets = c(2,3), className = "dt-left"),
         # prj doc section url
         list(targets = 4, visible = F)
-        ),
+      ),
       
       # header: black background
       initComplete = JS("
@@ -314,7 +112,7 @@ server <- function(input, output, session) {
       searchHighlight = T,
       lengthMenu = list(c(5, 10, 25, 50, -1), 
                         c("5", "10", "25", "50", "All")))) 
-
+  
   
   # ADD PRJ TABLE ----
   # * get data ----
@@ -341,8 +139,8 @@ server <- function(input, output, session) {
   #             str_replace_all("-", " ") %>% 
   #             str_sub(), 
   #           ignore_case = T, skip_word_none = T)) %>% 
-
- 
+  
+  
   
   
   #  match_prj <- function(
@@ -391,7 +189,7 @@ server <- function(input, output, session) {
   #   relocate(project) %>% 
   #   arrange(project)
   
-
+  
   # DTEDIT ----
   #* get labels for dtedit ----
   labels <- 
@@ -446,7 +244,7 @@ server <- function(input, output, session) {
   # dt_data <- reactiveVal()
   # dt_data(data.frame(get_ferc()))
   
-
+  
   #* dtedit() object ----
   fercdt <- dtedit(
     input, output,
@@ -529,7 +327,7 @@ server <- function(input, output, session) {
 					}
         }"))
     ),
-      
+    
     datatable.rownames = F,
     
     datatable.call = function(...) {
@@ -589,7 +387,7 @@ server <- function(input, output, session) {
     
     text.delete.modal = HTML(
       "<span><b>Are you sure you want to delete this record?</b></span>"),
-  
+    
     # callbacks
     callback.update = ferc.update.callback,
     callback.insert = ferc.insert.callback,
@@ -631,7 +429,7 @@ server <- function(input, output, session) {
     
     # tbl of all prj data, including new inputs
     prj_values_df <<- as.data.frame(prj_values$data) %>% tibble()
-
+    
     # modal to add another prj doc or return to ferc docs page
     prj_input_modal <- modalDialog(
       title = "Success!",
@@ -701,7 +499,7 @@ server <- function(input, output, session) {
     # prj_doc_sec_choices(
     #   prj_values_df$prj_doc_
     # )
-
+    
     showModal(
       modalDialog(
         "Input choices have been refreshed from those added on project docs page.",
@@ -717,225 +515,11 @@ server <- function(input, output, session) {
   observeEvent(fercdt$thedata, {
     data_list[[length(data_list) + 1]] <<- fercdt$thedata
   })
-
+  
   shiny::exportTestValues(data_list = {data_list})
   
   cancel.onsessionEnded <- session$onSessionEnded(function() {
     pool::poolClose(con)
     DBI::dbDisconnect(conn)
   })
-} 
-
-
-# UI ----
-ui <- tagList(
-  # * css styling ----
-  includeCSS("www/styles.css"),
-  shiny::tags$head(
-    shiny::tags$script(
-      src = "js/index.js"),
-    shiny::tags$style(HTML("
-
-      ::placeholder { 
-        word-wrap: break-word;
-        white-space: pre-line;
-        position: relative;
-        padding: 30px 30px 10px 5px !important;
-      }
-      .selectize-input { 
-        word-wrap: break-word; 
-        word-break: break-word; 
-        padding: 10px;
-        min-height: 60px;
-      }
-      .selectize-dropdown {
-        word-wrap: break-word; 
-        padding: 10px;
-        min-height: 60px;
-      }
-      
-      /* prj dropdown menus */
-      #sel_prj+ div>.selectize-dropdown, 
-      #sel_prj_doc+ div>.selectize-dropdown,
-      #sel_prj_doc_sec+ div>.selectize-dropdown,
-      #sel_prj_doc_sec_url+ div>.selectize-dropdown,
-      
-      /* prj inputs */
-      #sel_prj+ div>.selectize-input,
-      #sel_prj_doc+ div>.selectize-input,
-      #sel_prj_doc_sec+ div>.selectize-input,
-      #sel_prj_doc_sec_url+ div>.selectize-input {
-        width: 350px !important;
-        
-      }
-     
-      .btn-primary:hover {
-        color: #fff;
-        background-color: #0069d9 !important;
-        border-color: #0069d9 !important;
-      }
-    
-      .btn-primary:active, .btn-primary:focus {
-        background-color: #0069d9 !important;
-        border-color: #00397 !important;
-        background-blend-mode: darken !important;
-        box-shadow: inset 0px 0px 400px 110px rgba(0, 0, 0, .7) !important;
-      }
-      #refresh_btn {
-        display: inline-block;
-        float: right;
-        text-align: center;
-        height: 60px;
-        width: 300px;
-        margin: 0px 10px 10px 10px;
-        font-size: 16px;
-      }
-      
-      .cell-border-right {
-        border-right: 0.75px solid #ddd;
-      }
-     "))
-    ),
-
-  navbarPage(
-    "Edit",
-    
-    #* Documents ----
-    tabPanel(
-      "Documents", value = "docs",
-      span(
-        span(
-          actionButton(
-            "refresh_btn",
-            "Refresh FERC docs table",
-            icon  = icon("refresh"),
-            class = "btn btn-primary btn-lg btn-block")),
-        span(
-          h3("Editable FERC Documents"))),
-      helpText(
-        span(
-          span("Please add a new project, project document, or document section on "),
-          shiny::tags$a("Project Docs page", onclick="customHref('prj_docs')"))),
-          # span(actionLink("link_to_prj_docs", "Project Docs page")))),
-      hr(),
-      div(
-        "Tags filter by:",
-        icon("tags"),
-        span(class="me-tag me-technology", "Technology"),
-        span(class="me-tag me-stressor",   "Stressor"),
-        span(class="me-tag me-receptor",   "Receptor"),
-        span(class="me-tag me-phase",      "Phase")),
-      helpText(
-        HTML("The FERC eLibrary contains environmental compliance project documents, 
-          of which excerpts have been manually tagged for reference.")),
-      hr(), 
-      # DTEDIT TABLE
-      div(
-        id = "ferc_docs_table",
-        shinycssloaders::withSpinner(
-          uiOutput("ferc_dt_edit"),
-          # loading spinner:
-          type = 8, color = "#007BFE"),
-        style = "padding: 5px;")
-    ),
-    
-    #* Project Docs ----
-    tabPanel(
-      "Project Docs", value = "prj_docs",
-      
-      fluidRow(
-        
-        column(
-          width = 4,
-          div(
-            style = "
-              display: inline;
-              white-space: initial;
-              position: fixed;
-              overflow-wrap: break-word;
-              padding: 10px 10px 20px 10px;
-              overflow: hidden;
-              word-wrap: break-word; 
-              word-break: break-word; 
-            ",
-            helpText(
-              "Add new projects, project docs, and project doc sections below."),
-          
-            # PROJECT
-            selectizeInput(
-              "sel_prj",
-              "Project",
-              d_prj$project,
-              options = list(
-                create = T,
-                onInitialize = I(
-                  'function() { this.setValue("") }'),
-                placeholder = 
-                  "Select from menu or type to add new project")),
-            # TODO: (BB did for ecoidx-up) if new project, update google sheet [data | marineenergy.app - Google Sheets](https://docs.google.com/spreadsheets/d/1MTlWQgBeV4eNbM2JXNXU3Y-_Y6QcOOfjWFyKWfdMIQM/edit#gid=5178015)
-            
-            # DOC
-            selectizeInput(
-              "sel_prj_doc",
-              "Project Document", 
-              d_prj_doc$prj_doc, 
-              options = list(
-                create = T,
-                onInitialize = I(
-                  'function() { this.setValue("") }'),
-                placeholder = 
-                  "Select from menu or type to add new doc")),
-            
-            # SECTION
-            selectizeInput(
-              "sel_prj_doc_sec",
-              "Project Document Section",
-              d_prj_doc_sec$prj_doc_sec,
-              options = list(
-                create = T,
-                onInitialize = I(
-                  'function() { this.setValue("") }'),
-                placeholder = 
-                  "Select from menu or type to add new section")),
-            
-            # URL
-            selectizeInput(
-              "sel_prj_doc_sec_url",
-              "Project Document Section URL",
-              d_prj_doc_sec$prj_doc_sec_url,
-              options = list(
-                create = T,
-                onInitialize = I(
-                  'function() { this.setValue("") }'),
-                placeholder = 
-                  "Select from menu or type to add URL")),
-            
-            # SAVE/UPDATE
-            actionButton(
-              "save_sel",
-              "Save",
-              icon = icon("save"),
-              class = "btn-primary"),
-            br()
-          )), 
-        
-        # table of existing projects, prj docs, and prj doc sections
-        column(
-          width = 8,
-          div(
-            style = "
-              display: inline;
-              position: relative;
-              overflow-wrap: break-word;
-              overflow: hidden;
-              float: center;
-              padding: 0px 10px 20px 60px;",
-            h3("Existing projects"),
-            withSpinner(DTOutput("prj_table"), type = 8, color = "#007BFE"))
-        )
-      )
-    )
-))
-
-# SHINY APP ----
-shinyApp(ui, server)
+})
