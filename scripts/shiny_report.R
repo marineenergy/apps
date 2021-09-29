@@ -48,15 +48,16 @@ get_ferc <- function() {
         glue('<a href="{prj_doc_attach_url}">{document}</a>')),
       document = as.character(document),
       # prj_doc_sec = glue("<h5><b>{project}</b></h5> {prj_document} {ifelse(!is.na(prj_doc_attachment), glue('| <i>{prj_doc_attachment}</i>'), '')}"),
-      prj_doc_sec_display = as.character(glue("<h5><b>{project}</b></h5> {prj_document} {ifelse(!is.na(prj_doc_attachment), glue('| <i>{prj_doc_attachment}</i>'), '')}")),
+      prj_doc_sec_display = as.character(glue("<h5><b>{project}</b></h5> {prj_document} {ifelse(!is.na(prj_doc_attachment), glue('\n<i>{prj_doc_attachment}</i>'), '')}")),
       prj_doc_sec_values = as.character(glue("{project};;{prj_document};;{prj_doc_attachment}"))) %>% 
     mutate(prj_doc_sec = map2(prj_doc_sec_values, prj_doc_sec_display, setNames)) %>%
     # select(-prj_doc_sec_values) %>% 
     # select(-project) %>% 
     # mutate(project = map_chr(prj_document, match_prj)) %>% 
     relocate(
-      rowid, document, project, prj_doc_sec, detail, 
-      tag_sql, tag_named, tag_html) %>% 
+      rowid, document, project, 
+      prj_doc_sec, prj_doc_sec_display, prj_doc_sec_values, 
+      detail, tag_sql, tag_named, tag_html) %>% 
     arrange(rowid) %>%
     data.frame()
 }

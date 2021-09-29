@@ -182,63 +182,35 @@ shinyServer(function(input, output, session) {
   #       project == "RITE"          ~ "Roosevelt Island Tidal Energy")) %>% 
   #   select(project, project_alt_name)
   # 
-  # prj_docs <- ferc %>%
-  #   select(prj_document, prj_doc_attachment, prj_doc_attach_url) %>% 
-  #   distinct() %>% 
-  #   mutate(project = map(prj_docs$prj_document, match_prj)) %>% 
-  #   relocate(project) %>% 
-  #   arrange(project)
-  
-  
-  # DTEDIT ----
-  #* get labels for dtedit ----
-  labels <- 
-    tibble(
-      # actual names as stored in ferc, ferc_docs, and ferc_doc_tags
-      ferc_col_names = names(ferc),
-      # names to display on dtedit TABLE
-      view_col_names = c(
-        "ID",         # rowid 
-        "Document",   # document & url
-        "Project",    # prj
-        NA,           # prj_doc_sec       (edit only)
-        "Detail",     # key ixn detail
-        NA,           # tag_sql           (server only)
-        NA,           # tag_named         (server only)
-        "Tags",       # tag_html    
-        NA,           # prj_document      (server only)
-        "Attachment", # prj doc attachment/section 
-        NA,           # url               (server only) 
-        "Ixn",        # ck_ixn
-        "Obs",        # ck_obs
-        "MP?",        # ck_mp
-        "AMP?",       # ck_amp
-        "PME?",       # ck_pme
-        "BMPs?",      # ck_bmps
-        NA,           # prj_doc_sec_values  (server only)
-        NA            # prj_doc_sec_display (server only)
-      )
-    ) %>%
-    mutate( 
-      # is column displayed on dtedit TABLE?
-      view_col = ifelse(is.na(view_col_names), FALSE, TRUE),
-      # names to display in dtedit EDIT interface
-      edit_col_names = c(
-        "ID", NA, NA,  "Project, document, section", 
-        "Key interaction detail",  NA, "Tags", # tag_named
-        NA,  NA, NA, NA,
-        "Presented as potential interaction?",
-        "Described from observations at the project site?",
-        "Monitoring plan (MP)?",
-        "Adaptive management plan (AMP)?",
-        "Protection mitigation and enhancement (PME)?",
-        "Best management practices (BMPs) applied?", NA, NA),
-      # is column displayed in dtedit EDIT interface?
-      edit_col = ifelse(
-        ferc_col_names %in% c(
-          "rowid", "document", "project", "prj_document", "prj_doc_attachment", 
-          "prj_doc_attach_url", "tag_sql", "tag_html", "prj_doc_sec_display", "prj_doc_sec_values"), 
-        FALSE, TRUE))
+
+    # TODO: 
+    # - [x] replace `view_col_names` w/ view from above
+    # - [x] view_label
+    # - [x] edit
+    # - [x] edit_label
+      
+    #   )
+    # ) %>%
+    # mutate( 
+    #   # is column displayed on dtedit TABLE?
+    #   view_col = ifelse(is.na(view_col_names), FALSE, TRUE),
+    #   # names to display in dtedit EDIT interface
+    #   edit_col_names = c(
+    #     "ID", NA, NA,  "Project, document, section", 
+    #     "Key interaction detail",  NA, "Tags", # tag_named
+    #     NA,  NA, NA, NA,
+    #     "Presented as potential interaction?",
+    #     "Described from observations at the project site?",
+    #     "Monitoring plan (MP)?",
+    #     "Adaptive management plan (AMP)?",
+    #     "Protection mitigation and enhancement (PME)?",
+    #     "Best management practices (BMPs) applied?", NA, NA),
+    #   # is column displayed in dtedit EDIT interface?
+    #   edit_col = ifelse(
+    #     ferc_col_names %in% c(
+    #       "rowid", "document", "project", "prj_document", "prj_doc_attachment", 
+    #       "prj_doc_attach_url", "tag_sql", "tag_html", "prj_doc_sec_display", "prj_doc_sec_values"), 
+    #     FALSE, TRUE))
   
   
   # dt_data <- reactiveVal()
@@ -248,36 +220,11 @@ shinyServer(function(input, output, session) {
   #* dtedit() object ----
   fercdt <- dtedit(
     input, output,
-    name      = 'ferc_dt_edit',
-    thedata   = get_ferc(),
-    # thedata   = dt_data,
-    view.cols = labels %>% filter(view_col == T) %>% pull(ferc_col_names),
-    # previous version:
-    # view.cols = names(
-    #   ferc %>%
-    #     select(-prj_document, -prj_doc_attach_url, -tag_sql, -tag_named)),
-    edit.cols = c(
-      # "project",
-      # "prj_doc_sec",
-      "prj_doc_sec_display",
-      # "prj_document", 
-      # "prj_doc_attachment", 
-      "detail", "tag_named", 
-      "ck_ixn", "ck_obs", "ck_mp", "ck_amp", "ck_pme", "ck_bmps"),
-    edit.label.cols = c(
-      # "Project: Select project below or type to add new project",
-      # 'Project document name',
-      "Project, document, and document section (if applicable)",
-      # paste(HTML("<span><h4>Project</h4><h5>document</h5>document section (if applicable)")),
-      # "Document section", 
-      'Key interaction detail', 
-      'Tags',
-      'Presented as potential interaction?',
-      'Described from observations at the project site?',
-      'Monitoring plan (MP)?',
-      'Adaptive management plan (AMP)?',
-      'Protection mitigation and enhancement (PME)?',
-      'Best management practices (BMPs) applied?'),
+    name            = 'ferc_dt_edit',
+    thedata         = get_ferc(),
+    view.cols       = labels %>% filter(!is.na(view_label)) %>% pull(fld),
+    edit.cols       = labels %>% filter(!is.na(edit_label)) %>% pull(fld),
+    edit.label.cols = labels %>% filter(!is.na(edit_label)) %>% pull(edit_label),
     input.types = c(
       # project     = "selectizeInputReactive",  
       prj_doc_sec_display = "selectizeInput", 
@@ -299,9 +246,6 @@ shinyServer(function(input, output, session) {
       prj_doc_sec_display =  prj_doc_sec_choices,
       # prj_doc_sec =  prj_doc_sec_choices,
       # prj_doc_sec = 'prj.doc.sec.choices.list',
-      
-      # prj_document       = 'prj.doc.choices.list',
-      # prj_doc_attachment = 'prj.doc.attach.choices.list',
       ck_ixn     = c(TRUE, FALSE),
       ck_obs     = c(TRUE, FALSE),
       ck_mp      = c(TRUE, FALSE), 
@@ -320,10 +264,10 @@ shinyServer(function(input, output, session) {
       prj_doc_sec_display = list(
         render = I("{
           option: function(data, escape) {
-						return '<div>' + data.value + '</div>';
+						return '<div><strong>' + item.name + '</strong></div>';
 					},
 					item: function(data, escape) {
-						return '<div>' + data.value + '</div>';
+						return '<div>' + data.name + '</div>';
 					}
         }"))
     ),
@@ -335,7 +279,9 @@ shinyServer(function(input, output, session) {
       arguments$escape   <- 0
       arguments$class    <- 'display'
       arguments$colnames <- labels %>%
-        filter(view_col == T) %>% pull(view_col_names)
+        filter(!is.na(view_label)) %>% pull(view_label)
+      # arguments$colnames <- labels %>%
+      #   filter(view_col == T) %>% pull(view_col_names)
       do.call(DT::datatable, arguments) %>%
         DT::formatStyle('document',  fontWeight = 'bold')
     },

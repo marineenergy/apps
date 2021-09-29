@@ -198,3 +198,32 @@ for (project in unique(get_ferc()$project)){
           unlist()),
       project)) 
 }
+
+
+# * get labels (dtedit fld names)
+#* get labels for dtedit ----
+# construct first column: cat(paste(str_pad(glue('"{names(ferc)}"'), max(nchar(names(ferc))), "right"), collapse = '\n'))
+labels <- tribble(
+  ~fld                 ,  ~view,  ~view_label,   ~edit,  ~edit_label,
+  # -------------------|-------|-------------|--------|------------------------------------------------------------
+  "rowid"              ,      T,   "ID"      ,       F,  NA, 
+  "document"           ,      T,   "Document",       F,  NA,
+  "project"            ,      T,   "Project" ,       F,  NA,
+  "prj_doc_sec"        ,      F,    NA       ,       F,  NA,
+  "prj_doc_sec_display",      F,    NA       ,       T,  "Project, document, and document section (if applicable)",
+  "prj_doc_sec_values" ,      F,    NA       ,       F,  NA,   
+  "detail"             ,      T,    "Detail" ,       T,  "Key interaction detail",
+  "tag_sql"            ,      F,    NA       ,       F,  NA,
+  "tag_named"          ,      F,    NA       ,       T,  "Tags",
+  "tag_html"           ,      T,    "Tags"   ,       F,  NA,
+  "prj_document"       ,      F,    NA       ,       F,  NA,
+  "prj_doc_attachment" ,      T,    "Section",       F,  NA,
+  "prj_doc_attach_url" ,      F,    NA       ,       F,  NA,
+  "ck_ixn"             ,      T,    "Ixn"    ,       T,  "Presented as potential interaction?",
+  "ck_obs"             ,      T,    "Obs"    ,       T,  "Described from observations at the project site?",    
+  "ck_mp"              ,      T,    "MP?"    ,       T,  "Monitoring plan (MP)?",  
+  "ck_amp"             ,      T,    "AMP?"   ,       T,  "Adaptive management plan (AMP)?",
+  "ck_pme"             ,      T,    "PME?"   ,       T,  "Protection mitigation and enhancement (PME)?",
+  "ck_bmps"            ,      T,    "BMPs?"  ,       T,  "Best management practices (BMPs) applied?"
+)
+
