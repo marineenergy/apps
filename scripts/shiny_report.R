@@ -46,68 +46,20 @@ get_ferc <- function() {
         is.na(prj_doc_attach_url),
         document,
         glue('<a href="{prj_doc_attach_url}">{document}</a>')),
-      document = as.character(document)) %>% 
+      document = as.character(document),
+      # prj_doc_sec = glue("<h5><b>{project}</b></h5> {prj_document} {ifelse(!is.na(prj_doc_attachment), glue('| <i>{prj_doc_attachment}</i>'), '')}"),
+      prj_doc_sec_display = as.character(glue("<h5><b>{project}</b></h5> {prj_document} {ifelse(!is.na(prj_doc_attachment), glue('| <i>{prj_doc_attachment}</i>'), '')}")),
+      prj_doc_sec_values = as.character(glue("{project};;{prj_document};;{prj_doc_attachment}"))) %>% 
+    mutate(prj_doc_sec = map2(prj_doc_sec_values, prj_doc_sec_display, setNames)) %>%
+    # select(-prj_doc_sec_values) %>% 
     # select(-project) %>% 
     # mutate(project = map_chr(prj_document, match_prj)) %>% 
     relocate(
-      rowid, document, project, detail, 
+      rowid, document, project, prj_doc_sec, detail, 
       tag_sql, tag_named, tag_html) %>% 
     arrange(rowid) %>%
     data.frame()
 }
-# # read in & merge ferc_docs & ferc_doc_tags from db
-# get_ferc <- function() {
-#   # read in ferc_docs and merge w/ table created by inner join b/w
-#   # ferc_doc_tags and tags lookup
-#   dbReadTable(con, "ferc_docs") %>% 
-#     tibble() %>% collect() %>% 
-#     na_if("NA") %>%
-#     merge(
-#       # read in ferc_doc_tags
-#       dbReadTable(con, "ferc_doc_tags") %>% 
-#         tibble() %>% collect() %>% 
-#         mutate(tag_sql_chr = ifelse(
-#           content_tag == "ALL",
-#           glue("{tag_category}.{content_tag}") %>% as.character(),
-#           tag_sql %>% as.character())) %>% 
-#         filter(tag_sql != "NA") %>% 
-#         select(-content, -tag_category, -content_tag) %>% 
-#         # inner_join() with tags lookup to get tag_html & tag_named
-#         inner_join(
-#           get_tags() %>% 
-#             mutate(
-#               tag_html_nocat = glue(
-#                 "<span class='me-tag me-{cat}'>{tag_nocat}</span>")) %>% 
-#             select(tag_sql, tag_named, tag_html_nocat) %>% 
-#             rename(tag_html = tag_html_nocat),
-#           by = c("tag_sql_chr" = "tag_sql")) %>% 
-#         select(-tag_sql_chr) %>%
-#         group_by(rowid) %>% 
-#         tidyr::nest(
-#           tag_sql   = tag_sql,          # for UPDATING / storage
-#           tag_named = tag_named,        # for EDIT INTERFACE
-#           tag_html  = tag_html),        # for VIEW dtedit table
-#       # merge params
-#       by.x = "rowid", by.y = "rowid", all.x = T, incomparables = NA) %>% 
-#     mutate(
-#       tag_sql   = map(tag_sql,   merge_tags),
-#       tag_named = map(tag_named, merge_tags_named),
-#       tag_html  = map(tag_html,  merge_tags_html),
-#       document  = ifelse(
-#         is.na(prj_doc_attachment),
-#         prj_document,
-#         glue("{prj_document} - {prj_doc_attachment}")),
-#       document = ifelse(
-#         is.na(prj_doc_attach_url),
-#         document,
-#         glue('<a href="{prj_doc_attach_url}">{document}</a>')),
-#       document = as.character(document)) %>% 
-#     relocate(
-#       rowid, document, project, detail, 
-#       tag_sql, tag_named, tag_html) %>% 
-#     arrange(rowid) %>%
-#     data.frame()
-# }
 
 get_tags <- function(){
   tbl(con, "tags") %>% 

@@ -7,22 +7,71 @@ source(file.path(dir_scripts, "update.R"))
 
 # LIBRARIES ----
 # devtools::install_github("DavidPatShuiFong/DTedit@f1617e253d564bce9b2aa67e0662d4cf04d7931f")
-shelf(DavidPatShuiFong/DTedit, DBI, DT, glue, purrr, readr)
+shelf(
+  DavidPatShuiFong/DTedit, DBI, DT, 
+  glue, purrr, readr, tidyr,
+  shiny, shinycssloaders)
 
 # FXNS REFERENCED IN CALLBACKS ----
 
 # convert data from dtedit to ferc_docs format  
 
 get_new_docs <- function(d, flds = ferc_doc_names) {
-  d %>% 
-    select(-document, -tag_sql, -tag_named, -tag_html) %>% 
+  d %>%
+    separate(
+      prj_doc_sec,
+      into = c('project', 'prj_document', 'prj_doc_attachment'),
+      sep = ";;") %>% 
+    select(flds) %>% 
+    # select(-document, -tag_sql, -tag_named, -tag_html, -) %>%
     relocate(flds)
-}
+} 
+
+# get_new_docs <- function(d, flds = ferc_doc_names) {
+#   d %>%
+#     mutate(prj_doc_sec_values = prj_doc_sec %>% str_extract()
+# 
+# 
+#              )
+# 
+#     prj_doc_sec = glue("<h5><b>{project}</b></h5> {prj_document} {ifelse(!is.na(prj_doc_attachment), glue('| <i>{prj_doc_attachment}</i>'), '')}"),
+#     prj_doc_sec_values = glue("{project};;{prj_document};;{prj_doc_attachment}"))
+# 
+# 
+#     select(-document, -tag_sql, -tag_named, -tag_html) %>%
+#     relocate(flds)
+# }
 
 # TODO: find home for creation of these in db, borrowing from prj_subpages_test.Rmd
 d_prj_doc_sec   <- read_csv(here("data/project_doc_sec.csv"))
 d_prj_doc       <- read_csv(here("data/project_doc.csv"))
 d_prj           <- read_csv(here("data/project_sites.csv")) %>% arrange(project)
+
+# ferc_prj <- get_ferc() %>% tibble() %>%  select(-project) %>% 
+#   left_join(
+#     prj_docs %>% select(project, prj_document),
+#     by = c("prj_document" = "prj_document")) %>% 
+#   relocate(rowid, document, project)
+# # fix this: not working:
+# # dbWriteTable(con, "ferc_prj", ferc_prj, overwrite = T)
+# 
+# ferc_prj_doc_sec <- ferc_prj %>% 
+#   select(
+#     prj = project, prj_doc = prj_document, 
+#     prj_doc_sec = prj_doc_attachment, prj_doc_sec_url = prj_doc_attach_url) %>% 
+#   group_by(prj, prj_doc, prj_doc_sec, prj_doc_sec_url) %>% 
+#   summarize()
+# # dbWriteTable(con, "ferc_prj_doc_sec", ferc_prj_doc_sec)
+# 
+# ferc_prj_doc <- ferc_prj_doc_sec %>% 
+#   group_by(prj, prj_doc) %>% 
+#   summarize()
+# ferc_prj_doc %>% write_csv(here("data/project_doc.csv"))
+
+
+# d_prj <- dbReadTable(con, "project_sites") %>% 
+#   collect() %>% tibble() %>% arrange(project)
+
 
 
 # convert data from dtedit to ferc_doc_tags format
@@ -53,6 +102,7 @@ get_new_tags <- function(d, flds = ferc_tag_names) {
 
 # INSERT
 ferc.insert.callback <- function(data, row) {
+  browser()
   d <- data %>% slice(row) %>% 
     na_if("NA") %>% na_if("") %>% 
     mutate(rowid = max(get_ferc()$rowid) + 1)
@@ -76,6 +126,7 @@ ferc.insert.callback <- function(data, row) {
 
 # UPDATE
 ferc.update.callback <- function(data, olddata, row) {
+  browser()
   d <- data %>% slice(row) %>% 
     tibble() %>% 
     mutate(
@@ -119,6 +170,7 @@ ferc.update.callback <- function(data, olddata, row) {
   
 # DELETE
 ferc.delete.callback <- function(data, row) {
+  browser()
   d <- data %>% slice(row) %>% na_if("NA") %>% na_if("")
   sql_delete_docs <- glue("DELETE FROM ferc_docs WHERE rowid = {d$rowid};")
   sql_delete_tags <- glue("DELETE FROM ferc_doc_tags WHERE rowid = {d$rowid}")
@@ -149,6 +201,19 @@ for (category in unique(tags$category)){ # category = tags$category[1]
           pull(tag_named) %>% 
           unlist()),
       category)) 
+}
+
+prj_doc_sec_choices <- list()
+for (project in unique(get_ferc()$project)){ 
+  prj_doc_sec_choices <- append(
+    prj_doc_sec_choices,
+    setNames(
+      list(
+        ferc %>% 
+          filter(project == !!project) %>% 
+          pull(prj_doc_sec) %>% 
+          unlist()),
+      project)) 
 }
 
 # SHINY SERVER ----
@@ -198,98 +263,90 @@ server <- function(input, output, session) {
   # STORING & UPDATING INPUT CHOICES ----
 
   # prjs        <- d_prj$project 
-  prj_choices <- reactiveVal(d_prj_doc_sec$prj %>% sort() %>% unique())
-
+  prj_choices <- reactiveVal(
+    d_prj_doc_sec$prj %>% 
+      sort() %>% unique())
+  # prj_doc_sec_choices <- reactiveVal(
+  #   map2(prj_doc_sec_values, prj_doc_sec_display, setNames))
+  # )
+  
+  
+  
+  prj_doc_choices <- reactiveVal(
+    d_prj_doc_sec$prj_doc %>% 
+      sort() %>% unique())
+  
+  prj_doc_attach_choices <- reactiveVal(
+    d_prj_doc_sec$prj_doc_sec %>% 
+      sort() %>% unique())
     
   #old: works for storage/updating
   prj_values <- reactiveValues()
   prj_values$data <- d_prj_doc_sec 
   
-  # observeEvent(input$save_sel, {
-  #   browser()
-  # 
-  #   # create new row to be added from inputs
-  #   new_input <- isolate(c(
-  #     input$sel_prj,
-  #     input$sel_prj_doc,
-  #     input$sel_prj_doc_sec,
-  #     input$sel_prj_doc_sec_url))
-  #   # update data with new row
-  #   isolate(
-  #     prj_values$data <- rbind(
-  #       as.matrix(prj_values$data), unlist(new_input)) %>% 
-  #       unique())
-  #   
-  #   prj_values_df <<- as.data.frame(prj_values$data) %>% tibble()
-  #   # will update projects with this data via SQL 
-  #   # so it can be displayed in ferc docs table on other tab
-  # })
-  # 
+  # collapse_rowgroup_js <- JS("
+  #   table.on('click', 'tr.dtrg-group', function () {
+  #     var rowsCollapse = $(this).nextUntil('.dtrg-group');
+  #     $(rowsCollapse).toggleClass('hidden');
+  #   });"
+  # )
   
-  # for debugging:
-  output$prj_table <- renderTable(
-    {prj_values$data},
-    include.rownames = F)
-  
-  
-  
-  
-  
-  # observe({
-  #   req(input$sel_prj)
-  #   d_prj_input$prj <- data.frame(
-  #     prj             = input$sel_prj,
-  #     prj_doc         = input$sel_prj_doc,
-  #     prj_doc_sec     = input$sel_prj_doc_sec,
-  #     prj_doc_sec_url = input$sel_prj_doc_sec_url
-  #   )
-  # })
-  # 
-  # 
-  
-  
-  # observeEvent(input$sel_prj, {
-  #   d_prj_input$prj <- input$sel_prj})
-  # observeEvent(input$sel_prj_doc, {
-  #   d_prj_input$prj_doc <- input$sel_prj_doc})
-  # observeEvent(input$sel_prj_doc_sec, {
-  #   d_prj_input$prj_doc_sec <- input$sel_prj_doc_sec})
-  # observeEvent(input$sel_prj_doc_sec_url, {
-  #   d_prj_input$prj_doc_sec_url <- input$sel_prj_doc_sec_url})
+  # display all existing prj names
+  output$prj_table <- DT::renderDT(
+    prj_values$data,
+    class = 'compact row-border hover order-column',
+    colnames = c(
+      "Project", "Project Doc", 
+      "Project Doc Section", "Project Doc Section URL"),
+    extensions = "RowGroup",
+    callback   = JS("
+      table.on('click', 'tr.dtrg-group', function () {
+        var rowsCollapse = $(this).nextUntil('.dtrg-group');
+        $(rowsCollapse).toggleClass('hidden');
+      });"),
+    selection  = "none",
+    options = list(
+      pageLength = -1,
+      rowGroup  = list(
+        dataSrc = 1,
+        startRender = JS("
+          function(rows, group) {
+            var style = 
+              'background-color: #337AB7; color: white;'
+            var td = `<td style='${style}' colspan=12>${group}</td>`;
+            return $(`<tr>${td}</tr>`);
+          }")),
+      scrollX    = T, scrollCollapse = T,
+      autowidth  = T,
+      columnDefs = list(
+        # rowid hidden
+        list(targets = 0, visible = F),
+        # prj 
+        list(targets = 1, className = "dt-right cell-border-right "),
+        # prj doc, prj_doc_section
+        list(targets = c(2,3), className = "dt-left"),
+        # prj doc section url
+        list(targets = 4, visible = F)
+        ),
+      
+      # header: black background
+      initComplete = JS("
+        function(settings, json) {
+          $(this.api().table().header()).css({
+            'background-color': '#2b2d2f',
+            'color': '#fff'
+          })
+        }"),
+      searchHighlight = T,
+      lengthMenu = list(c(5, 10, 25, 50, -1), 
+                        c("5", "10", "25", "50", "All")))) 
 
-    
-    
-    
-    
-  #   prj             <- input$sel_prj
-  #   prj_doc         <- input$sel_prj_doc,
-  #   prj_doc_sec     <- input$sel_prj_doc_sec,
-  #   prj_doc_sec_url <- input$sel_prj_doc_sec_url
-  # })
-  # 
 
-  # observeEvent(input$save_sel, {
-  #   browser()
-  #   # need(validate(input$sel_prj, input$sel_prj_doc, input$sel_prj_doc_sec, input$sel_prj_doc_sec_url))
-  #   if (!is.null(input$sel_prj)) {
-  #     d$prj <- input$sel_prj
-  #   }
-  #   # data <<- data.frame(
-  #   #   prj             = input$sel_prj,
-  #   #   prj_doc         = input$sel_prj_doc,
-  #   #   prj_doc_sec     = input$sel_prj_doc_sec,
-  #   #   prj_doc_sec_url = input$sel_prj_doc_sec_url)
-  # 
-  #   
-  # })
+   
   
   
-# observeEvent(input$sel_prj_doc_url, {
-#   showModal(modalDialog(
-#     title = "Selection",
-#     glue("Project: {input$sel_prj}, Project Doc: {input$sel_prj_doc}, Project Doc Section: {input$sel_prj_doc_sec}")
-#   ))
-# })
+
+
   
   # ADD PRJ TABLE ----
   # * get data ----
@@ -316,16 +373,7 @@ server <- function(input, output, session) {
   #             str_replace_all("-", " ") %>% 
   #             str_sub(), 
   #           ignore_case = T, skip_word_none = T)) %>% 
-  #       na.omit() %>% 
-  #       unlist(recursive = T) %>% 
-  #       first()
-  #   }
-  #   prj_match
-  # }
-  
-  # d_prjs = tbl of prjs & alt prj names
-  # d_doc  = 1 row of tbl of prj_docs$prj_document
-  
+
  
   
   
@@ -388,26 +436,51 @@ server <- function(input, output, session) {
       ferc_col_names = names(ferc),
       # names to display on dtedit TABLE
       view_col_names = c(
-        "ID", "Document", "Project", "Detail", NA, NA, "Tags", NA, 
-        "Attachment", NA, "Ixn", "Obs", "MP?", "AMP?", "PME?", "BMPs?")) %>%
+        "ID",         # rowid 
+        "Document",   # document & url
+        "Project",    # prj
+        NA,           # prj_doc_sec       (edit only)
+        "Detail",     # key ixn detail
+        NA,           # tag_sql           (server only)
+        NA,           # tag_named         (server only)
+        "Tags",       # tag_html    
+        NA,           # prj_document      (server only)
+        "Attachment", # prj doc attachment/section 
+        NA,           # url               (server only) 
+        "Ixn",        # ck_ixn
+        "Obs",        # ck_obs
+        "MP?",        # ck_mp
+        "AMP?",       # ck_amp
+        "PME?",       # ck_pme
+        "BMPs?",      # ck_bmps
+        NA,           # prj_doc_sec_values  (server only)
+        NA            # prj_doc_sec_display (server only)
+      )
+    ) %>%
     mutate( 
       # is column displayed on dtedit TABLE?
       view_col = ifelse(is.na(view_col_names), FALSE, TRUE),
       # names to display in dtedit EDIT interface
       edit_col_names = c(
-        "ID", NA, "Project",  "Key interaction detail",  NA, "Tags",
-        NA,  "Document name", "Upload document attachment", 
-        "Upload document URL link",
+        "ID", NA, "Project",  "Project, document, section", 
+        "Key interaction detail",  NA, "Tags", # tag_named
+        NA,  NA, NA, NA,
         "Presented as potential interaction?",
         "Described from observations at the project site?",
         "Monitoring plan (MP)?",
         "Adaptive management plan (AMP)?",
         "Protection mitigation and enhancement (PME)?",
-        "Best management practices (BMPs) applied?"),
+        "Best management practices (BMPs) applied?", NA, NA),
       # is column displayed in dtedit EDIT interface?
       edit_col = ifelse(
-        ferc_col_names %in% c("rowid", "document", "tag_sql", "tag_html"), 
+        ferc_col_names %in% c(
+          "rowid", "document", "prj_document", "prj_doc_attachment", 
+          "prj_doc_attach_url", "tag_sql", "tag_html", "prj_doc_sec_display", "prj_doc_sec_values"), 
         FALSE, TRUE))
+  
+  
+  # dt_data <- reactiveVal()
+  # dt_data(data.frame(get_ferc()))
   
 
   #* dtedit() object ----
@@ -415,20 +488,25 @@ server <- function(input, output, session) {
     input, output,
     name      = 'ferc_dt_edit',
     thedata   = get_ferc(),
+    # thedata   = dt_data,
     view.cols = labels %>% filter(view_col == T) %>% pull(ferc_col_names),
     # previous version:
     # view.cols = names(
     #   ferc %>%
     #     select(-prj_document, -prj_doc_attach_url, -tag_sql, -tag_named)),
     edit.cols = c(
-      "project", "prj_document", "prj_doc_attachment", "prj_doc_attach_url", 
+      "project",
+      "prj_doc_sec",
+      # "prj_document", 
+      # "prj_doc_attachment", 
       "detail", "tag_named", 
       "ck_ixn", "ck_obs", "ck_mp", "ck_amp", "ck_pme", "ck_bmps"),
     edit.label.cols = c(
       "Project: Select project below or type to add new project",
-      'Document name',
-      'Upload document attachment',
-      'Upload document URL link',
+      # 'Project document name',
+      "Project, document, and document section (if applicable)",
+      # paste(HTML("<span><h4>Project</h4><h5>document</h5>document section (if applicable)")),
+      # "Document section", 
       'Key interaction detail', 
       'Tags',
       'Presented as potential interaction?',
@@ -438,46 +516,85 @@ server <- function(input, output, session) {
       'Protection mitigation and enhancement (PME)?',
       'Best management practices (BMPs) applied?'),
     input.types = c(
-      # project            = "selectizeInput",    
-      project            = "selectizeInputReactive",  
-      prj_document       = "textAreaInput",
-      prj_doc_attachment = "fileInput",
-      prj_doc_attach_url = "textInput",
-      detail             = "textAreaInput",
-      tag_named          = "selectInputMultiple",
-      ck_ixn             = "checkboxInput",
-      ck_obs             = "checkboxInput",
-      ck_mp              = "checkboxInput",
-      ck_amp             = "checkboxInput",
-      ck_pme             = "checkboxInput",
-      ck_bmps            = "checkboxInput"),
+      project     = "selectizeInputReactive",  
+      prj_doc_sec = "selectizeInput", 
+      # prj_document       = "selectizeInputReactive",
+      # prj_doc_attachment = "selectizeInputReactive",
+      detail      = "textAreaInput",
+      tag_named   = "selectInputMultiple",
+      ck_ixn      = "checkboxInput",
+      ck_obs      = "checkboxInput",
+      ck_mp       = "checkboxInput",
+      ck_amp      = "checkboxInput",
+      ck_pme      = "checkboxInput",
+      ck_bmps     = "checkboxInput"),
     input.choices = list(
       # TODO: add tab/link to app for editing projects and associated documents, attachments and urls
-      # project   = ferc$project %>% unique() %>% sort() %>% na.omit(),
-      # project   = get_ferc()$project %>% unique() %>% sort() %>% na.omit(),
-      project   = 'project.choices.list',
-      ck_ixn    = c(TRUE, FALSE),
-      ck_obs    = c(TRUE, FALSE),
-      ck_mp     = c(TRUE, FALSE), 
-      ck_amp    = c(TRUE, FALSE),
-      ck_pme    = c(TRUE, FALSE),
-      ck_bmps   = c(TRUE, FALSE),
-      tag_named = tag_choices), 
-    input.choices.reactive = list(project.choices.list = prj_choices),
+      project     = 'project.choices.list',
+      prj_doc_sec =  prj_doc_sec_choices,
+      # prj_document       = 'prj.doc.choices.list',
+      # prj_doc_attachment = 'prj.doc.attach.choices.list',
+      ck_ixn     = c(TRUE, FALSE),
+      ck_obs     = c(TRUE, FALSE),
+      ck_mp      = c(TRUE, FALSE), 
+      ck_amp     = c(TRUE, FALSE),
+      ck_pme     = c(TRUE, FALSE),
+      ck_bmps    = c(TRUE, FALSE),
+      tag_named  = tag_choices), 
+    input.choices.reactive = list(
+      project.choices.list = prj_choices),
+      # prj.doc.choices.list = prj_doc_choices,
+      # prj.doc.attach.choices.list = prj_doc_attach_choices),
     
     selectize = T, 
+    
     selectize.options  = list(
       project = list(
-        create   = T,
-        maxItems = 1, 
-        selectize = T
-        # ideally would display project name if it exists & if null, then ""
-        # onInitialize = I('
-        #   function() {
-        #     this.setValue("");
-        #   }'),
-        # placeholder  = "Select project below or type to add new project")
-      )),
+        create = T, persist = T, maxItems = 1, selectize = T
+      ),
+      prj_doc_sec = list(
+        render = I("{
+          option: function(data, escape) {
+						return '<div>' + data.label + '</div>';
+					},
+					item: function(data, escape) {
+						return '<div>' + data.label + '</div>';
+					}
+        }"))
+        
+      #   # this works for dropdown, just not for selected item:
+      #   render = I("{
+      #     option: function(data, escape) {
+      #       return '<div>' + data.value + '</div>';
+      #     }
+      #   }")
+      # )
+      
+        # TODO: get selected item to have escape = F too; doesn't seem to be 
+        # working as seen below:
+        
+
+      
+      # { 
+      #   option: function(data, escape) {
+      #     return '<div>' + data.value + '</div>';
+      #   }
+      # }
+      
+      # prj_doc_sec = list(
+      #   create = F,
+      #   valueField = 'value',
+      
+      #   labelField = 'name',
+      #   searchField = 'name',
+      #   options = list(),
+      #   render = I("{
+      #     option: function(item, escape) {
+      #       return '<div>' + '<strong>' + escape(item.name) + '</strong>' + '</div>';
+      #     }")
+      # 
+      
+    ),
       
     datatable.rownames = F,
     
@@ -519,14 +636,15 @@ server <- function(input, output, session) {
       searchHighlight = T,
       autowidth       = T,
       pageLength      = 5,
-      lengthMenu      = c(5, 10, 25, 50, 100, nrow(ferc))
+      lengthMenu      = list(c(5, 10, 25, 50, 100, -1),
+                             c(5, 10, 25, 50, 100, "All"))
     ),
       
-    modal.size      = 'm', 
+    modal.size      = 'l', 
     text.width      = '100%',
-    textarea.width  = '535px',
-    textarea.height = '300px',
-    select.width    = '100%',
+    # textarea.width  = '200%',
+    # textarea.height = '300px',
+    # select.width    = '100%',
     
     icon.delete     = icon("trash"),
     icon.edit       = icon("edit"),
@@ -546,14 +664,21 @@ server <- function(input, output, session) {
     callback.delete = ferc.delete.callback
   )
   
-  
-  # observeEvent(input$refresh, {
-  #   if (is.null(input$save_sel)) {
-  #     project_choices <- get_ferc()$project %>% unique() %>% sort() %>% na.omit()
-  #   } else {
-  #     project_choices <- prj_values_df$prj %>% unique() %>% sort() %>% na.omit()
-  #   }
+  # observe({
+  #   # browser()
+  #   dt_data(isolate(as.data.frame(fercdt$thedata, stringsasfactors = FALSE)))
+  #   print(isolate(dt_data()))
+  #   print(paste("Edit count:", fercdt$edit.count)) 
+  #   # only reacts to change in $edit.count
   # })
+  # 
+  # 
+  
+  
+  
+  
+  
+  
   
   
   # observe prj updates ----
@@ -575,25 +700,6 @@ server <- function(input, output, session) {
     # tbl of all prj data, including new inputs
     prj_values_df <<- as.data.frame(prj_values$data) %>% tibble()
 
-    # modal_controls <- glideControls(
-    #   list(
-    #     prevButton(),
-    #     firstButton(
-    #       class = "btn btn-primary",
-    #       `data-dismiss` = "modal",
-    #       "Add more project input choices"
-    #     )
-    #   ),
-    #   list(
-    #     nextButton(),
-    #     lastButton(
-    #       class = "btn btn-primary",
-    #       `data-dismiss`= "modal",
-    #       "Return to FERC docs table"
-    #     )
-    #   )
-    # )
-    
     # modal to add another prj doc or return to ferc docs page
     prj_input_modal <- modalDialog(
       title = "Success!",
@@ -657,8 +763,23 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$refresh_btn, {
-    # browser()
-    prj_choices(prj_values_df$prj %>% sort() %>% unique())
+    prj_choices(
+      prj_values_df$prj %>% 
+        sort() %>% unique())
+    prj_doc_choices(
+      prj_values_df %>% 
+        filter(prj %in% prj_choices()) %>% 
+        pull(prj_doc) %>% 
+        sort() %>% unique())
+    prj_doc_attach_choices(
+      prj_values_df$prj_doc_sec %>% 
+        sort() %>% unique())
+    
+    
+    # prj_doc_sec_choices(
+    #   prj_values_df$prj_doc_
+    # )
+
     showModal(
       modalDialog(
         "Input choices have been refreshed from those added on project docs page.",
@@ -668,10 +789,6 @@ server <- function(input, output, session) {
         fade      = TRUE,
         style     = "font-weight: bold;"))
   })
-  
-
-  
-  
   
   # update data according to dtedit data ----
   data_list <- list() 
@@ -696,6 +813,7 @@ ui <- tagList(
     shiny::tags$script(
       src = "js/index.js"),
     shiny::tags$style(HTML("
+
       ::placeholder { 
         word-wrap: break-word;
         white-space: pre-line;
@@ -742,14 +860,12 @@ ui <- tagList(
         box-shadow: inset 0px 0px 400px 110px rgba(0, 0, 0, .7) !important;
       }
       #refresh_btn {
-        display: inline;
+        display: inline-block;
         float: right;
-        right: 10vw;
         text-align: center;
         height: 60px;
         width: 300px;
-        margin: 5px;
-        top: 10px;
+        margin: 0px 10px 10px 10px;
         font-size: 16px;
       }
       
@@ -771,7 +887,7 @@ ui <- tagList(
             "refresh_btn",
             "Refresh FERC docs table",
             icon  = icon("refresh"),
-            class = "btn-primary")),
+            class = "btn btn-primary btn-lg btn-block")),
         span(
           h3("Editable FERC Documents"))),
       helpText(
@@ -812,10 +928,13 @@ ui <- tagList(
           div(
             style = "
               display: inline;
-              float: right;
-              padding: 10px;
-              display: inline;
-              margin: 10px 10px 20px 10px;
+              white-space: initial;
+              position: fixed;
+              overflow-wrap: break-word;
+              padding: 10px 10px 20px 10px;
+              overflow: hidden;
+              word-wrap: break-word; 
+              word-break: break-word; 
             ",
             helpText(
               "Add new projects, project docs, and project doc sections below."),
@@ -882,43 +1001,18 @@ ui <- tagList(
         column(
           width = 8,
           div(
+            style = "
+              display: inline;
+              position: relative;
+              overflow-wrap: break-word;
+              overflow: hidden;
+              float: center;
+              padding: 0px 10px 20px 60px;",
             h3("Existing projects"),
-            withSpinner(tableOutput("prj_table"), type = 8, color = "#007BFE")
-        ))
+            withSpinner(DTOutput("prj_table"), type = 8, color = "#007BFE"))
+        )
       )
     )
-    
-    
-    
-      
- 
-        
-        
-         
-        # 
-        # prj_1           <- d_prj$project[1]
-        # # all prj docs for first prj
-        # d_prj_doc_1     <- d_prj_doc %>% filter(prj == prj_1)
-        # # first prj doc for first prj
-        # prj_doc_1       <- d_prj_doc_1$prj_doc[1]
-        # # all prj doc sections for first prj doc for first prj
-        # d_prj_doc_sec_1 <- d_prj_doc %>% filter(prj == prj_1, prj_doc == prj_doc_1)
-        
-        
-        
-        
-        
-        
-        
-        # read_csv("data/project_docs.csv") %>% 
-        #   # default to first project
-        #   filter(
-        #     project == readr::read_csv("data/project_sites.csv") %>% 
-        #       arrange(project) %>% pull(project) %>% .[1])
-        #   pull(project),
-        # options = list(
-        #   create = T)) 
-    
 ))
 
 # SHINY APP ----
