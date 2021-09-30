@@ -44,6 +44,8 @@ shinyServer(function(input, output, session) {
   # STORING & UPDATING INPUT CHOICES ----
   
   # prjs        <- d_prj$project 
+  
+  # TODO: make prj_doc_sec_choices reactive based on refresh_btn like prj_choices below:
   prj_choices <- reactiveVal(
     d_prj_doc_sec$prj %>% 
       sort() %>% unique())
@@ -227,8 +229,8 @@ shinyServer(function(input, output, session) {
     edit.label.cols = labels %>% filter(!is.na(edit_label)) %>% pull(edit_label),
     input.types = c(
       # project     = "selectizeInputReactive",  
-      prj_doc_sec_display = "selectizeInput", 
-      # prj_doc_sec = "selectizeInputReactive",
+      prj_doc_sec_display = "selectizeInput",
+      # prj_doc_sec = "selectizeInput",
       
       # prj_document       = "selectizeInputReactive",
       # prj_doc_attachment = "selectizeInputReactive",
@@ -242,9 +244,10 @@ shinyServer(function(input, output, session) {
       ck_bmps     = "checkboxInput"),
     input.choices = list(
       # TODO: add tab/link to app for editing projects and associated documents, attachments and urls
-      project     = 'project.choices.list',
+      # project     = 'project.choices.list',
+      # prj_doc_sec_display =  prj_doc_sec_choices,
+      
       prj_doc_sec_display =  prj_doc_sec_choices,
-      # prj_doc_sec =  prj_doc_sec_choices,
       # prj_doc_sec = 'prj.doc.sec.choices.list',
       ck_ixn     = c(TRUE, FALSE),
       ck_obs     = c(TRUE, FALSE),
@@ -259,18 +262,42 @@ shinyServer(function(input, output, session) {
     ),
     selectize = T, 
     selectize.options  = list(
-      project = list(
-        create = T, persist = T, maxItems = 1, selectize = T),
       prj_doc_sec_display = list(
+        create = F,
+        # options run correctly, selected item
+        # TODO: fix so that selected item (`item`) is also formatted properly
+        # looks like an issue in the way the options are stored...
         render = I("{
           option: function(data, escape) {
-						return '<div><strong>' + item.name + '</strong></div>';
-					},
-					item: function(data, escape) {
-						return '<div>' + data.name + '</div>';
-					}
-        }"))
-    ),
+            return '<div>' + data.label + '</div>';
+          }
+        }")
+        # render = I("{
+        #   option: function(data, escape) {
+        #     return '<div>' + data.label + '</div>';
+        #   },
+        #   item: function(data, escape) {
+        #     return '<div>' + data.label + </div>; 
+        #   }
+        # }")
+        
+      )),
+      
+      # project = list(
+      #   create = T, persist = T, maxItems = 1, selectize = T)),
+      # prj_doc_sec_display = list(
+      #   render = 
+        
+        
+#         I("{
+#           option: function(data, escape) {
+# 						return '<div><strong>' + item.name + '</strong></div>';
+# 					},
+# 					item: function(data, escape) {
+# 						return '<div>' + data.name + '</div>';
+# 					}
+#         }"))
+#     ),
     
     datatable.rownames = F,
     
