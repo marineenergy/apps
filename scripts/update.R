@@ -69,7 +69,7 @@ update_projects <- function(){
       date_end = as.Date(date_end, format = "%Y-%m-%d")) %>% 
     filter(!is.na(longitude), !is.na(latitude)) %>% 
     arrange(technology_type, project)
-  
+
   project_permits <- read_sheet(gsheet, "project_permits") %>%
     mutate(
       permit_type  = factor(
@@ -85,6 +85,23 @@ update_projects <- function(){
   dbWriteTable(con, "projects", projects, overwrite = T)
   dbWriteTable(con, "project_permits", project_permits, overwrite = T)
   #dbListTables(con) %>% sort() %>% str_extract("proj.*") %>% na.omit()
+  
+  # store project names for matching with ferc_docs
+  project_names <- projects %>% 
+    select(prj = project) %>% 
+    # tibble() %>% collect() %>% 
+    mutate(
+      prj_alt = case_when(
+        prj == "Igiugig"       ~ "Iguigig",
+        prj == "OPT Reedsport" ~ "REEDSPORT OPT",
+        prj == "PacWave-N"     ~ "Pacwave North",
+        prj == "PacWave-S"     ~ "Pacwave South",
+        prj == "RITE"          ~ "Roosevelt Island Tidal Energy"))
+  dbWriteTable(con, "project_names", project_names, overwrite = T)
+  # %>% 
+  #   select(prj = project, prj_alt = project_alt_name)
+  
+  
   
   md2html <- function(x){
     markdownToHTML(text = x, fragment.only = T, options = c())}
@@ -200,6 +217,41 @@ update_ferc_docs <- function(){
   # names(docs)[sapply(docs, class) == "logical"] %>% paste(collapse = ',\n') %>% cat()
   # across(docs, where(is.logical), )
   
+  prjs <- dbReadTable(con, "project_names") %>% collect() %>% tibble()
+  
+  match_prj <- function(
+    prj_doc, prj_names = prjs$prj, alt_prj_names = prjs$prj_alt) {
+    prj_index <- prj_doc %>% 
+      str_detect(
+        coll(
+          prj_names %>%
+            str_replace_all("-", " "),
+          ignore_case = T)) %>% 
+      unlist(recursive = T)
+    if (!(TRUE %in% prj_index)) {
+      prj_index <- list()
+      prj_index <- prj_doc %>% 
+        str_detect(
+          coll(
+            alt_prj_names %>%
+              str_replace_all("-", " "),
+            ignore_case = T)) %>% 
+        unlist(recursive = T)
+    }
+    # get prj name that matches prj
+    if (!(TRUE %in% prj_index)) {
+      prj_index <- NA
+    } else {
+      prj_index <- which(prj_index == TRUE)
+    }
+    if (!(is.na(prj_index))) {
+      prj_name <- prj_names[prj_index]
+    } else {
+      prj_name <- NA
+    }
+    prj_name
+  }
+  
   # summarize the docs by the interaction detail (nrow=222)
   docs_ixns <- docs %>% 
     group_by(detail) %>% 
@@ -300,7 +352,7 @@ update_ferc_docs <- function(){
       tag_sql = as.character(tag_sql))
   
   # write tables to db
-  DBI::dbWriteTable(con, "ferc_docs", docs_ixns, overwrite=T)
+  dbWriteTable(con, "ferc_docs", docs_ixns, overwrite=T)
   # ferc_docs:      rowid | key_interaction_detail
   #  1 to many with :
   #   ferc_docs_tags: rowid | tag_sql

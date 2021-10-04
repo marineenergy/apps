@@ -1,14 +1,15 @@
 tagList(
-  # * css styling ----
+  # css styling ----
   includeCSS("www/styles.css"),
   shiny::tags$head(
     shiny::tags$script(
       src = "js/index.js")),
-  
+  # title ----
   navbarPage(
-    "Edit",
+    "Edit", 
+  
     
-    #* Documents ----
+    # documents ----
     tabPanel(
       "Documents", value = "docs",
       span(
@@ -22,9 +23,8 @@ tagList(
           h3("Editable FERC Documents"))),
       helpText(
         span(
-          span("Please add a new project, project document, or document section on "),
-          shiny::tags$a("Project Docs page", onclick="customHref('prj_docs')"))),
-      # span(actionLink("link_to_prj_docs", "Project Docs page")))),
+          span("Please add new projects, project documents, and document sections on "),
+          shiny::tags$a("Project Docs page.", onclick="customHref('prj_docs')"))),
       hr(),
       div(
         "Tags filter by:",
@@ -37,7 +37,7 @@ tagList(
         HTML("The FERC eLibrary contains environmental compliance project documents, 
           of which excerpts have been manually tagged for reference.")),
       hr(), 
-      # DTEDIT TABLE
+      # * ferc docs table (dtedit) ----
       div(
         id = "ferc_docs_table",
         shinycssloaders::withSpinner(
@@ -47,7 +47,8 @@ tagList(
         style = "padding: 5px;")
     ),
     
-    #* Project Docs ----
+    
+    # project docs: prj_doc_sec inputs ----
     tabPanel(
       "Project Docs", value = "prj_docs",
       
@@ -86,7 +87,7 @@ tagList(
             selectizeInput(
               "sel_prj_doc",
               "Project Document", 
-              d_prj_doc$prj_doc, 
+              choices = d_prj_doc$doc, 
               options = list(
                 create = T,
                 onInitialize = I(
@@ -98,7 +99,7 @@ tagList(
             selectizeInput(
               "sel_prj_doc_sec",
               "Project Document Section",
-              d_prj_doc_sec$prj_doc_sec,
+              choices = d_prj_doc_sec$sec,
               options = list(
                 create = T,
                 onInitialize = I(
@@ -110,7 +111,7 @@ tagList(
             selectizeInput(
               "sel_prj_doc_sec_url",
               "Project Document Section URL",
-              d_prj_doc_sec$prj_doc_sec_url,
+              choices = d_prj_doc_sec$url,
               options = list(
                 create = T,
                 onInitialize = I(
@@ -127,7 +128,7 @@ tagList(
             br()
           )), 
         
-        # table of existing projects, prj docs, and prj doc sections
+        # * table of existing projects ----
         column(
           width = 8,
           div(
@@ -139,7 +140,9 @@ tagList(
               float: center;
               padding: 0px 10px 20px 60px;",
             h3("Existing projects"),
-            withSpinner(DTOutput("prj_table"), type = 8, color = "#007BFE"))
+            withSpinner(
+              DTOutput("prj_table"), 
+              type = 8, color = "#007BFE"))
         )
       )
     )

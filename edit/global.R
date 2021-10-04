@@ -2,6 +2,7 @@
 dir_scripts <<- here::here("scripts")
 source(file.path(dir_scripts, "common_2.R"))
 source(file.path(dir_scripts, "db.R"))
+source(file.path(dir_scripts, "edit_interface.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
 source(file.path(dir_scripts, "update.R"))
 
@@ -12,18 +13,38 @@ shelf(
   glue, purrr, readr, tidyr,
   shiny, shinycssloaders)
 
+
+
 # FXNS REFERENCED IN CALLBACKS ----
 
 # convert data from dtedit to ferc_docs format  
 get_new_docs <- function(d, flds = ferc_doc_names) {
   d %>%
-    separate(
-      prj_doc_sec,
-      into = c('project', 'prj_document', 'prj_doc_attachment'),
-      sep  = ";;") %>% 
+    select(
+      -document, -project, -prj_doc_sec, -prj_doc_sec_values, 
+      -prj_document, -prj_doc_attachment, -prj_doc_attach_url) %>% 
+    left_join(d_prj_doc_sec, by = "prj_doc_sec_display") %>%
+    rename(
+      project = prj, prj_document = doc, prj_doc_attachment = sec,
+      prj_doc_attach_url = url) %>% 
+    # separate(
+    #   prj_doc_sec_values,
+    #   into = c('project', 'prj_document', 'prj_doc_attachment'),
+    #   sep  = ";;") %>% 
     select(flds) %>% 
     relocate(flds)
 } 
+
+# below works
+# get_new_docs <- function(d, flds = ferc_doc_names) {
+#   d %>%
+#     separate(
+#       prj_doc_sec,
+#       into = c('project', 'prj_document', 'prj_doc_attachment'),
+#       sep  = ";;") %>% 
+#     select(flds) %>% 
+#     relocate(flds)
+# } 
 
 # convert data from dtedit to ferc_doc_tags format
 get_new_tags <- function(d, flds = ferc_tag_names) {
@@ -48,43 +69,31 @@ get_new_tags <- function(d, flds = ferc_tag_names) {
     relocate(flds)
 }
 
-
+# DATA SETUP ----
 # TODO: find home for creation of these in db, borrowing from prj_subpages_test.Rmd
-d_prj_doc_sec   <- read_csv(here("data/project_doc_sec.csv"))
-d_prj_doc       <- read_csv(here("data/project_doc.csv"))
-d_prj           <- read_csv(here("data/project_sites.csv")) %>% arrange(project)
+# by prj
+d_prj_sites <- read_csv(here("data/project_sites.csv")) %>% 
+  arrange(project)
+# by prj_doc_sec: all prj doc sec data
+d_prj_doc_sec <- dbReadTable(con, "ferc_project_doc_sec") %>% 
+  tibble() %>% collect()
+# by prj_doc
+d_prj_doc <- d_prj_doc_sec %>% 
+  group_by(prj, doc) %>% summarize() %>% ungroup()
 
-# ferc_prj <- get_ferc() %>% tibble() %>%  select(-project) %>% 
-#   left_join(
-#     prj_docs %>% select(project, prj_document),
-#     by = c("prj_document" = "prj_document")) %>% 
-#   relocate(rowid, document, project)
-# # fix this: not working:
-# # dbWriteTable(con, "ferc_prj", ferc_prj, overwrite = T)
-# 
-# ferc_prj_doc_sec <- ferc_prj %>% 
-#   select(
-#     prj = project, prj_doc = prj_document, 
-#     prj_doc_sec = prj_doc_attachment, prj_doc_sec_url = prj_doc_attach_url) %>% 
-#   group_by(prj, prj_doc, prj_doc_sec, prj_doc_sec_url) %>% 
-#   summarize()
-# # dbWriteTable(con, "ferc_prj_doc_sec", ferc_prj_doc_sec)
-# 
-# ferc_prj_doc <- ferc_prj_doc_sec %>% 
-#   group_by(prj, prj_doc) %>% 
-#   summarize()
-# ferc_prj_doc %>% write_csv(here("data/project_doc.csv"))
+  
 
-
-# d_prj <- dbReadTable(con, "project_sites") %>% 
-#   collect() %>% tibble() %>% arrange(project)
+# old version:
+# d_prj_doc_sec   <- read_csv(here("data/project_doc_sec.csv")) 
+# d_prj_doc       <- read_csv(here("data/project_doc.csv"))
+# d_prj           <- read_csv(here("data/project_sites.csv")) %>% arrange(project)
 
 
 # CALLBACK FXNS ----
 
 # INSERT
 ferc.insert.callback <- function(data, row) {
-  browser()
+  # browser()
   d <- data %>% slice(row) %>% 
     na_if("NA") %>% na_if("") %>% 
     mutate(rowid = max(get_ferc()$rowid) + 1)
@@ -108,7 +117,7 @@ ferc.insert.callback <- function(data, row) {
 
 # UPDATE
 ferc.update.callback <- function(data, olddata, row) {
-  browser()
+  # browser()
   d <- data %>% slice(row) %>% 
     tibble() %>% 
     mutate(
@@ -152,7 +161,7 @@ ferc.update.callback <- function(data, olddata, row) {
 
 # DELETE
 ferc.delete.callback <- function(data, row) {
-  browser()
+  # browser()
   d <- data %>% slice(row) %>% na_if("NA") %>% na_if("")
   sql_delete_docs <- glue("DELETE FROM ferc_docs WHERE rowid = {d$rowid};")
   sql_delete_tags <- glue("DELETE FROM ferc_doc_tags WHERE rowid = {d$rowid}")
@@ -186,18 +195,18 @@ for (category in unique(tags$category)){ # category = tags$category[1]
       category)) 
 }
 
-prj_doc_sec_choices <- list()
-for (project in unique(get_ferc()$project)){ 
-  prj_doc_sec_choices <- append(
-    prj_doc_sec_choices,
-    setNames(
-      list(
-        ferc %>% 
-          filter(project == !!project) %>% 
-          pull(prj_doc_sec) %>% 
-          unlist()),
-      project)) 
-}
+# prj_doc_sec_choices <- list()
+# for (project in unique(get_ferc()$project)){ 
+#   prj_doc_sec_choices <- append(
+#     prj_doc_sec_choices,
+#     setNames(
+#       list(
+#         ferc %>% 
+#           filter(project == !!project) %>% 
+#           pull(prj_doc_sec) %>% 
+#           unlist()),
+#       project)) 
+# }
 
 
 # * get labels (dtedit fld names)
