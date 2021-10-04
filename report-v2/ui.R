@@ -12,6 +12,7 @@ ui <- dashboardPage(
       navbarTab(tabName = "tab_mgt",  "Management"),
       navbarTab(tabName = "tab_docs", "Documents"),
       navbarTab(tabName = "tab_pubs", "Publications"),
+      navbarTab(tabName = "tab_spatial", "Spatial"),
       navbarTab(tabName = "tab_rpt", "Reports")),
     tags$li(
       googleSignInUI_btn_signin("login"), class = "dropdown"),
@@ -199,6 +200,25 @@ ui <- dashboardPage(
           box(
             title = uiOutput("box_pubs", inline=T), width = 12,
             dataTableOutput("tbl_pubs")))),
+      
+      #** tab_spatial ----
+      tabItem(
+        tabName = "tab_spatial",
+        div("Filters by:", 
+            icon("tags"), 
+            span(class="me-tag me-technology", "Technology"),
+            span(class="me-tag me-stressor",   "Stressor"),
+            span(class="me-tag me-receptor",   "Receptor"),
+            span(class="me-tag me-phase",      "Phase")),
+        helpText(
+          "Spatial intersections are displayed here between the Location drawn and datasets loaded from", a("MarineCadastre.gov ", 
+                   href="https://MarineCadastre.gov"),
+          "of species, habitats and human uses as Receptor tags. [TODO: Run spatial intersection; only filtering by tags for now.]"),
+        fluidRow(
+          box(
+            title = uiOutput("box_spatial", inline=T), # TODO: figure out initial statement for spatial without Location or Tags
+            width = 12,
+            dataTableOutput("tbl_spatial")))),
       
       #** tab_reports ----
       tabItem(

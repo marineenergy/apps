@@ -1,4 +1,4 @@
-get_gsheet_data <- function(sheet = "tags"){
+get_gsheet_data <- function(sheet = "tags", sheet_id  = "https://docs.google.com/spreadsheets/d/1MTlWQgBeV4eNbM2JXNXU3Y-_Y6QcOOfjWFyKWfdMIQM/edit"){
   librarian::shelf(googlesheets4)
   
   # google sheet key from Google Console service account
@@ -7,7 +7,6 @@ get_gsheet_data <- function(sheet = "tags"){
   # tags tab in [data | marineenergy.app - Google Sheet](https://docs.google.com/spreadsheets/d/1MTlWQgBeV4eNbM2JXNXU3Y-_Y6QcOOfjWFyKWfdMIQM/edit#gid=662531985)
   #   + shared sheet with: shares@marineenergy4gargle.iam.gserviceaccount.com
   # sheet_id  <- "1MTlWQgBeV4eNbM2JXNXU3Y-_Y6QcOOfjWFyKWfdMIQM"
-  sheet_id  <- "https://docs.google.com/spreadsheets/d/1MTlWQgBeV4eNbM2JXNXU3Y-_Y6QcOOfjWFyKWfdMIQM/edit"
   
   # googledrive
   stopifnot(file.exists(gs4_auth_json))
@@ -511,6 +510,44 @@ update_tethys_pubs <- function(){
   #   arrange(desc(title))
   # docs_without_tech # 5,158 rows
   # View(docs_without_tech)
+}
+
+update_spatial <- function(){
+  # update db tables: spatial, spatial_tags; data/mc_spatial.csv
+  
+  # [spatial | marineenergy.app - Google Sheets](https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=936111013)
+  d_sp <- get_gsheet_data("datasets", "1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ") %>%
+      mutate(
+        ready = as.logical(ready)) %>% 
+    filter(ready) %>% 
+    replace_na(list(buffer_km = 0)) %>% 
+    select(-notes, -issues)
+  
+  tag_lookup <- get_gsheet_data("tag_lookup") %>% 
+    filter(content == "tethys_pubs") %>% 
+    select(-content, -content_tag_extra)
+  
+  d_sp_tag <- d_sp %>%   
+    separate_rows(tags, sep = ";") %>% 
+    rename(tag = tags)
+  
+  # check that we're not missing any spatial tags
+  stopifnot(length(setdiff(d_sp_tag$tag, tag_lookup$content_tag)) == 0)
+  
+  d_sp_tags <- d_sp_tag %>% 
+    left_join(
+      tag_lookup,
+      by = c("tag" = "content_tag")) %>% 
+    select(rowid, tag_sql)
+  
+  # write tables to filesys and database
+  write_csv(d_sp, here("data/mc_spatial.csv"))
+  dbWriteTable(con, "mc_spatial", d_sp, overwrite=T)
+  dbWriteTable(con, "mc_spatial_tags", d_sp_tags, overwrite=T)
+  dbExecute(con, "ALTER TABLE mc_spatial_tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
+  dbExecute(con, "CREATE INDEX idx_mc_spatial_tags_tag_sql ON mc_spatial_tags USING GIST (tag_sql);")
+  dbExecute(con, "CREATE INDEX idx_mc_spatial_tags_rowid ON mc_spatial_tags USING BTREE (rowid);")
+  dbExecute(con, "CREATE INDEX idx_mc_spatial_rowid ON mc_spatial USING BTREE (rowid);")
 }
 
 update_tethys_intxns <- function(verbose=F){
