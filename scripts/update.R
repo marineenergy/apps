@@ -98,9 +98,6 @@ update_projects <- function(){
         prj == "PacWave-S"     ~ "Pacwave South",
         prj == "RITE"          ~ "Roosevelt Island Tidal Energy"))
   dbWriteTable(con, "project_names", project_names, overwrite = T)
-  # %>% 
-  #   select(prj = project, prj_alt = project_alt_name)
-  
   
   
   md2html <- function(x){

@@ -77,7 +77,7 @@ get_ferc <- function() {
     data.frame()
 }
 
-# write project data to db ----
+# write project data to db ---- for update.R
 get_ferc_prjs <- function(){
   d_prj_doc_sec <- get_ferc() %>%
     select(
@@ -97,21 +97,8 @@ get_ferc_prjs <- function(){
     summarize() %>% 
     # rowid_to_column("id_prj_doc_sec") %>% 
     ungroup() 
+  # based on existing prj_doc_sec in ferc_docs
   dbWriteTable(con, "ferc_project_doc_sec", d_prj_doc_sec, overwrite = T)
-  # %>% 
-  #   arrange(d_prj_doc_sec)
-
-  
-  # ferc_prj_docs <<- ferc_prjs %>% 
-  #   group_by(prj, doc) %>% 
-  #   summarize()
-  
-  # # all data
-  # ferc_prjs %>% write_csv(here("data/ferc_projects.csv"))
-  # 
-  # # projects and associated docs only
-  # ferc_prj_docs %>% write_csv(here("data/ferc_project_docs.csv")) 
-  
 }
 
 

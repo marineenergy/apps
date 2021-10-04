@@ -57,7 +57,7 @@ tagList(
         column(
           width = 4,
           div(
-            style = "
+            style = {"
               display: inline;
               white-space: initial;
               position: fixed;
@@ -66,7 +66,7 @@ tagList(
               overflow: hidden;
               word-wrap: break-word; 
               word-break: break-word; 
-            ",
+            "},
             helpText(
               "Add new projects, project docs, and project doc sections below."),
             
@@ -74,7 +74,8 @@ tagList(
             selectizeInput(
               "sel_prj",
               "Project",
-              d_prj$project,
+              choices = prj_doc_sec_lookup$prj,
+              # prj_sites_lookup$project,
               options = list(
                 create = T,
                 onInitialize = I(
@@ -87,7 +88,8 @@ tagList(
             selectizeInput(
               "sel_prj_doc",
               "Project Document", 
-              choices = d_prj_doc$doc, 
+              choices = prj_doc_sec_lookup$doc,
+              # choices = prj_doc_lookup$doc, 
               options = list(
                 create = T,
                 onInitialize = I(
@@ -99,7 +101,7 @@ tagList(
             selectizeInput(
               "sel_prj_doc_sec",
               "Project Document Section",
-              choices = d_prj_doc_sec$sec,
+              choices = prj_doc_sec_lookup$sec,
               options = list(
                 create = T,
                 onInitialize = I(
@@ -111,7 +113,7 @@ tagList(
             selectizeInput(
               "sel_prj_doc_sec_url",
               "Project Document Section URL",
-              choices = d_prj_doc_sec$url,
+              choices = prj_doc_sec_lookup$url,
               options = list(
                 create = T,
                 onInitialize = I(

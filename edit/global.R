@@ -23,7 +23,7 @@ get_new_docs <- function(d, flds = ferc_doc_names) {
     select(
       -document, -project, -prj_doc_sec, -prj_doc_sec_values, 
       -prj_document, -prj_doc_attachment, -prj_doc_attach_url) %>% 
-    left_join(d_prj_doc_sec, by = "prj_doc_sec_display") %>%
+    left_join(prj_doc_sec_lookup, by = "prj_doc_sec_display") %>%
     rename(
       project = prj, prj_document = doc, prj_doc_attachment = sec,
       prj_doc_attach_url = url) %>% 
@@ -34,17 +34,6 @@ get_new_docs <- function(d, flds = ferc_doc_names) {
     select(flds) %>% 
     relocate(flds)
 } 
-
-# below works
-# get_new_docs <- function(d, flds = ferc_doc_names) {
-#   d %>%
-#     separate(
-#       prj_doc_sec,
-#       into = c('project', 'prj_document', 'prj_doc_attachment'),
-#       sep  = ";;") %>% 
-#     select(flds) %>% 
-#     relocate(flds)
-# } 
 
 # convert data from dtedit to ferc_doc_tags format
 get_new_tags <- function(d, flds = ferc_tag_names) {
@@ -71,23 +60,17 @@ get_new_tags <- function(d, flds = ferc_tag_names) {
 
 # DATA SETUP ----
 # TODO: find home for creation of these in db, borrowing from prj_subpages_test.Rmd
+
 # by prj
-d_prj_sites <- read_csv(here("data/project_sites.csv")) %>% 
+prj_sites_lookup <- read_csv(here("data/project_sites.csv")) %>% 
   arrange(project)
 # by prj_doc_sec: all prj doc sec data
-d_prj_doc_sec <- dbReadTable(con, "ferc_project_doc_sec") %>% 
-  tibble() %>% collect()
+prj_doc_sec_lookup <- dbReadTable(con, "ferc_project_doc_sec") %>% 
+  tibble() %>% collect() %>% 
+  filter(!is.na(prj))
 # by prj_doc
-d_prj_doc <- d_prj_doc_sec %>% 
+prj_doc_lookup <- prj_doc_sec_lookup %>% 
   group_by(prj, doc) %>% summarize() %>% ungroup()
-
-  
-
-# old version:
-# d_prj_doc_sec   <- read_csv(here("data/project_doc_sec.csv")) 
-# d_prj_doc       <- read_csv(here("data/project_doc.csv"))
-# d_prj           <- read_csv(here("data/project_sites.csv")) %>% arrange(project)
-
 
 # CALLBACK FXNS ----
 
@@ -213,26 +196,44 @@ for (category in unique(tags$category)){ # category = tags$category[1]
 #* get labels for dtedit ----
 # construct first column: cat(paste(str_pad(glue('"{names(ferc)}"'), max(nchar(names(ferc))), "right"), collapse = '\n'))
 labels <- tribble(
-  ~fld                 ,  ~view,  ~view_label,   ~edit,  ~edit_label,
-  # -------------------|-------|-------------|--------|------------------------------------------------------------
-  "rowid"              ,      T,   "ID"      ,       F,  NA, 
-  "document"           ,      T,   "Document",       F,  NA,
-  "project"            ,      T,   "Project" ,       F,  NA,
-  "prj_doc_sec"        ,      F,    NA       ,       F,  NA,
-  "prj_doc_sec_display",      F,    NA       ,       T,  "Project, document, and document section (if applicable)",
-  "prj_doc_sec_values" ,      F,    NA       ,       F,  NA,   
-  "detail"             ,      T,    "Detail" ,       T,  "Key interaction detail",
-  "tag_sql"            ,      F,    NA       ,       F,  NA,
-  "tag_named"          ,      F,    NA       ,       T,  "Tags",
-  "tag_html"           ,      T,    "Tags"   ,       F,  NA,
-  "prj_document"       ,      F,    NA       ,       F,  NA,
-  "prj_doc_attachment" ,      T,    "Section",       F,  NA,
-  "prj_doc_attach_url" ,      F,    NA       ,       F,  NA,
-  "ck_ixn"             ,      T,    "Ixn"    ,       T,  "Presented as potential interaction?",
-  "ck_obs"             ,      T,    "Obs"    ,       T,  "Described from observations at the project site?",    
-  "ck_mp"              ,      T,    "MP?"    ,       T,  "Monitoring plan (MP)?",  
-  "ck_amp"             ,      T,    "AMP?"   ,       T,  "Adaptive management plan (AMP)?",
-  "ck_pme"             ,      T,    "PME?"   ,       T,  "Protection mitigation and enhancement (PME)?",
-  "ck_bmps"            ,      T,    "BMPs?"  ,       T,  "Best management practices (BMPs) applied?"
+  ~fld                 ,  ~view_label,  ~edit_label,                                                 ~delete_label,
+  # -------------------|-------------|------------------------------------------------------------|----------------
+  "rowid"              ,   "ID"      ,   NA                                                       ,  "ID",
+  "document"           ,   "Document",   NA                                                       ,  NA,
+  "project"            ,   "Project" ,   NA                                                       ,  "Project",
+  "prj_doc_sec"        ,    NA       ,   NA                                                       ,  NA,
+  "prj_doc_sec_display",    NA       ,   "Project, document, and document section (if applicable)",  NA,
+  "prj_doc_sec_values" ,    NA       ,   NA                                                       ,  NA,
+  "detail"             ,    "Detail" ,   "Key interaction detail"                                 ,  "Key interaction detail",
+  "tag_sql"            ,    NA       ,   NA                                                       ,  NA,
+  "tag_named"          ,    NA       ,   "Tags"                                                   ,  "Tags",
+  "tag_html"           ,    "Tags"   ,   NA                                                       ,  NA,
+  "prj_document"       ,    NA       ,   NA                                                       ,  "Document",
+  "prj_doc_attachment" ,    "Section",   NA                                                       ,  "Document section",
+  "prj_doc_attach_url" ,    NA       ,   NA                                                       ,  NA,
+  "ck_ixn"             ,    "Ixn"    ,   "Presented as potential interaction?"                    ,  "Presented as potential interaction?",
+  "ck_obs"             ,    "Obs"    ,   "Described from observations at the project site?"       ,  "Described from observations at the project site?",   
+  "ck_mp"              ,    "MP?"    ,   "Monitoring plan (MP)?"                                  ,  "Monitoring plan (MP)?",
+  "ck_amp"             ,    "AMP?"   ,   "Adaptive management plan (AMP)?"                        ,  "Adaptive management plan (AMP)?",
+  "ck_pme"             ,    "PME?"   ,   "Protection mitigation and enhancement (PME)?"           ,  "Protection mitigation and enhancement (PME)?",
+  "ck_bmps"            ,    "BMPs?"  ,   "Best management practices (BMPs) applied?"              ,  "Best management practices (BMPs) applied?" 
 )
 
+
+# UPDATE DTEDIT PAGE on click
+# update_dtedit_page <- function() {
+#   prj_doc_sec_lookup <- dbReadTable(con, "ferc_project_doc_sec") %>% 
+#     tibble() %>% collect()
+#   d_prj_doc <- prj_doc_sec_lookup %>% 
+#     group_by(prj, doc) %>% summarize() %>% ungroup()
+#   prj_doc_sec_choices(
+#     prj_doc_sec_lookup %>% pull(prj_doc_sec_display) %>% sort() %>% unique())
+#   showModal(
+#     modalDialog(
+#       "Input choices have been refreshed from those added on project docs page.",
+#       footer    = modalButton("Continue"),
+#       easyClose = TRUE,
+#       size      = "s",
+#       fade      = TRUE,
+#       style     = "font-weight: bold;"))
+# }

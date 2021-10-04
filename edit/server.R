@@ -9,7 +9,7 @@ shinyServer(function(input, output, session) {
     updateSelectizeInput(
       session, 
       "sel_prj_doc", 
-      choices = d_prj_doc %>% 
+      choices = prj_doc_sec_lookup %>% 
         filter(prj == input$sel_prj) %>% 
         pull(doc),
       server = T)
@@ -19,7 +19,7 @@ shinyServer(function(input, output, session) {
     updateSelectizeInput(
       session, 
       "sel_prj_doc_sec",
-      choices = d_prj_doc_sec %>% 
+      choices = prj_doc_sec_lookup %>% 
         filter(
           prj == input$sel_prj,
           doc == input$sel_prj_doc) %>% 
@@ -31,7 +31,7 @@ shinyServer(function(input, output, session) {
     updateSelectizeInput(
       session, 
       "sel_prj_doc_sec_url",
-      choices = d_prj_doc_sec %>% 
+      choices = prj_doc_sec_lookup %>% 
         filter(
           prj == input$sel_prj,
           doc == input$sel_prj_doc) %>% 
@@ -41,96 +41,64 @@ shinyServer(function(input, output, session) {
   
   
   # * storing & updating dtedit input choices ----
-  # TODO: make prj_doc_sec_choices reactive based on refresh_btn like prj_choices below:
-  # below works!
+  # baseline input choices for editing prj_doc_sec
   prj_doc_sec_choices <- reactiveVal(
-    d_prj_doc_sec %>% pull(prj_doc_sec_display) %>% sort() %>% unique()
-  )
-
-  
-  
-
-           
-    
-    
-    
-
-      # choices <- list()
-      # for (project in (d_prj_doc_sec$prj %>% na.omit() %>% unique())) { 
-      #   choices <- append(
-      #     prj_doc_sec_choices,
-      #     setNames(
-      #       list(
-      #         ferc %>% 
-      #           filter(project == !!project) %>% 
-      #           # pull(prj_doc_sec) %>% 
-      #           pull(prj_doc_sec_display) %>% 
-      #           unlist()),
-      #       project)) 
-      # }
-      # d_prj_doc_sec$prj_doc_sec_display %>% 
-      #  sort() %>% unique()
-  
-  
-  # for storage/updating project info data
+    prj_doc_sec_lookup %>% pull(prj_doc_sec_display) %>% sort() %>% unique())
+  # for storing & updating prj_doc_sec_lookup; displayed in DT in right column
   prj_values <- reactiveValues()
-  # based on all projects & their assoc'd
-  prj_values$data <- d_prj_doc_sec 
+  prj_values$data <- prj_doc_sec_lookup 
 
-  
   # * prj table ----
   # display all existing prj names
   output$prj_table <- { DT::renderDT(
-    prj_values$data %>% select(prj, doc, sec, url),
-
+    prj_values$data %>%     # based on reactive data
+      select(prj, doc, sec, url) %>%
+      arrange(prj),
     class = 'compact row-border hover order-column',
     colnames = c(
-      "Project", "Project Doc", 
-      "Project Doc Section", "Project Doc Section URL"),
-    extensions = "RowGroup",
+      "Project", "Project Doc", "Project Doc Section", 
+      "Project Doc Section URL"),
+    extensions = "RowGroup",  # grouped by prj
     callback   = { JS("
       table.on('click', 'tr.dtrg-group', function () {
         var rowsCollapse = $(this).nextUntil('.dtrg-group');
         $(rowsCollapse).toggleClass('hidden');
-      });") },
+      });") },       # can collapse by rowgroup
     selection  = "none",
     options = list(
       pageLength = -1,
       rowGroup  = list(
         dataSrc = 1,
-        startRender = JS("
+        startRender = {JS("
           function(rows, group) {
             var style = 
               'background-color: #337AB7; color: white;'
             var td = `<td style='${style}' colspan=12>${group}</td>`;
             return $(`<tr>${td}</tr>`);
-          }")),
+          }")}
+      ),
       scrollX    = T, scrollCollapse = T,
       autowidth  = T,
       columnDefs = list(
-        # rowid hidden
-        list(targets = 0, visible = F),
         # prj
         list(targets = 1, className = "dt-right cell-border-right"),
         # prj doc, prj_doc_section
-        list(targets = c(2,3), className = "dt-left"),
-        # prj doc section url
+        list(targets = c(2, 3), className = "dt-left"),
+        # hide url
         list(targets = 4, visible = F)
       ),
-
       # header: black background
-      initComplete = JS("
+      initComplete = JS({"
         function(settings, json) {
           $(this.api().table().header()).css({
             'background-color': '#2b2d2f',
             'color': '#fff'
           })
-        }"),
+        }"}),
       searchHighlight = T,
-      lengthMenu = list(c(5, 10, 25, 50, -1), 
-                        c("5", "10", "25", "50", "All")))) 
-  }
-  
+      lengthMenu = list(c(5, 10, 25, 50, -1), c("5", "10", "25", "50", "All"))
+    )
+  )}
   
 
   
@@ -143,8 +111,8 @@ shinyServer(function(input, output, session) {
     view.cols       = labels %>% filter(!is.na(view_label)) %>% pull(fld),
     edit.cols       = labels %>% filter(!is.na(edit_label)) %>% pull(fld),
     edit.label.cols = labels %>% filter(!is.na(edit_label)) %>% pull(edit_label),
-    delete.info.label.cols = labels %>% filter(!is.na(view_label)) %>% pull(view_label),
-    
+    delete.info.label.cols = labels %>% 
+      filter(!is.na(view_label)) %>% pull(view_label),
     input.types = c(
       prj_doc_sec_display = "selectizeInputReactive",
       detail              = "textAreaInput",
@@ -155,7 +123,6 @@ shinyServer(function(input, output, session) {
       ck_amp              = "checkboxInput",
       ck_pme              = "checkboxInput",
       ck_bmps             = "checkboxInput"),
-    
     input.choices = list(
       prj_doc_sec_display = 'prj.doc.sec.choices.list',
       ck_ixn              = c(TRUE, FALSE),
@@ -165,18 +132,12 @@ shinyServer(function(input, output, session) {
       ck_pme              = c(TRUE, FALSE),
       ck_bmps             = c(TRUE, FALSE),
       tag_named           = tag_choices), 
-    
     input.choices.reactive = list(
-      prj.doc.sec.choices.list = prj_doc_sec_choices
-      # , prj.doc.sec.choices.list = prj_doc_sec_choices
-    ),
+      prj.doc.sec.choices.list = prj_doc_sec_choices), # reactiveVal
     selectize = T, 
-    selectize.options = list(
+    selectize.options = {list(
       prj_doc_sec_display = list(
         create = F,
-        # options run correctly, selected item
-        # TODO: fix so that selected item (`item`) is also formatted properly
-        # looks like an issue in the way the options are stored...
         render = I("{
           option: function(data, escape) {
             return '<div>' + data.label + '</div>';
@@ -185,35 +146,9 @@ shinyServer(function(input, output, session) {
             return '<div>' + data.label + '</div>';
           }
         }")
-        # render = I("{
-        #   option: function(data, escape) {
-        #     return '<div>' + data.label + '</div>';
-        #   },
-        #   item: function(data, escape) {
-        #     return '<div>' + data.label + </div>; 
-        #   }
-        # }")
-        
-      )),
-      
-      # project = list(
-      #   create = T, persist = T, maxItems = 1, selectize = T)),
-      # prj_doc_sec_display = list(
-      #   render = 
-        
-        
-#         I("{
-#           option: function(data, escape) {
-# 						return '<div><strong>' + item.name + '</strong></div>';
-# 					},
-# 					item: function(data, escape) {
-# 						return '<div>' + data.name + '</div>';
-# 					}
-#         }"))
-#     ),
-    
+      )
+    )},
     datatable.rownames = F,
-    
     datatable.call = function(...) {
       arguments <- list(...)
       arguments$escape   <- 0
@@ -221,9 +156,8 @@ shinyServer(function(input, output, session) {
       arguments$colnames <- labels %>%
         filter(!is.na(view_label)) %>% pull(view_label)
       do.call(DT::datatable, arguments) %>%
-        DT::formatStyle('document',  fontWeight = 'bold') # bold document name
+        DT::formatStyle('document',  fontWeight = 'bold') # bold doc name
     },
-    
     # * --> datatable.options ----
     datatable.options = list(
       columnDefs = list(
@@ -232,13 +166,13 @@ shinyServer(function(input, output, session) {
              className = 'dt-center'),
         # in-row checkboxes
         list(targets = c(6, 7, 8, 9, 10, 11),
-             render = JS(
+             render = {JS(
                "function(data, type, row) {
                   if (data == true) {
                     data = '<div class=\"text-success\"><span class=\"glyphicon glyphicon-ok-circle\"></span></div>';
                   } else if (data == false) {
                     data = '<div class=\"text-danger\"><span class=\"glyphicon glyphicon-remove-circle\"></span></div>';
-                  } return data}")),
+                  } return data}")}),
         list(targets = 1,
              className = "dt-right cell-border-right")),
       # header: black background
@@ -257,15 +191,10 @@ shinyServer(function(input, output, session) {
 
     modal.size      = 'l', 
     text.width      = '100%',
-    # textarea.width  = '200%',
-    # textarea.height = '300px',
-    # select.width    = '100%',
-    
     icon.delete     = icon("trash"),
     icon.edit       = icon("edit"),
     icon.add        = icon("plus"),
     icon.copy       = icon("copy"),
-    
     title.delete    = 'Delete',
     title.edit      = 'Edit',
     title.add       = 'Add new key interaction detail',
@@ -279,21 +208,14 @@ shinyServer(function(input, output, session) {
     callback.delete = ferc.delete.callback
   ) }
   
-  # observe({
-  #   # browser()
-  #   dt_data(isolate(as.data.frame(fercdt$thedata, stringsasfactors = FALSE)))
-  #   print(isolate(dt_data()))
-  #   print(paste("Edit count:", fercdt$edit.count)) 
-  #   # only reacts to change in $edit.count
-  # })
-
   
   # observe prj docs page updates in ferc docs page ----
   observeEvent(input$save_sel, {
     # browser()
     
-    # [ insert line to make sure no null inputs ]
+    # [ should insert line to make sure no null inputs ]
     
+    # new row of prj_doc_sec
     isolate(
       new_input <- tibble(
         prj = input$sel_prj,
@@ -306,20 +228,24 @@ shinyServer(function(input, output, session) {
       ) 
     )
     
-    # update data with new row
+    # update reactive data with new row
     isolate(
       prj_values$data <- prj_values$data %>% 
         bind_rows(new_input) %>% 
         unique()
     )
     
-    # tbl of all prj data, including new inputs
-    d_prj_doc_sec <<- prj_values$data
+    # update prj_doc_sec_lookup 
+    prj_doc_sec_lookup <<- prj_values$data
+    # update table in DB
     dbWriteTable(
       con, "ferc_project_doc_sec", 
-      d_prj_doc_sec %>% 
+      prj_doc_sec_lookup %>% 
         select(-prj_doc_sec), 
       overwrite = T)
+    
+    prj_doc_sec_lookup <<- dbReadTable(con, "ferc_project_doc_sec") %>% 
+      tibble() %>% collect()
     
     # modal with buttons to (1) add another prj doc or (2) return to ferc docs
     prj_input_modal <- modalDialog(
@@ -327,71 +253,46 @@ shinyServer(function(input, output, session) {
       HTML(paste(
         "<strong>You have added the following input choices:</strong><br>", 
         new_input$prj_doc_sec_display)), 
-        # paste(new_input, collapse = "<br>"))), 
       easyClose = TRUE,
       size = "m",
       footer = fluidRow(
         tagList(
           column(
             width = 5,
-            modalButton(
-              "Add more input choices")),
+            # ADD MORE
+            modalButton("Add more input choices")),
           column(
             width = 6,
+            # RETURN TO FERC DOCS
             actionButton(
               "return_to_ferc_docs", 
               "Return to FERC docs table", 
               class   = "btn btn-primary",
               onclick = "customHref('docs')")))))
+    
     showModal(prj_input_modal)
+    
     observeEvent(input$return_to_ferc_docs, {
+      # prj_doc_sec_choices(
+      #   prj_doc_sec_lookup %>% pull(prj_doc_sec_display) %>% sort() %>% unique())
       removeModal()
-      
-      # not sure if the following line works, but
-      # goal is to trigger refresh_btn by clicking return_to_ferc_docs
-      # input$refresh_btn
+      # update_dtedit_page() # in global.R
     })
-    
-    # clear selections
-    # updateSelectizeInput(
-    #   session, "sel_prj",
-    #   selected = NULL
-    #   # choices = d_prj$project,
-    #   # server = T, selected = character(0)
-    # )
-    # updateSelectizeInput(
-    #   session, 
-    #   "sel_prj_doc", 
-    #   choices = d_prj_doc %>% 
-    #     filter(prj == input$sel_prj) %>% 
-    #     pull(prj_doc),
-    #   server = T, selected = character(0))
-    
-    # prj_choices$prj <- prj_values_df$prj %>% unique()
-    # prj_choices$prj_doc <- prj_values_df$prj_doc %>% unique()
-    # prj_choices$prj_doc_sec <- prj_values_df$prj_doc_sec %>% unique()
-    # prj_choices$prj_doc_url <- prj_values_df$prj_doc_sec_url %>% unique()
-    # will update projects with this data via SQL 
-    # so it can be displayed in ferc docs table on other tab
   })
   
   observeEvent(input$refresh_btn, {
+    # update_dtedit_page()  # in global.R
     # browser()
     
-    d_prj_doc_sec <- dbReadTable(con, "ferc_project_doc_sec") %>% 
+    prj_doc_sec_lookup <<- dbReadTable(con, "ferc_project_doc_sec") %>%
       tibble() %>% collect()
-    d_prj_doc <- d_prj_doc_sec %>% 
+
+    d_prj_doc <- prj_doc_sec_lookup %>%
       group_by(prj, doc) %>% summarize() %>% ungroup()
-    
+
     prj_doc_sec_choices(
-      d_prj_doc_sec %>% pull(prj_doc_sec_display) %>% sort() %>% unique())
-    
-    # prj_doc_sec_choices(
-    #   prj_values_df %>% 
-    #     pull(prj_doc_sec_display) %>% unlist() %>% sort() %>% unique()
-    # or read table d_prj_doc_sec again & do:
-    # d_prj_doc_sec %>% pull(prj_doc_sec_display) %>% sort() %>% unique()
-    # ) 
+      prj_doc_sec_lookup %>% pull(prj_doc_sec_display) %>% sort() %>% unique())
+
     showModal(
       modalDialog(
         "Input choices have been refreshed from those added on project docs page.",
@@ -415,41 +316,5 @@ shinyServer(function(input, output, session) {
     DBI::dbDisconnect(conn)
   })
 })
-    
-
-    
-    
-    
-    
-
-    # prj_doc_sec_choices(
-    #   prj_values_df$prj_doc_sec %>% 
-    #     sort() %>% unique())
-    # prj_doc_choices(
-    #   prj_values_df %>% 
-    #     filter(prj %in% prj_choices()) %>% 
-    #     pull(prj_doc) %>% 
-    #     sort() %>% unique())
-    # prj_doc_attach_choices(
-    #   prj_values_df$prj_doc_sec %>% 
-    #     sort() %>% unique())
-    
-  # observeEvent(input$refresh_btn, {
-  #   prj_choices(
-  #     prj_values_df$prj %>% 
-  #       sort() %>% unique())
-  #   prj_doc_choices(
-  #     prj_values_df %>% 
-  #       filter(prj %in% prj_choices()) %>% 
-  #       pull(prj_doc) %>% 
-  #       sort() %>% unique())
-  #   prj_doc_attach_choices(
-  #     prj_values_df$prj_doc_sec %>% 
-  #       sort() %>% unique())
-    
-    
-    # prj_doc_sec_choices(
-    #   prj_values_df$prj_doc_
-    # )
     
    
