@@ -4,19 +4,20 @@ ui <- dashboardPage(
   
   #* header ----
   dashboardHeader(
-    title = HTML("<a class='navbar-brand' href='#'><img alt='Brand' src='./images/logo-horizontal-square.svg' width='40px'></a>MarineEnergy.app"),
+    title = shiny::HTML(
+      "<a class='navbar-brand' href='#'><img alt='Brand' src='./images/logo-horizontal-square.svg' width='40px'></a>MarineEnergy.app"),
     titleWidth = 310,
     #** navbarMenu ----
     leftUi = navbarMenu(
-      navbarTab(tabName = "tab_prj",  "Projects"),
-      navbarTab(tabName = "tab_mgt",  "Management"),
-      navbarTab(tabName = "tab_docs", "Documents"),
-      navbarTab(tabName = "tab_pubs", "Publications"),
+      navbarTab(tabName = "tab_prj",     "Projects"),
+      navbarTab(tabName = "tab_mgt",     "Management"),
+      navbarTab(tabName = "tab_docs",    "Documents"),
+      navbarTab(tabName = "tab_pubs",    "Publications"),
       navbarTab(tabName = "tab_spatial", "Spatial"),
-      navbarTab(tabName = "tab_rpt", "Reports")),
-    tags$li(
-      googleSignInUI_btn_signin("login"), class = "dropdown"),
-    userOutput("user")),
+      navbarTab(tabName = "tab_rpt",     "Reports")),
+    # tags$li(
+    #   googleSignInUI_btn_signin("login"), class = "dropdown"),
+    shinydashboardPlus::userOutput("user")),
 
   #* sidebar ----
   dashboardSidebar(

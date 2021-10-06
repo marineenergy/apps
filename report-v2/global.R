@@ -8,6 +8,7 @@ source(file.path(dir_scripts, "common_2.R"))
 source(file.path(dir_scripts, "db.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
 
+# devtools::install_github("RinteRface/shinydashboardPlus")
 librarian::shelf(
   DT, r-lib/gargle, MarkEdmondson1234/googleAuthR, htmltools, httr, jsonlite, leaflet, mapedit, plotly, purrr,
   shinydashboard, RinteRface/shinydashboardPlus, shiny, shinyjs, shinyWidgets)
@@ -132,16 +133,16 @@ dashboardHeader <- function(
 # trick: [How to Show Tabpanels in bs4navbar() ? · Issue #108 · RinteRface/bs4Dash](https://github.com/RinteRface/bs4Dash/issues/108)
 
 navbarTab <- function(tabName, ..., icon = NULL) {
-  tags$li(
+  shiny::tags$li(
     class = "nav-item",
-    tags$a(
+    shiny::tags$a(
       class = "nav-link",
       id = paste0("tab-", tabName),
       href = paste0("#shiny-tab-", tabName),
       `data-toggle` = "tab",
       `data-value`  = tabName,
       icon,
-      tags$p(...)))
+      shiny::tags$p(...)))
 }
 
 
@@ -341,3 +342,4 @@ d_to_tags_html <- function(d){
     collect() %>% 
     ungroup()
 }
+
