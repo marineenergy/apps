@@ -11,7 +11,7 @@ source(file.path(dir_scripts, "shiny_report.R"))
 # devtools::install_github("RinteRface/shinydashboardPlus")
 librarian::shelf(
   DT, r-lib/gargle, MarkEdmondson1234/googleAuthR, htmltools, httr, jsonlite, leaflet, mapedit, plotly, purrr,
-  shinydashboard, RinteRface/shinydashboardPlus, shiny, shinyjs, shinyWidgets)
+  shinydashboard, RinteRface/shinydashboardPlus, shiny, shinycssloaders, shinyjs, shinyWidgets)
 
 # navbar ----
 dashboardHeader <- function(

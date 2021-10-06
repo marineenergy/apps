@@ -151,7 +151,9 @@ ui <- dashboardPage(
         fluidRow(
           box(
             title = uiOutput("box_mgt", inline=T), width = 12,
-            DT::dataTableOutput("tbl_mgt")))),
+            withSpinner(
+              color = "#3C8DBC",
+              DT::dataTableOutput("tbl_mgt"))))),
       
       #** tab_docs ----
       tabItem(
@@ -181,7 +183,9 @@ ui <- dashboardPage(
         fluidRow(
           box(
             title = uiOutput("box_docs", inline=T), width = 12,
-            dataTableOutput("tbl_docs")))),
+            withSpinner(
+              color = "#3C8DBC",
+              dataTableOutput("tbl_docs"))))),
       
       
       #** tab_pubs ----
@@ -200,7 +204,9 @@ ui <- dashboardPage(
         fluidRow(
           box(
             title = uiOutput("box_pubs", inline=T), width = 12,
-            dataTableOutput("tbl_pubs")))),
+            withSpinner(
+              color = "#3C8DBC",
+              dataTableOutput("tbl_pubs"))))),
       
       #** tab_spatial ----
       tabItem(
@@ -219,7 +225,9 @@ ui <- dashboardPage(
           box(
             title = uiOutput("box_spatial", inline=T), # TODO: figure out initial statement for spatial without Location or Tags
             width = 12,
-            dataTableOutput("tbl_spatial")))),
+            withSpinner(
+              color = "#3C8DBC",
+              dataTableOutput("tbl_spatial"))))),
       
       #** tab_reports ----
       tabItem(
@@ -265,7 +273,9 @@ ui <- dashboardPage(
           fluidRow(
             box(
               title = "Existing Reports", width = 12,
-              DTOutput("tbl_rpts"),
+              withSpinner(
+                color = "#3C8DBC",
+                DTOutput("tbl_rpts")),
               actionButton("btn_del_rpts", "Delete selected report(s)", icon=icon("minus"))))))
       
       
