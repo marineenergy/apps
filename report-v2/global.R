@@ -13,11 +13,18 @@ librarian::shelf(
   DT, r-lib/gargle, MarkEdmondson1234/googleAuthR, htmltools, httr, jsonlite, leaflet, mapedit, plotly, purrr,
   shinydashboard, RinteRface/shinydashboardPlus, shiny, shinycssloaders, shinyjs, shinyWidgets)
 
+# library(reactlog)
+# reactlog_enable()
+# run a shiny app
+# runApp("/share/github/apps_cdob/report-v2")
+# once app has closed, display reactlog from shiny
+# shiny::reactlogShow()
+
 # navbar ----
 dashboardHeader <- function(
   ..., title = NULL, titleWidth = NULL, 
   disable = FALSE, .list = NULL, leftUi = NULL,
-  controlbarIcon = shiny::icon("gears"), fixed = FALSE) {
+  controlbarIcon = shiny::icon("cogs"), fixed = FALSE) {
   
   # handle right menu items
   items <- c(list(...), .list)

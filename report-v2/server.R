@@ -441,12 +441,14 @@ server <- function(input, output, session) {
     
     # browser()
     
-    get_spatial() %>% 
+    #browser()
+    d <- get_spatial() %>% 
       #select(-uri, -title, -tag)
       select(ID, Title, Tags) %>% 
       mutate(
         Title = as.character(Title))
-    
+    #browser()
+    d
     # TODO: we want to filter d_sp by aoi_wkt
     # if (is.null(crud()$finished)){
     #   aoi_wkt <- NULL

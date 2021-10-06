@@ -26,7 +26,7 @@ ui <- dashboardPage(
     sidebarMenu(
       menuItem(
         "Configure", 
-        tabName = "configure", icon = icon("gears"),
+        tabName = "configure", icon = icon("cogs"),
         startExpanded = T,
         wellPanel(
           h5(icon("tags"), "Interactions"),
@@ -258,13 +258,13 @@ ui <- dashboardPage(
                     inputId   = "ck_rpt_prj",
                     value     = T,
                     label_on  = "Projects",  label_off = "Projects",
-                    icon_on   = icon("check"), icon_off  = icon("remove")),
+                    icon_on   = icon("check"), icon_off  = icon("times")),
                   prettyToggle(
                     inputId   = "ck_rpt_mgt",
                     value     = T,
                     label_on  = "Management",  label_off = "Management",
-                    icon_on   = icon("check"), icon_off  = icon("remove")),
-                  circle = T, status = "default", icon = icon("gear"), width = "20px",
+                    icon_on   = icon("check"), icon_off  = icon("times")),
+                  circle = T, status = "default", icon = icon("cog"), width = "20px",
                   tooltip = tooltipOptions(title = "Click to configure report"))),
               column(
                 width = 3,

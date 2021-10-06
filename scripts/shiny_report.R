@@ -232,6 +232,7 @@ load_projects <- function(ixns=NULL){
   d_times <<- readr::read_csv(prj_times_csv, col_types = readr::cols())  %>% 
     arrange(technology_type, project) %>% 
     mutate(technology_type = factor(technology_type))
+  
   d_times <<- d_times %>% 
     mutate(
       # order projects by technology_type, then project
@@ -316,7 +317,7 @@ filter_prj_by_tech <- function(tech, prj_sites, d_times, d_permits) {
     mutate(
       project = factor(
         project,
-        levels = prj_sites %>% distinct(project) %>% pull(project)))
+        levels = prj_sites %>% sf::st_drop_geometry() %>% distinct(project) %>% pull(project)))
   
   d_times   <<- d_times   %>% filter(technology_type %in% tech) %>% 
     mutate(
@@ -587,6 +588,7 @@ add_lines <- function(fig, tech){
 # for initial plotly projects plot
 plot_projects <- function(){
   load_projects()
+  
   tech <<- c("Riverine Energy", "Tidal Energy", "Wave Energy")
   filter_prj_by_tech(tech, prj_sites, d_times, d_permits)
   calculate_y_tech(tech)
