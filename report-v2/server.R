@@ -29,6 +29,7 @@ server <- function(input, output, session) {
       setView(-93.4, 37.4, 2)
   })
   
+  # location input
   crud <- callModule(
     editMod, "mapEdit", map_edit, "ply",
     editorOptions = list(
@@ -402,6 +403,7 @@ server <- function(input, output, session) {
   
   #* get_spatial() ----
   get_spatial <- reactive({
+    # browser()
     d <- d_spatial
     if (length(values$ixns) > 0){
       rowids <- sapply(values$ixns, get_rowids_with_ixn, db_tbl = "mc_spatial_tags") %>% 
@@ -414,14 +416,15 @@ server <- function(input, output, session) {
 
     # TODO: run the spatial query based on Location if present; see tblSpatial (OLD) 
     
+    
     d %>% 
       mutate(
-        Title = glue("{title} (Source: <a href='{src_url}'>{src_name}</a>"))
+        Title = glue("{title} (Source: <a href='{src_url}'>{src_name}</a>)"))
   })
   
   #* box_spatial ----
   output$box_spatial <- renderText({
-    n_ixns <- length(values$ixns)
+    n_ixns    <- length(values$ixns)
     n_spatial <- nrow(get_spatial())
     
     #browser()
@@ -436,13 +439,21 @@ server <- function(input, output, session) {
   #* tbl_spatial ----
   output$tbl_spatial <- renderDataTable({
     
-    #browser()
+    # browser()
     
     get_spatial() %>% 
       #select(-uri, -title, -tag)
       select(ID, Title, Tags) %>% 
       mutate(
         Title = as.character(Title))
+    
+    # TODO: we want to filter d_sp by aoi_wkt
+    # if (is.null(crud()$finished)){
+    #   aoi_wkt <- NULL
+    # } else {
+    #   aoi_wkt <- crud()$finished %>% pull(geometry) %>% sf::st_as_text()
+    # }
+
   }, escape = F, rownames = F)
   
   
@@ -471,7 +482,8 @@ server <- function(input, output, session) {
     #   pull(Receptors) %>% 
     #   unique() %>% 
     #   sort()
-    
+     
+    # vals$queries_lit: report/server.R line 39
     spatial_receptors <- vals$queries_lit %>% 
       mutate(
         q = pmap(., function(Receptors, ...){

@@ -15,8 +15,8 @@ ui <- dashboardPage(
       navbarTab(tabName = "tab_pubs",    "Publications"),
       navbarTab(tabName = "tab_spatial", "Spatial"),
       navbarTab(tabName = "tab_rpt",     "Reports")),
-    # tags$li(
-    #   googleSignInUI_btn_signin("login"), class = "dropdown"),
+    tags$li(
+      googleSignInUI_btn_signin("login"), class = "dropdown"),
     shinydashboardPlus::userOutput("user")),
 
   #* sidebar ----
@@ -218,7 +218,7 @@ ui <- dashboardPage(
             span(class="me-tag me-receptor",   "Receptor"),
             span(class="me-tag me-phase",      "Phase")),
         helpText(
-          "Spatial intersections are displayed here between the Location drawn and datasets loaded from", a("MarineCadastre.gov ", 
+          "Spatial intersections are displayed here between the location drawn and datasets loaded from", a("MarineCadastre.gov ", 
                    href="https://MarineCadastre.gov"),
           "of species, habitats and human uses as Receptor tags. [TODO: Run spatial intersection; only filtering by tags for now.]"),
         fluidRow(
