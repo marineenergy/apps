@@ -9,15 +9,16 @@ server <- function(input, output, session) {
   # cat(capture.output(dput(values$ixns)))
   
   # login ----
-  glogin <- shiny::callModule(googleSignIn, "login")
-  
-  output$user <- renderUser({
-    dashboardUser(
-      name     = glogin()$name,
-      image    = glogin()$image,
-      subtitle = glogin()$email,
-      footer   = googleSignInUI_btn_signout("login"))
-  })
+  # DEBUG: login off
+  # glogin <- shiny::callModule(googleSignIn, "login")
+  # 
+  # output$user <- renderUser({
+  #   dashboardUser(
+  #     name     = glogin()$name,
+  #     image    = glogin()$image,
+  #     subtitle = glogin()$email,
+  #     footer   = googleSignInUI_btn_signout("login"))
+  # })
   
   # map ----
   output$map_side <- renderLeaflet({

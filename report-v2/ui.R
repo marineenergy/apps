@@ -14,15 +14,19 @@ ui <- dashboardPage(
       navbarTab(tabName = "tab_docs",    "Documents"),
       navbarTab(tabName = "tab_pubs",    "Publications"),
       navbarTab(tabName = "tab_spatial", "Spatial"),
-      navbarTab(tabName = "tab_rpt",     "Reports")),
-    tags$li(
-      googleSignInUI_btn_signin("login"), class = "dropdown"),
-    shinydashboardPlus::userOutput("user")),
+      navbarTab(tabName = "tab_rpt",     "Reports"))
+    #,
+    # DEBUG: login off
+    # tags$li(
+    #   googleSignInUI_btn_signin("login"), class = "dropdown"),
+    # shinydashboardPlus::userOutput("user")
+    ),
 
   #* sidebar ----
   dashboardSidebar(
     width = 310,
-    googleSignInUI_head("login"),
+    # DEBUG: login off
+    #googleSignInUI_head("login"),
     sidebarMenu(
       menuItem(
         "Configure", 
@@ -232,9 +236,10 @@ ui <- dashboardPage(
       #** tab_reports ----
       tabItem(
         tabName = "tab_rpt",
-        uiOutput("txt_rpt_login"),
-        conditionalPanel(
-          condition = "input['login-g_email'] != null && input['login-g_email'] != ''",
+        # DEBUG: login off
+        # uiOutput("txt_rpt_login"),
+        # conditionalPanel(
+        #   condition = "input['login-g_email'] != null && input['login-g_email'] != ''",
           fluidRow(
             box(
               title = "New Report", width = 12,
@@ -276,7 +281,10 @@ ui <- dashboardPage(
               withSpinner(
                 color = "#3C8DBC",
                 DTOutput("tbl_rpts")),
-              actionButton("btn_del_rpts", "Delete selected report(s)", icon=icon("minus"))))))
+              actionButton("btn_del_rpts", "Delete selected report(s)", icon=icon("minus"))))
+          # DEBUG: login off
+          # ))
+        )
       
       
     )))
