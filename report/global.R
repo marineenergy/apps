@@ -1,13 +1,15 @@
-message(paste("user:", Sys.info()[["user"]]))
+#message(paste("user:", Sys.info()[["user"]]))
 source(here::here("functions.R")) # libraries, db connection object (con)
 shelf(
   # shiny
-  DT, rintrojs, shinydashboard, shinyEventLogger, shinyWidgets, shinyjs, waiter, yaml, # shinydashboardPlus, nutterb/shinydust,
+  DT, rintrojs, shinydashboard, shinyWidgets, shinyjs, waiter, yaml, # shinydashboardPlus, nutterb/shinydust,
+  logger, # shinyEventLogger
   # report
   hadley/emo, rhandsontable,
   # spatial
   mapedit)
-set_logging(file = "/share/github/apps/logging_tmp.txt")
+#set_logging()
+log_appender(appender_file(file = "/share/github/apps/logging_tmp.txt"))
 
 web_url = "https://marineenergy.app"
 
