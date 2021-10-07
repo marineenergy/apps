@@ -251,6 +251,14 @@ d_pubs <- tbl(con, "tethys_pubs") %>%
 # tbl(con, "tethys_pubs") %>% collect() %>% names() %>% paste(collapse = ", ")
 d_pubs_n <- tbl(con, "tethys_pubs") %>% summarize(n = n()) %>% pull(n)
 
+# spatial ----
+d_spatial <- tbl(con, "mc_spatial") %>% 
+  left_join(
+    tbl(con, "mc_spatial_tags"),
+    by = "rowid") %>% 
+  distinct_all()
+d_spatial_n <- tbl(con, "mc_spatial") %>% summarize(n = n()) %>% pull(n)
+
 # reports ----
 dir_rpt_pfx <- "/share/user_reports"
 url_rpt_pfx <- "https://api.marineenergy.app/report"
