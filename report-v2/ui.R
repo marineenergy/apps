@@ -14,19 +14,15 @@ ui <- dashboardPage(
       navbarTab(tabName = "tab_docs",    "Documents"),
       navbarTab(tabName = "tab_pubs",    "Publications"),
       navbarTab(tabName = "tab_spatial", "Spatial"),
-      navbarTab(tabName = "tab_rpt",     "Reports"))
-    #,
-    # DEBUG: login off
-    # tags$li(
-    #   googleSignInUI_btn_signin("login"), class = "dropdown"),
-    # shinydashboardPlus::userOutput("user")
-    ),
+      navbarTab(tabName = "tab_rpt",     "Reports")),
+    shiny::tags$li(
+      googleSignInUI_btn_signin("login"), class = "dropdown"),
+    shinydashboardPlus::userOutput("user")),
 
   #* sidebar ----
   dashboardSidebar(
     width = 310,
-    # DEBUG: login off
-    #googleSignInUI_head("login"),
+    googleSignInUI_head("login"),
     sidebarMenu(
       menuItem(
         "Configure", 
