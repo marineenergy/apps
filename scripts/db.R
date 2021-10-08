@@ -41,7 +41,8 @@ con <<- pool::dbPool(
 shiny::onStop(function() {
   suppressWarnings({
     pool::poolClose(con)
-    DBI::dbDisconnect(conn)})
+    #DBI::dbDisconnect(conn)
+    })
 })
 
 # use conn to preview SQL, but con for st_read() to get spatial geometries

@@ -4,19 +4,20 @@ ui <- dashboardPage(
   
   #* header ----
   dashboardHeader(
-    title = HTML("<a class='navbar-brand' href='#'><img alt='Brand' src='./images/logo-horizontal-square.svg' width='40px'></a>MarineEnergy.app"),
+    title = shiny::HTML(
+      "<a class='navbar-brand' href='#'><img alt='Brand' src='./images/logo-horizontal-square.svg' width='40px'></a>MarineEnergy.app"),
     titleWidth = 310,
     #** navbarMenu ----
     leftUi = navbarMenu(
-      navbarTab(tabName = "tab_prj",  "Projects"),
-      navbarTab(tabName = "tab_mgt",  "Management"),
-      navbarTab(tabName = "tab_docs", "Documents"),
-      navbarTab(tabName = "tab_pubs", "Publications"),
+      navbarTab(tabName = "tab_prj",     "Projects"),
+      navbarTab(tabName = "tab_mgt",     "Management"),
+      navbarTab(tabName = "tab_docs",    "Documents"),
+      navbarTab(tabName = "tab_pubs",    "Publications"),
       navbarTab(tabName = "tab_spatial", "Spatial"),
-      navbarTab(tabName = "tab_rpt", "Reports")),
-    tags$li(
+      navbarTab(tabName = "tab_rpt",     "Reports")),
+    shiny::tags$li(
       googleSignInUI_btn_signin("login"), class = "dropdown"),
-    userOutput("user")),
+    shinydashboardPlus::userOutput("user")),
 
   #* sidebar ----
   dashboardSidebar(
@@ -25,7 +26,7 @@ ui <- dashboardPage(
     sidebarMenu(
       menuItem(
         "Configure", 
-        tabName = "configure", icon = icon("gears"),
+        tabName = "configure", icon = icon("cogs"),
         startExpanded = T,
         wellPanel(
           h5(icon("tags"), "Interactions"),
@@ -150,7 +151,9 @@ ui <- dashboardPage(
         fluidRow(
           box(
             title = uiOutput("box_mgt", inline=T), width = 12,
-            DT::dataTableOutput("tbl_mgt")))),
+            withSpinner(
+              color = "#3C8DBC",
+              DT::dataTableOutput("tbl_mgt"))))),
       
       #** tab_docs ----
       tabItem(
@@ -180,7 +183,9 @@ ui <- dashboardPage(
         fluidRow(
           box(
             title = uiOutput("box_docs", inline=T), width = 12,
-            dataTableOutput("tbl_docs")))),
+            withSpinner(
+              color = "#3C8DBC",
+              dataTableOutput("tbl_docs"))))),
       
       
       #** tab_pubs ----
@@ -199,7 +204,9 @@ ui <- dashboardPage(
         fluidRow(
           box(
             title = uiOutput("box_pubs", inline=T), width = 12,
-            dataTableOutput("tbl_pubs")))),
+            withSpinner(
+              color = "#3C8DBC",
+              dataTableOutput("tbl_pubs"))))),
       
       #** tab_spatial ----
       tabItem(
@@ -211,21 +218,24 @@ ui <- dashboardPage(
             span(class="me-tag me-receptor",   "Receptor"),
             span(class="me-tag me-phase",      "Phase")),
         helpText(
-          "Spatial intersections are displayed here between the Location drawn and datasets loaded from", a("MarineCadastre.gov ", 
+          "Spatial intersections are displayed here between the location drawn and datasets loaded from", a("MarineCadastre.gov ", 
                    href="https://MarineCadastre.gov"),
           "of species, habitats and human uses as Receptor tags. [TODO: Run spatial intersection; only filtering by tags for now.]"),
         fluidRow(
           box(
             title = uiOutput("box_spatial", inline=T), # TODO: figure out initial statement for spatial without Location or Tags
             width = 12,
-            dataTableOutput("tbl_spatial")))),
+            withSpinner(
+              color = "#3C8DBC",
+              dataTableOutput("tbl_spatial"))))),
       
       #** tab_reports ----
       tabItem(
         tabName = "tab_rpt",
-        uiOutput("txt_rpt_login"),
-        conditionalPanel(
-          condition = "input['login-g_email'] != null && input['login-g_email'] != ''",
+        # DEBUG: login off
+        # uiOutput("txt_rpt_login"),
+        # conditionalPanel(
+        #   condition = "input['login-g_email'] != null && input['login-g_email'] != ''",
           fluidRow(
             box(
               title = "New Report", width = 12,
@@ -249,13 +259,13 @@ ui <- dashboardPage(
                     inputId   = "ck_rpt_prj",
                     value     = T,
                     label_on  = "Projects",  label_off = "Projects",
-                    icon_on   = icon("check"), icon_off  = icon("remove")),
+                    icon_on   = icon("check"), icon_off  = icon("times")),
                   prettyToggle(
                     inputId   = "ck_rpt_mgt",
                     value     = T,
                     label_on  = "Management",  label_off = "Management",
-                    icon_on   = icon("check"), icon_off  = icon("remove")),
-                  circle = T, status = "default", icon = icon("gear"), width = "20px",
+                    icon_on   = icon("check"), icon_off  = icon("times")),
+                  circle = T, status = "default", icon = icon("cog"), width = "20px",
                   tooltip = tooltipOptions(title = "Click to configure report"))),
               column(
                 width = 3,
@@ -264,8 +274,13 @@ ui <- dashboardPage(
           fluidRow(
             box(
               title = "Existing Reports", width = 12,
-              DTOutput("tbl_rpts"),
-              actionButton("btn_del_rpts", "Delete selected report(s)", icon=icon("minus"))))))
+              withSpinner(
+                color = "#3C8DBC",
+                DTOutput("tbl_rpts")),
+              actionButton("btn_del_rpts", "Delete selected report(s)", icon=icon("minus"))))
+          # DEBUG: login off
+          # ))
+        )
       
       
     )))

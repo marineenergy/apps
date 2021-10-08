@@ -78,28 +78,58 @@ get_ferc <- function() {
 }
 
 # write project data to db ---- for update.R
-get_ferc_prjs <- function(){
-  d_prj_doc_sec <- get_ferc() %>%
-    select(
-      prj = project, 
-      doc = prj_document, 
-      sec = prj_doc_attachment, 
-      url = prj_doc_attach_url,
-      prj_doc_sec_display = prj_doc_sec_display, 
-      prj_doc_sec_values = prj_doc_sec_values) %>% 
-      # prj_doc_sec = prj_doc_sec) %>% 
-    group_by(
-      prj, doc, sec, url,
-      prj_doc_sec_display, prj_doc_sec_values) %>% 
-    # group_by(
-    #   prj, doc, sec, url,
-    #   prj_doc_sec_display, prj_doc_sec_values, prj_doc_sec) %>% 
-    summarize() %>% 
-    # rowid_to_column("id_prj_doc_sec") %>% 
-    ungroup() 
+update_ferc_prjs <- function(){
+  d_prj_doc_sec <- dbReadTable(con, "projects") %>% tibble() %>% collect() %>% 
+    select(prj = project) %>% 
+    left_join(
+      get_ferc() %>% 
+        select(
+          prj = project, 
+          doc = prj_document, 
+          sec = prj_doc_attachment, 
+          url = prj_doc_attach_url,
+          prj_doc_sec_display = prj_doc_sec_display, 
+          prj_doc_sec_values = prj_doc_sec_values) %>% 
+        group_by(
+          prj, doc, sec, url,
+          prj_doc_sec_display, prj_doc_sec_values) %>% 
+        summarize() %>% 
+        ungroup(),
+      by = "prj")
+  
+  
+  
+  # d_prj_doc_sec <- get_ferc() %>%
+  #   select(
+  #     prj = project, 
+  #     doc = prj_document, 
+  #     sec = prj_doc_attachment, 
+  #     url = prj_doc_attach_url,
+  #     prj_doc_sec_display = prj_doc_sec_display, 
+  #     prj_doc_sec_values = prj_doc_sec_values) %>% 
+  #     # prj_doc_sec = prj_doc_sec) %>% 
+  #   group_by(
+  #     prj, doc, sec, url,
+  #     prj_doc_sec_display, prj_doc_sec_values) %>% 
+  #   # group_by(
+  #   #   prj, doc, sec, url,
+  #   #   prj_doc_sec_display, prj_doc_sec_values, prj_doc_sec) %>% 
+  #   summarize() %>% 
+  #   # rowid_to_column("id_prj_doc_sec") %>% 
+  #   ungroup() 
   # based on existing prj_doc_sec in ferc_docs
   dbWriteTable(con, "ferc_project_doc_sec", d_prj_doc_sec, overwrite = T)
 }
+
+
+# use conn to preview SQL, but con for st_read() to get spatial geometries
+conn <<- connections::connection_open(
+  RPostgres::Postgres(),
+  dbname   = db_params$dbname,
+  host     = db_params$host,
+  port     = 5432,
+  user     = db_params$user,
+  password = readLines(db_params$pwd_txt))
 
 
 
