@@ -121,15 +121,14 @@ update_ferc_prjs <- function(){
   dbWriteTable(con, "ferc_project_doc_sec", d_prj_doc_sec, overwrite = T)
 }
 
-
 # use conn to preview SQL, but con for st_read() to get spatial geometries
-conn <<- connections::connection_open(
-  RPostgres::Postgres(),
-  dbname   = db_params$dbname,
-  host     = db_params$host,
-  port     = 5432,
-  user     = db_params$user,
-  password = readLines(db_params$pwd_txt))
+# conn <<- connections::connection_open(
+#   RPostgres::Postgres(),
+#   dbname   = db_params$dbname,
+#   host     = db_params$host,
+#   port     = 5432,
+#   user     = db_params$user,
+#   password = readLines(db_params$pwd_txt))
 
 
 

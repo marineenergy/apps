@@ -207,14 +207,11 @@ update_tags <- function(){
 update_ferc_docs <- function(){
   
   # original docs repeats the row of detail for multiple tag interactions (nrow=687)
-  docs <- get_gsheet_data("documents") %>% 
-    rename(detail = key_interaction_detail) 
+  docs <- get_gsheet_data("documents_import2db") %>% 
+    rename(detail = key_interaction_detail) %>% 
+    mutate(
+      detail = map_chr(detail, iconv, from = "latin1", to = "ASCII", sub = ""))
 
-  for (id in 1:length(docs$detail)) {
-    docs$detail[id] <- iconv(docs$detail[id], "latin1", "ASCII", sub = "")
-    # docs$detail[id] <- stri_trans_general(docs$detail[id], id = "latin-ascii")
-  }
-  
   # names(docs)[sapply(docs, class) == "logical"] %>% paste(collapse = ',\n') %>% cat()
   # across(docs, where(is.logical), )
   
@@ -282,6 +279,7 @@ update_ferc_docs <- function(){
     relocate(rowid)
   
   # get all tags by category from wide to long (nrow=3,435)
+  # update_tags()
   docs_tags <- bind_rows(
     docs %>% 
       mutate(
@@ -303,11 +301,17 @@ update_ferc_docs <- function(){
         content      = "ferc_docs",
         tag_category = "Phase") %>% 
       select(content, rowid, tag_category, content_tag = phase),
+    # docs %>% 
+    #   mutate(
+    #     content      = "ferc_docs",
+    #     tag_category = "Effect") %>% 
     docs %>% 
       mutate(
         content      = "ferc_docs",
-        tag_category = "Effect") %>% 
-      select(content, rowid, tag_category, content_tag = key_effects))
+        tag_category = "Consequence") %>% 
+      select(content, rowid, tag_category, content_tag = consequence)) %>% 
+    mutate(content_tag = na_if(content_tag, "NA")) %>% 
+    filter(!is.na(content_tag))
   
   # get authoritative tags
   tags <- tbl(con, "tags") %>% 
@@ -315,23 +319,27 @@ update_ferc_docs <- function(){
     mutate(
       tag_sql = as.character(tag_sql))
   
-  # match based on lookup
-  docs_tags_lookup <- docs_tags %>% 
-    group_by(content, tag_category, content_tag) %>% 
-    filter(!is.na(content_tag)) %>% 
-    summarize(.groups = "drop") %>% 
-    mutate(
-      content_tag_strip = stringr::str_replace_all(content_tag, "[^A-Za-z0-9_.]", ""),
-      content_tag_sql   = as.character(glue("{tag_category}.{content_tag_strip}"))) %>% 
-    left_join(
-      tags,
-      by = c("content_tag_sql" = "tag_sql")) %>% 
-    arrange(is.na(tag), tag_category, content_tag)
-  
+  # create tags_lookup for manually matching...
+  # docs_tags_lookup <- docs_tags %>% 
+  #   group_by(content, tag_category, content_tag) %>% 
+  #   filter(!is.na(content_tag)) %>% 
+  #   summarize(.groups = "drop") %>% 
+  #   #View()
+  #   mutate(
+  #     content_tag_strip = stringr::str_replace_all(content_tag, "[^A-Za-z0-9_.]", ""),
+  #     content_tag_sql   = as.character(glue("{tag_category}.{content_tag_strip}"))) %>% 
+  #   left_join(
+  #     tags,
+  #     by = c("content_tag_sql" = "tag_sql")) %>% 
+  #   arrange(is.na(tag), tag_category, content_tag)
+  # 
+  # docs_tags_lookup %>%
+  #   filter(is.na(tag)) %>%
+  #   write_csv(here("data/docs_tags_lookup_na.csv"))
   # table(!is.na(docs_tags_lookup$tag))
   # View(docs_tags_lookup)
-  
-  readr::write_csv(docs_tags_lookup, here("data/docs_tags_lookup.csv"))
+  # 
+  # readr::write_csv(docs_tags_lookup, here("data/docs_tags_lookup.csv"))
   
   # copy/pasted docs_tags_lookup.csv into gsheet
   # TODO: finish Effect.* lookups
@@ -346,7 +354,13 @@ update_ferc_docs <- function(){
       tag_lookup,
       by = c("tag_category", "content_tag"))
   
-  # TODO: check that all docs_tags.tag_sql in tags.tag_sql
+  # check that all tags matched in tag_lookup
+  docs_tags_nolookup <- docs_tags %>% 
+    filter(is.na(tag_sql), !is.na(content_tag)) %>% 
+    group_by(tag_category, content_tag) %>% 
+    summarize(.groups = "drop")
+  stopifnot(nrow(docs_tags_nolookup)==0)
+  
   tags <- tbl(con, "tags") %>% 
     collect() %>% 
     mutate(

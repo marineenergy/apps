@@ -3,7 +3,7 @@ if (!require(librarian)){
   library(librarian)
 }
 shelf(
-  DBI, dplyr, DT, fs, glue, here, htmltools, htmlwidgets, kableExtra, knitr, 
+  DBI, dplyr, DT, fs, ggmap, glue, here, htmltools, htmlwidgets, kableExtra, knitr, 
   leaflet, markdown, r-spatial/mapview, # https://github.com/r-spatial/mapview/issues/324
   purrr, readr,  RPostgres, rmarkdown, rvest, tibble, tidyr,
   scales, sf, shiny, sp, stringr, tinytex, urltools, yaml)
