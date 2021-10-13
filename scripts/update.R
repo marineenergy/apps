@@ -211,7 +211,7 @@ update_ferc_docs <- function(){
     rename(detail = key_interaction_detail) %>% 
     mutate(
       detail = map_chr(detail, iconv, from = "latin1", to = "ASCII", sub = ""))
-                       
+
   # names(docs)[sapply(docs, class) == "logical"] %>% paste(collapse = ',\n') %>% cat()
   # across(docs, where(is.logical), )
   
