@@ -208,7 +208,12 @@ update_ferc_docs <- function(){
   
   # original docs repeats the row of detail for multiple tag interactions (nrow=687)
   docs <- get_gsheet_data("documents") %>% 
-    rename(detail = key_interaction_detail)
+    rename(detail = key_interaction_detail) 
+
+  for (id in 1:length(docs$detail)) {
+    docs$detail[id] <- iconv(docs$detail[id], "latin1", "ASCII", sub = "")
+    # docs$detail[id] <- stri_trans_general(docs$detail[id], id = "latin-ascii")
+  }
   
   # names(docs)[sapply(docs, class) == "logical"] %>% paste(collapse = ',\n') %>% cat()
   # across(docs, where(is.logical), )
