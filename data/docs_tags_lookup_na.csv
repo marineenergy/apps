@@ -1,0 +1,15 @@
+content,tag_category,content_tag,content_tag_strip,content_tag_sql,category,tag,cat,tag_nocat
+ferc_docs,Phase,1. Site Characterization and Assessment,1.SiteCharacterizationandAssessment,Phase.1.SiteCharacterizationandAssessment,NA,NA,NA,NA
+ferc_docs,Phase,2. Construction,2.Construction,Phase.2.Construction,NA,NA,NA,NA
+ferc_docs,Phase,3. Operations and Maintenance,3.OperationsandMaintenance,Phase.3.OperationsandMaintenance,NA,NA,NA,NA
+ferc_docs,Phase,"3. Operations, Maintenance and Compliance",3.OperationsMaintenanceandCompliance,Phase.3.OperationsMaintenanceandCompliance,NA,NA,NA,NA
+ferc_docs,Phase,4. Decommissioning,4.Decommissioning,Phase.4.Decommissioning,NA,NA,NA,NA
+ferc_docs,Phase,ALL,ALL,Phase.ALL,NA,NA,NA,NA
+ferc_docs,Phase,"NA","NA",Phase.NA,NA,NA,NA,NA
+ferc_docs,Receptor,ALL,ALL,Receptor.ALL,NA,NA,NA,NA
+ferc_docs,Receptor,"NA","NA",Receptor.NA,NA,NA,NA,NA
+ferc_docs,Stressor,ALL,ALL,Stressor.ALL,NA,NA,NA,NA
+ferc_docs,Stressor,"NA","NA",Stressor.NA,NA,NA,NA,NA
+ferc_docs,Stressor,Noise Underwater,NoiseUnderwater,Stressor.NoiseUnderwater,NA,NA,NA,NA
+ferc_docs,Technology,Marine Energy.Tidal,MarineEnergy.Tidal,Technology.MarineEnergy.Tidal,NA,NA,NA,NA
+ferc_docs,Technology,Marine Energy.Wave,MarineEnergy.Wave,Technology.MarineEnergy.Wave,NA,NA,NA,NA
