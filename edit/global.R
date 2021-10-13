@@ -32,8 +32,9 @@ get_new_docs <- function(d, flds = ferc_doc_names) {
     #   prj_doc_sec_values,
     #   into = c('project', 'prj_document', 'prj_doc_attachment'),
     #   sep  = ";;") %>% 
-    select(flds) %>% 
-    relocate(flds)
+    select(all_of(flds)) %>% 
+    relocate(flds) %>% 
+    arrange(rowid)
 } 
 
 # convert data from dtedit to ferc_doc_tags format
@@ -56,7 +57,8 @@ get_new_tags <- function(d, flds = ferc_tag_names) {
       by = "tag_named") %>% 
     mutate(content = "ferc_docs") %>% 
     select(-tag_named) %>% 
-    relocate(flds)
+    relocate(flds) %>% 
+    arrange(rowid)
 }
 
 # DATA SETUP ----
@@ -93,8 +95,8 @@ ferc.insert.callback <- function(data, row) {
     .con = conn)
   res <- try(dbExecute(con, sql_insert_docs))
   if ("try-error" %in% class(res)) stop(res)
-  
-  DBI::dbAppendTable(conn, "ferc_doc_tags", d_tags)
+  DBI::dbAppendTable(con, "ferc_doc_tags", d_tags)
+  # DBI::dbAppendTable(conn, "ferc_doc_tags", d_tags)
   
   get_ferc()
 }
@@ -138,9 +140,11 @@ ferc.update.callback <- function(data, olddata, row) {
   
   res <- try(dbExecute(con, sql_delete_tags))
   if ("try-error" %in% class(res)) stop(res)
-  DBI::dbAppendTable(conn, "ferc_doc_tags", d_tags)
+  DBI::dbAppendTable(con, "ferc_doc_tags", d_tags)
+  # DBI::dbAppendTable(conn, "ferc_doc_tags", d_tags)
   
   get_ferc()
+  
 }
 
 # DELETE
@@ -200,8 +204,10 @@ labels <- tribble(
   ~fld                 ,  ~view_label,  ~edit_label,                                                 ~delete_label,
   # -------------------|-------------|------------------------------------------------------------|----------------
   "rowid"              ,   "ID"      ,   NA                                                       ,  "ID",
-  "document"           ,   "Document",   NA                                                       ,  NA,
   "project"            ,   "Project" ,   NA                                                       ,  "Project",
+  "document"           ,   "Document",   NA                                                       ,  NA,
+  "prj_document"       ,    NA       ,   NA                                                       ,  "Document",
+  "prj_doc_attachment" ,    "Section",   NA                                                       ,  "Document section",
   "prj_doc_sec"        ,    NA       ,   NA                                                       ,  NA,
   "prj_doc_sec_display",    NA       ,   "Project, document, and document section (if applicable)",  NA,
   "prj_doc_sec_values" ,    NA       ,   NA                                                       ,  NA,
@@ -209,8 +215,6 @@ labels <- tribble(
   "tag_sql"            ,    NA       ,   NA                                                       ,  NA,
   "tag_named"          ,    NA       ,   "Tags"                                                   ,  "Tags",
   "tag_html"           ,    "Tags"   ,   NA                                                       ,  NA,
-  "prj_document"       ,    NA       ,   NA                                                       ,  "Document",
-  "prj_doc_attachment" ,    "Section",   NA                                                       ,  "Document section",
   "prj_doc_attach_url" ,    NA       ,   NA                                                       ,  NA,
   "ck_ixn"             ,    "Ixn"    ,   "Presented as potential interaction?"                    ,  "Presented as potential interaction?",
   "ck_obs"             ,    "Obs"    ,   "Described from observations at the project site?"       ,  "Described from observations at the project site?",   

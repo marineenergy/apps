@@ -70,10 +70,10 @@ get_ferc <- function() {
       prj_doc_sec_values = as.character(glue("{project};;{prj_document};;{prj_doc_attachment}"))) %>% 
     mutate(prj_doc_sec = map2(prj_doc_sec_values, prj_doc_sec_display, setNames)) %>%
     relocate(
-      rowid, document, project, 
+      rowid, project, document, prj_doc_attachment,
       prj_doc_sec, prj_doc_sec_display, prj_doc_sec_values, 
       detail, tag_sql, tag_named, tag_html) %>% 
-    arrange(rowid) %>%
+    # arrange(project, document, prj_doc_attachment) %>%
     data.frame()
 }
 

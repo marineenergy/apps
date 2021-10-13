@@ -438,7 +438,7 @@ server <- function(input, output, session) {
   
   #* tbl_spatial ----
   output$tbl_spatial <- renderDataTable({
-    browser()
+    # browser()
     
     aoi_wkt <- ifelse(
       !is.null(crud()$finished), 

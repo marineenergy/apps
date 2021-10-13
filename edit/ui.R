@@ -22,24 +22,40 @@ tagList(
         span(
           h3("Editable FERC Documents"))),
       helpText(
-        span(
-          span("Please add new projects, project documents, and document sections on "),
-          shiny::tags$a("Project Docs page.", onclick="customHref('prj_docs')"))),
+        HTML("The FERC eLibrary contains environmental compliance project 
+             documents, of which excerpts have been manually tagged for 
+             reference.")),
+      span(
+        span("Please add new projects, project documents, and document sections on "),
+        shiny::tags$a("Project Docs page.", onclick="customHref('prj_docs')")),
+      br(),
+      span(
+        HTML("Then, click <b>Refresh FERC docs table</b> at right for them to 
+             become available as input choices.")),
       hr(),
       div(
-        "Tags filter by:",
-        icon("tags"),
-        span(class="me-tag me-technology", "Technology"),
-        span(class="me-tag me-stressor",   "Stressor"),
-        span(class="me-tag me-receptor",   "Receptor"),
-        span(class="me-tag me-phase",      "Phase")),
-      helpText(
-        HTML("The FERC eLibrary contains environmental compliance project documents, 
-          of which excerpts have been manually tagged for reference.")),
+        span(
+          HTML("<b>Tags</b> filter by:"),
+          icon("tags"),
+          span(class="me-tag me-technology", "Technology"),
+          span(class="me-tag me-stressor",   "Stressor"),
+          span(class="me-tag me-receptor",   "Receptor"),
+          span(class="me-tag me-phase",      "Phase")),
+        br(), 
+        span(
+          HTML("Records are ordered by <b>Project</b>. To view recently added 
+               records first, toggle <b>ID</b> twice."))),
       hr(), 
       # * ferc docs table (dtedit) ----
       div(
         id = "ferc_docs_table",
+        # div(
+          # actionButton(
+          #   "sort_recent_btn",
+          #   "Sort by most recent record",
+          #   icon  = icon("sort"),
+          #   class = "btn btn-primary"),
+          # style = "padding: 0 5px 10px 0;"),
         shinycssloaders::withSpinner(
           uiOutput("ferc_dt_edit"),
           # loading spinner:

@@ -155,15 +155,19 @@ shinyServer(function(input, output, session) {
       arguments$class    <- 'display'
       arguments$colnames <- labels %>%
         filter(!is.na(view_label)) %>% pull(view_label)
+      # arguments$extensions <- "Buttons"
       do.call(DT::datatable, arguments) %>%
-        DT::formatStyle('document',  fontWeight = 'bold') # bold doc name
+        DT::formatStyle("project", fontWeight = 'bold') %>% 
+        DT::formatStyle("prj_doc_attachment", fontStyle = 'italic')
     },
     # * --> datatable.options ----
     datatable.options = list(
       columnDefs = list(
-        # centered rowid
-        list(targets = c(0, 2, 6, 7, 8, 9, 10, 11),
-             className = 'dt-center'),
+        list(targets = 0, className = 'dt-right'),
+        list(targets = 1, className = 'dt-center cell-border-right'),
+        list(targets = 2, className = 'dt-left'),
+        list(targets = 3, className = "dt-left cell-border-right"),
+        list(targets = c(6, 7, 8, 9, 10, 11), className = 'dt-center'),
         # in-row checkboxes
         list(targets = c(6, 7, 8, 9, 10, 11),
              render = {JS(
@@ -172,9 +176,9 @@ shinyServer(function(input, output, session) {
                     data = '<div class=\"text-success\"><span class=\"glyphicon glyphicon-ok-circle\"></span></div>';
                   } else if (data == false) {
                     data = '<div class=\"text-danger\"><span class=\"glyphicon glyphicon-remove-circle\"></span></div>';
-                  } return data}")}),
-        list(targets = 1,
-             className = "dt-right cell-border-right")),
+                  } return data}")})
+        ),
+      # dom = "Bfrtip", buttons = "Sort by newest record",
       # header: black background
       initComplete = JS("
         function(settings, json) {
@@ -184,6 +188,7 @@ shinyServer(function(input, output, session) {
           })
         }"),
       searchHighlight = T,
+      order      = list(list(1, 'asc')),
       autowidth  = T,
       pageLength = 5,
       lengthMenu = list(c(5, 10, 25, 50, 100, -1), c(5, 10, 25, 50, 100, "All"))
@@ -248,7 +253,7 @@ shinyServer(function(input, output, session) {
       tibble() %>% collect()
     
     # modal with buttons to (1) add another prj doc or (2) return to ferc docs
-    prj_input_modal <- modalDialog(
+    prj_input_modal <- {modalDialog(
       title = "Success!",
       HTML(paste(
         "<strong>You have added the following input choices:</strong><br>", 
@@ -268,13 +273,10 @@ shinyServer(function(input, output, session) {
               "return_to_ferc_docs", 
               "Return to FERC docs table", 
               class   = "btn btn-primary",
-              onclick = "customHref('docs')")))))
-    
+              onclick = "customHref('docs')")))))}
     showModal(prj_input_modal)
     
     observeEvent(input$return_to_ferc_docs, {
-      # prj_doc_sec_choices(
-      #   prj_doc_sec_lookup %>% pull(prj_doc_sec_display) %>% sort() %>% unique())
       removeModal()
       # update_dtedit_page() # in global.R
     })
@@ -306,6 +308,7 @@ shinyServer(function(input, output, session) {
   # update data according to dtedit data ----
   data_list <- list() 
   observeEvent(fercdt$thedata, {
+    # browser()
     data_list[[length(data_list) + 1]] <<- fercdt$thedata
   })
   
