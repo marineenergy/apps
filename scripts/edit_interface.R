@@ -73,6 +73,7 @@ get_ferc <- function() {
       rowid, project, document, prj_doc_attachment,
       prj_doc_sec, prj_doc_sec_display, prj_doc_sec_values, 
       detail, tag_sql, tag_named, tag_html) %>% 
+    mutate(across(starts_with("ck_"), as.logical)) %>% 
     # arrange(project, document, prj_doc_attachment) %>%
     data.frame()
 }
