@@ -210,7 +210,12 @@ update_ferc_docs <- function(){
   docs <- get_gsheet_data("documents_import2db") %>% 
     rename(detail = key_interaction_detail) %>% 
     mutate(
-      detail = map_chr(detail, iconv, from = "latin1", to = "ASCII", sub = ""))
+      across(where(is.character)),
+      map_dfr(., iconv, from = "latin1", to = "ASCII", sub = " "))
+      # detail = map_chr(
+      #   detail, iconv, from = "latin1", to = "ASCII", sub = ""),
+      # `doc NAME` = map_chr(
+      #   `doc NAME`, iconv, from = "latin1", to = "ASCII", sub = ""))
 
   # names(docs)[sapply(docs, class) == "logical"] %>% paste(collapse = ',\n') %>% cat()
   # across(docs, where(is.logical), )
