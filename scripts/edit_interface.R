@@ -63,7 +63,7 @@ get_ferc <- function() {
       document = ifelse(
         is.na(prj_doc_attach_url),
         document,
-        glue('<a href="{prj_doc_attach_url}">{document}</a>')),
+        glue('<a href="{prj_doc_attach_url}"target="_blank">{document}</a>')),
       document = as.character(document),
       # prj_doc_sec = glue("<h5><b>{project}</b></h5> {prj_document} {ifelse(!is.na(prj_doc_attachment), glue('| <i>{prj_doc_attachment}</i>'), '')}"),
       prj_doc_sec_display = as.character(glue("<h5><b>{project}</b></h5> {prj_document} {ifelse(!is.na(prj_doc_attachment), glue('<br><i>{prj_doc_attachment}</i>'), '')}")),
