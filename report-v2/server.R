@@ -144,6 +144,7 @@ server <- function(input, output, session) {
   #* prj_map observe Technology tag  ----
   observe({
     req(length(values$ixns) > 0)
+    # browser()
     # output$prj_p <- renderText(suppressWarnings(""))
     
     # extract technology from interaction tags
@@ -154,8 +155,7 @@ server <- function(input, output, session) {
     
     if (!is.null(values$ixns)){
       tech <<- sql2tech[intersect(names(sql2tech), values$ixns %>% unlist())]
-    }
-    else {
+    } else if (is.null(values$ixns)) {
       tech <<- sql2tech
     }
     
@@ -167,18 +167,17 @@ server <- function(input, output, session) {
       load_projects()
       prj_tech <<- prj_sites %>% 
         filter(technology_type %in% tech)
-      leafletProxy("prj_map") %>% 
+      leaflet::leafletProxy("prj_map") %>% 
         leaflet::clearMarkers() %>% 
         leaflet::addMarkers(
           data  = prj_tech,
           label = ~label_html, 
           popup = ~popup_html)
-    }
     # if NO tech type selected in ixns, redraw ALL markers
-    else if (!TRUE %in% tech_str_match){
+    } else if (!TRUE %in% tech_str_match){
       load_projects()
       prj_tech <<- prj_sites
-      leafletProxy("prj_map") %>% 
+      leaflet::leafletProxy("prj_map") %>% 
         leaflet::clearMarkers() %>% 
         leaflet::addMarkers(
           data  = prj_tech,
@@ -236,7 +235,7 @@ server <- function(input, output, session) {
       
       output$prj_p <- renderPlotly(
         suppressWarnings({
-          update_projects()
+          update_project_plot()
           })
         )
     }
@@ -404,7 +403,7 @@ server <- function(input, output, session) {
   
   #* get_spatial() ----
   get_spatial <- reactive({
-    # browser()
+    browser()
     d <- d_spatial 
     # d <- d_spatial %>% collect() %>% tibble()
     if (length(values$ixns) > 0){
@@ -413,11 +412,30 @@ server <- function(input, output, session) {
       d <- d %>%
         filter(rowid %in% !!rowids)
     }
-    
     d <- d_to_tags_html(d)
-
-    # TODO: run the spatial query based on Location if present; see tblSpatial (OLD) 
     
+    # area of interest (user input)
+    aoi_wkt <- ifelse(
+      !is.null(crud()$finished), 
+      crud()$finished %>% pull(geometry) %>% sf::st_as_text(),
+      NULL)
+    
+    # spatial query / intersection based on aoi
+    d <- d %>%  
+      filter(ready) %>% 
+      # replace_na(list(buffer_km = 0)) %>% 
+      mutate(
+        data = map(
+          code, get_spatial_intersection,  
+          aoi_wkt = aoi_wkt, output = "tibble"))
+    
+    
+    
+    
+    
+    
+    
+    # TODO: run the spatial query based on Location if present; see tblSpatial (OLD) 
     d %>% 
       mutate(
         Title = glue("{title} (Source: <a href='{src_url}'>{src_name}</a>)"))
@@ -427,9 +445,7 @@ server <- function(input, output, session) {
   output$box_spatial <- renderText({
     n_ixns    <- length(values$ixns)
     n_spatial <- nrow(get_spatial())
-    
-    #browser()
-    
+
     ifelse(
       n_ixns == 0,
       HTML(glue("MarineCadastre Spatial datasets <small>({d_spatial_n} rows)</small>")),
@@ -440,10 +456,7 @@ server <- function(input, output, session) {
   output$tbl_spatial <- renderDataTable({
     # browser()
     
-    aoi_wkt <- ifelse(
-      !is.null(crud()$finished), 
-      crud()$finished %>% pull(geometry) %>% sf::st_as_text(),
-      NULL)
+   
    
     # TODO: we want to filter d_sp by aoi_wkt
     # if (is.null(crud()$finished)){

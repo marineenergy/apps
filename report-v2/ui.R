@@ -17,7 +17,8 @@ ui <- dashboardPage(
       navbarTab(tabName = "tab_rpt",     "Reports")),
     shiny::tags$li(
       googleSignInUI_btn_signin("login"), class = "dropdown"),
-    shinydashboardPlus::userOutput("user")),
+    shinydashboardPlus::userOutput("user")
+    ),
 
   #* sidebar ----
   dashboardSidebar(

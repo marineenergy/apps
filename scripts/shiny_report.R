@@ -1,14 +1,19 @@
 shelf(DT, glue, tidyr)
 
 map_projects <- function(prj_sites){
+  prj_sites <- prj_sites %>% 
+    mutate(
+      label_html = label_html %>% lapply(htmltools::HTML),
+      popup_html = popup_html %>% lapply(htmltools::HTML))
+  
   leaflet::leaflet(
     data    = prj_sites, width = "100%",
     options = leaflet::leafletOptions(
       zoomControl = F)) %>% 
     leaflet::addProviderTiles(leaflet::providers$Esri.OceanBasemap) %>% 
     leaflet::addMarkers(
-      label = ~label_html, 
-      popup = ~popup_html) %>%
+      label = ~label_html,
+      popup = ~popup_html) %>% 
     htmlwidgets::onRender("function(el, x) {
           L.control.zoom({ position: 'topright' }).addTo(this)
     }")
@@ -89,31 +94,43 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt, output = "tibble"){
     return("Please draw a location to get a summary of the intersecting features for this dataset.")
   }
     
-  ds <- tbl(con, "datasets") %>% 
+  ds <- tbl(con, "mc_spatial") %>% 
     filter(code == !!dataset_code) %>%  # will map across dataset_code fld of d
     replace_na(list(buffer_nm = 0)) %>% 
     collect()
   
+  # if aoi > 1 plygn
+  if (length(aoi_wkt) > 1){
+    aoi_wkts <- glue("'SRID=4326;{aoi_wkt}'::geometry")
+    aoi_sql  <- glue("ST_COLLECT(\n{paste(aoi_wkts, collapse=',\n')})") # Is this recreating the ST_COLLECT statement
+    # for every item in <aoi_wkt> array?
+  # if aoi = 1 plygn
+  } else {
+    # aoi_sql <- glue("'SRID=4326;{aoi_wkt}'")
+    aoi_sql <- glue("'SRID=4326;{aoi_wkt}'::geometry")
+  }
+  
   # Different set of queries required for data sets that do or
   #   do not need area weighted statistics 
   
-  if (ds$st_intersection){    # Area weighted statistics ARE required
+  # if area weighted statistics ARE required
+  if (ds$st_intersection == T){    
     ixn_sql <- str_replace(
       {ds$select_sql}, 'geometry', 
       'geometry, st_intersection(ds.geometry, buf_aoi.geom) as ixn ')
     
-    if (!is.na(ds$summarize_sql)){ 
-      x_df <- dbGetQuery(
-        con,
-        glue("
-          with
-            buf_aoi as (
-              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom),
-            tmp_aoi as (
-              {ixn_sql} as ds, buf_aoi
-              where st_intersects(ds.geometry, buf_aoi.geom))
-            {ds$summarize_sql}
-          "))
+    # if a summarize_sql query exists
+    if (!is.na(ds$summarize_sql)){
+      x_df <- dbGetQuery(con, glue("
+        with
+          buf_aoi as (
+            select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom),
+          tmp_aoi as (
+            {ixn_sql} as ds, buf_aoi
+            where st_intersects(ds.geometry, buf_aoi.geom))
+          {ds$summarize_sql}
+        "))
+    # if no summarize sql query
     } else {
       x_sf <- st_read(
         con, 
@@ -532,7 +549,8 @@ add_prj_mkrs <- function(fig, permit_data) {
         '<b>License Date:</b> '    , permit_data$license_date, 
         '<br><b>Project Name:</b> ', permit_data$project, 
         '<br><b>Permit Type:</b> ' , permit_data$permit_type,
-        '<br><b>Technology:</b> '  , permit_data$technology_type))
+        '<br><b>Technology:</b> '  , permit_data$technology_type)
+    )
 }
 
 lgnd_x_y <- function(fig, time_data) {
@@ -746,7 +764,7 @@ plot_projects <- function(){
 }
 
 # for plot filtered by tech selection
-update_projects <- function(){
+update_project_plot <- function(){
   load_projects()
   tech <<- tech
   filter_prj_by_tech(tech, prj_sites, d_times, d_permits)
