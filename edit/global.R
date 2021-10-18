@@ -3,6 +3,7 @@
 dir_scripts <<- here::here("scripts")
 source(file.path(dir_scripts, "common_2.R"))
 source(file.path(dir_scripts, "db.R"))
+source(file.path(dir_scripts, "db_conn.R"))
 source(file.path(dir_scripts, "edit_interface.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
 source(file.path(dir_scripts, "update.R"))
@@ -104,7 +105,7 @@ ferc.insert.callback <- function(data, row) {
 
 # UPDATE
 ferc.update.callback <- function(data, olddata, row) {
-  browser()
+  # browser()
   d <- data %>% slice(row) %>% 
     tibble() %>% 
     mutate(across(starts_with("ck_"), as.logical)) %>% 
