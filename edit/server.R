@@ -157,9 +157,10 @@ shinyServer(function(input, output, session) {
           filter(!is.na(view_label)) %>% pull(view_label)
         # arguments$extensions <- "Buttons"
         do.call(DT::datatable, arguments) %>%
-          DT::formatStyle("project", fontWeight = 'bold') %>% 
-          DT::formatStyle("prj_doc_attachment", fontStyle = 'italic')
-      },
+          DT::formatStyle("project", fontWeight = 'bold', fontSize = "16px") %>% 
+          DT::formatStyle("prj_doc_attachment", fontStyle = 'italic') %>% 
+          DT::formatStyle(c("detail", "tag_html"), fontSize = "13px")
+        },
       # * --> datatable.options ----
       datatable.options = list(
         columnDefs = list(
@@ -176,7 +177,8 @@ shinyServer(function(input, output, session) {
                     data = '<div class=\"text-success\"><span class=\"glyphicon glyphicon-ok-circle\"></span></div>';
                   } else if (data == false) {
                     data = '<div class=\"text-danger\"><span class=\"glyphicon glyphicon-remove-circle\"></span></div>';
-                  } return data}")})
+                  } return data 
+               }"))
         ),
         # dom = "Bfrtip", buttons = "Sort by newest record",
         # header: black background
@@ -306,6 +308,7 @@ shinyServer(function(input, output, session) {
   })
   
   # update data according to dtedit data ----
+  # data_list <- list() 
   # https://rpubs.com/DavidFong/DTedit#custom-icons-for-neweditdeletecopy-buttons
   # data_list <- list()
   # observeEvent(fercdt$thedata, {

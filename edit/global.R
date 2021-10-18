@@ -39,7 +39,7 @@ get_new_docs <- function(d, flds = ferc_doc_names) {
     #   prj_doc_sec_values,
     #   into = c('project', 'prj_document', 'prj_doc_attachment'),
     #   sep  = ";;") %>% 
-    select(all_of(flds)) %>% 
+    select(flds) %>% 
     relocate(flds) %>% 
     arrange(rowid)
 } 
@@ -99,7 +99,7 @@ ferc.insert.callback <- function(data, row) {
       ({rowid}, {detail}, {project},
       {prj_document}, {prj_doc_attachment}, {prj_doc_attach_url},
       {ck_ixn}, {ck_obs}, {ck_mp}, {ck_amp}, {ck_pme}, {ck_bmps})",
-    .con = conn)
+    .con = con)
   res <- try(dbExecute(con, sql_insert_docs))
   if ("try-error" %in% class(res)) stop(res)
   DBI::dbAppendTable(con, "ferc_doc_tags", d_tags)
@@ -113,8 +113,7 @@ ferc.update.callback <- function(data, olddata, row) {
   # browser()
   d <- data %>% slice(row) %>% 
     tibble() %>% 
-    mutate(
-      across(starts_with("ck_"), as.logical)) %>% 
+    mutate(across(starts_with("ck_"), as.logical)) %>% 
     na_if("NA") %>% 
     na_if("") 
   d_docs <- get_new_docs(d)  # data to UPDATE ferc_docs
@@ -151,7 +150,6 @@ ferc.update.callback <- function(data, olddata, row) {
   # DBI::dbAppendTable(conn, "ferc_doc_tags", d_tags)
   
   get_ferc()
-  
 }
 
 # DELETE
@@ -178,12 +176,13 @@ ferc_tag_names <- dbReadTable(con, "ferc_doc_tags") %>% names()
 
 # * get input choices ----
 tag_choices <- list()
-for (category in unique(tags$category)){ # category = tags$category[1]
+for (category in unique(tags$category[tags$category != "Management"])){ # category = tags$category[1]
   tag_choices <- append(
     tag_choices,
     setNames(
       list(
         tags %>% 
+          filter(category != "Management") %>% # mgmt under tethys so exclude
           filter(category == !!category) %>% 
           pull(tag_named) %>% 
           unlist()),

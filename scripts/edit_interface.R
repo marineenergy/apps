@@ -1,4 +1,4 @@
-shelf(DT, glue, tidyr)
+shelf(DBI, DT, glue, tidyr)
 
 # get_ferc() helper functions ----
 merge_tags <- function(tag_list_col) {
@@ -9,7 +9,7 @@ merge_tags <- function(tag_list_col) {
 merge_tags_html <- function(tag_list_col) {
   tag_list_col %>% 
     unlist() %>% unique() %>% 
-    paste(., collapse = "\n")
+    paste(., collapse = "<br>")
 }
 merge_tags_named <- function(tag_list_col) {
   tag_list_col %>% 
@@ -29,10 +29,11 @@ get_ferc <- function() {
       # read in ferc_doc_tags
       dbReadTable(con, "ferc_doc_tags") %>% 
         tibble() %>% collect() %>% 
-        mutate(tag_sql_chr = ifelse(
-          content_tag == "ALL",
-          glue("{tag_category}.{content_tag}") %>% as.character(),
-          tag_sql %>% as.character())) %>% 
+        mutate(tag_sql_chr = tag_sql %>% as.character()) %>% 
+        # mutate(tag_sql_chr = ifelse(
+        #   content_tag == "ALL",
+        #   glue("{tag_category}.{content_tag}") %>% as.character(),
+        #   tag_sql %>% as.character())) %>% 
         filter(tag_sql != "NA") %>% 
         select(-content, -tag_category, -content_tag) %>% 
         # inner_join() with tags lookup to get tag_html & tag_named
@@ -45,6 +46,7 @@ get_ferc <- function() {
             rename(tag_html = tag_html_nocat),
           by = c("tag_sql_chr" = "tag_sql")) %>% 
         select(-tag_sql_chr) %>%
+        arrange(rowid, tag_sql) %>% 
         group_by(rowid) %>% 
         tidyr::nest(
           tag_sql   = tag_sql,          # for UPDATING / storage
@@ -57,18 +59,23 @@ get_ferc <- function() {
       tag_named = map(tag_named, merge_tags_named),
       tag_html  = map(tag_html,  merge_tags_html),
       document  = ifelse(
-        is.na(prj_doc_attachment),
-        prj_document,
-        glue("{prj_document} - {prj_doc_attachment}")),
-      document = ifelse(
         is.na(prj_doc_attach_url),
-        document,
-        glue('<a href="{prj_doc_attach_url}">{document}</a>')),
-      document = as.character(document),
+        prj_document,
+        as.character(glue('<a href="{prj_doc_attach_url}"target="_blank">{prj_document}</a>'))),
+      # document  = ifelse(
+      #   is.na(prj_doc_attachment),
+      #   prj_document,
+      #   glue("{prj_document} - {prj_doc_attachment}")),
+      # document = ifelse(
+      #   is.na(prj_doc_attach_url),
+      #   document,
+      #   glue('<a href="{prj_doc_attach_url}"target="_blank">{document}</a>')),
+      # document = as.character(document),
       # prj_doc_sec = glue("<h5><b>{project}</b></h5> {prj_document} {ifelse(!is.na(prj_doc_attachment), glue('| <i>{prj_doc_attachment}</i>'), '')}"),
       prj_doc_sec_display = as.character(glue("<h5><b>{project}</b></h5> {prj_document} {ifelse(!is.na(prj_doc_attachment), glue('<br><i>{prj_doc_attachment}</i>'), '')}")),
       prj_doc_sec_values = as.character(glue("{project};;{prj_document};;{prj_doc_attachment}"))) %>% 
     mutate(prj_doc_sec = map2(prj_doc_sec_values, prj_doc_sec_display, setNames)) %>%
+    mutate(across(starts_with("ck_"), as.logical)) %>% 
     relocate(
       rowid, project, document, prj_doc_attachment,
       prj_doc_sec, prj_doc_sec_display, prj_doc_sec_values, 

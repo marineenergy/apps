@@ -37,10 +37,11 @@ tagList(
         span(
           HTML("<b>Tags</b> filter by:"),
           icon("tags"),
-          span(class="me-tag me-technology", "Technology"),
-          span(class="me-tag me-stressor",   "Stressor"),
-          span(class="me-tag me-receptor",   "Receptor"),
-          span(class="me-tag me-phase",      "Phase")),
+          span(class="me-tag me-technology",  "Technology"),
+          span(class="me-tag me-stressor",    "Stressor"),
+          span(class="me-tag me-receptor",    "Receptor"),
+          span(class="me-tag me-phase",       "Phase"),
+          span(class="me-tag me-consequence", "Consequence")),
         br(), 
         span(
           HTML("Records are ordered by <b>Project</b>. To view recently added 

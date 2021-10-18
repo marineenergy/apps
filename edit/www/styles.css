@@ -67,6 +67,12 @@
   background-color: #efefef; /*light gray*/
   border-color: transparent;
 }
+.selectize-control.multi .selectize-input > div[data-value^='Consequence.'] { 
+  /* .btn-secondary */
+  color: #333333;
+  background-color: #f5f2d0; /*light yellow*/
+  border-color: transparent;
+}
 
 /* selectize dropdown option controls*/
 .selectize-dropdown-content .active[data-value^='Technology.'] {
@@ -83,6 +89,9 @@
 }
 .selectize-dropdown-content .active[data-value^='Phase.'] {
   background: #d7d7d7 !important;
+}
+.selectize-dropdown-content .active[data-value^='Consequence.'] {
+  background: #c4c1a6 !important;
 }
 
 .option[data-value^='Technology.'] { 
@@ -133,7 +142,16 @@
   padding: 2px 10px 2px 10px;
   box-sizing: border-box;
 }
-
+.option[data-value^='Consequence.'] { 
+  /* .btn-secondary */
+  color: #333333;
+  background-color: #f5f2d0; /*light yellow*/
+  border-color: transparent;
+  border-radius: 3px;
+  margin: 4px;
+  padding: 2px 10px 2px 10px;
+  box-sizing: border-box;
+}
 .me-tag {
   border-color: transparent;
   border-radius: 3px;
@@ -164,7 +182,10 @@
   color: #333333;
   background-color: #efefef; /*light gray*/
 }
-
+.me-consequence {
+  color: #333333;
+  background-color: #f5f2d0; /*light yellow*/
+}
 
 ::placeholder { 
   word-wrap: break-word;
