@@ -2,7 +2,6 @@
 # DB CONNECTION & SCRIPTS ----
 dir_scripts <<- here::here("scripts")
 source(file.path(dir_scripts, "common_2.R"))
-source(file.path(dir_scripts, "db.R"))
 source(file.path(dir_scripts, "db_conn.R"))
 source(file.path(dir_scripts, "edit_interface.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
@@ -10,13 +9,19 @@ source(file.path(dir_scripts, "update.R"))
 
 # LIBRARIES ----
 # devtools::install_github("DavidPatShuiFong/DTedit@f1617e253d564bce9b2aa67e0662d4cf04d7931f")
-# library(librarian)
-librarian::shelf(
-  DavidPatShuiFong/DTedit, DBI, DT, 
+shelf(
+  DavidPatShuiFong/DTedit, 
+  DBI, DT, 
   glue, purrr, readr, tidyr,
   shiny, shinycssloaders)
+#devtools::load_all("/share/github/DTedit")
 
+# launch with reactlog
+#   library(reactlog); reactlog_enable(); app <- runApp(here::here("edit"))
+# once app has closed, display reactlog from shiny
+#   shiny::reactlogShow()
 
+#options(error = recover)
 
 # FXNS REFERENCED IN CALLBACKS ----
 

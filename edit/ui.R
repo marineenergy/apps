@@ -17,7 +17,7 @@ tagList(
           actionButton(
             "refresh_btn",
             "Refresh FERC docs table",
-            icon  = icon("refresh"),
+            icon  = icon("sync"),
             class = "btn btn-primary btn-lg btn-block")),
         span(
           h3("Editable FERC Documents"))),
