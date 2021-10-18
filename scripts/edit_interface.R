@@ -29,10 +29,11 @@ get_ferc <- function() {
       # read in ferc_doc_tags
       dbReadTable(con, "ferc_doc_tags") %>% 
         tibble() %>% collect() %>% 
-        mutate(tag_sql_chr = ifelse(
-          content_tag == "ALL",
-          glue("{tag_category}.{content_tag}") %>% as.character(),
-          tag_sql %>% as.character())) %>% 
+        mutate(tag_sql_chr = tag_sql %>% as.character()) %>% 
+        # mutate(tag_sql_chr = ifelse(
+        #   content_tag == "ALL",
+        #   glue("{tag_category}.{content_tag}") %>% as.character(),
+        #   tag_sql %>% as.character())) %>% 
         filter(tag_sql != "NA") %>% 
         select(-content, -tag_category, -content_tag) %>% 
         # inner_join() with tags lookup to get tag_html & tag_named

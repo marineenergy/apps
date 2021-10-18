@@ -169,29 +169,33 @@ update_tags <- function(){
   
   # check all tag_lookup.tag_sql in tags.tag_sql
   tag_lookup_notin_tags <- anti_join(tag_lookup, tags, by="tag_sql")
-  stopifnot(tag_lookup_notin_tags == 0)
+  if (nrow(tag_lookup_notin_tags) != 0){
+    message("tag_lookup:tag_sql not found in tags:tag_sql...")
+    message(paste(with(tag_lookup_notin_tags, glue("  {content}:{tag_sql}")), collapse =  "\n"))
+    stop("Please update tags or tag_lookup in Google Sheet to fix mismatched tags above")
+  }
   
   # provide plural form if tagged at highest level of category
-  categories_all <- c(
-    Technology  = "All Technologies",
-    Receptor    = "All Receptors",
-    Stressor    = "All Stressors",
-    Phase       = "All Phases",
-    Management  = "All Management Categories",
-    Consequence = "All Consequences")
-  stopifnot(all(tags %>% distinct(category) %>% pull(category) %in% names(categories_all)))
+  # categories_all <- c(
+  #   Technology  = "All Technologies",
+  #   Receptor    = "All Receptors",
+  #   Stressor    = "All Stressors",
+  #   Phase       = "All Phases",
+  #   Management  = "All Management Categories",
+  #   Consequence = "All Consequences")
+  # stopifnot(all(tags %>% distinct(category) %>% pull(category) %in% names(categories_all)))
   
   # add columns for fast, pretty printing to shiny and reports
   tags <- tags %>% 
     mutate(
       cat       = tolower(category),
       tag_nocat = purrr::map2_chr(tag, category, function(tag, category){
-        stringr::str_replace(tag, glue("{category}/"), "")}),
-      tag_nocat = ifelse(
-        tag_nocat == tag,
-        # provide plural form if tagged at highest level of category
-        categories_all[tag_nocat],
-        tag_nocat))
+        stringr::str_replace(tag, glue("{category}/"), "")}))
+      # tag_nocat = ifelse(
+      #   tag_nocat == tag,
+      #   # provide plural form if tagged at highest level of category
+      #   categories_all[tag_nocat],
+      #   tag_nocat))
   
   # write tags to db
   dbWriteTable(con, "tags", tags, overwrite=T)
@@ -247,22 +251,23 @@ update_ferc_docs <- function(){
     }
     prj_name
   }
-  expand_tag_all <- function(tag_dfr_row) {
-    if (tag_dfr_row$content_tag == "ALL") {
-      content <- docs_tags %>% 
-        filter(tag_category == tag_dfr_row$tag_category) %>% 
-        filter(content_tag != "ALL") %>% 
-        select(content_tag) %>% 
-        distinct() 
-      tag_dfr_row %>% 
-        map_dfr(function(x) {
-          rep(x, length.out = nrow(content))}) %>% 
-        select(-content_tag) %>% 
-        bind_cols(content)
-    } else {
-      tag_dfr_row
-    }
-  }
+  
+  # expand_tag_all <- function(tag_dfr_row) {
+  #   if (tag_dfr_row$content_tag == "ALL") {
+  #     content <- docs_tags %>% 
+  #       filter(tag_category == tag_dfr_row$tag_category) %>% 
+  #       filter(content_tag != "ALL") %>% 
+  #       select(content_tag) %>% 
+  #       distinct() 
+  #     tag_dfr_row %>% 
+  #       map_dfr(function(x) {
+  #         rep(x, length.out = nrow(content))}) %>% 
+  #       select(-content_tag) %>% 
+  #       bind_cols(content)
+  #   } else {
+  #     tag_dfr_row
+  #   }
+  # }
 
   # summarize the docs by the interaction detail (nrow=222)
   docs_ixns <- docs %>% 
@@ -332,10 +337,10 @@ update_ferc_docs <- function(){
         "3. Operations, Maintenance and Compliance",
         content_tag))
   
-  docs_tags <- docs_tags %>% 
-    split(1:nrow(.)) %>% 
-    map(expand_tag_all) %>% 
-    bind_rows()
+  # docs_tags <- docs_tags %>% 
+  #   split(1:nrow(.)) %>% 
+  #   map(expand_tag_all) %>% 
+  #   bind_rows()
 
   # test <- docs_tags %>% 
   #   split(1:nrow(.)) %>% 
@@ -387,7 +392,12 @@ update_ferc_docs <- function(){
     filter(is.na(tag_sql), !is.na(content_tag)) %>% 
     group_by(tag_category, content_tag) %>% 
     summarize(.groups = "drop")
-  stopifnot(nrow(docs_tags_nolookup)==0)
+  if (nrow(docs_tags_nolookup) != 0){
+    message("tag_lookup:content_tag missing for documents:[*tag]...")
+    message(paste(with(docs_tags_nolookup, glue("  {tag_category}:{content_tag}")), collapse =  "\n"))
+    stop("Please add to tag_lookup in Google Sheet to fix unmatched tags in documents from above")
+  }
+  
   
   tags <- tbl(con, "tags") %>% 
     collect() %>% 
