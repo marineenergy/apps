@@ -24,7 +24,7 @@ get_tags <- function(){
     collect() %>% 
     filter(tag != category) %>% 
     mutate(
-      tag_sql = as.character(tag_sql),
+      tag_sql   = as.character(tag_sql),
       tag_named = purrr::map2(tag_sql, tag_nocat, setNames),
       tag_html  = glue("<span class='me-tag me-{cat}'>{tag}</span>")) %>% 
     arrange(desc(category), tag)

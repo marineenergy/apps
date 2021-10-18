@@ -155,10 +155,10 @@ shinyServer(function(input, output, session) {
       arguments$class    <- 'display'
       arguments$colnames <- labels %>%
         filter(!is.na(view_label)) %>% pull(view_label)
-      # arguments$extensions <- "Buttons"
       do.call(DT::datatable, arguments) %>%
-        DT::formatStyle("project", fontWeight = 'bold') %>% 
-        DT::formatStyle("prj_doc_attachment", fontStyle = 'italic')
+        DT::formatStyle("project", fontWeight = 'bold', fontSize = "16px") %>% 
+        DT::formatStyle("prj_doc_attachment", fontStyle = 'italic') %>% 
+        DT::formatStyle(c("detail", "tag_html"), fontSize = "13px")
     },
     # * --> datatable.options ----
     datatable.options = list(
@@ -170,13 +170,14 @@ shinyServer(function(input, output, session) {
         list(targets = c(6, 7, 8, 9, 10, 11), className = 'dt-center'),
         # in-row checkboxes
         list(targets = c(6, 7, 8, 9, 10, 11),
-             render = {JS(
+             render = JS(
                "function(data, type, row) {
                   if (data == true) {
                     data = '<div class=\"text-success\"><span class=\"glyphicon glyphicon-ok-circle\"></span></div>';
                   } else if (data == false) {
                     data = '<div class=\"text-danger\"><span class=\"glyphicon glyphicon-remove-circle\"></span></div>';
-                  } return data}")})
+                  } return data 
+               }"))
         ),
       # dom = "Bfrtip", buttons = "Sort by newest record",
       # header: black background
@@ -306,17 +307,16 @@ shinyServer(function(input, output, session) {
   })
   
   # update data according to dtedit data ----
-  data_list <- list() 
-  observeEvent(fercdt$thedata, {
-    # browser()
-    data_list[[length(data_list) + 1]] <<- fercdt$thedata
-  })
-  
-  shiny::exportTestValues(data_list = {data_list})
+  # data_list <- list() 
+  # observeEvent(fercdt$thedata, {
+  #   # browser()
+  #   data_list[[length(data_list) + 1]] <<- fercdt$thedata
+  # })
+  # shiny::exportTestValues(data_list = {data_list})
   
   cancel.onsessionEnded <- session$onSessionEnded(function() {
     pool::poolClose(con)
-    DBI::dbDisconnect(conn)
+    # DBI::dbDisconnect(conn)
   })
 })
     
