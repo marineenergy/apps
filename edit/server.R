@@ -105,40 +105,40 @@ shinyServer(function(input, output, session) {
   # EDIT FERC DOCS PAGE ----
   #* dtedit() object ----
   fercdt <-  dtedit(
-      input, output,
-      name            = 'ferc_dt_edit',
-      thedata         = get_ferc(),
-      view.cols       = labels %>% filter(!is.na(view_label)) %>% pull(fld),
-      edit.cols       = labels %>% filter(!is.na(edit_label)) %>% pull(fld),
-      edit.label.cols = labels %>% filter(!is.na(edit_label)) %>% pull(edit_label),
-      delete.info.label.cols = labels %>% 
-        filter(!is.na(view_label)) %>% pull(view_label),
-      input.types = c(
-        prj_doc_sec_display = "selectizeInputReactive",
-        detail              = "textAreaInput",
-        tag_named           = "selectInputMultiple",
-        ck_ixn              = "checkboxInput",
-        ck_obs              = "checkboxInput",
-        ck_mp               = "checkboxInput",
-        ck_amp              = "checkboxInput",
-        ck_pme              = "checkboxInput",
-        ck_bmps             = "checkboxInput"),
-      input.choices = list(
-        prj_doc_sec_display = 'prj.doc.sec.choices.list',
-        ck_ixn              = c(TRUE, FALSE),
-        ck_obs              = c(TRUE, FALSE),
-        ck_mp               = c(TRUE, FALSE), 
-        ck_amp              = c(TRUE, FALSE),
-        ck_pme              = c(TRUE, FALSE),
-        ck_bmps             = c(TRUE, FALSE),
-        tag_named           = tag_choices), 
-      input.choices.reactive = list(
-        prj.doc.sec.choices.list = prj_doc_sec_choices), # reactiveVal
-      selectize = T, 
-      selectize.options = list(
-        prj_doc_sec_display = list(
-          create = F,
-          render = I("{
+    input, output,
+    name            = 'ferc_dt_edit',
+    thedata         = get_ferc(),
+    view.cols       = labels %>% filter(!is.na(view_label)) %>% pull(fld),
+    edit.cols       = labels %>% filter(!is.na(edit_label)) %>% pull(fld),
+    edit.label.cols = labels %>% filter(!is.na(edit_label)) %>% pull(edit_label),
+    delete.info.label.cols = labels %>% 
+      filter(!is.na(view_label)) %>% pull(view_label),
+    input.types = c(
+      prj_doc_sec_display = "selectizeInputReactive",
+      detail              = "textAreaInput",
+      tag_named           = "selectInputMultiple",
+      ck_ixn              = "checkboxInput",
+      ck_obs              = "checkboxInput",
+      ck_mp               = "checkboxInput",
+      ck_amp              = "checkboxInput",
+      ck_pme              = "checkboxInput",
+      ck_bmps             = "checkboxInput"),
+    input.choices = list(
+      prj_doc_sec_display = 'prj.doc.sec.choices.list',
+      ck_ixn              = c(TRUE, FALSE),
+      ck_obs              = c(TRUE, FALSE),
+      ck_mp               = c(TRUE, FALSE), 
+      ck_amp              = c(TRUE, FALSE),
+      ck_pme              = c(TRUE, FALSE),
+      ck_bmps             = c(TRUE, FALSE),
+      tag_named           = tag_choices), 
+    input.choices.reactive = list(
+      prj.doc.sec.choices.list = prj_doc_sec_choices), # reactiveVal
+    selectize = T, 
+    selectize.options = list(
+      prj_doc_sec_display = list(
+        create = F,
+        render = I("{
           option: function(data, escape) {
             return '<div>' + data.label + '</div>';
           },
@@ -146,74 +146,75 @@ shinyServer(function(input, output, session) {
             return '<div>' + data.label + '</div>';
           }
         }")
-        )
-      ),
-      datatable.rownames = F,
-      datatable.call = function(...) {
-        arguments <- list(...)
-        arguments$escape   <- 0
-        arguments$class    <- 'display'
-        arguments$colnames <- labels %>%
-          filter(!is.na(view_label)) %>% pull(view_label)
-        # arguments$extensions <- "Buttons"
-        do.call(DT::datatable, arguments) %>%
-          DT::formatStyle("project", fontWeight = 'bold', fontSize = "16px") %>% 
-          DT::formatStyle("prj_doc_attachment", fontStyle = 'italic') %>% 
-          DT::formatStyle(c("detail", "tag_html"), fontSize = "13px")
-        },
-      # * --> datatable.options ----
-      datatable.options = list(
-        columnDefs = list(
-          list(targets = 0, className = 'dt-right'),
-          list(targets = 1, className = 'dt-center cell-border-right'),
-          list(targets = 2, className = 'dt-left'),
-          list(targets = 3, className = "dt-left cell-border-right"),
-          list(targets = c(6, 7, 8, 9, 10, 11), className = 'dt-center'),
-          # in-row checkboxes
-          list(targets = c(6, 7, 8, 9, 10, 11),
-               render = {JS(
-                 "function(data, type, row) {
+      )
+    ),
+    datatable.rownames = F,
+    datatable.call = function(...) {
+      arguments <- list(...)
+      arguments$escape   <- 0
+      arguments$class    <- 'display'
+      arguments$colnames <- labels %>%
+        filter(!is.na(view_label)) %>% pull(view_label)
+      # arguments$extensions <- "Buttons"
+      
+      do.call(DT::datatable, arguments) %>%
+        DT::formatStyle("project", fontWeight = 'bold', fontSize = "16px") %>% 
+        DT::formatStyle("prj_doc_attachment", fontStyle = 'italic') %>% 
+        DT::formatStyle(c("detail", "tag_html"), fontSize = "13px")
+    },
+    # * --> datatable.options ----
+    datatable.options = list(
+      columnDefs = list(
+        list(targets = 0, className = 'dt-right'),
+        list(targets = 1, className = 'dt-center cell-border-right'),
+        list(targets = 2, className = 'dt-left'),
+        list(targets = 3, className = "dt-left cell-border-right"),
+        list(targets = c(6, 7, 8, 9, 10, 11), className = 'dt-center'),
+        # in-row checkboxes
+        list(targets = c(6, 7, 8, 9, 10, 11),
+             render = JS(
+               "function(data, type, row) {
                   if (data == true) {
                     data = '<div class=\"text-success\"><span class=\"glyphicon glyphicon-ok-circle\"></span></div>';
                   } else if (data == false) {
                     data = '<div class=\"text-danger\"><span class=\"glyphicon glyphicon-remove-circle\"></span></div>';
                   } return data 
                }"))
-        ),
-        # dom = "Bfrtip", buttons = "Sort by newest record",
-        # header: black background
-        initComplete = JS("
+      ),
+      # dom = "Bfrtip", buttons = "Sort by newest record",
+      # header: black background
+      initComplete = JS("
         function(settings, json) {
           $(this.api().table().header()).css({
             'background-color': '#2b2d2f',
             'color': '#fff'
           })
         }"),
-        searchHighlight = T,
-        order      = list(list(1, 'asc')),
-        autowidth  = T,
-        pageLength = 5,
-        lengthMenu = list(c(5, 10, 25, 50, 100, -1), c(5, 10, 25, 50, 100, "All"))
-      ), # end options
-      
-      modal.size      = 'l', 
-      text.width      = '100%',
-      icon.delete     = icon("trash"),
-      icon.edit       = icon("edit"),
-      icon.add        = icon("plus"),
-      icon.copy       = icon("copy"),
-      title.delete    = 'Delete',
-      title.edit      = 'Edit',
-      title.add       = 'Add new key interaction detail',
-      
-      text.delete.modal = HTML(
-        "<span><b>Are you sure you want to delete this record?</b></span>"),
-      
-      # callbacks
-      callback.update = ferc.update.callback,
-      callback.insert = ferc.insert.callback,
-      callback.delete = ferc.delete.callback
-    )
+      searchHighlight = T,
+      order      = list(list(1, 'asc')),
+      autowidth  = T,
+      pageLength = 5,
+      lengthMenu = list(c(5, 10, 25, 50, 100, -1), c(5, 10, 25, 50, 100, "All"))
+    ), # end options
+    
+    modal.size      = 'l', 
+    text.width      = '100%',
+    icon.delete     = icon("trash"),
+    icon.edit       = icon("edit"),
+    icon.add        = icon("plus"),
+    icon.copy       = icon("copy"),
+    title.delete    = 'Delete',
+    title.edit      = 'Edit',
+    title.add       = 'Add new key interaction detail',
+    
+    text.delete.modal = HTML(
+      "<span><b>Are you sure you want to delete this record?</b></span>"),
+    
+    # callbacks
+    callback.update = ferc.update.callback,
+    callback.insert = ferc.insert.callback,
+    callback.delete = ferc.delete.callback
+  )
   
   
   # observe prj docs page updates in ferc docs page ----
