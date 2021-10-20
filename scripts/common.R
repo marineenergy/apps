@@ -11,8 +11,8 @@ glue <- glue::glue
 os   <- Sys.info()[["sysname"]]
 user <- Sys.info()[["user"]]
 machine <<- dplyr::case_when(
-  os   != "Linux"                  ~ "Caleb",
   user == "bbest" & os == "Darwin" ~ "Ben",
+  os   != "Linux"                  ~ "Caleb",
   T                                ~ "server")
 
 dir_scripts <<- switch(

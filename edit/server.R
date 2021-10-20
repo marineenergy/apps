@@ -104,7 +104,7 @@ shinyServer(function(input, output, session) {
   
   # EDIT FERC DOCS PAGE ----
   #* dtedit() object ----
-  fercdt <- { dtedit(
+  fercdt <-  dtedit(
     input, output,
     name            = 'ferc_dt_edit',
     thedata         = get_ferc(),
@@ -135,7 +135,7 @@ shinyServer(function(input, output, session) {
     input.choices.reactive = list(
       prj.doc.sec.choices.list = prj_doc_sec_choices), # reactiveVal
     selectize = T, 
-    selectize.options = {list(
+    selectize.options = list(
       prj_doc_sec_display = list(
         create = F,
         render = I("{
@@ -147,7 +147,7 @@ shinyServer(function(input, output, session) {
           }
         }")
       )
-    )},
+    ),
     datatable.rownames = F,
     datatable.call = function(...) {
       arguments <- list(...)
@@ -155,26 +155,33 @@ shinyServer(function(input, output, session) {
       arguments$class    <- 'display'
       arguments$colnames <- labels %>%
         filter(!is.na(view_label)) %>% pull(view_label)
+      # arguments$extensions <- "Buttons"
+      
       do.call(DT::datatable, arguments) %>%
-        DT::formatStyle('document',  fontWeight = 'bold') # bold doc name
+        DT::formatStyle("project", fontWeight = 'bold', fontSize = "16px") %>% 
+        DT::formatStyle("prj_doc_attachment", fontStyle = 'italic') %>% 
+        DT::formatStyle(c("detail", "tag_html"), fontSize = "13px")
     },
     # * --> datatable.options ----
     datatable.options = list(
       columnDefs = list(
-        # centered rowid
-        list(targets = c(0, 2, 6, 7, 8, 9, 10, 11),
-             className = 'dt-center'),
+        list(targets = 0, className = 'dt-right'),
+        list(targets = 1, className = 'dt-center cell-border-right'),
+        list(targets = 2, className = 'dt-left'),
+        list(targets = 3, className = "dt-left cell-border-right"),
+        list(targets = c(6, 7, 8, 9, 10, 11), className = 'dt-center'),
         # in-row checkboxes
         list(targets = c(6, 7, 8, 9, 10, 11),
-             render = {JS(
+             render = JS(
                "function(data, type, row) {
                   if (data == true) {
                     data = '<div class=\"text-success\"><span class=\"glyphicon glyphicon-ok-circle\"></span></div>';
                   } else if (data == false) {
                     data = '<div class=\"text-danger\"><span class=\"glyphicon glyphicon-remove-circle\"></span></div>';
-                  } return data}")}),
-        list(targets = 1,
-             className = "dt-right cell-border-right")),
+                  } return data 
+               }"))
+      ),
+      # dom = "Bfrtip", buttons = "Sort by newest record",
       # header: black background
       initComplete = JS("
         function(settings, json) {
@@ -184,11 +191,12 @@ shinyServer(function(input, output, session) {
           })
         }"),
       searchHighlight = T,
+      order      = list(list(1, 'asc')),
       autowidth  = T,
       pageLength = 5,
       lengthMenu = list(c(5, 10, 25, 50, 100, -1), c(5, 10, 25, 50, 100, "All"))
     ), # end options
-
+    
     modal.size      = 'l', 
     text.width      = '100%',
     icon.delete     = icon("trash"),
@@ -206,7 +214,7 @@ shinyServer(function(input, output, session) {
     callback.update = ferc.update.callback,
     callback.insert = ferc.insert.callback,
     callback.delete = ferc.delete.callback
-  ) }
+  )
   
   
   # observe prj docs page updates in ferc docs page ----
@@ -248,7 +256,7 @@ shinyServer(function(input, output, session) {
       tibble() %>% collect()
     
     # modal with buttons to (1) add another prj doc or (2) return to ferc docs
-    prj_input_modal <- modalDialog(
+    prj_input_modal <- {modalDialog(
       title = "Success!",
       HTML(paste(
         "<strong>You have added the following input choices:</strong><br>", 
@@ -268,13 +276,10 @@ shinyServer(function(input, output, session) {
               "return_to_ferc_docs", 
               "Return to FERC docs table", 
               class   = "btn btn-primary",
-              onclick = "customHref('docs')")))))
-    
+              onclick = "customHref('docs')")))))}
     showModal(prj_input_modal)
     
     observeEvent(input$return_to_ferc_docs, {
-      # prj_doc_sec_choices(
-      #   prj_doc_sec_lookup %>% pull(prj_doc_sec_display) %>% sort() %>% unique())
       removeModal()
       # update_dtedit_page() # in global.R
     })
@@ -304,17 +309,20 @@ shinyServer(function(input, output, session) {
   })
   
   # update data according to dtedit data ----
-  data_list <- list() 
-  observeEvent(fercdt$thedata, {
-    data_list[[length(data_list) + 1]] <<- fercdt$thedata
-  })
+  # data_list <- list() 
+  # https://rpubs.com/DavidFong/DTedit#custom-icons-for-neweditdeletecopy-buttons
+  # data_list <- list()
+  # observeEvent(fercdt$thedata, {
+  #   # browser()
+  #   data_list[[length(data_list) + 1]] <<- fercdt$thedata
+  # })
+  # 
+  # shiny::exportTestValues(data_list = {data_list})
   
-  shiny::exportTestValues(data_list = {data_list})
-  
-  cancel.onsessionEnded <- session$onSessionEnded(function() {
-    pool::poolClose(con)
-    DBI::dbDisconnect(conn)
-  })
+  # cancel.onsessionEnded <- session$onSessionEnded(function() {
+  #   pool::poolClose(con)
+  #   connections::connection_close(conn)
+  # })
 })
     
    

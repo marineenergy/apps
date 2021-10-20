@@ -10,8 +10,9 @@ server <- function(input, output, session) {
   
   # login ----
   glogin <- shiny::callModule(googleSignIn, "login")
-  
+
   output$user <- renderUser({
+    
     dashboardUser(
       name     = glogin()$name,
       image    = glogin()$image,
@@ -29,6 +30,7 @@ server <- function(input, output, session) {
       setView(-93.4, 37.4, 2)
   })
   
+  # location input
   crud <- callModule(
     editMod, "mapEdit", map_edit, "ply",
     editorOptions = list(
@@ -142,6 +144,7 @@ server <- function(input, output, session) {
   #* prj_map observe Technology tag  ----
   observe({
     req(length(values$ixns) > 0)
+    # browser()
     # output$prj_p <- renderText(suppressWarnings(""))
     
     # extract technology from interaction tags
@@ -152,8 +155,7 @@ server <- function(input, output, session) {
     
     if (!is.null(values$ixns)){
       tech <<- sql2tech[intersect(names(sql2tech), values$ixns %>% unlist())]
-    }
-    else {
+    } else if (is.null(values$ixns)) {
       tech <<- sql2tech
     }
     
@@ -165,18 +167,17 @@ server <- function(input, output, session) {
       load_projects()
       prj_tech <<- prj_sites %>% 
         filter(technology_type %in% tech)
-      leafletProxy("prj_map") %>% 
+      leaflet::leafletProxy("prj_map") %>% 
         leaflet::clearMarkers() %>% 
         leaflet::addMarkers(
           data  = prj_tech,
           label = ~label_html, 
           popup = ~popup_html)
-    }
     # if NO tech type selected in ixns, redraw ALL markers
-    else if (!TRUE %in% tech_str_match){
+    } else if (!TRUE %in% tech_str_match){
       load_projects()
       prj_tech <<- prj_sites
-      leafletProxy("prj_map") %>% 
+      leaflet::leafletProxy("prj_map") %>% 
         leaflet::clearMarkers() %>% 
         leaflet::addMarkers(
           data  = prj_tech,
@@ -234,7 +235,7 @@ server <- function(input, output, session) {
       
       output$prj_p <- renderPlotly(
         suppressWarnings({
-          update_projects()
+          update_project_plot()
           })
         )
     }
@@ -402,47 +403,143 @@ server <- function(input, output, session) {
   
   #* get_spatial() ----
   get_spatial <- reactive({
-    d <- d_spatial
+    browser()
+    d <- d_spatial 
+    # d <- d_spatial %>% collect() %>% tibble()
     if (length(values$ixns) > 0){
       rowids <- sapply(values$ixns, get_rowids_with_ixn, db_tbl = "mc_spatial_tags") %>% 
         unlist() %>% unique()
       d <- d %>%
         filter(rowid %in% !!rowids)
     }
-    
     d <- d_to_tags_html(d)
-
-    # TODO: run the spatial query based on Location if present; see tblSpatial (OLD) 
     
+    # area of interest (user input)
+    aoi_wkt <- ifelse(
+      !is.null(crud()$finished), 
+      crud()$finished %>% pull(geometry) %>% sf::st_as_text(),
+      NULL)
+    
+    # spatial query / intersection based on aoi
+    d <- d %>%  
+      filter(ready) %>% 
+      # replace_na(list(buffer_km = 0)) %>% 
+      mutate(
+        data = map(
+          code, get_spatial_intersection,  
+          aoi_wkt = aoi_wkt, output = "tibble"))
+    
+    
+    
+    
+    
+    
+    
+    # TODO: run the spatial query based on Location if present; see tblSpatial (OLD) 
     d %>% 
       mutate(
-        Title = glue("{title} (Source: <a href='{src_url}'>{src_name}</a>"))
+        Title = glue("{title} (Source: <a href='{src_url}'>{src_name}</a>)"))
   })
   
   #* box_spatial ----
   output$box_spatial <- renderText({
-    n_ixns <- length(values$ixns)
+    n_ixns    <- length(values$ixns)
     n_spatial <- nrow(get_spatial())
-    
-    #browser()
-    
+
     ifelse(
       n_ixns == 0,
       HTML(glue("MarineCadastre Spatial datasets <small>({d_spatial_n} rows)</small>")),
       HTML(glue("MarineCadastre Spatial datasets <small>({n_spatial} of {d_spatial_n} rows; filtered by {n_ixns} interactions)</small>")))
   })
   
-  
   #* tbl_spatial ----
   output$tbl_spatial <- renderDataTable({
+    # browser()
     
-    #browser()
+   
+   
+    # TODO: we want to filter d_sp by aoi_wkt
+    # if (is.null(crud()$finished)){
+    #   aoi_wkt <- NULL
+    # } else if (!is.null(crud()$finished)) {
+    #   aoi_wkt <- crud()$finished %>% pull(geometry) %>% sf::st_as_text()
+    # }
     
-    get_spatial() %>% 
+    d <- get_spatial() %>% 
+      filter(ready) %>% 
+      replace_na(list(buffer_km = 0)) %>% 
+      mutate(
+        data = map(
+          code, get_spatial_intersection,  
+          aoi_wkt = aoi_wkt, output = "tibble")) %>% 
       #select(-uri, -title, -tag)
-      select(ID, Title, Tags) %>% 
+      select(ID, Title, Tags, data) %>% 
       mutate(
         Title = as.character(Title))
+
+      
+    
+
+    
+    
+    # get spatial receptors
+    # spatial_receptors <- vals$queries_lit %>% 
+    #   mutate(
+    #     q = pmap(., function(Receptors, ...){
+    #       keys <- c(Receptors) %>% 
+    #         str_replace_all('"', '') %>%
+    #         na_if("") %>% 
+    #         na.omit()
+    #       paste(keys, collapse = " AND ") })) %>% 
+    #   pull(q) %>% 
+    #   as.character()
+
+
+    
+
+    
+    
+    
+    
+    
+    # SPATIAL QUERY: filter d_sp by aoi_wkt
+    # datasets <- tbl(con, "datasets") %>% collect() %>%
+    #   filter(ready) %>% 
+    #   replace_na(list(buffer_km = 0)) %>% 
+    #   select(-notes, -issues) %>% 
+    #   separate_rows(tags, sep = ";") %>% 
+    #   rename(tag = tags) %>% 
+    #   mutate(
+    #     tag = str_trim(tag)) %>% 
+    #   filter(
+    #     tag %in% spatial_receptors) %>%  # filter by tag (done already)
+    #   arrange(tag, title) %>% 
+    #   mutate(
+    #     data      = map(
+    #       code, 
+    #       tabulate_dataset_shp_within_aoi, 
+    #       aoi_wkt = aoi_wkt, output = "tibble"),
+    #     # datasets1 <- datasets
+    #     # datasets2 <- datasets1 %>% 
+    #     #   mutate(
+    #     data_nrow = map_int(data, nrow),
+    #     Title     = map2_chr(
+    #       title, src_url,
+    #       function(x, y)
+    #         glue("<a href={y} target='_blank'>{x}</a>")),
+    #     Title     = ifelse(
+    #       buffer_nm > 0,
+    #       glue("{Title} [within {buffer_nm} nm of Location]"),
+    #       Title)) %>% 
+    #   select(
+    #     Title,
+    #     `Rows of Results` = data_nrow) %>% 
+    #   arrange(Title)
+    
+    
+    
+    
+
   }, escape = F, rownames = F)
   
   
@@ -471,7 +568,8 @@ server <- function(input, output, session) {
     #   pull(Receptors) %>% 
     #   unique() %>% 
     #   sort()
-    
+     
+    # vals$queries_lit: report/server.R line 39
     spatial_receptors <- vals$queries_lit %>% 
       mutate(
         q = pmap(., function(Receptors, ...){
@@ -601,7 +699,9 @@ server <- function(input, output, session) {
   
   #* poll_rpts_tbl() ----
   poll_rpts_tbl <- reactivePoll(
-    10000, session, # check every 10 seconds
+    # 10000, 
+    1000000, 
+    session, # check every 10 seconds
     checkFunc = function() {
       email <- get_email()
       if (is.null(email)) 

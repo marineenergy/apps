@@ -1,128 +1,19 @@
 shelf(DT, glue, tidyr)
-# 
-# # edit interface ----
-# # get_ferc() helper functions
-# merge_tags <- function(tag_list_col) {
-#   tag_list_col %>% 
-#     unlist() %>% 
-#     unique() 
-# }
-# merge_tags_html <- function(tag_list_col) {
-#   tag_list_col %>% 
-#     unlist() %>% unique() %>% 
-#     paste(., collapse = "\n")
-# }
-# merge_tags_named <- function(tag_list_col) {
-#   tag_list_col %>% 
-#     unlist(recursive = F) %>% 
-#     unlist(recursive = F, use.names = T) %>% 
-#     unique() 
-# }
-# match_prj <- function(
-#   prj_doc, prj_names = prjs$prj, alt_prj_names = prjs$prj_alt) {
-#   prj_index <- prj_doc %>% 
-#     str_detect(
-#       coll(
-#         prj_names %>%
-#           str_replace_all("-", " "),
-#         ignore_case = T)) %>% 
-#     unlist(recursive = T)
-#   if (!(TRUE %in% prj_index)) {
-#     prj_index <- list()
-#     prj_index <- prj_doc %>% 
-#       str_detect(
-#         coll(
-#           alt_prj_names %>%
-#             str_replace_all("-", " "),
-#           ignore_case = T)) %>% 
-#       unlist(recursive = T)
-#   }
-#   # get prj name that matches prj
-#   if (!(TRUE %in% prj_index)) {
-#     prj_index <- NA
-#   } else {
-#     prj_index <- which(prj_index == TRUE)
-#   }
-#   if (!(is.na(prj_index))) {
-#     prj_name <- prj_names[prj_index]
-#   } else {
-#     prj_name <- NA
-#   }
-#   prj_name
-# }
-# 
-# # read in & merge ferc_docs & ferc_doc_tags from db
-# get_ferc <- function() {
-#   # read in ferc_docs and merge w/ table created by inner join b/w
-#   # ferc_doc_tags and tags lookup
-#   dbReadTable(con, "ferc_docs") %>% 
-#     tibble() %>% collect() %>% 
-#     na_if("NA") %>%
-#     merge(
-#       # read in ferc_doc_tags
-#       dbReadTable(con, "ferc_doc_tags") %>% 
-#         tibble() %>% collect() %>% 
-#         mutate(tag_sql_chr = ifelse(
-#           content_tag == "ALL",
-#           glue("{tag_category}.{content_tag}") %>% as.character(),
-#           tag_sql %>% as.character())) %>% 
-#         filter(tag_sql != "NA") %>% 
-#         select(-content, -tag_category, -content_tag) %>% 
-#         # inner_join() with tags lookup to get tag_html & tag_named
-#         inner_join(
-#           get_tags() %>% 
-#             mutate(
-#               tag_html_nocat = glue(
-#                 "<span class='me-tag me-{cat}'>{tag_nocat}</span>")) %>% 
-#             select(tag_sql, tag_named, tag_html_nocat) %>% 
-#             rename(tag_html = tag_html_nocat),
-#           by = c("tag_sql_chr" = "tag_sql")) %>% 
-#         select(-tag_sql_chr) %>%
-#         group_by(rowid) %>% 
-#         tidyr::nest(
-#           tag_sql   = tag_sql,          # for UPDATING / storage
-#           tag_named = tag_named,        # for EDIT INTERFACE
-#           tag_html  = tag_html),        # for VIEW dtedit table
-#       # merge params
-#       by.x = "rowid", by.y = "rowid", all.x = T, incomparables = NA) %>% 
-#     mutate(
-#       tag_sql   = map(tag_sql,   merge_tags),
-#       tag_named = map(tag_named, merge_tags_named),
-#       tag_html  = map(tag_html,  merge_tags_html),
-#       document  = ifelse(
-#         is.na(prj_doc_attachment),
-#         prj_document,
-#         glue("{prj_document} - {prj_doc_attachment}")),
-#       document = ifelse(
-#         is.na(prj_doc_attach_url),
-#         document,
-#         glue('<a href="{prj_doc_attach_url}">{document}</a>')),
-#       document = as.character(document),
-#       # prj_doc_sec = glue("<h5><b>{project}</b></h5> {prj_document} {ifelse(!is.na(prj_doc_attachment), glue('| <i>{prj_doc_attachment}</i>'), '')}"),
-#       prj_doc_sec_display = as.character(glue("<h5><b>{project}</b></h5> {prj_document} {ifelse(!is.na(prj_doc_attachment), glue('<br><i>{prj_doc_attachment}</i>'), '')}")),
-#       prj_doc_sec_values = as.character(glue("{project};;{prj_document};;{prj_doc_attachment}"))) %>% 
-#     mutate(prj_doc_sec = map2(prj_doc_sec_values, prj_doc_sec_display, setNames)) %>%
-#     # select(-prj_doc_sec_values) %>% 
-#     # select(-project) %>% 
-#     # mutate(project = map_chr(prj_document, match_prj)) %>% 
-#     relocate(
-#       rowid, document, project, 
-#       prj_doc_sec, prj_doc_sec_display, prj_doc_sec_values, 
-#       detail, tag_sql, tag_named, tag_html) %>% 
-#     arrange(rowid) %>%
-#     data.frame()
-# }
-
 
 map_projects <- function(prj_sites){
+  prj_sites <- prj_sites %>% 
+    mutate(
+      label_html = label_html %>% lapply(htmltools::HTML),
+      popup_html = popup_html %>% lapply(htmltools::HTML))
+  
   leaflet::leaflet(
     data    = prj_sites, width = "100%",
     options = leaflet::leafletOptions(
       zoomControl = F)) %>% 
     leaflet::addProviderTiles(leaflet::providers$Esri.OceanBasemap) %>% 
     leaflet::addMarkers(
-      label = ~label_html, 
-      popup = ~popup_html) %>%
+      label = ~label_html,
+      popup = ~popup_html) %>% 
     htmlwidgets::onRender("function(el, x) {
           L.control.zoom({ position: 'topright' }).addTo(this)
     }")
@@ -133,7 +24,7 @@ get_tags <- function(){
     collect() %>% 
     filter(tag != category) %>% 
     mutate(
-      tag_sql = as.character(tag_sql),
+      tag_sql   = as.character(tag_sql),
       tag_named = purrr::map2(tag_sql, tag_nocat, setNames),
       tag_html  = glue("<span class='me-tag me-{cat}'>{tag}</span>")) %>% 
     arrange(desc(category), tag)
@@ -157,6 +48,264 @@ get_tags_html <- function(rid, tbl_tags = "ferc_doc_tags"){
     pull(tag_html) %>% 
     paste(collapse = " ")
 }
+
+
+# spatial 
+# will map across rows of d 
+get_spatial_intersection <- function(dataset_code, aoi_wkt, output = "tibble"){
+  librarian::shelf(sf)
+  # summarize shapefile dataset from area of interest, with temporary in-memory query
+ 
+  # TODO: pull latest datasets: https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=936111013
+  # datasets_gsheet2db(redo = T)
+  
+  # dataset_code = "cetacean-bia"; aoi_wkt = params$aoi_wkt
+    
+  # test values: 
+  # dataset_code <- "efh"
+  # aoi_wkt <- "POLYGON ((-104.7656 22.97593, -104.7656 41.15991, -77.87109 41.15991, -77.87109 22.97593, -104.7656 22.97593))" 
+  # NOTES:
+  {   
+  # aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
+  # crud()$finished <- "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
+
+  # dataset_code = "cetacean-bia";
+  # dataset_code = "cetacean-pacific-summer"; aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
+  # params <- yaml::yaml.load("
+  # title: Testing
+  # aoi_wkt:
+  # - POLYGON ((-115.9245 32.26236, -115.9245 32.26565, -115.9206 32.26565, -115.9206
+  #               32.26236, -115.9245 32.26236))
+  # - POLYGON ((-121.9503 33.01519, -121.9503 35.51658, -115.8711 35.51658, -115.8711
+  #             33.01519, -121.9503 33.01519))")
+  # aoi_wkt <- params$aoi_wkt
+  # dataset_code = "oil-gas-wells"
+  # aoi_wkt      = "POLYGON ((-157.4273 55.22198, -157.4273 61.76097, -143.1428 61.76097, -143.1428 55.22198, -157.4273 55.22198))"
+  # dataset_code='fed-sand-gravel-lease'
+  # aoi_wkt='POLYGON ((-175.4932 15.34568, -175.4932 27.93566, -151.813 27.93566, -151.813 15.34568, -175.4932 15.34568))'
+  
+  # dataset_code='monuments'
+  # aoi_wkt='POLYGON ((-180.0668 16.98081, -180.0668 29.87807, -153.4797 29.87807, -153.4797 16.98081, -180.0668 16.98081))'
+  }
+  
+  message(glue("tab..._shp_within_aoi(dataset_code='{dataset_code}', aoi_wkt='{paste(aoi_wkt, collapse=';')}')"))
+  
+  if (is.null(aoi_wkt)) {
+    return("Please draw a location to get a summary of the intersecting features for this dataset.")
+  }
+    
+  ds <- tbl(con, "mc_spatial") %>% 
+    filter(code == !!dataset_code) %>%  # will map across dataset_code fld of d
+    replace_na(list(buffer_nm = 0)) %>% 
+    collect()
+  
+  # if aoi > 1 plygn
+  if (length(aoi_wkt) > 1){
+    aoi_wkts <- glue("'SRID=4326;{aoi_wkt}'::geometry")
+    aoi_sql  <- glue("ST_COLLECT(\n{paste(aoi_wkts, collapse=',\n')})") # Is this recreating the ST_COLLECT statement
+    # for every item in <aoi_wkt> array?
+  # if aoi = 1 plygn
+  } else {
+    # aoi_sql <- glue("'SRID=4326;{aoi_wkt}'")
+    aoi_sql <- glue("'SRID=4326;{aoi_wkt}'::geometry")
+  }
+  
+  # Different set of queries required for data sets that do or
+  #   do not need area weighted statistics 
+  
+  # if area weighted statistics ARE required
+  if (ds$st_intersection == T){    
+    ixn_sql <- str_replace(
+      {ds$select_sql}, 'geometry', 
+      'geometry, st_intersection(ds.geometry, buf_aoi.geom) as ixn ')
+    
+    # if a summarize_sql query exists
+    if (!is.na(ds$summarize_sql)){
+      x_df <- dbGetQuery(con, glue("
+        with
+          buf_aoi as (
+            select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom),
+          tmp_aoi as (
+            {ixn_sql} as ds, buf_aoi
+            where st_intersects(ds.geometry, buf_aoi.geom))
+          {ds$summarize_sql}
+        "))
+    # if no summarize sql query
+    } else {
+      x_sf <- st_read(
+        con, 
+        glue("
+          with
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom)
+            {ixn_sql} as ds, buf_aoi
+            where st_intersects(ds.geometry, buf_aoi.geom)
+          "))
+      x_df <- st_drop_geometry(x_sf)
+      
+      if (!is.na(ds$summarize_r))
+        eval(parse(text=ds$summarize_r))
+    }
+    
+  } else { # Area weighted statistics NOT required: if(ds$st_intersection != T)
+    if (!is.na(ds$summarize_sql)){
+      x_df <- dbGetQuery(
+        con, glue("
+          with 
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom ),
+            tmp_aoi as (
+              {ds$select_sql} as ds
+              inner join buf_aoi on st_intersects(ds.geometry, buf_aoi.geom) )
+           {ds$summarize_sql}
+           "))
+    } else {
+      x_sf <- st_read(
+        con, glue("
+          with 
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {ds$buffer_nm} * 1852) as geom)
+            {ds$select_sql} as ds
+            inner join buf_aoi on st_intersects(ds.geometry, buf_aoi.geom )
+            "))
+      x_df <- st_drop_geometry(x_sf)
+      
+      if (!is.na(ds$summarize_r))
+        eval(parse(text=ds$summarize_r))
+    }
+  }
+  
+  x_df
+}
+  
+
+ # from analyze_spatial.Rmd -----
+tabulate_dataset_shp_within_aoi3 <- function(dataset_code, aoi_wkt, output = "kable"){
+  # summarize shapefile dataset from area of interest
+  
+  # dataset_code = "cetacean-bia"; aoi_wkt = params$aoi_wkt; output = "kable"
+  # dataset_code = "cetacean-pacific-summer"; aoi_wkt = params$aoi_wkt; output = "kable"
+  
+  message(glue("tab..._shp_within_aoi(dataset_code='{dataset_code}', aoi_wkt='{paste(aoi_wkt, collapse=';')}')"))
+  
+  if (is.null(aoi_wkt))
+    return("Please draw a Location to get a summary of the intersecting features for this dataset.")
+  
+  ds <- tbl(con, "datasets") %>% 
+    filter(code == !!dataset_code) %>% 
+    replace_na(list(buffer_nm = 0)) %>% 
+    collect()
+  
+  if (length(aoi_wkt) > 1){
+    aoi_wkts <- glue("'SRID=4326;{aoi_wkt}'::geometry")
+    aoi_sql  <- glue("ST_COLLECT(\n{paste(aoi_wkts, collapse=',\n')})") # Is this recreating the ST_COLLECT statement
+    # for every item in <aoi_wkt> array?
+  } else {
+    # aoi_sql <- glue("'SRID=4326;{aoi_wkt}'")
+    aoi_sql <- glue("'SRID=4326;{aoi_wkt}'::geometry")
+  }
+  
+  # Different set of queries required for data sets that do or
+  #   do not need area weighted statistics 
+  if (ds$st_intersection){
+    # Area weighted statistics ARE required
+    ixn_sql <- str_replace({ds$select_sql}, 'geometry', 'geometry, st_intersection(ds.geometry, buf_aoi.geom) as ixn ')
+    
+    if (!is.na(ds$summarize_sql)){
+      x_df <- dbGetQuery(
+        con,
+        glue("
+          with
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom),
+            tmp_aoi as (
+              {ixn_sql} as ds, buf_aoi
+              where st_intersects(ds.geometry, buf_aoi.geom))
+            {ds$summarize_sql}
+          "))
+    } else {
+      x_sf <- st_read(
+        con, 
+        glue("
+          with
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom)
+            {ixn_sql} as ds, buf_aoi
+            where st_intersects(ds.geometry, buf_aoi.geom)
+          "))
+      x_df <- st_drop_geometry(x_sf)
+      
+      if (!is.na(ds$summarize_r))
+        eval(parse(text=ds$summarize_r))
+    }
+    
+  } else {
+    # Area weighted statistics NOT required
+    if (!is.na(ds$summarize_sql)){
+      x_df <- dbGetQuery(
+        con, glue("
+          with 
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom ),
+            tmp_aoi as (
+              {ds$select_sql} as ds
+              inner join buf_aoi on st_intersects(ds.geometry, buf_aoi.geom) )
+           {ds$summarize_sql}
+           "))
+    } else {
+      x_sf <- st_read(
+        con, query = glue("
+          with 
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {ds$buffer_nm} * 1852) as geom)
+            {ds$select_sql} as ds
+            inner join buf_aoi on st_intersects(ds.geometry, buf_aoi.geom )
+            "))
+      x_df <- st_drop_geometry(x_sf)
+      
+      if (!is.na(ds$summarize_r))
+        eval(parse(text=ds$summarize_r))
+    }
+  }
+  if (output == "tibble"){
+    return(x_df)
+  }
+  
+  x_spatial <- ifelse(
+    ds$buffer_nm == 0,
+    glue("\n\nSpatial: within site", .trim = F),
+    glue("\n\nSpatial: within {ds$buffer_nm} nautical miles of site", .trim = F))
+  
+  if (knitr::is_html_output()){
+    x_caption <- HTML(markdownToHTML(
+      text = glue("Source: [{ds$src_name}]({ds$src_url}){x_spatial}"),
+      fragment.only = T))
+    
+    tbl <- x_df %>% 
+      kbl(caption = x_caption) %>%
+      kable_styling(
+        # full_width = F, position = "left", # position = "float_right"
+        bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+    
+  } else {
+    x_caption <- glue("Source: [{ds$src_name}]({ds$src_url}){x_spatial}")
+    
+    tbl <- x_df %>% 
+      kable(caption = x_caption, format = "pipe")
+  }
+  
+  tbl
+}
+
+
+
+
+
+
+
+
+
+
 
 get_rowids_with_ixn <- function(db_tbl, ixn){
   # db_tbl = "tethys_mgt_tags"; ixn = c("Receptor.Fish", "Stressor.PhysicalInteraction.Collision")
@@ -232,6 +381,7 @@ load_projects <- function(ixns=NULL){
   d_times <<- readr::read_csv(prj_times_csv, col_types = readr::cols())  %>% 
     arrange(technology_type, project) %>% 
     mutate(technology_type = factor(technology_type))
+  
   d_times <<- d_times %>% 
     mutate(
       # order projects by technology_type, then project
@@ -316,7 +466,7 @@ filter_prj_by_tech <- function(tech, prj_sites, d_times, d_permits) {
     mutate(
       project = factor(
         project,
-        levels = prj_sites %>% distinct(project) %>% pull(project)))
+        levels = prj_sites %>% sf::st_drop_geometry() %>% distinct(project) %>% pull(project)))
   
   d_times   <<- d_times   %>% filter(technology_type %in% tech) %>% 
     mutate(
@@ -399,7 +549,8 @@ add_prj_mkrs <- function(fig, permit_data) {
         '<b>License Date:</b> '    , permit_data$license_date, 
         '<br><b>Project Name:</b> ', permit_data$project, 
         '<br><b>Permit Type:</b> ' , permit_data$permit_type,
-        '<br><b>Technology:</b> '  , permit_data$technology_type))
+        '<br><b>Technology:</b> '  , permit_data$technology_type)
+    )
 }
 
 lgnd_x_y <- function(fig, time_data) {
@@ -587,6 +738,7 @@ add_lines <- function(fig, tech){
 # for initial plotly projects plot
 plot_projects <- function(){
   load_projects()
+  
   tech <<- c("Riverine Energy", "Tidal Energy", "Wave Energy")
   filter_prj_by_tech(tech, prj_sites, d_times, d_permits)
   calculate_y_tech(tech)
@@ -612,7 +764,7 @@ plot_projects <- function(){
 }
 
 # for plot filtered by tech selection
-update_projects <- function(){
+update_project_plot <- function(){
   load_projects()
   tech <<- tech
   filter_prj_by_tech(tech, prj_sites, d_times, d_permits)

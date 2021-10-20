@@ -1,5 +1,5 @@
 librarian::shelf(
-  dbplyr, dplyr, pool, shiny, stringr)
+  connections, dbplyr, dplyr, pool, shiny, stringr)
 
 db_params <- switch(machine, # common.R:machine
   Caleb  =
@@ -38,22 +38,21 @@ con <<- pool::dbPool(
   user     = db_params$user,
   password = readLines(db_params$pwd_txt))
 
+# use conn to preview SQL, but con for st_read() to get spatial geometries
+conn <<- connections::connection_open(
+  RPostgres::Postgres(),
+  dbname   = db_params$dbname,
+  host     = db_params$host,
+  port     = 5432,
+  user     = db_params$user,
+  password = readLines(db_params$pwd_txt))
+
 shiny::onStop(function() {
   suppressWarnings({
     pool::poolClose(con)
-    #DBI::dbDisconnect(conn)
-    })
+    connections::connection_close(conn)
+  })
 })
-
-# use conn to preview SQL, but con for st_read() to get spatial geometries
-# conn <<- connections::connection_open(
-#   RPostgres::Postgres(),
-#   dbname   = db_params$dbname,
-#   host     = db_params$host,
-#   port     = 5432,
-#   user     = db_params$user,
-#   password = readLines(db_params$pwd_txt))
-
 
 # tbls <- dbListTables(con) %>% sort(); tbls
 

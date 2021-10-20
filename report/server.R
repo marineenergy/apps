@@ -10,7 +10,7 @@ shinyServer(function(input, output, session) {
   
   #addClass(selector = "body", class = "sidebar-collapse")
   
-  set_logging_session()
+  #set_logging_session()
   w <- Waiter$new()
     
   crud <- callModule(
@@ -184,9 +184,12 @@ shinyServer(function(input, output, session) {
         # rmd_params <- readRDS(here("data/tmp_rmd_params.rds"))
         # file <- here("data/tmp_rmd_params_report.html")
         
-        log_event("download_report")
-        log_output(list(input_rmd=input_rmd, out_fmt=out_fmt, file=file) %>% as.yaml())
-        log_output(rmd_params %>% as.yaml())
+        # log_event("download_report")
+        # log_output(list(input_rmd=input_rmd, out_fmt=out_fmt, file=file) %>% as.yaml())
+        # log_output(rmd_params %>% as.yaml())
+        log_info("download_report")
+        log_info(list(input_rmd=input_rmd, out_fmt=out_fmt, file=file) %>% as.yaml())
+        log_info(rmd_params %>% as.yaml())
 
         waiter_show(html = waiting_screen, color = "black")
         
