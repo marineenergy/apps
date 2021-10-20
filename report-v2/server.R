@@ -12,7 +12,8 @@ server <- function(input, output, session) {
   glogin <- shiny::callModule(googleSignIn, "login")
 
   output$user <- renderUser({
-    
+    #browser()
+    # DEBUG
     dashboardUser(
       name     = glogin()$name,
       image    = glogin()$image,
@@ -377,7 +378,7 @@ server <- function(input, output, session) {
       mutate(
         # TODO: include in scripts/update_tags.R:update_tags()
         across(where(is.character), na_if, "NA"),
-        Title = glue("<a href='{uri}'>{title}</a>"))
+        Title = as.character(glue("<a href='{uri}'>{title}</a>")))
   })
   
   #* box_pubs ----
@@ -403,7 +404,7 @@ server <- function(input, output, session) {
   
   #* get_spatial() ----
   get_spatial <- reactive({
-    browser()
+    #browser()
     d <- d_spatial 
     # d <- d_spatial %>% collect() %>% tibble()
     if (length(values$ixns) > 0){
@@ -414,31 +415,25 @@ server <- function(input, output, session) {
     }
     d <- d_to_tags_html(d)
     
-    # area of interest (user input)
-    aoi_wkt <- ifelse(
-      !is.null(crud()$finished), 
-      crud()$finished %>% pull(geometry) %>% sf::st_as_text(),
-      NULL)
-    
-    # spatial query / intersection based on aoi
-    d <- d %>%  
-      filter(ready) %>% 
-      # replace_na(list(buffer_km = 0)) %>% 
-      mutate(
-        data = map(
-          code, get_spatial_intersection,  
-          aoi_wkt = aoi_wkt, output = "tibble"))
-    
-    
-    
-    
-    
-    
+    # # area of interest (user input)
+    # aoi_wkt <- ifelse(
+    #   !is.null(crud()$finished), 
+    #   crud()$finished %>% pull(geometry) %>% sf::st_as_text(),
+    #   NULL)
+    # 
+    # # spatial query / intersection based on aoi
+    # d <- d %>%  
+    #   filter(ready) %>% 
+    #   # replace_na(list(buffer_km = 0)) %>% 
+    #   mutate(
+    #     data = map(
+    #       code, get_spatial_intersection,  
+    #       aoi_wkt = aoi_wkt, output = "tibble"))
     
     # TODO: run the spatial query based on Location if present; see tblSpatial (OLD) 
     d %>% 
       mutate(
-        Title = glue("{title} (Source: <a href='{src_url}'>{src_name}</a>)"))
+        Title = as.character(glue("{title} (Source: <a href='{src_url}'>{src_name}</a>)")))
   })
   
   #* box_spatial ----
@@ -467,15 +462,17 @@ server <- function(input, output, session) {
     
     d <- get_spatial() %>% 
       filter(ready) %>% 
-      replace_na(list(buffer_km = 0)) %>% 
-      mutate(
-        data = map(
-          code, get_spatial_intersection,  
-          aoi_wkt = aoi_wkt, output = "tibble")) %>% 
-      #select(-uri, -title, -tag)
-      select(ID, Title, Tags, data) %>% 
-      mutate(
-        Title = as.character(Title))
+      select(ID, Title, Tags)
+      
+      # replace_na(list(buffer_km = 0)) %>% 
+      # mutate(
+      #   data = map(
+      #     code, get_spatial_intersection,  
+      #     aoi_wkt = aoi_wkt, output = "tibble")) %>% 
+      # #select(-uri, -title, -tag)
+      # select(ID, Title, Tags, data) %>% 
+      # mutate(
+      #   Title = as.character(Title))
 
       
     
@@ -536,10 +533,7 @@ server <- function(input, output, session) {
     #     `Rows of Results` = data_nrow) %>% 
     #   arrange(Title)
     
-    
-    
-    
-
+    d
   }, escape = F, rownames = F)
   
   
@@ -699,26 +693,26 @@ server <- function(input, output, session) {
   
   #* poll_rpts_tbl() ----
   poll_rpts_tbl <- reactivePoll(
-    # 10000, 
-    1000000, 
+    10000,
     session, # check every 10 seconds
     checkFunc = function() {
       email <- get_email()
-      if (is.null(email)) 
+      if (is.null(email))
         return("")
       lastmod <- get_user_reports_last_modified(email)
-      #message(glue("poll_rpts_tbl({email}) {Sys.time()} -- lastmod: {lastmod}"))
+      # message(glue("poll_rpts_tbl({email}) {Sys.time()} -- lastmod: {lastmod}"))
       lastmod
       },
     valueFunc = function() {
       email <- get_email()
-      if (is.null(email)) 
+      if (is.null(email))
         return(rpts_0)
-      #message(glue("poll_rpts_tbl({email}) set value {Sys.time()}"))
+      # message(glue("poll_rpts_tbl({email}) set value {Sys.time()}"))
       values$rpts <- get_user_reports(email)
       values$rpts
     })
-  observe(poll_rpts_tbl())
+  #observe(poll_rpts_tbl()) # that was EVIL!
+  #poll_rpts_tbl <- get_user_reports("bdbest@gmail.com")
   
   #* get_rpts() ----
   get_rpts <- reactive({

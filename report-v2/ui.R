@@ -15,10 +15,11 @@ ui <- dashboardPage(
       navbarTab(tabName = "tab_pubs",    "Publications"),
       navbarTab(tabName = "tab_spatial", "Spatial"),
       navbarTab(tabName = "tab_rpt",     "Reports")),
-    shiny::tags$li(
-      googleSignInUI_btn_signin("login"), class = "dropdown"),
-    shinydashboardPlus::userOutput("user")
-    ),
+    #shiny::tags$li(
+      # googleSignInUI_btn_signin("login"), class = "dropdown"),
+    #shinydashboardPlus::userOutput("user")
+    # DEBUG
+    shiny::tags$li(googleSignInUI("login"), class = "dropdown")),
 
   #* sidebar ----
   dashboardSidebar(
@@ -215,10 +216,7 @@ ui <- dashboardPage(
         tabName = "tab_spatial",
         div("Filters by:", 
             icon("tags"), 
-            span(class="me-tag me-technology", "Technology"),
-            span(class="me-tag me-stressor",   "Stressor"),
-            span(class="me-tag me-receptor",   "Receptor"),
-            span(class="me-tag me-phase",      "Phase")),
+            span(class="me-tag me-receptor",   "Receptor")),
         helpText(
           "Spatial intersections are displayed here between the location drawn and datasets loaded from", a("MarineCadastre.gov ", 
                    href="https://MarineCadastre.gov"),
