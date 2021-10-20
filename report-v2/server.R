@@ -691,8 +691,8 @@ server <- function(input, output, session) {
         </span>"))
   })
   
-  #* poll_rpts_tbl() ----
-  poll_rpts_tbl <- reactivePoll(
+  #* get_rpts_tbl() ----
+  get_rpts_tbl <- reactivePoll(
     10000,
     session, # check every 10 seconds
     checkFunc = function() {
@@ -711,22 +711,11 @@ server <- function(input, output, session) {
       values$rpts <- get_user_reports(email)
       values$rpts
     })
-  #observe(poll_rpts_tbl()) # that was EVIL!
-  #poll_rpts_tbl <- get_user_reports("bdbest@gmail.com")
-  
-  #* get_rpts() ----
-  get_rpts <- reactive({
-    email       <- get_email()
-    #message(glue("get_rpts() email: {email}"))
-    values$rpts <- get_user_reports(email)
-    values$rpts
-  })
-  observe(get_rpts())
-  
+
   #* tbl_rpts ----
   output$tbl_rpts = renderDT({
     
-    get_rpts() %>% 
+    get_rpts_tbl() %>% 
       # get_user_reports("ben@ecoquants.com") %>% 
       # arrange(desc(date)) %>% 
       mutate(
@@ -817,7 +806,7 @@ server <- function(input, output, session) {
     irows <- input$tbl_rpts_rows_selected
     email <- isolate(get_email())
     
-    rpts_del <- get_rpts() %>% 
+    rpts_del <- get_rpts_tbl() %>% 
       slice(irows) %>% 
       pull(url) %>% 
       basename()
