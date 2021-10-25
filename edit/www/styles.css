@@ -39,35 +39,35 @@
    colors for Stressor - Receptor; color-blind safe purple-green from https://colorbrewer2.org/#type=diverging&scheme=PiYG&n=11 */
 
 /* selectize input controls*/
-.selectize-control.multi .selectize-input > div[data-value^='Technology.'] { 
+.selectize-control.multi .selectize-input > div[data-value^='Technology'] { 
   color: #333333;
   background-color: #d1e5f0; /*light blue*/
   border-color: transparent;
 }
-.selectize-control.multi .selectize-input > div[data-value^='Receptor.'] { 
+.selectize-control.multi .selectize-input > div[data-value^='Receptor'] { 
   color: #333333;
   background-color: #e6f5d0; /*light green*/
   border-color: transparent;
 }
-.selectize-control.multi .selectize-input > div[data-value^='Stressor.'] { 
+.selectize-control.multi .selectize-input > div[data-value^='Stressor'] { 
   /* .btn-danger  */
   color: #333333;
   background-color: #fde0ef; /*light pink*/
   border-color: transparent;
 }
-.selectize-control.multi .selectize-input > div[data-value^='Management.'] { 
+.selectize-control.multi .selectize-input > div[data-value^='Management'] { 
   /* .btn-secondary */
   color: #333333;
   background-color: #d8daeb; /*light purple*/
   border-color: transparent;
 }
-.selectize-control.multi .selectize-input > div[data-value^='Phase.'] { 
+.selectize-control.multi .selectize-input > div[data-value^='Phase'] { 
   /* .btn-secondary */
   color: #333333;
   background-color: #efefef; /*light gray*/
   border-color: transparent;
 }
-.selectize-control.multi .selectize-input > div[data-value^='Consequence.'] { 
+.selectize-control.multi .selectize-input > div[data-value^='Consequence'] { 
   /* .btn-secondary */
   color: #333333;
   background-color: #f5f2d0; /*light yellow*/
@@ -75,26 +75,26 @@
 }
 
 /* selectize dropdown option controls*/
-.selectize-dropdown-content .active[data-value^='Technology.'] {
+.selectize-dropdown-content .active[data-value^='Technology'] {
   background: #bcced8 !important;
 }
 .selectize-dropdown-content .active[data-value^='Receptor'] {
   background: #cfdcbb !important;
 }
-.selectize-dropdown-content .active[data-value^='Stressor.'] {
+.selectize-dropdown-content .active[data-value^='Stressor'] {
   background: #e3c9d7 !important;
 }
-.selectize-dropdown-content .active[data-value^='Management.'] {
+.selectize-dropdown-content .active[data-value^='Management'] {
   background: #c2c4d3 !important;
 }
-.selectize-dropdown-content .active[data-value^='Phase.'] {
+.selectize-dropdown-content .active[data-value^='Phase'] {
   background: #d7d7d7 !important;
 }
-.selectize-dropdown-content .active[data-value^='Consequence.'] {
+.selectize-dropdown-content .active[data-value^='Consequence'] {
   background: #c4c1a6 !important;
 }
 
-.option[data-value^='Technology.'] { 
+.option[data-value^='Technology'] { 
   color: #333333;
   background-color: #d1e5f0; /*light blue*/
   border-color: transparent;
@@ -103,7 +103,7 @@
   padding: 2px 10px 2px 10px;
   box-sizing: border-box;
 }
-.option[data-value^='Receptor.'] { 
+.option[data-value^='Receptor'] { 
   color: #333333;
   background-color: #e6f5d0; /*light green*/
   border-color: transparent;
@@ -112,7 +112,7 @@
   padding: 2px 10px 2px 10px;
   box-sizing: border-box;
 }
-.option[data-value^='Stressor.'] { 
+.option[data-value^='Stressor'] { 
   /* .btn-danger  */
   color: #333333;
   background-color: #fde0ef; /*light pink*/
@@ -122,7 +122,7 @@
   padding: 2px 10px 2px 10px;
   box-sizing: border-box;
 }
-.option[data-value^='Management.'] { 
+.option[data-value^='Management'] { 
   /* .btn-secondary */
   color: #333333;
   background-color: #d8daeb; /*light purple*/
@@ -132,7 +132,7 @@
   padding: 2px 10px 2px 10px;
   box-sizing: border-box;
 }
-.option[data-value^='Phase.'] { 
+.option[data-value^='Phase'] { 
   /* .btn-secondary */
   color: #333333;
   background-color: #efefef; /*light gray*/
@@ -142,7 +142,7 @@
   padding: 2px 10px 2px 10px;
   box-sizing: border-box;
 }
-.option[data-value^='Consequence.'] { 
+.option[data-value^='Consequence'] { 
   /* .btn-secondary */
   color: #333333;
   background-color: #f5f2d0; /*light yellow*/

@@ -10,11 +10,13 @@ source(file.path(dir_scripts, "update.R"))
 # LIBRARIES ----
 # devtools::install_github("DavidPatShuiFong/DTedit@f1617e253d564bce9b2aa67e0662d4cf04d7931f")
 shelf(
-  DavidPatShuiFong/DTedit, 
+  bbest/DTedit, # DavidPatShuiFong/DTedit, # [@bbest pr](https://github.com/DavidPatShuiFong/DTedit/pull/35)
   DBI, DT, 
   glue, purrr, readr, tidyr,
   shiny, shinycssloaders)
-#devtools::load_all("/share/github/DTedit")
+#devtools::load_all("/share/github/DTedit") 
+#devtools::install_local("/share/github/DTedit") # value <- ifelse(is.na(value), FALSE, value) # FIXES ERROR if NA: missing value where TRUE/FALSE needed
+options(readr.show_col_types = FALSE)
 
 # launch with reactlog
 #   library(reactlog); reactlog_enable(); app <- runApp(here::here("edit"))
