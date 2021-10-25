@@ -404,7 +404,7 @@ server <- function(input, output, session) {
   
   #* get_spatial() ----
   get_spatial <- reactive({
-    #browser()
+    
     d <- d_spatial 
     # d <- d_spatial %>% collect() %>% tibble()
     if (length(values$ixns) > 0){
@@ -415,27 +415,26 @@ server <- function(input, output, session) {
     }
     d <- d_to_tags_html(d)
     
-    # # area of interest (user input)
-    # aoi_wkt <- ifelse(
-    #   !is.null(crud()$finished), 
-    #   crud()$finished %>% pull(geometry) %>% sf::st_as_text(),
-    #   NULL)
-    # 
-    # # spatial query / intersection based on aoi
-    # d <- d %>%  
-    #   filter(ready) %>% 
-    #   # replace_na(list(buffer_km = 0)) %>% 
-    #   mutate(
-    #     data = map(
-    #       code, get_spatial_intersection,  
-    #       aoi_wkt = aoi_wkt, output = "tibble"))
+    # area of interest (user input)
+    aoi_wkt <- ifelse(
+      !is.null(crud()$finished),
+      crud()$finished %>% pull(geometry) %>% sf::st_as_text(),
+      NULL)
     
-    # TODO: run the spatial query based on Location if present; see tblSpatial (OLD) 
-    d %>% 
+    # browser()
+    
+    # spatial query / intersection based on aoi
+    d %>%
+      # filter(ready) %>%                    # duplicative with get_spatial_intersection()?
+      # replace_na(list(buffer_km = 0)) %>%  # "
       mutate(
-        Title = as.character(glue("{title} (Source: <a href='{src_url}'>{src_name}</a>)")))
+        Title = as.character(glue("{title} (Source: <a href='{src_url}'>{src_name}</a>)")),
+        sp_data = map(code, get_spatial_intersection, aoi_wkt = aoi_wkt)) # , output = "tibble"    
+    
+    # TODO: - [ ] get to work when d's nrow == 0
+    #       - [ ] ixn != fish
   })
-  
+    
   #* box_spatial ----
   output$box_spatial <- renderText({
     n_ixns    <- length(values$ixns)
@@ -447,211 +446,22 @@ server <- function(input, output, session) {
       HTML(glue("MarineCadastre Spatial datasets <small>({n_spatial} of {d_spatial_n} rows; filtered by {n_ixns} interactions)</small>")))
   })
   
+
   #* tbl_spatial ----
   output$tbl_spatial <- renderDataTable({
-    # browser()
-    
-   
-   
-    # TODO: we want to filter d_sp by aoi_wkt
-    # if (is.null(crud()$finished)){
-    #   aoi_wkt <- NULL
-    # } else if (!is.null(crud()$finished)) {
-    #   aoi_wkt <- crud()$finished %>% pull(geometry) %>% sf::st_as_text()
-    # }
-    
     d <- get_spatial() %>% 
-      filter(ready) %>% 
-      select(ID, Title, Tags)
-      
-      # replace_na(list(buffer_km = 0)) %>% 
-      # mutate(
-      #   data = map(
-      #     code, get_spatial_intersection,  
-      #     aoi_wkt = aoi_wkt, output = "tibble")) %>% 
-      # #select(-uri, -title, -tag)
-      # select(ID, Title, Tags, data) %>% 
-      # mutate(
-      #   Title = as.character(Title))
+      # filter(ready) %>% # TODO: move to d_spatial in global.R
+      select(ID, Title, Tags, sp_data)
+    }, 
 
-      
-    
+    escape = F, 
+    rownames = F
+    )
+    # TODO: 'expand data' buttons for each row which, when clicked result in the corresponding sp_data being displayed as a df
 
-    
-    
-    # get spatial receptors
-    # spatial_receptors <- vals$queries_lit %>% 
-    #   mutate(
-    #     q = pmap(., function(Receptors, ...){
-    #       keys <- c(Receptors) %>% 
-    #         str_replace_all('"', '') %>%
-    #         na_if("") %>% 
-    #         na.omit()
-    #       paste(keys, collapse = " AND ") })) %>% 
-    #   pull(q) %>% 
-    #   as.character()
-
-
-    
-
-    
-    
-    
-    
-    
-    # SPATIAL QUERY: filter d_sp by aoi_wkt
-    # datasets <- tbl(con, "datasets") %>% collect() %>%
-    #   filter(ready) %>% 
-    #   replace_na(list(buffer_km = 0)) %>% 
-    #   select(-notes, -issues) %>% 
-    #   separate_rows(tags, sep = ";") %>% 
-    #   rename(tag = tags) %>% 
-    #   mutate(
-    #     tag = str_trim(tag)) %>% 
-    #   filter(
-    #     tag %in% spatial_receptors) %>%  # filter by tag (done already)
-    #   arrange(tag, title) %>% 
-    #   mutate(
-    #     data      = map(
-    #       code, 
-    #       tabulate_dataset_shp_within_aoi, 
-    #       aoi_wkt = aoi_wkt, output = "tibble"),
-    #     # datasets1 <- datasets
-    #     # datasets2 <- datasets1 %>% 
-    #     #   mutate(
-    #     data_nrow = map_int(data, nrow),
-    #     Title     = map2_chr(
-    #       title, src_url,
-    #       function(x, y)
-    #         glue("<a href={y} target='_blank'>{x}</a>")),
-    #     Title     = ifelse(
-    #       buffer_nm > 0,
-    #       glue("{Title} [within {buffer_nm} nm of Location]"),
-    #       Title)) %>% 
-    #   select(
-    #     Title,
-    #     `Rows of Results` = data_nrow) %>% 
-    #   arrange(Title)
-    
     d
   }, escape = F, rownames = F)
-  
-  
-  #* tblSpatial (OLD) ----
-  output$tblSpatial <- renderDT({
-    
-    req(vals$queries_lit)
-    
-    message("output$tblSpatial")
-    
-    if (is.null(crud()$finished)){
-      aoi_wkt <- NULL
-    } else {
-      aoi_wkt <- crud()$finished %>% pull(geometry) %>% st_as_text()
-    }
-    
-    if (nrow(vals$queries_lit) == 0 || is.null(aoi_wkt)){
-      dt_empty <- tibble(
-        message = "Please Configure Tags and Locations to see results here") %>%
-        datatable(rownames = F, options = list(dom = 't'))
-      
-      return(dt_empty)
-    }
-    
-    # receptors <- vals$queries_lit %>% 
-    #   pull(Receptors) %>% 
-    #   unique() %>% 
-    #   sort()
-     
-    # vals$queries_lit: report/server.R line 39
-    spatial_receptors <- vals$queries_lit %>% 
-      mutate(
-        q = pmap(., function(Receptors, ...){
-          keys <- c(Receptors) %>% 
-            str_replace_all('"', '') %>%
-            na_if("") %>% 
-            na.omit()
-          paste(keys, collapse = " AND ") })) %>% 
-      pull(q) %>% 
-      as.character()
-    
-    # receptors = c("Marine Mammals", "Fish")
-    # aoi_wkt = "POLYGON ((-122.6833 32.35398, -122.6833 35.31737, -116.1166 35.31737, -116.1166 32.35398, -122.6833 32.35398))"
-    # 
-    # datasets <- tbl(con, "datasets") %>% 
-    #   collect() %>%
-    #   filter(ready) %>% 
-    #   replace_na(list(buffer_km = 0)) %>% 
-    #   select(-notes, -issues) %>% 
-    #   separate_rows(tags, sep = ";") %>% 
-    #   rename(tag = tags) %>% 
-    #   mutate(
-    #     tag = str_trim(tag)) %>% 
-    #   filter(
-    #     tag %in% receptors) %>% 
-    #   arrange(tag, title) %>% 
-    #   mutate(
-    #     data      = map(
-    #       code, 
-    #       tabulate_dataset_shp_within_aoi, 
-    #       aoi_wkt = aoi_wkt, output = "tibble"),
-    #     data_nrow = map_int(data, nrow),
-    #     Title     = map2_chr(
-    #       title, src_url,
-    #       function(x, y)
-    #         glue("<a href={y} target='_blank'>{x}</a>")),
-    #     Title     = ifelse(
-    #       buffer_nm > 0,
-    #       glue("{Title} [within {buffer_nm} nm of Location]"),
-    #       Title)) %>% 
-    #   select(
-    #     Title,
-    #     `Rows of Results` = data_nrow) %>% 
-    #   arrange(Title)
-    
-    # spatial_receptors = c("Marine Mammals", "Fish")
-    # aoi_wkt = "POLYGON ((-122.6833 32.35398, -122.6833 35.31737, -116.1166 35.31737, -116.1166 32.35398, -122.6833 32.35398))"
-    #
-    #browser()
-    datasets <- tbl(con, "datasets") %>% 
-      collect() %>%
-      filter(ready) %>% 
-      replace_na(list(buffer_km = 0)) %>% 
-      select(-notes, -issues) %>% 
-      separate_rows(tags, sep = ";") %>% 
-      rename(tag = tags) %>% 
-      mutate(
-        tag = str_trim(tag)) %>% 
-      filter(
-        tag %in% spatial_receptors) %>% 
-      arrange(tag, title) %>% 
-      mutate(
-        data      = map(
-          code, 
-          tabulate_dataset_shp_within_aoi, 
-          aoi_wkt = aoi_wkt, output = "tibble"),
-        # datasets1 <- datasets
-        # datasets2 <- datasets1 %>% 
-        #   mutate(
-        data_nrow = map_int(data, nrow),
-        Title     = map2_chr(
-          title, src_url,
-          function(x, y)
-            glue("<a href={y} target='_blank'>{x}</a>")),
-        Title     = ifelse(
-          buffer_nm > 0,
-          glue("{Title} [within {buffer_nm} nm of Location]"),
-          Title)) %>% 
-      select(
-        Title,
-        `Rows of Results` = data_nrow) %>% 
-      arrange(Title)
-    
-    # TODO: nest spatial dataset results as sub-tables
-    #   https://stackoverflow.com/questions/55058126/multiple-child-tables-in-dt-datatable#answer-56486534
-    datatable(datasets, escape = F)
-    
-  })
+
   
   # reports ----
   

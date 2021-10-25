@@ -51,19 +51,23 @@ get_tags_html <- function(rid, tbl_tags = "ferc_doc_tags"){
 
 
 # spatial 
-# will map across rows of d 
-get_spatial_intersection <- function(dataset_code, aoi_wkt, output = "tibble"){
-  librarian::shelf(sf)
+# will map across rows of d ('code')
+get_spatial_intersection <- function(dataset_code, aoi_wkt){
+  librarian::shelf(glue, sf)
   # summarize shapefile dataset from area of interest, with temporary in-memory query
  
   # TODO: pull latest datasets: https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=936111013
   # datasets_gsheet2db(redo = T)
+
   
-  # dataset_code = "cetacean-bia"; aoi_wkt = params$aoi_wkt
+  # test vals
+  # dataset_code = "cetacean-bia"
+  # aoi_wkt = "POLYGON ((-105.9082 22.73295, -105.9082 35.65492, -70.13672 35.65492, -70.13672 22.73295, -105.9082 22.73295))"
+  # aoi_wkt = params$aoi_wkt
     
   # test values: 
-  # dataset_code <- "efh"
-  # aoi_wkt <- "POLYGON ((-104.7656 22.97593, -104.7656 41.15991, -77.87109 41.15991, -77.87109 22.97593, -104.7656 22.97593))" 
+  # dataset_code <- "gloria"
+  # aoi_wkt <- "POLYGON ((-104.7656 22.97593, -104.7656 41.15991, -77.87109 41.15991, -77.87109 22.97593, -104.7656 22.97593))"
   # NOTES:
   {   
   # aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
@@ -93,44 +97,42 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt, output = "tibble"){
   if (is.null(aoi_wkt)) {
     return("Please draw a location to get a summary of the intersecting features for this dataset.")
   }
-    
-  ds <- tbl(con, "mc_spatial") %>% 
-    filter(code == !!dataset_code) %>%  # will map across dataset_code fld of d
-    replace_na(list(buffer_nm = 0)) %>% 
-    collect()
   
-  # if aoi > 1 plygn
-  if (length(aoi_wkt) > 1){
-    aoi_wkts <- glue("'SRID=4326;{aoi_wkt}'::geometry")
-    aoi_sql  <- glue("ST_COLLECT(\n{paste(aoi_wkts, collapse=',\n')})") # Is this recreating the ST_COLLECT statement
-    # for every item in <aoi_wkt> array?
-  # if aoi = 1 plygn
-  } else {
-    # aoi_sql <- glue("'SRID=4326;{aoi_wkt}'")
+  ds <- tbl(con, "mc_spatial") %>% 
+    collect() %>% 
+    filter(code == !!dataset_code) %>%  # will map across dataset_code fld of d
+    filter(ready) %>% 
+    replace_na(list(buffer_nm = 0)) %>% 
+    # mutate(buffer_nm = 0) %>% # TEST EFFECTS OF THIS
+    mutate(
+      st_intersection = ifelse(
+        is.na(st_intersection), 
+        as.logical('FALSE'), 
+        st_intersection))
+  
+  if (length(aoi_wkt) <= 1) {
     aoi_sql <- glue("'SRID=4326;{aoi_wkt}'::geometry")
+  } else if (length(aoi_wkt > 1)) {
+    aoi_wkts <- glue("'SRID=4326;{aoi_wkt}'::geometry")
+    aoi_sql  <- glue("ST_COLLECT(\n{paste(aoi_wkts, collapse=',\n')})") 
   }
   
-  # Different set of queries required for data sets that do or
-  #   do not need area weighted statistics 
-  
-  # if area weighted statistics ARE required
-  if (ds$st_intersection == T){    
-    ixn_sql <- str_replace(
-      {ds$select_sql}, 'geometry', 
-      'geometry, st_intersection(ds.geometry, buf_aoi.geom) as ixn ')
+  if (ds$st_intersection){
+    # Area weighted statistics ARE required
+    ixn_sql <- str_replace({ds$select_sql}, 'geometry', 'geometry, st_intersection(ds.geometry, buf_aoi.geom) as ixn ')
     
-    # if a summarize_sql query exists
     if (!is.na(ds$summarize_sql)){
-      x_df <- dbGetQuery(con, glue("
-        with
-          buf_aoi as (
-            select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom),
-          tmp_aoi as (
-            {ixn_sql} as ds, buf_aoi
-            where st_intersects(ds.geometry, buf_aoi.geom))
-          {ds$summarize_sql}
-        "))
-    # if no summarize sql query
+      x_df <- dbGetQuery(
+        con,
+        glue("
+          with
+            buf_aoi as (
+              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom),
+            tmp_aoi as (
+              {ixn_sql} as ds, buf_aoi
+              where st_intersects(ds.geometry, buf_aoi.geom))
+            {ds$summarize_sql}
+          "))
     } else {
       x_sf <- st_read(
         con, 
@@ -147,7 +149,8 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt, output = "tibble"){
         eval(parse(text=ds$summarize_r))
     }
     
-  } else { # Area weighted statistics NOT required: if(ds$st_intersection != T)
+  } else {
+    # Area weighted statistics NOT required
     if (!is.na(ds$summarize_sql)){
       x_df <- dbGetQuery(
         con, glue("
@@ -161,7 +164,7 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt, output = "tibble"){
            "))
     } else {
       x_sf <- st_read(
-        con, glue("
+        con, query = glue("
           with 
             buf_aoi as (
               select ST_BUFFER({aoi_sql}, {ds$buffer_nm} * 1852) as geom)
@@ -175,9 +178,93 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt, output = "tibble"){
     }
   }
   
-  x_df
+  
+  
+  
+  # Different set of queries required for data sets that do or
+  #   do not need area weighted statistics 
+  
+  # if area weighted statistics ARE required
+  # if (ds$st_intersection == T) {    
+  #   ixn_sql <- str_replace(
+  #     {ds$select_sql}, 'geometry', 
+  #     'geometry, st_intersection(ds.geometry, buf_aoi.geom) as ixn ')
+  #   
+  #   # if a summarize_sql query exists
+  #   if (!is.na(ds$summarize_sql)){
+  #     x_df <- dbGetQuery(con, glue("
+  #       with
+  #         buf_aoi as (
+  #           select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom),
+  #         tmp_aoi as (
+  #           {ixn_sql} as ds, buf_aoi
+  #           where st_intersects(ds.geometry, buf_aoi.geom))
+  #         {ds$summarize_sql}
+  #       "))
+  #   # if no summarize sql query
+  #   } else {
+  #     x_sf <- st_read(
+  #       con, 
+  #       glue("
+  #         with
+  #           buf_aoi as (
+  #             select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom)
+  #           {ixn_sql} as ds, buf_aoi
+  #           where st_intersects(ds.geometry, buf_aoi.geom)
+  #         "))
+  #     x_df <- st_drop_geometry(x_sf)
+  #     
+  #     if (!is.na(ds$summarize_r))
+  #       eval(parse(text=ds$summarize_r))
+  #   }
+  #   
+  # } else { # Area weighted statistics NOT required: if(ds$st_intersection != T)
+  #   if (!is.na(ds$summarize_sql)){
+  #     x_df <- dbGetQuery(
+  #       con, glue("
+  #         with 
+  #           buf_aoi as (
+  #             select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom ),
+  #           tmp_aoi as (
+  #             {ds$select_sql} as ds
+  #             inner join buf_aoi on st_intersects(ds.geometry, buf_aoi.geom) )
+  #          {ds$summarize_sql}
+  #          "))
+  #   } else {
+  #     x_sf <- st_read(
+  #       con, glue("
+  #         with 
+  #           buf_aoi as (
+  #             select ST_BUFFER({aoi_sql}, {ds$buffer_nm} * 1852) as geom)
+  #           {ds$select_sql} as ds
+  #           inner join buf_aoi on st_intersects(ds.geometry, buf_aoi.geom )
+  #           "))
+  #     x_df <- st_drop_geometry(x_sf)
+  #     
+  #     if (!is.na(ds$summarize_r))
+  #       eval(parse(text=ds$summarize_r))
+  #   }
+  # }
+  
+  x_df %>% collect() %>% tibble()
 }
   
+# dataset_code <- "oil-gas-wells"
+dataset_code <- "cetacean-pacific-summer"
+aoi_wkt <- "POLYGON ((-104.7656 22.97593, -104.7656 41.15991, -77.87109 41.15991, -77.87109 22.97593, -104.7656 22.97593))"
+# testing get_spatial_intersection()
+test_df<-get_spatial_intersection(dataset_code = dataset_code, aoi_wkt = aoi_wkt) 
+
+# testing mapping get_spatial_intersection()
+# spatial query / intersection based on aoi
+# vals$ixns <- list(
+#   c("Receptor.Birds.Passerines", 
+#     "Stressor.BehavioralInteraction"))
+
+
+
+
+
 
  # from analyze_spatial.Rmd -----
 tabulate_dataset_shp_within_aoi3 <- function(dataset_code, aoi_wkt, output = "kable"){
@@ -309,7 +396,8 @@ tabulate_dataset_shp_within_aoi3 <- function(dataset_code, aoi_wkt, output = "ka
 
 get_rowids_with_ixn <- function(db_tbl, ixn){
   # db_tbl = "tethys_mgt_tags"; ixn = c("Receptor.Fish", "Stressor.PhysicalInteraction.Collision")
-  
+  # db_tbl = "mc_spatial_tags"; ixn = values$ixns %>% unlist()
+  # ixn = list(c(""Receptor.Birds","Stressor.HabitatChange"))
   sql <- glue("SELECT rowid FROM {db_tbl} WHERE tag_sql ~ '{ixn}.*'") %>% 
     paste(collapse = "\nINTERSECT\n")
   DBI::dbGetQuery(con, sql) %>% 
