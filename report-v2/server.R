@@ -403,7 +403,7 @@ server <- function(input, output, session) {
   
   #* get_spatial() ----
   get_spatial <- reactive({
-    browser()
+    
     d <- d_spatial 
     # d <- d_spatial %>% collect() %>% tibble()
     if (length(values$ixns) > 0){
@@ -414,33 +414,28 @@ server <- function(input, output, session) {
     }
     d <- d_to_tags_html(d)
     
+    
     # area of interest (user input)
     aoi_wkt <- ifelse(
-      !is.null(crud()$finished), 
+      !is.null(crud()$finished),
       crud()$finished %>% pull(geometry) %>% sf::st_as_text(),
       NULL)
     
+    # browser()
     # spatial query / intersection based on aoi
-    d <- d %>%  
-      filter(ready) %>% 
-      # replace_na(list(buffer_km = 0)) %>% 
+    
+    d %>%
       mutate(
-        data = map(
-          code, get_spatial_intersection,  
-          aoi_wkt = aoi_wkt, output = "tibble"))
+        Title = as.character(glue("{title} (Source: <a href='{src_url}'>{src_name}</a>)")),
+        sp_data = map(d$code, get_spatial_intersection, aoi_wkt = aoi_wkt))
     
-    
-    
-    
-    
-    
-    
-    # TODO: run the spatial query based on Location if present; see tblSpatial (OLD) 
-    d %>% 
-      mutate(
-        Title = glue("{title} (Source: <a href='{src_url}'>{src_name}</a>)"))
+    #try ixn = fish
+    # this code only works when d has nrow > 0
+ 
+    # d %>% 
+    #   mutate(Title = as.character(glue("{title} (Source: <a href='{src_url}'>{src_name}</a>)")))
   })
-  
+    
   #* box_spatial ----
   output$box_spatial <- renderText({
     n_ixns    <- length(values$ixns)
@@ -452,95 +447,22 @@ server <- function(input, output, session) {
       HTML(glue("MarineCadastre Spatial datasets <small>({n_spatial} of {d_spatial_n} rows; filtered by {n_ixns} interactions)</small>")))
   })
   
+    
+  
+
   #* tbl_spatial ----
   output$tbl_spatial <- renderDataTable({
-    # browser()
-    
-   
-   
-    # TODO: we want to filter d_sp by aoi_wkt
-    # if (is.null(crud()$finished)){
-    #   aoi_wkt <- NULL
-    # } else if (!is.null(crud()$finished)) {
-    #   aoi_wkt <- crud()$finished %>% pull(geometry) %>% sf::st_as_text()
-    # }
-    
     d <- get_spatial() %>% 
       filter(ready) %>% 
-      replace_na(list(buffer_km = 0)) %>% 
-      mutate(
-        data = map(
-          code, get_spatial_intersection,  
-          aoi_wkt = aoi_wkt, output = "tibble")) %>% 
-      #select(-uri, -title, -tag)
-      select(ID, Title, Tags, data) %>% 
-      mutate(
-        Title = as.character(Title))
+      select(ID, Title, Tags, sp_data)
+    }, 
 
-      
-    
-
-    
-    
-    # get spatial receptors
-    # spatial_receptors <- vals$queries_lit %>% 
-    #   mutate(
-    #     q = pmap(., function(Receptors, ...){
-    #       keys <- c(Receptors) %>% 
-    #         str_replace_all('"', '') %>%
-    #         na_if("") %>% 
-    #         na.omit()
-    #       paste(keys, collapse = " AND ") })) %>% 
-    #   pull(q) %>% 
-    #   as.character()
+    escape = F, 
+    rownames = F
+    )
+  # TO-DO: 'expand data' buttons for each row which, when clicked result in the corresponding sp_data being displayed as a df
 
 
-    
-
-    
-    
-    
-    
-    
-    # SPATIAL QUERY: filter d_sp by aoi_wkt
-    # datasets <- tbl(con, "datasets") %>% collect() %>%
-    #   filter(ready) %>% 
-    #   replace_na(list(buffer_km = 0)) %>% 
-    #   select(-notes, -issues) %>% 
-    #   separate_rows(tags, sep = ";") %>% 
-    #   rename(tag = tags) %>% 
-    #   mutate(
-    #     tag = str_trim(tag)) %>% 
-    #   filter(
-    #     tag %in% spatial_receptors) %>%  # filter by tag (done already)
-    #   arrange(tag, title) %>% 
-    #   mutate(
-    #     data      = map(
-    #       code, 
-    #       tabulate_dataset_shp_within_aoi, 
-    #       aoi_wkt = aoi_wkt, output = "tibble"),
-    #     # datasets1 <- datasets
-    #     # datasets2 <- datasets1 %>% 
-    #     #   mutate(
-    #     data_nrow = map_int(data, nrow),
-    #     Title     = map2_chr(
-    #       title, src_url,
-    #       function(x, y)
-    #         glue("<a href={y} target='_blank'>{x}</a>")),
-    #     Title     = ifelse(
-    #       buffer_nm > 0,
-    #       glue("{Title} [within {buffer_nm} nm of Location]"),
-    #       Title)) %>% 
-    #   select(
-    #     Title,
-    #     `Rows of Results` = data_nrow) %>% 
-    #   arrange(Title)
-    
-    
-    
-    
-
-  }, escape = F, rownames = F)
   
   
   #* tblSpatial (OLD) ----
