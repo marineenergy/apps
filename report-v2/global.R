@@ -11,7 +11,7 @@ source(file.path(dir_scripts, "shiny_report.R"))
 # devtools::install_github("RinteRface/shinydashboardPlus@4f23ece8c1ab50ae8e9505400ea7c266c6a04731") # Dec 7, 2020
 librarian::shelf(
   DT, r-lib/gargle, MarkEdmondson1234/googleAuthR, htmltools, httr, jsonlite, leaflet, mapedit, plotly, purrr,
-  shinydashboard, RinteRface/shinydashboardPlus, shiny, shinycssloaders, shinyjs, shinyWidgets)
+  sf, shinydashboard, RinteRface/shinydashboardPlus, shiny, shinycssloaders, shinyjs, shinyWidgets)
 # devtools::session_info() # confirm versions, esp shinydashboardPlus
 # library(reactlog)
 # reactlog_enable()
@@ -221,15 +221,6 @@ googleSignInUI_btn_signout <- function(id, logout_name = "Sign Out", logout_clas
     tags$button(id = ns("signout"), logout_name, onclick = "signOut();", class = logout_class))
 }
 
-
-# map_edit ----
-map_edit <- leaflet(
-  options = leafletOptions(
-    zoomControl = T,
-    attributionControl = F)) %>% 
-  addProviderTiles(providers$Esri.OceanBasemap) %>% 
-  setView(-93.4, 37.4, 4)
-
 # projects ----
 load_projects()
 
@@ -261,10 +252,12 @@ d_pubs_n <- tbl(con, "tethys_pubs") %>% summarize(n = n()) %>% pull(n)
 
 # spatial ----
 d_spatial <- tbl(con, "mc_spatial") %>% 
+  filter(ready) %>%
   left_join(
     tbl(con, "mc_spatial_tags"),
     by = "rowid") %>% 
-  distinct_all()
+  distinct_all() %>% 
+  arrange(title)
 d_spatial_n <- tbl(con, "mc_spatial") %>% summarize(n = n()) %>% pull(n)
 
 # reports ----

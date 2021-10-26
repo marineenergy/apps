@@ -571,6 +571,7 @@ update_tethys_pubs <- function(){
 }
 
 update_spatial <- function(){
+  librarian::shelf(readr)
   # update db tables: spatial, spatial_tags; data/mc_spatial.csv
   
   # [spatial | marineenergy.app - Google Sheets](https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=936111013)
