@@ -92,7 +92,7 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
   # aoi_wkt='POLYGON ((-180.0668 16.98081, -180.0668 29.87807, -153.4797 29.87807, -153.4797 16.98081, -180.0668 16.98081))'
   }
   
-  message(glue("tab..._shp_within_aoi(dataset_code='{dataset_code}', aoi_wkt='{paste(aoi_wkt, collapse=';')}')"))
+  message(glue("get_spatial_intersection(dataset_code='{dataset_code}', aoi_wkt='{paste(aoi_wkt, collapse=';')}')"))
   
   if (is.null(aoi_wkt)) {
     return("Please draw a location to get a summary of the intersecting features for this dataset.")
@@ -104,22 +104,54 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
     filter(ready) %>% 
     replace_na(list(buffer_nm = 0)) %>% 
     # mutate(buffer_nm = 0) %>% # TEST EFFECTS OF THIS
-    mutate(
-      st_intersection = ifelse(
-        is.na(st_intersection), 
-        as.logical('FALSE'), 
-        st_intersection))
+    mutate(across(st_intersection, function(x) ifelse(is.na(x), F, x)))
+      # st_intersection = ifelse( # TODO: fix spatial data
+      #   is.na(st_intersection), 
+      #   as.logical('FALSE'), 
+      #   st_intersection))
   
-  if (length(aoi_wkt) <= 1) {
+  #browser()
+  if (is.null(aoi_wkt) | is.na(aoi_wkt)){
+    # if no Location
+    #aoi_sql <- glue("'ST_MakeEnvelope(-180,-90,180,90,4326)'::geometry")
+    aoi_sql <- "world"
+  } else if (length(aoi_wkt) == 1) {
+    # if 1 Location
     aoi_sql <- glue("'SRID=4326;{aoi_wkt}'::geometry")
   } else if (length(aoi_wkt > 1)) {
+    # if >1 Location
     aoi_wkts <- glue("'SRID=4326;{aoi_wkt}'::geometry")
     aoi_sql  <- glue("ST_COLLECT(\n{paste(aoi_wkts, collapse=',\n')})") 
+  }
+  #browser()
+  
+  if (aoi_sql == "world"){
+    #browser()
+    
+    #if(dataset_code == "oil-gas-wells") browser()
+    # ds$select_sql %>% str_replace_all(",\\W*geometry", "") %>% cat()
+    # ∆ summarize_sql: +"as X" b/c ERROR:  subquery in FROM must have an alias
+    # coastal-channels
+    # column "geom" does not exist
+    # LINE 13:         st_force2d(geom) as geometry
+    
+    #x_ds <- st_read(con, query = glue(ds$select_sql))
+    # get non-spatial entirety of table
+    #x_df <- dbGetQuery(con, ds$select_sql %>% str_replace_all(",\\W*geometry", "")) %>% tibble()
+    x_df <- dbGetQuery(con, ds$select_sql_nogeom) %>% tibble()
+    
+    if (!is.na(ds$summarize_r))
+      eval(parse(text=ds$summarize_r))
+    
+    return(x_df)
   }
   
   if (ds$st_intersection){
     # Area weighted statistics ARE required
     ixn_sql <- str_replace({ds$select_sql}, 'geometry', 'geometry, st_intersection(ds.geometry, buf_aoi.geom) as ixn ')
+    
+    
+    #if (dataset_code == 'ocs-lease-blk') browser()
     
     if (!is.na(ds$summarize_sql)){
       x_df <- dbGetQuery(
@@ -133,6 +165,7 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
               where st_intersects(ds.geometry, buf_aoi.geom))
             {ds$summarize_sql}
           "))
+      
     } else {
       x_sf <- st_read(
         con, 
@@ -250,10 +283,10 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
 }
   
 # dataset_code <- "oil-gas-wells"
-dataset_code <- "cetacean-pacific-summer"
-aoi_wkt <- "POLYGON ((-104.7656 22.97593, -104.7656 41.15991, -77.87109 41.15991, -77.87109 22.97593, -104.7656 22.97593))"
-# testing get_spatial_intersection()
-test_df<-get_spatial_intersection(dataset_code = dataset_code, aoi_wkt = aoi_wkt) 
+# dataset_code <- "cetacean-pacific-summer"
+# aoi_wkt <- "POLYGON ((-104.7656 22.97593, -104.7656 41.15991, -77.87109 41.15991, -77.87109 22.97593, -104.7656 22.97593))"
+# # testing get_spatial_intersection()
+# test_df<-get_spatial_intersection(dataset_code = dataset_code, aoi_wkt = aoi_wkt) 
 
 # testing mapping get_spatial_intersection()
 # spatial query / intersection based on aoi
