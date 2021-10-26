@@ -220,7 +220,7 @@ ui <- dashboardPage(
         helpText(
           "Spatial intersections are displayed here between the location drawn and datasets loaded from", a("MarineCadastre.gov ", 
                    href="https://MarineCadastre.gov"),
-          "of species, habitats and human uses as Receptor tags. [TODO: Run spatial intersection; only filtering by tags for now.]"),
+          "of species, habitats and human uses as Receptor tags."),
         fluidRow(
           box(
             title = uiOutput("box_spatial", inline=T), # TODO: figure out initial statement for spatial without Location or Tags

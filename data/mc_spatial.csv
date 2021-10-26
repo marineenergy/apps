@@ -1,0 +1,1607 @@
+rowid,code,ready,title,tags,buffer_nm,src_name,src_url,tbl_name,spatial_type,st_intersection,select_sql,select_sql_nogeom,summarize_r,summarize_sql
+1,cetacean-bia,TRUE,Biologically Important Areas for Cetaceans,Marine Mammals;Cetaceans,10,NOAA Fisheries,http://www.nmfs.noaa.gov/,shp_CetMap_BIA_WGS84,shp,NA,"SELECT 
+        cmn_name || ' (' || sci_name || ')' AS ""Species"", bia_type AS ""Behavior"", 
+        bia_time AS ""Time"", bia_name AS ""Place"", geometry 
+FROM 
+        ""shp_CetMap_BIA_WGS84""","SELECT 
+        cmn_name || ' (' || sci_name || ')' AS ""Species"", bia_type AS ""Behavior"", 
+        bia_time AS ""Time"", bia_name AS ""Place""
+FROM 
+        ""shp_CetMap_BIA_WGS84""",NA,NA
+2,efh,TRUE,Essential Fish Habitat,Fish,0,NOAA Fisheries,https://www.fisheries.noaa.gov/national/habitat-conservation/essential-fish-habitat,shp_nationwide_efh,shp,NA,"SELECT 
+        sitename_l, lifestage, geometry 
+FROM 
+        shp_nationwide_efh","SELECT 
+        sitename_l, lifestage
+FROM 
+        shp_nationwide_efh","x_df <- x_df %>% 
+    rename(Species = sitename_l) %>% 
+    group_by(Species) %>% 
+    summarize(
+      Lifestage = paste(lifestage, collapse = ', '),
+      .groups = 'drop')","SELECT 
+        sitename_l AS Species, string_agg(lifestage, ', ') AS Lifestage 
+FROM 
+        tmp_aoi 
+GROUP BY 
+        sitename_l
+ORDER BY
+        sitename_l, lifestage"
+3,shipping-lanes,TRUE,Shipping Lanes and Regulations,Navigation;Legal & Policy;Human Dimensions,5,NOAA Office of Coast Survey,http://www.nauticalcharts.noaa.gov/,shp_shippinglanes,shp,NA,"SELECT 
+        themelayer, objnam, inform, geometry 
+FROM 
+        shp_shippinglanes","SELECT 
+        themelayer, objnam, inform
+FROM 
+        shp_shippinglanes",NA,"SELECT 
+        themelayer as ""Area Designation"", objnam as ""Area Name"", 
+        string_agg(inform, ', ') as ""Area Details"" 
+FROM 
+        tmp_aoi 
+GROUP BY 
+        themelayer, objnam 
+ORDER BY 
+        themelayer"
+4,sediment-texture,TRUE,USGS Sediment Texture,Physical Environment;Sediment Transport,0,USGS,http://www.usgs.gov/,shp_ecstdb2014,shp,NA,"SELECT 
+        project, area, latitude, longitude, depth_m, device, year_coll, classifica, 
+        gravel_pct, sand_pct, silt_pct, clay_pct, median, mean, stdev, geometry 
+FROM 
+        shp_ecstdb2014","SELECT 
+        project, area, latitude, longitude, depth_m, device, year_coll, classifica, 
+        gravel_pct, sand_pct, silt_pct, clay_pct, median, mean, stdev
+FROM 
+        shp_ecstdb2014",NA,"SELECT 
+        project as ""Project Name"", area as Location, latitude as Latitude, longitude as Longitude, 
+        year_coll as ""Year Collected"", depth_m as ""Depth (m)"", device as ""Sampling Device"", 
+        classifica as ""Sediment Classification"", gravel_pct as ""Percent Gravel"", sand_pct as ""Percent Sand"", 
+        silt_pct as ""Percent Silt"", clay_pct as ""Percent Clay"", median as ""Median Grain Size Distribution (phi units)"", 
+        mean as ""Mean Grain Size Distribution (phi units)"", stdev as ""Std Dev Grain Size Distribution (phi units)"" 
+FROM 
+        tmp_aoi 
+GROUP BY 
+        project, area, latitude, longitude, year_coll, depth_m, device, classifica, gravel_pct, 
+        sand_pct, silt_pct, clay_pct, median, mean, stdev ORDER BY project, area, year_coll"
+5,oil-gas-wells,TRUE,Oil and Natural Gas Wells,Marine Spatial Planning;Social & Economic Data,1,BOEM,https://www.boem.gov/,shp_Wells;shp_Pacific_Wells_04_07_15;shp_Alaska_OCS_Wells;shp_atlantic_wells,shp,NA,"select
+        operator, 
+        well_name,
+        spud_date,
+        case 
+                when type='D' then 'Development'
+                when type='R' then 'Relief'
+                when type='E' then 'Exploration'
+                else type end as type,
+        status,
+        depth,
+        description,
+        geometry
+from (
+select 
+        operator, well_name, spud_date::date, type_code_ as type, status, 
+        depth::real, status_des as description, geometry 
+from 
+        ""shp_Wells""
+union
+select 
+        company_na as operator, well_name, well_spud_::date as spud_date, 
+        well_type_ as type, status, md::real as depth, null as description, geometry 
+from 
+        ""shp_Pacific_Wells_04_07_15""
+union 
+select 
+        operator, no as well_name, spud::date as spud_date, null as type, null as status, 
+        replace(depth, ' ft', '')::real as depth, prospect as description, geometry 
+from 
+        ""shp_Alaska_OCS_Wells""
+union
+select 
+        operator, no_ as well_name, spud_date, type_code as type, stat_code as status, 
+        td_ft_ as depth, null as description, geometry 
+from 
+        ""shp_atlantic_wells""
+)","select
+        operator, 
+        well_name,
+        spud_date,
+        case 
+                when type='D' then 'Development'
+                when type='R' then 'Relief'
+                when type='E' then 'Exploration'
+                else type end as type,
+        status,
+        depth,
+        description
+from (
+select 
+        operator, well_name, spud_date::date, type_code_ as type, status, 
+        depth::real, status_des as description
+from 
+        ""shp_Wells""
+union
+select 
+        company_na as operator, well_name, well_spud_::date as spud_date, 
+        well_type_ as type, status, md::real as depth, null as description
+from 
+        ""shp_Pacific_Wells_04_07_15""
+union 
+select 
+        operator, no as well_name, spud::date as spud_date, null as type, null as status, 
+        replace(depth, ' ft', '')::real as depth, prospect as description
+from 
+        ""shp_Alaska_OCS_Wells""
+union
+select 
+        operator, no_ as well_name, spud_date, type_code as type, stat_code as status, 
+        td_ft_ as depth, null as description
+from 
+        ""shp_atlantic_wells""
+) AS x",NA,"select 
+        type, status, count(*) 
+from 
+        tmp_aoi 
+group by 
+        type, status 
+order by 
+        type, status"
+6,hapc,TRUE,Habitat Areas of Particular Concern,Fish,15,NOAA Fisheries,http://www.nmfs.noaa.gov/,shp_nationwide_hapc,shp,NA,"select
+        fmc_report as fmc,
+        sitename_l as sitename_long,
+        ddbox as sitename,
+        lifestage,
+        geometry
+from 
+        shp_nationwide_hapc","select
+        fmc_report as fmc,
+        sitename_l as sitename_long,
+        ddbox as sitename,
+        lifestage
+from 
+        shp_nationwide_hapc",NA,"select distinct
+        fmc, sitename, lifestage
+from 
+        tmp_aoi
+order by
+        fmc, sitename, lifestage"
+7,cetacean-pacific-summer,TRUE,"Fin Whale, Pacific Summer Density;Humpback Whale, Pacific Summer Density;Sperm Whale, Pacific Summer Density;Blue Whale, Pacific Summer Density",Marine Mammals;Cetaceans,5,NOAA Fisheries,http://www.nmfs.noaa.gov/,shp_serdp_swfsc_cce,shp,T,"select
+        unnest(
+                array['Blue whale', 'Fin whale', 'Berardius', 'Short-beaked common dolphin',
+                          'Rissos dolphin', 'Pacific white-sidded dolphin', 'Northern right whale dolphin', 'Humpback whale',
+                          'Dalls porpoise', 'Sperm whale', 'Striped dolphin', 'Small beaked whale']
+                ) as common_name,
+        unnest(
+                array['Balaenoptera musculus', 'Balaenoptera physalus', 'Berardius', 'Delphinus delphis',
+                          'Grampus griseus', 'Lagenorhynchus obliquidens', 'Lissodelphis borealis', 'Megaptera novaeangliae',
+                          'Phocoenoides dalli', 'Physeter macrocephalus', 'Stenella coeruleoalba', 'Ziphius and Mesoplodon']
+                ) as taxon,
+        unnest(
+                array[bmu_i_u_d, bph_r_u_d, bba_r_u_d, dde_i_u_d, 
+                          ggr_r_u_d, lob_i_u_d, lbo_i_u_d, mno_r_u_d, 
+                          pda_i_u_d, pma_i_u_d, sco_r_u_d, zsm_r_u_d]
+                ) as avg_density,
+                geometry
+from shp_serdp_swfsc_cce","select
+        unnest(
+                array['Blue whale', 'Fin whale', 'Berardius', 'Short-beaked common dolphin',
+                          'Rissos dolphin', 'Pacific white-sidded dolphin', 'Northern right whale dolphin', 'Humpback whale',
+                          'Dalls porpoise', 'Sperm whale', 'Striped dolphin', 'Small beaked whale']
+                ) as common_name,
+        unnest(
+                array['Balaenoptera musculus', 'Balaenoptera physalus', 'Berardius', 'Delphinus delphis',
+                          'Grampus griseus', 'Lagenorhynchus obliquidens', 'Lissodelphis borealis', 'Megaptera novaeangliae',
+                          'Phocoenoides dalli', 'Physeter macrocephalus', 'Stenella coeruleoalba', 'Ziphius and Mesoplodon']
+                ) as taxon,
+        unnest(
+                array[bmu_i_u_d, bph_r_u_d, bba_r_u_d, dde_i_u_d, 
+                          ggr_r_u_d, lob_i_u_d, lbo_i_u_d, mno_r_u_d, 
+                          pda_i_u_d, pma_i_u_d, sco_r_u_d, zsm_r_u_d]
+                ) as avg_density
+from shp_serdp_swfsc_cce",NA,"select
+        common_name AS ""Common Name"", taxon AS ""Taxon"", sum(avg_density * (st_area(ixn::geography) / st_area(geometry::geography))) AS ""Density (#/km^2^)""
+from
+        tmp_aoi
+group by 
+        common_name, taxon
+order by
+        common_name, taxon"
+8,mpa,TRUE,MPA Inventory - Marine Monuments;MPA Inventory - Marine National Parks,Human Dimensions;Marine Spatial Planning,15,NOAA MPA Center,http://marineprotectedareas.noaa.gov/,shp_Monuments;shp_NPS,shp,NA,"select
+        site_name, mgmt_agen, estab_yr, ns_full, prot_lvl, fish_rstr, vessel, geometry
+from 
+        ""shp_Monuments""
+UNION
+select
+        site_name, mgmt_agen, estab_yr, ns_full, prot_lvl, fish_rstr, vessel, geometry
+from 
+        ""shp_NPS""","select
+        site_name, mgmt_agen, estab_yr, ns_full, prot_lvl, fish_rstr, vessel
+from 
+        ""shp_Monuments""
+UNION
+select
+        site_name, mgmt_agen, estab_yr, ns_full, prot_lvl, fish_rstr, vessel
+from 
+        ""shp_NPS""",NA,"select
+        site_name, mgmt_agen as mgmt_agency, estab_yr as year_established, ns_full as nat_sys_status, 
+        prot_lvl as protection_lvl, fish_rstr as fish_restrictions, vessel as vessel_access
+from 
+        tmp_aoi"
+9,nat-park-bdry,TRUE,National Park Service Regions,Human Dimensions;Terrestrial Mammals,15,US NPS,http://www.nps.gov/index.htm,shp_National_Park_Service___Regional_Boundaries,shp,NA,"select
+        region, geometry
+from 
+        ""shp_National_Park_Service___Regional_Boundaries""","select
+        region
+from 
+        ""shp_National_Park_Service___Regional_Boundaries""",NA,"select distinct
+        region
+from 
+        tmp_aoi
+order by 
+        region"
+10,seabed-sed,TRUE,National Seafloor Sediment (usSEABED),Physical Environment;Sediment Transport;Human Dimensions;Social & Economic Data,0,USGS,http://www.usgs.gov/,shp_gmx_ext;shp_pac_ext;shp_atl_ext,shp,NA,"select
+        waterdepth, sampletop, samplebase, sitename, sampler, datatypes, gravel, sand, mud, clay, 
+        grainsize, sorting, seabedcls, clsmshp, folkcode, shepardcod, rockmshp, weedmshp, carbonate::text, 
+        munslcode, orgcarbon, lgshearstr, porosity, pwavevel, roughness, lgcrshst, samplephas, geometry
+from 
+        shp_gmx_ext
+UNION
+select
+        waterdepth, sampletop, samplebase, sitename, sampler, datatypes, gravel, sand, mud, clay, 
+        grainsize, sorting, seabedcls, clsmshp, folkcode, shepardcod, rockmshp, weedmshp, carbonate::text, 
+        munslcode, orgcarbon, lgshearstr, porosity, pwavevel, roughness, lgcrshst, samplephas, geometry
+from 
+        shp_pac_ext
+UNION
+select
+        waterdepth, sampletop, samplebase, sitename, sampler, datatypes, gravel, sand, mud, clay, 
+        grainsize, sorting, seabedcls, clsmshp, folkcode, shepardcod, rockmshp, weedmshp, carbonate::text, 
+        munslcode, orgcarbon, lgshearstr, porosity, pwavevel, roughness, lgcrshst, samplephas, geometry
+from 
+        shp_atl_ext","select
+        waterdepth, sampletop, samplebase, sitename, sampler, datatypes, gravel, sand, mud, clay, 
+        grainsize, sorting, seabedcls, clsmshp, folkcode, shepardcod, rockmshp, weedmshp, carbonate::text, 
+        munslcode, orgcarbon, lgshearstr, porosity, pwavevel, roughness, lgcrshst, samplephas
+from 
+        shp_gmx_ext
+UNION
+select
+        waterdepth, sampletop, samplebase, sitename, sampler, datatypes, gravel, sand, mud, clay, 
+        grainsize, sorting, seabedcls, clsmshp, folkcode, shepardcod, rockmshp, weedmshp, carbonate::text, 
+        munslcode, orgcarbon, lgshearstr, porosity, pwavevel, roughness, lgcrshst, samplephas
+from 
+        shp_pac_ext
+UNION
+select
+        waterdepth, sampletop, samplebase, sitename, sampler, datatypes, gravel, sand, mud, clay, 
+        grainsize, sorting, seabedcls, clsmshp, folkcode, shepardcod, rockmshp, weedmshp, carbonate::text, 
+        munslcode, orgcarbon, lgshearstr, porosity, pwavevel, roughness, lgcrshst, samplephas
+from 
+        shp_atl_ext",NA,"select
+        shepardcod as sed_class,
+        count(sitename) as samps_collected
+from 
+        tmp_aoi
+where 
+        shepardcod is not null
+group by shepardcod
+order by shepardcod"
+11,sma,TRUE,North Atlantic Right Whale Seasonal Management Areas,Marine Mammals;Cetaceans;Human Dimensions,10,NOAA Fisheries,http://www.nmfs.noaa.gov/,shp_right_whale_SMA_all_po,shp,NA,"select 
+        id, restr_area, geometry
+from 
+        ""shp_right_whale_SMA_all_po""","select 
+        id, restr_area
+from 
+        ""shp_right_whale_SMA_all_po""",NA,select restr_area from tmp_aoi
+12,ocs-lease-blk,TRUE,Outer Continental Shelf Lease Blocks,Legal & Policy;Human Dimensions;Marine Spatial Planning;Social & Economic Data,0,BOEM,https://www.boem.gov/,shp_blk_clip;shp_PC_BLK_CLIP;shp_ATL_BLKCLP;shp_AK_BLKCLP,shp,T,"select
+        prot_numbe as protraction_num, 
+        prot_aprv_ as protraction_aprv, 
+        block_numb as block_num, 
+        blk_fed_ap::date as block_fed_aprv, 
+        mms_region, 
+        mms_plan_a as mms_plan_area, 
+        geometry
+from (
+        select
+                prot_numbe, prot_aprv_, block_numb, blk_fed_ap, mms_region, mms_plan_a, geometry
+        from shp_blk_clip
+        UNION
+        select
+                prot_numbe, prot_aprv_, block_numb, blk_fed_ap, mms_region, mms_plan_a, geometry
+        from ""shp_PC_BLK_CLIP""
+        UNION
+        select 
+                prot_numbe, prot_aprv_, block_numb, blk_fed_ap, mms_region, mms_plan_a, geometry
+        from ""shp_ATL_BLKCLP""
+        UNION
+        select
+                prot_numbe, prot_aprv_, block_numb, blk_fed_ap, mms_region, mms_plan_a, ST_MakeValid(geometry) AS geometry
+        from ""shp_AK_BLKCLP"")","select
+        prot_numbe as protraction_num, 
+        prot_aprv_ as protraction_aprv, 
+        block_numb as block_num, 
+        blk_fed_ap::date as block_fed_aprv, 
+        mms_region, 
+        mms_plan_a as mms_plan_area
+from (
+        select
+                prot_numbe, prot_aprv_, block_numb, blk_fed_ap, mms_region, mms_plan_a
+        from shp_blk_clip
+        UNION
+        select
+                prot_numbe, prot_aprv_, block_numb, blk_fed_ap, mms_region, mms_plan_a
+        from ""shp_PC_BLK_CLIP""
+        UNION
+        select 
+                prot_numbe, prot_aprv_, block_numb, blk_fed_ap, mms_region, mms_plan_a
+        from ""shp_ATL_BLKCLP""
+        UNION
+        select
+                prot_numbe, prot_aprv_, block_numb, blk_fed_ap, mms_region, mms_plan_a
+        from ""shp_AK_BLKCLP"") AS x",NA,"select
+        mms_plan_area,
+        protraction_num,
+        block_fed_aprv,
+        sum(st_area(geometry::geography) * (st_area(ixn::geography) / st_area(geometry::geography))) / 1000000 as area_sq_km
+from
+    tmp_aoi
+where 
+    protraction_num is not null
+group by
+        mms_plan_area,
+        protraction_num,
+        block_fed_aprv
+order by
+        mms_plan_area,
+        protraction_num,
+        block_fed_aprv"
+13,oil-gas-lease,TRUE,Outer Continental Shelf Oil and Gas Leasing Withdrawal and Moratoria Areas,Legal & Policy;Human Dimensions;Marine Spatial Planning;Social & Economic Data,0,BOEM,https://www.boem.gov/,shp_WithdrawalUpdate10-2017;shp_AlaskaRegionWithdrawArea;shp_PacificRegionWithdrawAreas,shp,T,"select
+        sanctuary, 
+        area_name, 
+        mms_region, 
+        mms_plan_a as mms_plan_area, 
+        notes_1 as category,
+        notes as subcategory, 
+        notes_12 as e_cfr,
+        nm as nautical_miles,
+        acres,  
+        geometry
+from (
+        select 
+                sanctuary, area_name, mms_region, mms_plan_a, 
+                notes, notes_1, notes_12, acres, nm, geometry
+        from ""shp_WithdrawalUpdate10-2017""
+        UNION
+        select
+                sanctuary, area_name, mms_region, mms_plan_a, 
+                notes, notes_1, notes_12, acres, nm, geometry
+        from ""shp_AlaskaRegionWithdrawArea""
+        UNION
+        select
+                sanctuary, area_name, mms_region, mms_plan_a, 
+                notes, notes_1, notes_12, null as acres, null as nm, geometry
+        from ""shp_PacificRegionWithdrawAreas"")","select
+        sanctuary, 
+        area_name, 
+        mms_region, 
+        mms_plan_a as mms_plan_area, 
+        notes_1 as category,
+        notes as subcategory, 
+        notes_12 as e_cfr,
+        nm as nautical_miles,
+        acres
+from (
+        select 
+                sanctuary, area_name, mms_region, mms_plan_a, 
+                notes, notes_1, notes_12, acres, nm
+        from ""shp_WithdrawalUpdate10-2017""
+        UNION
+        select
+                sanctuary, area_name, mms_region, mms_plan_a, 
+                notes, notes_1, notes_12, acres, nm
+        from ""shp_AlaskaRegionWithdrawArea""
+        UNION
+        select
+                sanctuary, area_name, mms_region, mms_plan_a, 
+                notes, notes_1, notes_12, null as acres, null as nm
+        from ""shp_PacificRegionWithdrawAreas"") AS x",NA,"select 
+        mms_plan_area,
+        subcategory as area_name,
+        e_cfr,
+        sum(acres * st_area(ixn::geography) / st_area(geometry::geography)) as acres
+from 
+    tmp_aoi
+where 
+    acres is not null
+group by
+        mms_plan_area,
+        subcategory,
+        e_cfr
+order by
+        mms_plan_area,
+        subcategory"
+14,pipelines,TRUE,Selected Pipelines,Physical Environment;Human Dimensions;Social & Economic Data,0,BOEM,https://www.boem.gov/,shp_ppl_arcs;shp_BOEM_Pacific_Pipelines_2011-08_nad83,shp,T,"select
+  fed_seg_len_ft,
+  status_code,
+  outer_diameter,
+  product_code,
+  aprv_code,
+  operator,
+  geometry
+from (
+  select
+    seg_length as fed_seg_len_ft,
+    status_cod as status_code,
+    ppl_size_c as outer_diameter,
+    prod_code as product_code,
+    aprv_code,
+    sde_compan as operator,
+    geometry
+  from shp_ppl_arcs
+  UNION
+  select
+    seg_length as fed_seg_len_ft,
+    status_cod as status_code,
+    ppl_size_c as outer_diameter,
+    prod_code as product_code,
+    aprv_code,
+    sde_compan as operator,
+    geometry
+  from ""shp_BOEM_Pacific_Pipelines_2011-08_nad83"")","select
+  fed_seg_len_ft,
+  status_code,
+  outer_diameter,
+  product_code,
+  aprv_code,
+  operator
+from (
+  select
+    seg_length as fed_seg_len_ft,
+    status_cod as status_code,
+    ppl_size_c as outer_diameter,
+    prod_code as product_code,
+    aprv_code,
+    sde_compan as operator
+  from shp_ppl_arcs
+  UNION
+  select
+    seg_length as fed_seg_len_ft,
+    status_cod as status_code,
+    ppl_size_c as outer_diameter,
+    prod_code as product_code,
+    aprv_code,
+    sde_compan as operator
+  from ""shp_BOEM_Pacific_Pipelines_2011-08_nad83"") AS x",NA,"select
+  status_code as ""Status Code"",
+  product_code as ""Product Code"",
+  operator as ""Operator"",
+  to_char(round(sum(st_length(ixn::geography)) * 3.281), 'FM999,999,999') as ""Segment Length (ft)""
+from 
+  tmp_aoi
+group by
+  status_code, product_code, operator
+order by
+  status_code, product_code, operator"
+15,ocs-programs,TRUE,Outer Continental Shelf Proposed Final Program Areas 2017-2022,Legal & Policy;Human Dimensions;Marine Spatial Planning;Social & Economic Data,0,BOEM,https://www.boem.gov/,shp_GOMR_Proposed_FInal_Program_Area;shp_Alaska_Region_2017-2022_Proposed_Final_Program_Area,shp,T,"select
+        notes, geometry
+from (
+        select 
+          notes, geometry
+        from 
+          ""shp_GOMR_Proposed_FInal_Program_Area""
+        UNION
+        select 
+          notes, geometry 
+        from 
+    ""shp_Alaska_Region_2017-2022_Proposed_Final_Program_Area"")","select
+        notes
+from (
+        select 
+          notes
+        from 
+          ""shp_GOMR_Proposed_FInal_Program_Area""
+        UNION
+        select 
+          notes
+        from 
+    ""shp_Alaska_Region_2017-2022_Proposed_Final_Program_Area"") AS x",NA,"select
+  replace(notes, 'FInal', 'Final') as ""Note"",
+  round(100 * sum(st_area(ixn::geography) / st_area(geometry::geography))) || ' %' as ""AOI Overlap""
+from
+  tmp_aoi
+group by
+  notes
+order by
+  notes"
+16,fed-ocs-lease,TRUE,Federal Outer Continental Shelf (OCS) Sand and Gravel Borrow Areas (Lease Areas),Legal & Policy;Human Dimensions;Marine Spatial Planning;Social & Economic Data;Physical Environment,0,BOEM,https://www.boem.gov/,shp_Leases_200203,shp,NA,"select
+  state,
+  leaseno,
+  projectid,
+  projectcou,
+  totalsanda,
+  fiscalyear,
+  effectived,
+  expiration,
+  originalvo,
+  borrowarea,
+  amendmentd,
+  amendmentn,
+  additional,
+  acres,
+  leasestatu,
+  geometry
+from ""shp_Leases_200203""","select
+  state,
+  leaseno,
+  projectid,
+  projectcou,
+  totalsanda,
+  fiscalyear,
+  effectived,
+  expiration,
+  originalvo,
+  borrowarea,
+  amendmentd,
+  amendmentn,
+  additional,
+  acres,
+  leasestatu
+from ""shp_Leases_200203""",NA,"select
+  state as ""State"",
+  leaseno as ""Lease"",
+  projectid as ""Project"",
+  leasestatu as ""Status"",
+  expiration as ""Expiration"",
+  totalsanda as ""Allocated Sand Volume (yd^3^)""
+from
+  tmp_aoi
+order by
+  state, leasestatu, expiration, leaseno, projectid"
+17,cbrs,TRUE,Coastal Barrier Resources System,Legal & Policy;Human Dimensions;Marine Spatial Planning;Social & Economic Data;Physical Environment,0.00329158,US FWS,http://www.fws.gov/,shp_CBRS_Polygons_03122019,shp,T,"select
+  unit,
+  name,
+  unit_type,
+  fast_acres,
+  wet_acres,
+  shore_mile,
+  geometry
+from ""shp_CBRS_Polygons_03122019""","select
+  unit,
+  name,
+  unit_type,
+  fast_acres,
+  wet_acres,
+  shore_mile
+from ""shp_CBRS_Polygons_03122019""",NA,"select
+  unit as ""CBRS Unit"",
+  name as ""Unit Name"",
+  unit_type as ""Unit Type"",
+  round(fast_acres * sum(st_area(ixn::geography) / st_area(geometry::geography))) as ""Upland Area (acres)"",
+  round(wet_acres * sum(st_area(ixn::geography) / st_area(geometry::geography))) as ""Wetland Area (acres)""
+from
+  tmp_aoi
+group by
+  unit, name, unit_type, fast_acres, wet_acres
+order by
+  unit, name, unit_type"
+18,gloria,TRUE,National Seafloor Geology (GLORIA),Physical Environment;Sediment Transport;Human Dimensions;Social & Economic Data,0,USGS,http://www.usgs.gov/,shp_interp;shp_west;shp_geo_poly;shp_geology,shp,NA,"select
+  unit, 
+  description, 
+  geometry 
+from (
+  select area, unit, null as description, geometry from shp_interp
+  union
+  select area, unit, descriptio as description, geometry from shp_west
+  union
+  select st_area(geometry) as area, tunits as unit, null as description, geometry from shp_geo_poly
+  union
+  select area, geoabrv as unit, descriptio as description, geometry from shp_geology
+)","select
+  unit, 
+  description
+from (
+  select area, unit, null as description from shp_interp
+  union
+  select area, unit, descriptio as description from shp_west
+  union
+  select st_area(geometry) as area, tunits as unit, null as description from shp_geo_poly
+  union
+  select area, geoabrv as unit, descriptio as description from shp_geology
+) AS x",NA,"select
+  unit as ""Unit"",
+  case when description is null then 'No description' when description = 'No Data' then 'No description' else description end as ""Description""
+from 
+  tmp_aoi
+where
+  unit is not null and unit != 'nodat'
+group by
+  unit, description
+order by
+  unit, description"
+19,nationwide-efha,TRUE,EFH Areas Protected from Fishing,Fish;Marine Spatial Planning;Fisheries,0,NOAA Fisheries,http://www.nmfs.noaa.gov/,shp_nationwide_efha,shp,T,"select 
+	fmc_report,
+	sitename_l,
+	instatewat,
+	lifestage,
+	lttdt_link,
+	acres,
+	geometry
+from shp_nationwide_efha","select 
+        fmc_report,
+        sitename_l,
+        instatewat,
+        lifestage,
+        lttdt_link,
+        acres
+from shp_nationwide_efha",NA,"select
+  fmc_report as ""FMC Region"",
+  sitename_l as ""Site"",
+  case when instatewat = 'Y' then 'Yes' else 'No' end as ""State Waters"",
+  lifestage as ""Lifestage"",
+  to_char(round(sum(st_area(geometry::geography) * (st_area(ixn::geography) / st_area(geometry::geography))) / 4047), 'FM999,999,999,999') as ""Acres""
+from
+  tmp_aoi
+group by
+  fmc_report, sitename_l, instatewat, lifestage, lttdt_link
+order by
+  fmc_report, sitename_l, instatewat, lifestage, lttdt_link"
+20,coastal-channels,TRUE,Coastal Maintained Channels,Navigation;Legal & Policy;Human Dimensions;Social & Economic Data;Physical Environment,0,USACE,http://www.usace.army.mil/,shp_maintainedchannels,shp,T,"select
+        objnam,
+        themelayer,
+        inform,
+        drval1,
+        quasou,
+        quasou_txt,
+        sordat,
+        fairway,
+        dsnm,
+        dataaccess,
+        datatype,
+        st_force2d(geom) as geometry
+from shp_maintainedchannels","select
+        objnam,
+        themelayer,
+        inform,
+        drval1,
+        quasou,
+        quasou_txt,
+        sordat,
+        fairway,
+        dsnm,
+        dataaccess,
+        datatype
+from shp_maintainedchannels",NA,"select
+    fairway as ""Fairway"",
+    round(sum(st_area(geometry::geography) * (st_area(ixn::geography) / st_area(geometry::geography))) / 4047) as ""AOI Acres""
+  from 
+    tmp_aoi
+  group by
+    fairway
+  order by
+    fairway"
+21,drill-platforms,TRUE,Drilling Platforms,Physical Environment;Social & Economic Data;Marine Spatial Planning;Human Dimensions,0,BOEM,https://www.boem.gov/,shp_pc_plat;shp_platform,shp,NA,"select
+    structure, 
+    geometry
+from (
+    select platform_n as structure, geometry from shp_pc_plat
+    union
+    select complex_id || ' ' || str_name as structure, geometry from shp_platform
+)","select
+    structure
+from (
+    select platform_n as structure from shp_pc_plat
+    union
+    select complex_id || ' ' || str_name as structure from shp_platform
+) AS x",NA,"select
+    count(*) as ""# Structures""
+from 
+    tmp_aoi"
+22,wave-potential,TRUE,Ocean Wave Resource Potential,Physical Environment;Social & Economic Data;Marine Spatial Planning,0,NREL,http://www.nrel.gov/,shp_wave_power_density,shp,NA,"select
+    case
+      when depth_wef::double precision >= 0 and depth_wef::double precision < 1000 then '0000-0999'::text
+      when depth_wef::double precision >= 1000 and depth_wef::double precision < 2000 then '1000-1999'::text
+      when depth_wef::double precision >= 2000 and depth_wef::double precision < 3000 then '2000-2999'::text
+      when depth_wef::double precision >= 3000 and depth_wef::double precision < 4000 then '3000-3999'::text
+      when depth_wef::double precision >= 4000 and depth_wef::double precision < 5000 then '4000-4999'::text
+      when depth_wef::double precision >= 5000 then '>5000'::text end as depth_wef_cat,
+    ann_wef,
+    geometry
+from (
+    select
+      depth_wef,
+      ann_wef,
+      geometry
+  from
+      shp_wave_power_density
+  )","select
+    case
+      when depth_wef::double precision >= 0 and depth_wef::double precision < 1000 then '0000-0999'::text
+      when depth_wef::double precision >= 1000 and depth_wef::double precision < 2000 then '1000-1999'::text
+      when depth_wef::double precision >= 2000 and depth_wef::double precision < 3000 then '2000-2999'::text
+      when depth_wef::double precision >= 3000 and depth_wef::double precision < 4000 then '3000-3999'::text
+      when depth_wef::double precision >= 4000 and depth_wef::double precision < 5000 then '4000-4999'::text
+      when depth_wef::double precision >= 5000 then '>5000'::text end as depth_wef_cat,
+    ann_wef
+from (
+    select
+      depth_wef,
+      ann_wef
+  from
+      shp_wave_power_density
+  ) AS x",NA,"select
+    depth_wef_cat as ""Depth Category"",
+    min(ann_wef) as ""Min Annual WEF"",
+    max(ann_wef) as ""Max Annual WEF"",
+    avg(ann_wef) as ""Avg Annual WEF""
+from
+    tmp_aoi
+group by
+    depth_wef_cat
+order by
+    depth_wef_cat"
+23,uscg-districts,TRUE,US Coast Guard Districts,Legal & Policy;Human Dimensions;Marine Spatial Planning;Social & Economic Data,0,USCG,http://www.uscg.mil/,shp_U.S._Coast_Guard_Districts,shp,T,"select
+    districtna,
+    office,
+    areaname,
+    zones,
+    shape_area,
+    geometry
+from
+    ""shp_U.S._Coast_Guard_Districts""","select
+    districtna,
+    office,
+    areaname,
+    zones,
+    shape_area
+from
+    ""shp_U.S._Coast_Guard_Districts""",NA,"select
+    areaname as ""Area"",
+    districtna as ""District"",
+    office as ""Office"",
+    replace(replace(zones, 'Cotp Zones Consist of ', ''), 'Cotp Zones consist of ', '') as ""Zones"",
+    round(100 * sum(st_area(ixn::geography) / st_area(geometry::geography))) || ' %' as ""AOI Intersection""
+from
+    tmp_aoi
+group by
+    areaname, districtna, office, zones, shape_area
+order by
+    districtna"
+24,land-boundary,TRUE,US/Canada Land Boundary,Legal & Policy;Human Dimensions;Marine Spatial Planning;Social & Economic Data,5,NOAA,http://www.nauticalcharts.noaa.gov/,shp_USMaritimeLimitsNBoundaries,shp,NA,"select
+    region,
+    feat_type,
+    legal_auth,
+    aor,
+    supp_info,
+    geometry
+from
+    ""shp_USMaritimeLimitsNBoundaries""","select
+    region,
+    feat_type,
+    legal_auth,
+    aor,
+    supp_info
+from
+    ""shp_USMaritimeLimitsNBoundaries""",NA,"select
+    region as ""Region"",
+    feat_type as ""Boundary Type"",
+    legal_auth as ""Legal Authority""
+from
+    tmp_aoi
+group by
+    region, feat_type, legal_auth
+order by
+    region, feat_type, legal_auth"
+25,fish-species,TRUE,Individual Fish Species,Fish,5,NOAA Fisheries,http://www.nmfs.noaa.gov/,"shp_FALL_SP101_2010TO2016;
+shp_FALL_SP102_2010TO2016;
+shp_FALL_SP103_2010TO2016;
+shp_FALL_SP104_2010TO2016;
+shp_FALL_SP105_2010TO2016;
+shp_FALL_SP106_2010TO2016;
+shp_FALL_SP107_2010TO2016;
+shp_FALL_SP108_2010TO2016;
+shp_FALL_SP109_2010TO2016;
+shp_FALL_SP116_2010TO2016;
+shp_FALL_SP12_2010TO2016;
+shp_FALL_SP121_2010TO2016;
+shp_FALL_SP13_2010TO2016;
+shp_FALL_SP131_2010TO2016;
+shp_FALL_SP135_2010TO2016;
+shp_FALL_SP136_2010TO2016;
+shp_FALL_SP139_2010TO2016;
+shp_FALL_SP141_2010TO2016;
+shp_FALL_SP142_2010TO2016;
+shp_FALL_SP143_2010TO2016;
+shp_FALL_SP145_2010TO2016;
+shp_FALL_SP146_2010TO2016;
+shp_FALL_SP149_2010TO2016;
+shp_FALL_SP15_2010TO2016;
+shp_FALL_SP151_2010TO2016;
+shp_FALL_SP155_2010TO2016;
+shp_FALL_SP156_2010TO2016;
+shp_FALL_SP163_2010TO2016;
+shp_FALL_SP164_2010TO2016;
+shp_FALL_SP171_2010TO2016;
+shp_FALL_SP172_2010TO2016;
+shp_FALL_SP176_2010TO2016;
+shp_FALL_SP177_2010TO2016;
+shp_FALL_SP18_2010TO2016;
+shp_FALL_SP181_2010TO2016;
+shp_FALL_SP19_2010TO2016;
+shp_FALL_SP192_2010TO2016;
+shp_FALL_SP193_2010TO2016;
+shp_FALL_SP196_2010TO2016;
+shp_FALL_SP197_2010TO2016;
+shp_FALL_SP21_2010TO2016;
+shp_FALL_SP22_2010TO2016;
+shp_FALL_SP23_2010TO2016;
+shp_FALL_SP24_2010TO2016;
+shp_FALL_SP25_2010TO2016;
+shp_FALL_SP26_2010TO2016;
+shp_FALL_SP27_2010TO2016;
+shp_FALL_SP28_2010TO2016;
+shp_FALL_SP29_2010TO2016;
+shp_FALL_SP301_2010TO2016;
+shp_FALL_SP306_2010TO2016;
+shp_FALL_SP31_2010TO2016;
+shp_FALL_SP312_2010TO2016;
+shp_FALL_SP318_2010TO2016;
+shp_FALL_SP32_2010TO2016;
+shp_FALL_SP33_2010TO2016;
+shp_FALL_SP34_2010TO2016;
+shp_FALL_SP35_2010TO2016;
+shp_FALL_SP36_2010TO2016;
+shp_FALL_SP360_2010TO2016;
+shp_FALL_SP37_2010TO2016;
+shp_FALL_SP375_2010TO2016;
+shp_FALL_SP380_2010TO2016;
+shp_FALL_SP384_2010TO2016;
+shp_FALL_SP4_2010TO2016;
+shp_FALL_SP401_2010TO2016;
+shp_FALL_SP43_2010TO2016;
+shp_FALL_SP44_2010TO2016;
+shp_FALL_SP502_2010TO2016;
+shp_FALL_SP503_2010TO2016;
+shp_FALL_SP640_2010TO2016;
+shp_FALL_SP651_2010TO2016;
+shp_FALL_SP69_2010TO2016;
+shp_FALL_SP72_2010TO2016;
+shp_FALL_SP73_2010TO2016;
+shp_FALL_SP74_2010TO2016;
+shp_FALL_SP75_2010TO2016;
+shp_FALL_SP76_2010TO2016;
+shp_FALL_SP77_2010TO2016;
+shp_FALL_SP78_2010TO2016;
+shp_FALL_SP84_2010TO2016;
+shp_SPRING_SP101_2010TO2017;
+shp_SPRING_SP102_2010TO2017;
+shp_SPRING_SP103_2010TO2017;
+shp_SPRING_SP104_2010TO2017;
+shp_SPRING_SP105_2010TO2017;
+shp_SPRING_SP106_2010TO2017;
+shp_SPRING_SP107_2010TO2017;
+shp_SPRING_SP108_2010TO2017;
+shp_SPRING_SP109_2010TO2017;
+shp_SPRING_SP116_2010TO2017;
+shp_SPRING_SP12_2010TO2017;
+shp_SPRING_SP121_2010TO2017;
+shp_SPRING_SP13_2010TO2017;
+shp_SPRING_SP131_2010TO2017;
+shp_SPRING_SP135_2010TO2017;
+shp_SPRING_SP136_2010TO2017;
+shp_SPRING_SP139_2010TO2017;
+shp_SPRING_SP141_2010TO2017;
+shp_SPRING_SP142_2010TO2017;
+shp_SPRING_SP143_2010TO2017;
+shp_SPRING_SP145_2010TO2017;
+shp_SPRING_SP146_2010TO2017;
+shp_SPRING_SP149_2010TO2017;
+shp_SPRING_SP15_2010TO2017;
+shp_SPRING_SP151_2010TO2017;
+shp_SPRING_SP155_2010TO2017;
+shp_SPRING_SP156_2010TO2017;
+shp_SPRING_SP163_2010TO2017;
+shp_SPRING_SP164_2010TO2017;
+shp_SPRING_SP171_2010TO2017;
+shp_SPRING_SP172_2010TO2017;
+shp_SPRING_SP176_2010TO2017;
+shp_SPRING_SP177_2010TO2017;
+shp_SPRING_SP18_2010TO2017;
+shp_SPRING_SP181_2010TO2017;
+shp_SPRING_SP19_2010TO2017;
+shp_SPRING_SP192_2010TO2017;
+shp_SPRING_SP193_2010TO2017;
+shp_SPRING_SP196_2010TO2017;
+shp_SPRING_SP197_2010TO2017;
+shp_SPRING_SP21_2010TO2017;
+shp_SPRING_SP22_2010TO2017;
+shp_SPRING_SP23_2010TO2017;
+shp_SPRING_SP24_2010TO2017;
+shp_SPRING_SP25_2010TO2017;
+shp_SPRING_SP26_2010TO2017;
+shp_SPRING_SP27_2010TO2017;
+shp_SPRING_SP28_2010TO2017;
+shp_SPRING_SP29_2010TO2017;
+shp_SPRING_SP301_2010TO2017;
+shp_SPRING_SP306_2010TO2017;
+shp_SPRING_SP31_2010TO2017;
+shp_SPRING_SP312_2010TO2017;
+shp_SPRING_SP318_2010TO2017;
+shp_SPRING_SP32_2010TO2017;
+shp_SPRING_SP33_2010TO2017;
+shp_SPRING_SP34_2010TO2017;
+shp_SPRING_SP35_2010TO2017;
+shp_SPRING_SP36_2010TO2017;
+shp_SPRING_SP360_2010TO2017;
+shp_SPRING_SP37_2010TO2017;
+shp_SPRING_SP375_2010TO2017;
+shp_SPRING_SP380_2010TO2017;
+shp_SPRING_SP384_2010TO2017;
+shp_SPRING_SP4_2010TO2017;
+shp_SPRING_SP401_2010TO2017;
+shp_SPRING_SP43_2010TO2017;
+shp_SPRING_SP44_2010TO2017;
+shp_SPRING_SP502_2010TO2017;
+shp_SPRING_SP503_2010TO2017;
+shp_SPRING_SP640_2010TO2017;
+shp_SPRING_SP651_2010TO2017;
+shp_SPRING_SP69_2010TO2017;
+shp_SPRING_SP72_2010TO2017;
+shp_SPRING_SP73_2010TO2017;
+shp_SPRING_SP74_2010TO2017;
+shp_SPRING_SP75_2010TO2017;
+shp_SPRING_SP76_2010TO2017;
+shp_SPRING_SP77_2010TO2017;
+shp_SPRING_SP78_2010TO2017;
+shp_SPRING_SP84_2010TO2017",NA,NA,"select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP101_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP102_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP103_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP104_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP105_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP106_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP107_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP108_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP109_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP116_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP12_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP121_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP13_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP131_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP135_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP136_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP139_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP141_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP142_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP143_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP145_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP146_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP149_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP15_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP151_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP155_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP156_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP163_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP164_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP171_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP172_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP176_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP177_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP18_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP181_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP19_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP192_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP193_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP196_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP197_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP21_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP22_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP23_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP24_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP25_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP26_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP27_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP28_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP29_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP301_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP306_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP31_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP312_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP318_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP32_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP33_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP34_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP35_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP36_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP360_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP37_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP375_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP380_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP384_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP4_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP401_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP43_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP44_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP502_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP503_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP640_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP651_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP69_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP72_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP73_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP74_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP75_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP76_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP77_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP78_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_FALL_SP84_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP101_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP102_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP103_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP104_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP105_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP106_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP107_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP108_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP109_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP116_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP12_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP121_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP13_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP131_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP135_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP136_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP139_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP141_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP142_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP143_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP145_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP146_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP149_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP15_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP151_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP155_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP156_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP163_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP164_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP171_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP172_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP176_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP177_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP18_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP181_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP19_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP192_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP193_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP196_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP197_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP21_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP22_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP23_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP24_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP25_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP26_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP27_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP28_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP29_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP301_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP306_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP31_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP312_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP318_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP32_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP33_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP34_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP35_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP36_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP360_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP37_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP375_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP380_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP384_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP4_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP401_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP43_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP44_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP502_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP503_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP640_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP651_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP69_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP72_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP73_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP74_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP75_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP76_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP77_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP78_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass, geometry from ""shp_SPRING_SP84_2010TO2017""","select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP101_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP102_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP103_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP104_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP105_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP106_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP107_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP108_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP109_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP116_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP12_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP121_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP13_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP131_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP135_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP136_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP139_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP141_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP142_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP143_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP145_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP146_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP149_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP15_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP151_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP155_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP156_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP163_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP164_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP171_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP172_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP176_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP177_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP18_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP181_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP19_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP192_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP193_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP196_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP197_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP21_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP22_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP23_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP24_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP25_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP26_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP27_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP28_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP29_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP301_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP306_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP31_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP312_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP318_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP32_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP33_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP34_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP35_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP36_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP360_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP37_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP375_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP380_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP384_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP4_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP401_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP43_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP44_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP502_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP503_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP640_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP651_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP69_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP72_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP73_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP74_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP75_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP76_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP77_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP78_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_FALL_SP84_2010TO2016""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP101_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP102_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP103_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP104_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP105_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP106_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP107_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP108_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP109_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP116_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP12_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP121_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP13_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP131_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP135_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP136_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP139_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP141_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP142_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP143_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP145_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP146_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP149_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP15_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP151_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP155_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP156_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP163_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP164_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP171_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP172_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP176_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP177_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP18_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP181_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP19_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP192_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP193_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP196_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP197_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP21_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP22_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP23_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP24_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP25_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP26_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP27_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP28_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP29_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP301_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP306_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP31_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP312_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP318_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP32_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP33_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP34_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP35_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP36_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP360_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP37_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP375_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP380_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP384_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP4_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP401_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP43_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP44_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP502_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP503_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP640_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP651_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP69_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP72_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP73_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP74_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP75_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP76_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP77_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP78_2010TO2017""
+union
+select idnum, cruise, stratum, station, year, season, avgdepth, spp_name, sci_name, biomass from ""shp_SPRING_SP84_2010TO2017""",NA,"select
+    year as ""Year"", 
+    season as ""Season"", 
+    spp_name as ""Species Name"", 
+    sci_name as ""Scientific Name"", 
+    round(max(biomass)::numeric, 2) as ""Biomass Max"", 
+    round(avg(biomass)::numeric, 2) as ""Biomass Avg""
+from
+    tmp_aoi
+group by
+    year, season, spp_name, sci_name
+order by
+    year, season, sci_name"
