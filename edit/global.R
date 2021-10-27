@@ -2,7 +2,7 @@
 # DB CONNECTION & SCRIPTS ----
 dir_scripts <<- here::here("scripts")
 source(file.path(dir_scripts, "common_2.R"))
-source(file.path(dir_scripts, "db_conn.R"))
+source(file.path(dir_scripts, "db.R"))
 source(file.path(dir_scripts, "edit_interface.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
 source(file.path(dir_scripts, "update.R"))
@@ -48,26 +48,13 @@ get_new_docs <- function(d, flds = ferc_doc_names) {
 
 # convert data from dtedit to ferc_doc_tags format
 get_new_tags <- function(d, flds = ferc_tag_names) {
+  # tbl(con, "ferc_doc_tags") %>% collect() %>% names() %>% paste(collapse = ', ')
+
   d %>% 
-    select(-tag_html, -tag_sql) %>% 
-    unnest(tag_named = tag_named) %>% 
     select(rowid, tag_named) %>% 
-    left_join(
-      tags %>% 
-        rename(
-          tag_category = category,
-          content_tag  = tag_nocat) %>% 
-        select(
-          tag_category, 
-          content_tag,
-          tag_named,
-          tag_sql) %>% 
-        mutate(tag_named = as.character(tag_named)),
-      by = "tag_named") %>% 
-    mutate(content = "ferc_docs") %>% 
-    select(-tag_named) %>% 
-    relocate(flds) %>% 
-    arrange(rowid)
+    unnest(tag_named) %>% 
+    select(rowid, tag_sql = tag_named) %>% 
+    arrange(rowid, tag_sql)
 }
 
 # DATA SETUP ----
@@ -92,19 +79,21 @@ ferc.insert.callback <- function(data, row) {
   d <- data %>% slice(row) %>% 
     na_if("NA") %>% na_if("") %>% 
     mutate(rowid = max(get_ferc()$rowid) + 1)
-  d_docs <- get_new_docs(d)  # data to INSERT into ferc_docs
-  d_tags <- get_new_tags(d)  # data to INSERT into ferc_doc_tags
+  d_docs <- get_new_docs(d) # %>% tibble() # data to INSERT into ferc_docs
+  d_tags <- get_new_tags(d) # %>% tibble()  # data to INSERT into ferc_doc_tags
   
+  conn <- poolCheckout(con)
   sql_insert_docs <- glue_data_sql(
     d_docs,
     "INSERT INTO ferc_docs VALUES
       ({rowid}, {detail}, {project},
       {prj_document}, {prj_doc_attachment}, {prj_doc_attach_url},
       {ck_ixn}, {ck_obs}, {ck_mp}, {ck_amp}, {ck_pme}, {ck_bmps})",
-    .con = con)
+    .con = conn)
+  poolReturn(conn)
   res <- try(dbExecute(con, sql_insert_docs))
   if ("try-error" %in% class(res)) stop(res)
-  DBI::dbAppendTable(con, "ferc_doc_tags", d_tags)
+  dbAppendTable(con, "ferc_doc_tags", d_tags)
   # DBI::dbAppendTable(conn, "ferc_doc_tags", d_tags)
   
   get_ferc()
@@ -121,6 +110,7 @@ ferc.update.callback <- function(data, olddata, row) {
   d_docs <- get_new_docs(d)  # data to UPDATE ferc_docs
   d_tags <- get_new_tags(d)  # data to be APPENDED to ferc_doc_tags
   
+  conn <- poolCheckout(con)
   sql_update_docs <- glue_data_sql(
     d_docs,
     "UPDATE ferc_docs 
@@ -139,7 +129,7 @@ ferc.update.callback <- function(data, olddata, row) {
         ck_bmps            = {ck_bmps}
       WHERE rowid = {rowid}",
     .con = conn)
-  
+  poolReturn(conn)
   sql_delete_tags <- glue("
     DELETE FROM ferc_doc_tags WHERE rowid = {d$rowid};")
   

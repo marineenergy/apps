@@ -142,7 +142,7 @@ ui <- dashboardPage(
             span(class="me-tag me-stressor",    "Stressor"),
             span(class="me-tag me-management",  "Management"),
             span(class="me-tag me-phase",       "Phase"),
-            span(class="me-tag me-consequnece", "Consequence")),
+            span(class="me-tag me-consequence", "Consequence")),
         helpText(
           HTML("The Management Measures tool allows users to search and query the Tethys 
           Management Measures Tool for Marine Renewable Energy - a robust compilation 
@@ -169,7 +169,8 @@ ui <- dashboardPage(
             #span(class="me-tag me-effect?", "Effect missing in db.tags"),
             span(class="me-tag me-stressor",   "Stressor"),
             span(class="me-tag me-receptor",   "Receptor"),
-            span(class="me-tag me-phase",      "Phase")),
+            span(class="me-tag me-phase",      "Phase"),
+            span(class="me-tag me-consequence", "Consequence")),
         helpText(
           HTML("The FERC eLibrary contains environmental compliance project documents, 
           of which excerpts have been manually tagged for reference.")),

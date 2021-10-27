@@ -53,7 +53,16 @@ shiny::onStop(function() {
 #   port     = 5432,
 #   user     = db_params$user,
 #   password = readLines(db_params$pwd_txt))
-
+# instead of above, use following pattern: conn <- poolCheckout(con); ...; poolReturn(conn)
+# conn <- poolCheckout(con)
+# sql_insert_docs <- glue_data_sql(
+#   d_docs,
+#   "INSERT INTO ferc_docs VALUES
+#       ({rowid}, {detail}, {project},
+#       {prj_document}, {prj_doc_attachment}, {prj_doc_attach_url},
+#       {ck_ixn}, {ck_obs}, {ck_mp}, {ck_amp}, {ck_pme}, {ck_bmps})",
+#   .con = conn)
+# poolReturn(conn)
 
 # tbls <- dbListTables(con) %>% sort(); tbls
 
