@@ -22,11 +22,22 @@ map_projects <- function(prj_sites){
 get_tags <- function(){
   tbl(con, "tags") %>% 
     collect() %>% 
-    filter(tag != category) %>% 
+    #filter(tag != category) %>% 
     mutate(
       tag_sql   = as.character(tag_sql),
       tag_named = purrr::map2(tag_sql, tag_nocat, setNames),
       tag_html  = glue("<span class='me-tag me-{cat}'>{tag}</span>")) %>% 
+    arrange(desc(category), tag)
+}
+
+get_tags_nocat <- function(){
+  tbl(con, "tags") %>% 
+    collect() %>% # View()
+    #filter(tag != category) %>% 
+    mutate(
+      tag_sql   = as.character(tag_sql),
+      tag_named = purrr::map2(tag_sql, tag_nocat, setNames),
+      tag_html  = glue("<span class='me-tag me-{cat}'>{tag_nocat}</span>")) %>% 
     arrange(desc(category), tag)
 }
 

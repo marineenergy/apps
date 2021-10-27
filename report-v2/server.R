@@ -107,12 +107,12 @@ server <- function(input, output, session) {
   #   message("draw_all_features SOLO")
   # })
   
-  observe({
-    features <- input$mapeditor_draw_all_features
-    message("observe: input$mapeditor_draw_all_features")
-    
-    
-  })
+  # observe({
+  #   features <- input$mapeditor_draw_all_features
+  #   message("observe: input$mapeditor_draw_all_features")
+  #   
+  #   
+  # })
   
   observe({
     #use the draw_stop event to detect when users finished drawing
@@ -456,13 +456,19 @@ server <- function(input, output, session) {
     }
     if (length(input$cks_docs) > 0){
       for (col_bln in input$cks_docs){
-        d <- d %>% 
+        d <- d %>% # collect() %>% nrow() # 1426
           filter(.data[[col_bln]] == TRUE) # %>% collect() %>% nrow()
-        message(glue("ck_docs == `{col_bln}` nrow: {d %>% collect() %>% nrow()}"))
+        # message(glue("ck_docs == `{col_bln}` nrow: {d %>% collect() %>% nrow()}"))
       }
     }
-    
+    #browser() # TODO 236 #
+    # d %>% filter(rowid == 236) %>% collect()
+    # d_0 <<- d
     d <- d_to_tags_html(d)
+    
+    # rowid 236 showing up 2x in results
+    # tbl(con, "ferc_docs") %>% arrange(desc(rowid))
+    # tbl(con, "ferc_doc_tags") %>% filter(rowid == 236)
     
     d %>% 
       mutate(

@@ -235,7 +235,8 @@ d_mgt_n <- tbl(con, "tethys_mgt") %>% summarize(n = n()) %>% pull(n)
 d_docs <- tbl(con, "ferc_docs") %>% 
   left_join(
     tbl(con, "ferc_doc_tags"),
-    by = "rowid")
+    by = "rowid") %>% 
+  arrange(desc(rowid))
 d_docs_n <- tbl(con, "ferc_docs") %>% summarize(n = n()) %>% pull(n)
 
 # publications ----
@@ -331,6 +332,8 @@ d_to_tags_html <- function(d){
     select(-tag_sql, -cat, -tag_nocat)
   
   cols_grpby <- setdiff(colnames(y), "tag_html")
+  
+  #browser()
   
   y %>% 
     group_by(
