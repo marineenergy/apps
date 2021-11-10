@@ -8,15 +8,23 @@ source(file.path(dir_scripts, "common_2.R"))
 source(file.path(dir_scripts, "db.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
 
+# devtools::install_github("RinteRface/shinydashboardPlus@4f23ece8c1ab50ae8e9505400ea7c266c6a04731") # Dec 7, 2020
 librarian::shelf(
   DT, r-lib/gargle, MarkEdmondson1234/googleAuthR, htmltools, httr, jsonlite, leaflet, mapedit, plotly, purrr,
-  shinydashboard, RinteRface/shinydashboardPlus, shiny, shinyjs, shinyWidgets)
+  sf, shinydashboard, RinteRface/shinydashboardPlus, shiny, shinycssloaders, shinyjs, shinyWidgets)
+# devtools::session_info() # confirm versions, esp shinydashboardPlus
+# library(reactlog)
+# reactlog_enable()
+# run a shiny app
+# runApp("/share/github/apps_cdob/report-v2")
+# once app has closed, display reactlog from shiny
+# shiny::reactlogShow()
 
 # navbar ----
 dashboardHeader <- function(
   ..., title = NULL, titleWidth = NULL, 
   disable = FALSE, .list = NULL, leftUi = NULL,
-  controlbarIcon = shiny::icon("gears"), fixed = FALSE) {
+  controlbarIcon = shiny::icon("cogs"), fixed = FALSE) {
   
   # handle right menu items
   items <- c(list(...), .list)
@@ -132,16 +140,16 @@ dashboardHeader <- function(
 # trick: [How to Show Tabpanels in bs4navbar() ? · Issue #108 · RinteRface/bs4Dash](https://github.com/RinteRface/bs4Dash/issues/108)
 
 navbarTab <- function(tabName, ..., icon = NULL) {
-  tags$li(
+  shiny::tags$li(
     class = "nav-item",
-    tags$a(
+    shiny::tags$a(
       class = "nav-link",
       id = paste0("tab-", tabName),
       href = paste0("#shiny-tab-", tabName),
       `data-toggle` = "tab",
       `data-value`  = tabName,
       icon,
-      tags$p(...)))
+      shiny::tags$p(...)))
 }
 
 
@@ -213,15 +221,6 @@ googleSignInUI_btn_signout <- function(id, logout_name = "Sign Out", logout_clas
     tags$button(id = ns("signout"), logout_name, onclick = "signOut();", class = logout_class))
 }
 
-
-# map_edit ----
-map_edit <- leaflet(
-  options = leafletOptions(
-    zoomControl = T,
-    attributionControl = F)) %>% 
-  addProviderTiles(providers$Esri.OceanBasemap) %>% 
-  setView(-93.4, 37.4, 4)
-
 # projects ----
 load_projects()
 
@@ -229,39 +228,15 @@ load_projects()
 d_mgt_tags <- tbl(con, "tethys_mgt") %>% 
   select(rowid, Interaction, `Specific Management Measures`, `Implications of Measure`) %>% 
   left_join(
-    tbl(con, "tethys_mgt_tags"), by = "rowid") %>% 
-  distinct_all()
+    tbl(con, "tethys_mgt_tags"), by = "rowid")
 d_mgt_n <- tbl(con, "tethys_mgt") %>% summarize(n = n()) %>% pull(n)
 
 # documents ----
 d_docs <- tbl(con, "ferc_docs") %>% 
-  #collect() %>% names() %>% paste(collapse=", ")
-  # rowid, detail, project, prj_document, prj_doc_attachment, prj_doc_attach_url, 
-  # ck_ixn, ck_obs, ck_mp, ck_amp, ck_pme, ck_bmps
-  select(
-    rowid,
-    Detail     = detail,
-    Project    = project,
-    doc_name   = prj_document,
-    doc_attach = prj_doc_attachment,
-    doc_url    = prj_doc_attach_url,
-    ck_ixn,
-    ck_obs, 
-    ck_mp, 
-    ck_amp, 
-    ck_pme, 
-    ck_bmps) %>% 
-  mutate(
-    Doc = ifelse(
-      is.na(doc_attach),
-      doc_name,
-      paste0(doc_name, ": ", doc_attach))) %>% 
   left_join(
     tbl(con, "ferc_doc_tags"),
     by = "rowid") %>% 
-  distinct_all()
-
-# tbl(con, "ferc_docs") %>% collect() %>% names() %>% paste(collapse = ", ")
+  arrange(desc(rowid))
 d_docs_n <- tbl(con, "ferc_docs") %>% summarize(n = n()) %>% pull(n)
 
 # publications ----
@@ -275,6 +250,16 @@ d_pubs <- tbl(con, "tethys_pubs") %>%
 
 # tbl(con, "tethys_pubs") %>% collect() %>% names() %>% paste(collapse = ", ")
 d_pubs_n <- tbl(con, "tethys_pubs") %>% summarize(n = n()) %>% pull(n)
+
+# spatial ----
+d_spatial <- tbl(con, "mc_spatial") %>% 
+  filter(ready) %>%
+  left_join(
+    tbl(con, "mc_spatial_tags"),
+    by = "rowid") %>% 
+  distinct_all() %>% 
+  arrange(title)
+d_spatial_n <- tbl(con, "mc_spatial") %>% summarize(n = n()) %>% pull(n)
 
 # reports ----
 dir_rpt_pfx <- "/share/user_reports"
@@ -338,15 +323,17 @@ df_tags  <- tbl(con, "tags") %>%
 d_to_tags_html <- function(d){
   y <- d %>% 
     left_join(
-      tbl_tags %>%
+      tbl_tags %>% 
         select(tag_sql, cat, tag_nocat),
-      by = "tag_sql") %>%
+      by = "tag_sql") %>% 
     mutate(
       tag_html = paste0("<span class='me-tag me-", cat, "'>", tag_nocat, "</span>")) %>% 
     arrange(rowid, desc(cat), tag_nocat) %>% 
     select(-tag_sql, -cat, -tag_nocat)
   
-  cols_grpby <- setdiff(colnames(y), c("tag_html","content","tag_category", "content_tag", "tag"))
+  cols_grpby <- setdiff(colnames(y), "tag_html")
+  
+  #browser()
   
   y %>% 
     group_by(
@@ -358,3 +345,4 @@ d_to_tags_html <- function(d){
     collect() %>% 
     ungroup()
 }
+

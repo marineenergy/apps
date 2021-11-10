@@ -5,13 +5,16 @@ server <- function(input, output, session) {
 
   values <- reactiveValues(
     ixns   = list(),
-    rpts   = rpts_0 )
+    rpts   = rpts_0,
+    ply    = NULL)
   # cat(capture.output(dput(values$ixns)))
   
   # login ----
   glogin <- shiny::callModule(googleSignIn, "login")
-  
+
   output$user <- renderUser({
+    #browser()
+    # DEBUG
     dashboardUser(
       name     = glogin()$name,
       image    = glogin()$image,
@@ -29,22 +32,124 @@ server <- function(input, output, session) {
       setView(-93.4, 37.4, 2)
   })
   
-  crud <- callModule(
-    editMod, "mapEdit", map_edit, "ply",
-    editorOptions = list(
-      polylineOptions = F, markerOptions = F, circleMarkerOptions = F,
-      singleFeature = T))
+  # tmp <- sf::st_sfc()
+  # class(tmp)[1] <- "sfc_POLYGON"
+  # ply_editable_0 <- sf::st_sf(X_leaflet_id = integer(0), feature_type = character(0), geometry=tmp, crs = 4326)
+  # map_edit <- leaflet(
+  #   options = leafletOptions(
+  #     zoomControl = T,
+  #     attributionControl = F)) %>% 
+  #   addProviderTiles(providers$Esri.OceanBasemap) %>% 
+  #   # addPolygons(data = ply_editable_0, group = "ply_editable") %>% 
+  #   setView(-93.4, 37.4, 4)
   
-  observeEvent(input$btn_mod_map, {
-    showModal(modalDialog(
-      title     = "Modify Location",
-      editModUI("mapEdit"),
-      footer    = modalButton("Close"),
-      easyClose = T))
+  # Location input
+  # crud <- callModule(
+  #   editMod, 
+  #   leafmap       = map_edit,
+  #   id            = "map_editor", 
+  #   # [edit existing feature within Shiny and save](https://github.com/r-spatial/mapedit/issues/105#issuecomment-552198352)
+  #   targetLayerId = "ply_editable",  # "ply",
+  #   editor        = "leaflet.extras", # "leafpm"
+  #   editorOptions = list(
+  #     polylineOptions = F, markerOptions = F, circleMarkerOptions = F,
+  #     #editOptions = T, 
+  #     singleFeature = T))
+  
+  # output$map_editable <- renderLeaflet({
+  #   req(crud()$all)
+  #   mapview(crud()$all)@map
+  # })
+  output$mapeditor <- renderLeaflet({
+    library(leaflet.extras)
+    
+    # m <- map_edit
+    m <- leaflet(
+      options = leafletOptions(
+        zoomControl = T,
+        attributionControl = F)) %>% 
+      addProviderTiles(providers$Esri.OceanBasemap) %>% 
+      # addPolygons(data = ply_editable_0, group = "ply_editable") %>% 
+      setView(-93.4, 37.4, 4)
+    
+    #browser()
+    m <- m %>% 
+      leaflet.extras::addDrawToolbar(
+        targetGroup = "ply_editable",
+        editOptions = leaflet.extras::editToolbarOptions(
+          # edit = F,
+          # remove = T,
+          selectedPathOptions = selectedPathOptions()),
+        circleOptions = F,
+        circleMarkerOptions = F,
+        markerOptions = F,
+        polylineOptions = F,
+        singleFeature = T) 
+    
+    ply <- values$ply
+    if (!is.null(ply)){
+      bb <- sf::st_bbox(ply)
+      
+      m <- m %>% 
+        addPolygons(data = ply, group = "ply_editable") # %>%
+      # flyToBounds(bb[['xmin']], bb[['ymin']], bb[['xmax']], bb[['ymax']])
+    }
+    
+    m
   })
+ 
+  # observe({
+  #   #use the draw_stop event to detect when users finished drawing
+  #   
+  #   # https://github.com/bhaskarvk/leaflet.extras/blob/master/inst/examples/shiny/draw-events/app.R
+  #   #req(input$mapeditor_draw_stop)
+  #   req(input$mapeditor_draw_all_features)
+  #   message("draw_all_features SOLO")
+  # })
+  
+  # observe({
+  #   features <- input$mapeditor_draw_all_features
+  #   message("observe: input$mapeditor_draw_all_features")
+  #   
+  #   
+  # })
   
   observe({
-    ply <- crud()$finished
+    #use the draw_stop event to detect when users finished drawing
+    
+    # https://github.com/bhaskarvk/leaflet.extras/blob/master/inst/examples/shiny/draw-events/app.R
+    #req(input$mapeditor_draw_stop)
+    req(input$mapeditor_draw_all_features)
+    #browser()
+    message("draw_all_features")
+    
+    feature <- isolate(input$mapeditor_draw_all_features$features[[1]])
+    
+    # if(!is.null(isolate(input$mapeditor_draw_stop))){
+    #   message("  New Feature")
+    #   feature <- isolate(input$mapeditor_draw_new_feature)
+    # }
+    # if(!is.null(isolate(input$mapeditor_draw_edited_features))){
+    #   message("  Edited Feature")
+    #   feature <- isolate(input$mapeditor_draw_edited_features)
+    # }
+    # browser()
+    #print(feature)
+    #message("mapeditor_draw_stop")
+    #browser()
+    # polygon_coordinates <- input$mymap_draw_new_feature$geometry$coordinates[[1]]
+    # # see  https://rstudio.github.io/leaflet/shiny.html
+    # bb <- input$mymap_bounds
+    #geom_polygon <- input$feature$geometry
+    #geom_polygon <- feature$geometry
+    # drawn_polygon <- Polygon(do.call(rbind,lapply(polygon_coordinates,function(x){c(x[[1]][1],x[[2]][1])})))
+    ply_json <- geojsonio::as.json(feature$geometry)
+    # spdf <- geojsonio::geojson_sp(feature)
+    ply <- st_read(ply_json, quiet = T)
+    #ply_wkt <- st_as_text(st_geometry(ply))
+    values$ply <- ply
+    #mymap_proxy = leafletProxy("mymap") %>% clearPopups() %>% addPopups(south,west,coord)
+    #textOutput("wkt")
     
     leafletProxy("map_side") %>%
       clearShapes()
@@ -56,14 +161,59 @@ server <- function(input, output, session) {
       bb <- sf::st_bbox(ply)
       
       leafletProxy("map_side") %>%
-        addPolygons(data = ply) %>% 
+        addPolygons(data = ply, group = "ply_editable") %>% 
         flyToBounds(bb[['xmin']], bb[['ymin']], bb[['xmax']], bb[['ymax']])
       
       updateActionButton(
         session,
-        "btn_mod_map", "Modify", icon=icon("gear"))
+        "btn_mod_map", "Modify", icon=icon("cog"))
     }
   })
+  
+  observeEvent(input$btn_mod_map, {
+    showModal(modalDialog(
+      title     = "Modify Location",
+      #editModUI("map_editor"),
+      leafletOutput("mapeditor"),
+      #leafletOutput("map_editable"),
+      footer    = modalButton("Close"),
+      easyClose = T))
+    
+    # ply <- crud()$finished
+    # if (!is.null(ply)){
+    #   bb <- sf::st_bbox(ply)
+    #   #browser()
+    #   
+    #   leafletProxy("map_editor-map") %>%
+    #     addPolygons(data = ply, group = "ply_editable") %>% 
+    #     flyToBounds(bb[['xmin']], bb[['ymin']], bb[['xmax']], bb[['ymax']])
+    # }    
+  })
+  
+  
+  
+  # observe({
+  #   #ply <- crud()$finished
+  #   ply <- crud()$all
+  #   
+  #   leafletProxy("map_side") %>%
+  #     clearShapes()
+  #   
+  #   if (is.null(ply)){
+  #     actionButton(
+  #       "btn_mod_map", "Add", icon=icon("plus"))
+  #   } else {
+  #     bb <- sf::st_bbox(ply)
+  #     
+  #     leafletProxy("map_side") %>%
+  #       addPolygons(data = ply, group = "ply_editable") %>% 
+  #       flyToBounds(bb[['xmin']], bb[['ymin']], bb[['xmax']], bb[['ymax']])
+  #     
+  #     updateActionButton(
+  #       session,
+  #       "btn_mod_map", "Modify", icon=icon("cog"))
+  #   }
+  # })
   
   # ixns ----
   
@@ -80,7 +230,7 @@ server <- function(input, output, session) {
       actionButton(
         "btn_add_ixn" , "Add"         , icon=icon("plus"), width="120px", style="display:inline-block;"),
       actionButton(
-        "btn_mod_ixns", "Modify (n=0)", icon=icon("gear"), width="120px", style="display:inline-block;margin-right:15px;float:right"))
+        "btn_mod_ixns", "Modify (n=0)", icon=icon("cog"), width="120px", style="display:inline-block;margin-right:15px;float:right"))
   })
   
   #* btn_add_ixn ----
@@ -89,10 +239,12 @@ server <- function(input, output, session) {
     
     values$ixns <- append(values$ixns, list(input$sel_ixn_tags))
     
-    updateSelectInput(
-      session, 
-      "sel_ixn_tags",
-      selected = "")
+    updateSelectizeInput(
+      session, "sel_ixn_tags", selected = "")
+    # updateSelectInput(
+    #   session, 
+    #   "sel_ixn_tags",
+    #   selected = "")
   })
   
   #* btn_mod_ixns ----
@@ -140,6 +292,7 @@ server <- function(input, output, session) {
   #* prj_map observe Technology tag  ----
   observe({
     req(length(values$ixns) > 0)
+    # browser()
     # output$prj_p <- renderText(suppressWarnings(""))
     
     # extract technology from interaction tags
@@ -150,8 +303,7 @@ server <- function(input, output, session) {
     
     if (!is.null(values$ixns)){
       tech <<- sql2tech[intersect(names(sql2tech), values$ixns %>% unlist())]
-    }
-    else {
+    } else if (is.null(values$ixns)) {
       tech <<- sql2tech
     }
     
@@ -163,18 +315,17 @@ server <- function(input, output, session) {
       load_projects()
       prj_tech <<- prj_sites %>% 
         filter(technology_type %in% tech)
-      leafletProxy("prj_map") %>% 
+      leaflet::leafletProxy("prj_map") %>% 
         leaflet::clearMarkers() %>% 
         leaflet::addMarkers(
           data  = prj_tech,
           label = ~label_html, 
           popup = ~popup_html)
-    }
     # if NO tech type selected in ixns, redraw ALL markers
-    else if (!TRUE %in% tech_str_match){
+    } else if (!TRUE %in% tech_str_match){
       load_projects()
       prj_tech <<- prj_sites
-      leafletProxy("prj_map") %>% 
+      leaflet::leafletProxy("prj_map") %>% 
         leaflet::clearMarkers() %>% 
         leaflet::addMarkers(
           data  = prj_tech,
@@ -232,7 +383,7 @@ server <- function(input, output, session) {
       
       output$prj_p <- renderPlotly(
         suppressWarnings({
-          update_projects()
+          update_project_plot()
           })
         )
     }
@@ -305,13 +456,19 @@ server <- function(input, output, session) {
     }
     if (length(input$cks_docs) > 0){
       for (col_bln in input$cks_docs){
-        d <- d %>% 
+        d <- d %>% # collect() %>% nrow() # 1426
           filter(.data[[col_bln]] == TRUE) # %>% collect() %>% nrow()
-        message(glue("ck_docs == `{col_bln}` nrow: {d %>% collect() %>% nrow()}"))
+        # message(glue("ck_docs == `{col_bln}` nrow: {d %>% collect() %>% nrow()}"))
       }
     }
-    
+    #browser() # TODO 236 #
+    # d %>% filter(rowid == 236) %>% collect()
+    # d_0 <<- d
     d <- d_to_tags_html(d)
+    
+    # rowid 236 showing up 2x in results
+    # tbl(con, "ferc_docs") %>% arrange(desc(rowid))
+    # tbl(con, "ferc_doc_tags") %>% filter(rowid == 236)
     
     d %>% 
       mutate(
@@ -320,15 +477,16 @@ server <- function(input, output, session) {
         across(starts_with("ck_"), as.character),
         across(starts_with("ck_"), recode, "TRUE"="✓", "FALSE"="☐"),
         Doc = ifelse(
-          is.na(doc_attach),
-          doc_name,
-          paste0(doc_name, ": ", doc_attach)),
+          is.na(prj_doc_attachment),
+          prj_document,
+          paste0(prj_document, ": ", prj_doc_attachment)),
         Doc = ifelse(
-          is.na(doc_url),
+          is.na(prj_doc_attach_url),
           Doc,
-          glue("<a href='{doc_url}'>{Doc}</a>"))) %>% 
+          glue("<a href='{prj_doc_attach_url}'>{Doc}</a>"))) %>% 
+      #names()
       select(
-        ID, Project, Doc, Detail, Tags,
+        ID, Project=project, Document=Doc, Detail=detail, Tags,
         Ixn = ck_ixn, 
         Obs = ck_obs, 
         MP  = ck_mp, 
@@ -373,7 +531,7 @@ server <- function(input, output, session) {
       mutate(
         # TODO: include in scripts/update_tags.R:update_tags()
         across(where(is.character), na_if, "NA"),
-        Title = glue("<a href='{uri}'>{title}</a>"))
+        Title = as.character(glue("<a href='{uri}'>{title}</a>")))
   })
   
   #* box_pubs ----
@@ -393,6 +551,86 @@ server <- function(input, output, session) {
       #select(-uri, -title, -tag)
       select(ID, Title, Tags)
   }, escape = F, rownames = F)
+  
+  
+  # spatial ----
+  
+  #* get_spatial() ----
+  get_spatial <- reactive({
+    
+    # update mc_spatial table from  [spatial | marineenergy.app - Google Sheet](https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=936111013):
+    #   source(file.path(dir_scripts, "db.R")); source(file.path(dir_scripts, "update.R")); update_spatial()
+
+    # TODO: add Github issue for future reference
+    # get_spatial_intersection(dataset_code='ocs-lease-blk', aoi_wkt='POLYGON ((-128.3687 31.86402, -128.3687 49.68904, -116.5255 49.68904, -116.5255 31.86402, -128.3687 31.86402))')
+    # Warning: Error in : Problem with `mutate()` column `sp_data`.
+    # ℹ `sp_data = map(code, get_spatial_intersection, aoi_wkt = aoi_wkt)`.
+    # x Failed to fetch row: ERROR:  lwgeom_intersection: GEOS Error: TopologyException: Input geom 0 is invalid: Self-intersection at or near point -179.95155358242297 47.850116156353714 at -179.95155358242297 47.850116156353714
+    # Fixed by updating to select_sql to using ST_MakeValid() for problematic shapefile: ...select prot_numbe, prot_aprv_, block_numb, blk_fed_ap, mms_region, mms_plan_a, ST_MakeValid(geometry) AS geometry from "shp_AK_BLKCLP")
+    
+    d <- d_spatial 
+    
+    # filter by Tags
+    if (length(values$ixns) > 0){
+      rowids <- sapply(values$ixns, get_rowids_with_ixn, db_tbl = "mc_spatial_tags") %>% 
+        unlist() %>% unique()
+      d <- d %>%
+        filter(rowid %in% !!rowids)
+    }
+    d <- d_to_tags_html(d) %>% 
+      mutate(
+        Title = as.character(glue("{title} (Source: <a href='{src_url}'>{src_name}</a>)"))) %>% 
+      arrange(Title)
+    
+    # get Location
+    #browser()
+    aoi_wkt <- ifelse(
+      # !is.null(crud()$finished),
+      # crud()$finished %>% pull(geometry) %>% sf::st_as_text(),
+      !is.null(values$ply),
+      values$ply %>% pull(geometry) %>% sf::st_as_text(),
+      NA)
+    
+    # browser()
+    
+    # filter by Location
+    d <-  d %>%
+      # replace_na(list(buffer_km = 0)) %>%  # "
+      mutate(
+        sp_data = map(code, get_spatial_intersection, aoi_wkt = aoi_wkt)) # , output = "tibble"    
+
+    # TODO: - [ ] get to work when d's nrow == 0
+    #       - [ ] ixn != fish
+    d
+  })
+    
+  #* box_spatial ----
+  output$box_spatial <- renderText({
+    n_ixns    <- length(values$ixns)
+    n_spatial <- nrow(get_spatial())
+
+    ifelse(
+      n_ixns == 0,
+      HTML(glue("MarineCadastre Spatial datasets <small>({d_spatial_n} rows)</small>")),
+      HTML(glue("MarineCadastre Spatial datasets <small>({n_spatial} of {d_spatial_n} rows; filtered by {n_ixns} interactions)</small>")))
+  })
+  
+
+  #* tbl_spatial ----
+  output$tbl_spatial <- renderDataTable({
+    d <- get_spatial()
+    
+    #browser()
+    
+    d <- d %>% 
+      mutate(
+        `Rows in Results` = map_int(sp_data, nrow)) %>% 
+      select(ID, Title, Tags, `Rows in Results`) # , sp_data)
+    
+    d
+    # TODO: 'expand data' buttons for each row which, when clicked result in the corresponding sp_data being displayed as a df
+  }, escape = F, rownames = F)
+
   
   # reports ----
   
@@ -432,40 +670,31 @@ server <- function(input, output, session) {
         </span>"))
   })
   
-  #* poll_rpts_tbl() ----
-  poll_rpts_tbl <- reactivePoll(
-    10000, session, # check every 10 seconds
+  #* get_rpts_tbl() ----
+  get_rpts_tbl <- reactivePoll(
+    10000,
+    session, # check every 10 seconds
     checkFunc = function() {
       email <- get_email()
-      if (is.null(email)) 
+      if (is.null(email))
         return("")
       lastmod <- get_user_reports_last_modified(email)
-      #message(glue("poll_rpts_tbl({email}) {Sys.time()} -- lastmod: {lastmod}"))
+      # message(glue("poll_rpts_tbl({email}) {Sys.time()} -- lastmod: {lastmod}"))
       lastmod
       },
     valueFunc = function() {
       email <- get_email()
-      if (is.null(email)) 
+      if (is.null(email))
         return(rpts_0)
-      #message(glue("poll_rpts_tbl({email}) set value {Sys.time()}"))
+      # message(glue("poll_rpts_tbl({email}) set value {Sys.time()}"))
       values$rpts <- get_user_reports(email)
       values$rpts
     })
-  observe(poll_rpts_tbl())
-  
-  #* get_rpts() ----
-  get_rpts <- reactive({
-    email       <- get_email()
-    #message(glue("get_rpts() email: {email}"))
-    values$rpts <- get_user_reports(email)
-    values$rpts
-  })
-  observe(get_rpts())
-  
+
   #* tbl_rpts ----
   output$tbl_rpts = renderDT({
     
-    get_rpts() %>% 
+    get_rpts_tbl() %>% 
       # get_user_reports("ben@ecoquants.com") %>% 
       # arrange(desc(date)) %>% 
       mutate(
@@ -556,7 +785,7 @@ server <- function(input, output, session) {
     irows <- input$tbl_rpts_rows_selected
     email <- isolate(get_email())
     
-    rpts_del <- get_rpts() %>% 
+    rpts_del <- get_rpts_tbl() %>% 
       slice(irows) %>% 
       pull(url) %>% 
       basename()

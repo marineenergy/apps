@@ -235,7 +235,7 @@ if (is.null(params$aoi_wkt) || str_trim(params$aoi_wkt) == ""){
     # Convert to 3857
     aoi_3857 <- st_transform(aoi_sf, 3857)
     
-    bkmap <- get_map(location = bb, source = "stamen")
+    bkmap <- ggmap::get_map(location = bb, source = "stamen")
     
     # Define a function to fix the bbox to be in EPSG:3857
     ggmap_bbox <- function(map) {
