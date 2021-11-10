@@ -745,8 +745,11 @@ server <- function(input, output, session) {
       title        = rpt_title,
       filetype     = out_ext,
       contents     = list(
-          projects   = input$ck_rpt_prj,
-          management = input$ck_rpt_mgt),
+          projects     = input$ck_rpt_prj,
+          management   = input$ck_rpt_mgt,
+          documents    = input$ck_rpt_docs,
+          publications = input$ck_rpt_pubs,
+          spatial      = input$ck_rpt_spatial),
       interactions = values[["ixns"]])
     # list(params = m) %>% as.yaml() %>% cat()
     # TODO: Spatial wkt in meta
@@ -768,7 +771,6 @@ server <- function(input, output, session) {
     q$interactions <- toJSON(m$interactions) # %>% as.character()
     # as.yaml(q) %>% cat()
 
-    
     r <- GET(url_rpt_pfx, query = q)
     # message(glue("r$url: {r$url}"))
     
