@@ -331,10 +331,8 @@ d_to_tags_html <- function(d){
     arrange(rowid, desc(cat), tag_nocat) %>% 
     select(-tag_sql, -cat, -tag_nocat)
   
-  cols_grpby <- setdiff(colnames(y), "tag_html")
-  
-  #browser()
-  
+  cols_grpby <- setdiff(colnames(y), c("tag", "tag_category", "tag_html"))
+
   y %>% 
     group_by(
       !!!syms(cols_grpby)) %>% 
