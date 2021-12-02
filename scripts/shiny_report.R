@@ -1,106 +1,55 @@
 shelf(DT, glue, tidyr)
 
-map_projects <- function(prj_sites){
-  prj_sites <- prj_sites %>% 
-    mutate(
-      label_html = label_html %>% lapply(htmltools::HTML),
-      popup_html = popup_html %>% lapply(htmltools::HTML))
-  
-  leaflet::leaflet(
-    data    = prj_sites, width = "100%",
-    options = leaflet::leafletOptions(
-      zoomControl = F)) %>% 
-    leaflet::addProviderTiles(leaflet::providers$Esri.OceanBasemap) %>% 
-    leaflet::addMarkers(
-      label = ~label_html,
-      popup = ~popup_html) %>% 
-    htmlwidgets::onRender("function(el, x) {
-          L.control.zoom({ position: 'topright' }).addTo(this)
-    }")
-}
-
-get_tags <- function(){
-  tbl(con, "tags") %>% 
-    collect() %>% 
-    #filter(tag != category) %>% 
-    mutate(
-      tag_sql   = as.character(tag_sql),
-      tag_named = purrr::map2(tag_sql, tag_nocat, setNames),
-      tag_html  = glue("<span class='me-tag me-{cat}'>{tag}</span>")) %>% 
-    arrange(desc(category), tag)
-}
-
-get_tags_nocat <- function(){
-  tbl(con, "tags") %>% 
-    collect() %>% # View()
-    #filter(tag != category) %>% 
-    mutate(
-      tag_sql   = as.character(tag_sql),
-      tag_named = purrr::map2(tag_sql, tag_nocat, setNames),
-      tag_html  = glue("<span class='me-tag me-{cat}'>{tag_nocat}</span>")) %>% 
-    arrange(desc(category), tag)
-}
-
-get_tags_html <- function(rid, tbl_tags = "ferc_doc_tags"){
-  # rid = 1; tbl_tags = "ferc_doc_tags"
-  tbl(con, tbl_tags) %>% 
-    filter(rowid == !!rid, !is.na(tag_sql)) %>% 
-    # select(rowid, tag_sql) %>% 
-    distinct(rowid, tag_sql) %>% 
-    collect() %>% 
-    mutate(
-      tag_sql = as.character(tag_sql)) %>%
-    left_join(
-      d_tags %>% 
-        select(tag_sql, category, tag, tag_html),
-      by = "tag_sql") %>% 
-    filter(!is.na(tag)) %>% 
-    arrange(desc(category), tag) %>% 
-    pull(tag_html) %>% 
-    paste(collapse = " ")
-}
-
-
-# spatial 
-# will map across rows of d ('code')
 get_spatial_intersection <- function(dataset_code, aoi_wkt){
   librarian::shelf(glue, sf)
   # summarize shapefile dataset from area of interest, with temporary in-memory query
- 
+  
   # TODO: pull latest datasets: https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=936111013
   # datasets_gsheet2db(redo = T)
-
+  
+  # dataset_code <- "oil-gas-wells"
+  # dataset_code <- "cetacean-pacific-summer"
+  # aoi_wkt <- "POLYGON ((-104.7656 22.97593, -104.7656 41.15991, -77.87109 41.15991, -77.87109 22.97593, -104.7656 22.97593))"
+  # # testing get_spatial_intersection()
+  # test_df<-get_spatial_intersection(dataset_code = dataset_code, aoi_wkt = aoi_wkt) 
+  
+  # testing mapping get_spatial_intersection()
+  # spatial query / intersection based on aoi
+  # vals$ixns <- list(
+  #   c("Receptor.Birds.Passerines", 
+  #     "Stressor.BehavioralInteraction"))
+  
   
   # test vals
   # dataset_code = "cetacean-bia"
   # aoi_wkt = "POLYGON ((-105.9082 22.73295, -105.9082 35.65492, -70.13672 35.65492, -70.13672 22.73295, -105.9082 22.73295))"
   # aoi_wkt = params$aoi_wkt
-    
+  
   # test values: 
   # dataset_code <- "gloria"
   # aoi_wkt <- "POLYGON ((-104.7656 22.97593, -104.7656 41.15991, -77.87109 41.15991, -77.87109 22.97593, -104.7656 22.97593))"
   # NOTES:
   {   
-  # aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
-  # crud()$finished <- "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
-
-  # dataset_code = "cetacean-bia";
-  # dataset_code = "cetacean-pacific-summer"; aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
-  # params <- yaml::yaml.load("
-  # title: Testing
-  # aoi_wkt:
-  # - POLYGON ((-115.9245 32.26236, -115.9245 32.26565, -115.9206 32.26565, -115.9206
-  #               32.26236, -115.9245 32.26236))
-  # - POLYGON ((-121.9503 33.01519, -121.9503 35.51658, -115.8711 35.51658, -115.8711
-  #             33.01519, -121.9503 33.01519))")
-  # aoi_wkt <- params$aoi_wkt
-  # dataset_code = "oil-gas-wells"
-  # aoi_wkt      = "POLYGON ((-157.4273 55.22198, -157.4273 61.76097, -143.1428 61.76097, -143.1428 55.22198, -157.4273 55.22198))"
-  # dataset_code='fed-sand-gravel-lease'
-  # aoi_wkt='POLYGON ((-175.4932 15.34568, -175.4932 27.93566, -151.813 27.93566, -151.813 15.34568, -175.4932 15.34568))'
-  
-  # dataset_code='monuments'
-  # aoi_wkt='POLYGON ((-180.0668 16.98081, -180.0668 29.87807, -153.4797 29.87807, -153.4797 16.98081, -180.0668 16.98081))'
+    # aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
+    # crud()$finished <- "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
+    
+    # dataset_code = "cetacean-bia";
+    # dataset_code = "cetacean-pacific-summer"; aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
+    # params <- yaml::yaml.load("
+    # title: Testing
+    # aoi_wkt:
+    # - POLYGON ((-115.9245 32.26236, -115.9245 32.26565, -115.9206 32.26565, -115.9206
+    #               32.26236, -115.9245 32.26236))
+    # - POLYGON ((-121.9503 33.01519, -121.9503 35.51658, -115.8711 35.51658, -115.8711
+    #             33.01519, -121.9503 33.01519))")
+    # aoi_wkt <- params$aoi_wkt
+    # dataset_code = "oil-gas-wells"
+    # aoi_wkt      = "POLYGON ((-157.4273 55.22198, -157.4273 61.76097, -143.1428 61.76097, -143.1428 55.22198, -157.4273 55.22198))"
+    # dataset_code='fed-sand-gravel-lease'
+    # aoi_wkt='POLYGON ((-175.4932 15.34568, -175.4932 27.93566, -151.813 27.93566, -151.813 15.34568, -175.4932 15.34568))'
+    
+    # dataset_code='monuments'
+    # aoi_wkt='POLYGON ((-180.0668 16.98081, -180.0668 29.87807, -153.4797 29.87807, -153.4797 16.98081, -180.0668 16.98081))'
   }
   
   message(glue("get_spatial_intersection(dataset_code='{dataset_code}', aoi_wkt='{paste(aoi_wkt, collapse=';')}')"))
@@ -116,10 +65,10 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
     replace_na(list(buffer_nm = 0)) %>% 
     # mutate(buffer_nm = 0) %>% # TEST EFFECTS OF THIS
     mutate(across(st_intersection, function(x) ifelse(is.na(x), F, x)))
-      # st_intersection = ifelse( # TODO: fix spatial data
-      #   is.na(st_intersection), 
-      #   as.logical('FALSE'), 
-      #   st_intersection))
+  # st_intersection = ifelse( # TODO: fix spatial data
+  #   is.na(st_intersection), 
+  #   as.logical('FALSE'), 
+  #   st_intersection))
   
   #browser()
   if (is.null(aoi_wkt) | is.na(aoi_wkt)){
@@ -292,27 +241,70 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
   
   x_df %>% collect() %>% tibble()
 }
+
+get_tags <- function(){
+  tbl(con, "tags") %>% 
+    collect() %>% 
+    #filter(tag != category) %>% 
+    mutate(
+      tag_sql   = as.character(tag_sql),
+      tag_named = purrr::map2(tag_sql, tag_nocat, setNames),
+      tag_html  = glue("<span class='me-tag me-{cat}'>{tag}</span>")) %>% 
+    arrange(desc(category), tag)
+}
+
+get_tags_nocat <- function(){
+  tbl(con, "tags") %>% 
+    collect() %>% # View()
+    #filter(tag != category) %>% 
+    mutate(
+      tag_sql   = as.character(tag_sql),
+      tag_named = purrr::map2(tag_sql, tag_nocat, setNames),
+      tag_html  = glue("<span class='me-tag me-{cat}'>{tag_nocat}</span>")) %>% 
+    arrange(desc(category), tag)
+}
+
+get_tags_html <- function(rid, tbl_tags = "ferc_doc_tags"){
+  # rid = 1; tbl_tags = "ferc_doc_tags"
+  tbl(con, tbl_tags) %>% 
+    filter(rowid == !!rid, !is.na(tag_sql)) %>% 
+    # select(rowid, tag_sql) %>% 
+    distinct(rowid, tag_sql) %>% 
+    collect() %>% 
+    mutate(
+      tag_sql = as.character(tag_sql)) %>%
+    left_join(
+      d_tags %>% 
+        select(tag_sql, category, tag, tag_html),
+      by = "tag_sql") %>% 
+    filter(!is.na(tag)) %>% 
+    arrange(desc(category), tag) %>% 
+    pull(tag_html) %>% 
+    paste(collapse = " ")
+}
+
+map_projects <- function(prj_sites){
+  prj_sites <- prj_sites %>% 
+    mutate(
+      label_html = label_html %>% lapply(htmltools::HTML),
+      popup_html = popup_html %>% lapply(htmltools::HTML))
   
-# dataset_code <- "oil-gas-wells"
-# dataset_code <- "cetacean-pacific-summer"
-# aoi_wkt <- "POLYGON ((-104.7656 22.97593, -104.7656 41.15991, -77.87109 41.15991, -77.87109 22.97593, -104.7656 22.97593))"
-# # testing get_spatial_intersection()
-# test_df<-get_spatial_intersection(dataset_code = dataset_code, aoi_wkt = aoi_wkt) 
+  leaflet::leaflet(
+    data    = prj_sites, width = "100%",
+    options = leaflet::leafletOptions(
+      zoomControl = F)) %>% 
+    leaflet::addProviderTiles(leaflet::providers$Esri.OceanBasemap) %>% 
+    leaflet::addMarkers(
+      label = ~label_html,
+      popup = ~popup_html) %>% 
+    htmlwidgets::onRender("function(el, x) {
+          L.control.zoom({ position: 'topright' }).addTo(this)
+    }")
+}
 
-# testing mapping get_spatial_intersection()
-# spatial query / intersection based on aoi
-# vals$ixns <- list(
-#   c("Receptor.Birds.Passerines", 
-#     "Stressor.BehavioralInteraction"))
-
-
-
-
-
-
- # from analyze_spatial.Rmd -----
 tabulate_dataset_shp_within_aoi3 <- function(dataset_code, aoi_wkt, output = "kable"){
-  # summarize shapefile dataset from area of interest
+  # from analyze_spatial.Rmd -----
+    # summarize shapefile dataset from area of interest
   
   # dataset_code = "cetacean-bia"; aoi_wkt = params$aoi_wkt; output = "kable"
   # dataset_code = "cetacean-pacific-summer"; aoi_wkt = params$aoi_wkt; output = "kable"
