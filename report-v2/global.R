@@ -6,7 +6,7 @@ source(file.path(dir_scripts, "common_2.R"))
 # dir_scripts <<- here::here("scripts")
 # dir_data    <<- here::here("data")
 source(file.path(dir_scripts, "db.R"))
-source(file.path(dir_scripts, "shiny_report.R"))
+source(file.path(dir_scripts, "shiny_report.R")) # loads content d_*
 
 # devtools::install_github("RinteRface/shinydashboardPlus@4f23ece8c1ab50ae8e9505400ea7c266c6a04731") # Dec 7, 2020
 librarian::shelf(
@@ -231,14 +231,6 @@ d_mgt_tags <- tbl(con, "tethys_mgt") %>%
     tbl(con, "tethys_mgt_tags"), by = "rowid")
 d_mgt_n <- tbl(con, "tethys_mgt") %>% summarize(n = n()) %>% pull(n)
 
-# documents ----
-d_docs <- tbl(con, "ferc_docs") %>% 
-  left_join(
-    tbl(con, "ferc_doc_tags"),
-    by = "rowid") %>% 
-  arrange(desc(rowid))
-d_docs_n <- tbl(con, "ferc_docs") %>% summarize(n = n()) %>% pull(n)
-
 # publications ----
 d_pubs <- tbl(con, "tethys_pubs") %>% 
   select(rowid, uri, title) %>% 
@@ -331,8 +323,10 @@ d_to_tags_html <- function(d){
     arrange(rowid, desc(cat), tag_nocat) %>% 
     select(-tag_sql, -cat, -tag_nocat)
   
-  cols_grpby <- setdiff(colnames(y), c("tag", "tag_category", "tag_html"))
-
+  cols_grpby <- setdiff(colnames(y), c("tag", "tag_html", "tag_category"))
+  
+  #browser()
+  
   y %>% 
     group_by(
       !!!syms(cols_grpby)) %>% 

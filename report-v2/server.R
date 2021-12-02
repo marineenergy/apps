@@ -444,55 +444,9 @@ server <- function(input, output, session) {
   }, escape = F, rownames = F)
   
   # documents ----
-  
   #* get_docs() ----
   get_docs <- reactive({
-    d <- d_docs
-    if (length(values$ixns) > 0){
-      rowids <- sapply(values$ixns, get_rowids_with_ixn, db_tbl = "ferc_doc_tags") %>% 
-        unlist() %>% unique()
-      d <- d %>%
-        filter(rowid %in% !!rowids)
-    }
-    if (length(input$cks_docs) > 0){
-      for (col_bln in input$cks_docs){
-        d <- d %>% # collect() %>% nrow() # 1426
-          filter(.data[[col_bln]] == TRUE) # %>% collect() %>% nrow()
-        # message(glue("ck_docs == `{col_bln}` nrow: {d %>% collect() %>% nrow()}"))
-      }
-    }
-    #browser() # TODO 236 #
-    # d %>% filter(rowid == 236) %>% collect()
-    # d_0 <<- d
-    d <- d_to_tags_html(d)
-    
-    # rowid 236 showing up 2x in results
-    # tbl(con, "ferc_docs") %>% arrange(desc(rowid))
-    # tbl(con, "ferc_doc_tags") %>% filter(rowid == 236)
-    
-    d %>% 
-      mutate(
-        # TODO: include in scripts/update_tags.R:update_tags()
-        across(where(is.character), na_if, "NA"),
-        across(starts_with("ck_"), as.character),
-        across(starts_with("ck_"), recode, "TRUE"="✓", "FALSE"="☐"),
-        Doc = ifelse(
-          is.na(prj_doc_attachment),
-          prj_document,
-          paste0(prj_document, ": ", prj_doc_attachment)),
-        Doc = ifelse(
-          is.na(prj_doc_attach_url),
-          Doc,
-          glue("<a href='{prj_doc_attach_url}'>{Doc}</a>"))) %>% 
-      #names()
-      select(
-        ID, Project=project, Document=Doc, Detail=detail, Tags,
-        Ixn = ck_ixn, 
-        Obs = ck_obs, 
-        MP  = ck_mp, 
-        AMP = ck_amp, 
-        PME = ck_pme, 
-        BMP = ck_bmps)
+    get_docs_tbl(d_docs, ixns = values$ixns, cks = input$cks_docs)
   })
   
   #* box_docs ----
@@ -745,11 +699,8 @@ server <- function(input, output, session) {
       title        = rpt_title,
       filetype     = out_ext,
       contents     = list(
-          projects     = input$ck_rpt_prj,
-          management   = input$ck_rpt_mgt,
-          documents    = input$ck_rpt_docs,
-          publications = input$ck_rpt_pubs,
-          spatial      = input$ck_rpt_spatial),
+          projects   = input$ck_rpt_prj,
+          management = input$ck_rpt_mgt),
       interactions = values[["ixns"]])
     # list(params = m) %>% as.yaml() %>% cat()
     # TODO: Spatial wkt in meta
@@ -771,6 +722,7 @@ server <- function(input, output, session) {
     q$interactions <- toJSON(m$interactions) # %>% as.character()
     # as.yaml(q) %>% cat()
 
+    
     r <- GET(url_rpt_pfx, query = q)
     # message(glue("r$url: {r$url}"))
     

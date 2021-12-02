@@ -764,20 +764,6 @@ add_tech_text <- function(fig, p_tech_sel, y_tech, tech_name){
           yshift    = 8))
   }
 }
-    
-    
-    
-    
-    
-    
-
-  
-
-  
-  
-
-  
-  
 
 #   # tech lines -----
 #   n_tech_types  <- p_tech_tbl %>%
@@ -948,4 +934,54 @@ update_project_plot <- function(){
 
 tags_sql_to_html <- function(ixns, df_tags){
   
+}
+
+# documents ----
+d_docs <- tbl(con, "ferc_docs") %>% 
+  left_join(
+    tbl(con, "ferc_doc_tags"),
+    by = "rowid") %>% 
+  arrange(desc(rowid))
+d_docs_n <- tbl(con, "ferc_docs") %>% summarize(n = n()) %>% pull(n)
+
+get_docs_tbl <- function(d, ixns, cks){
+  
+  if (length(ixns) > 0){
+    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "ferc_doc_tags") %>% 
+      unlist() %>% unique()
+    d <- d %>%
+      filter(rowid %in% !!rowids)
+  }
+  if (length(cks) > 0){
+    for (col_bln in cks){
+      d <- d %>% # collect() %>% nrow() # 1426
+        filter(.data[[col_bln]] == TRUE) # %>% collect() %>% nrow()
+      # message(glue("ck_docs == `{col_bln}` nrow: {d %>% collect() %>% nrow()}"))
+    }
+  }
+  d <- d_to_tags_html(d)
+  
+  d %>% 
+    mutate(
+      # TODO: include in scripts/update_tags.R:update_tags()
+      across(where(is.character), na_if, "NA"),
+      across(starts_with("ck_"), as.character),
+      across(starts_with("ck_"), recode, "TRUE"="✓", "FALSE"="☐"),
+      Doc = ifelse(
+        is.na(prj_doc_attachment),
+        prj_document,
+        paste0(prj_document, ": ", prj_doc_attachment)),
+      Doc = ifelse(
+        is.na(prj_doc_attach_url),
+        Doc,
+        glue("<a href='{prj_doc_attach_url}'>{Doc}</a>"))) %>% 
+    #names()
+    select(
+      ID, Project=project, Document=Doc, Detail=detail, Tags,
+      Ixn = ck_ixn, 
+      Obs = ck_obs, 
+      MP  = ck_mp, 
+      AMP = ck_amp, 
+      PME = ck_pme, 
+      BMP = ck_bmps)
 }
