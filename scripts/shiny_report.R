@@ -152,6 +152,32 @@ calculate_y_tech <- function(tech) {
       name        = stringr::str_replace(tech, " Energy", ""))
 }
 
+d_to_tags_html <- function(d){
+  y <- d %>% 
+    left_join(
+      tbl_tags %>% 
+        select(tag_sql, cat, tag_nocat),
+      by = "tag_sql") %>% 
+    mutate(
+      tag_html = paste0("<span class='me-tag me-", cat, "'>", tag_nocat, "</span>")) %>% 
+    arrange(rowid, desc(cat), tag_nocat) %>% 
+    select(-tag_sql, -cat, -tag_nocat)
+  
+  cols_grpby <- setdiff(colnames(y), c("tag", "tag_html", "tag_category"))
+  
+  #browser()
+  
+  y %>% 
+    group_by(
+      !!!syms(cols_grpby)) %>% 
+    summarize(
+      Tags = str_flatten(tag_html, collapse = " ")) %>% 
+    rename(ID = rowid) %>% 
+    arrange(ID) %>% 
+    collect() %>% 
+    ungroup()
+}
+
 filter_prj_by_tech <- function(tech, prj_sites, d_times, d_permits) {
   # filter projects by selected technology
   
@@ -207,8 +233,9 @@ get_antn_info <- function(tech, p_tech_tbl){
   
 }
 
-get_docs_tbl <- function(d, ixns, cks){
+get_docs_tbl <- function(d_docs_tags, ixns = NULL, cks = NULL){
   
+  d <- d_docs_tags
   if (length(ixns) > 0){
     rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "ferc_doc_tags") %>% 
       unlist() %>% unique()
@@ -249,6 +276,38 @@ get_docs_tbl <- function(d, ixns, cks){
       BMP = ck_bmps)
 }
 
+get_mgt_tbl <- function(d_mgt_tags, ixns = NULL){
+  
+  d <- d_mgt_tags
+  
+  if (length(ixns) > 0){
+    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "tethys_mgt_tags") %>% 
+      unlist() %>% unique()
+    d <- d %>%
+      filter(rowid %in% !!rowids)
+  }
+  
+  d_to_tags_html(d)
+}
+
+get_pubs_tbl <- function(d_pubs_tags, ixns = NULL){
+  d <- d_pubs_tags
+  if (length(ixns) > 0){
+    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "tethys_pub_tags") %>% 
+      unlist() %>% unique()
+    d <- d %>%
+      filter(rowid %in% !!rowids)
+  }
+  
+  d <- d_to_tags_html(d)
+  
+  d %>% 
+    mutate(
+      # TODO: include in scripts/update_tags.R:update_tags()
+      across(where(is.character), na_if, "NA"),
+      Title = as.character(glue("<a href='{uri}'>{title}</a>")))
+}
+
 get_rowids_with_ixn <- function(db_tbl, ixn){
   # db_tbl = "tethys_mgt_tags"; ixn = c("Receptor.Fish", "Stressor.PhysicalInteraction.Collision")
   # db_tbl = "mc_spatial_tags"; ixn = values$ixns %>% unlist()
@@ -278,7 +337,6 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
   #   c("Receptor.Birds.Passerines", 
   #     "Stressor.BehavioralInteraction"))
   
-  
   # test vals
   # dataset_code = "cetacean-bia"
   # aoi_wkt = "POLYGON ((-105.9082 22.73295, -105.9082 35.65492, -70.13672 35.65492, -70.13672 22.73295, -105.9082 22.73295))"
@@ -288,7 +346,6 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
   # dataset_code <- "gloria"
   # aoi_wkt <- "POLYGON ((-104.7656 22.97593, -104.7656 41.15991, -77.87109 41.15991, -77.87109 22.97593, -104.7656 22.97593))"
   # NOTES:
-  {   
     # aoi_wkt = "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
     # crud()$finished <- "POLYGON ((-67.06819 44.99416, -67.1857 44.94707, -67.21651 44.88058, -67.15834 44.78871, -67.04385 44.81789, -66.91015 44.86279, -67.06819 44.99416))"
     
@@ -309,13 +366,12 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
     
     # dataset_code='monuments'
     # aoi_wkt='POLYGON ((-180.0668 16.98081, -180.0668 29.87807, -153.4797 29.87807, -153.4797 16.98081, -180.0668 16.98081))'
-  }
   
   message(glue("get_spatial_intersection(dataset_code='{dataset_code}', aoi_wkt='{paste(aoi_wkt, collapse=';')}')"))
   
-  if (is.null(aoi_wkt)) {
-    return("Please draw a location to get a summary of the intersecting features for this dataset.")
-  }
+  # if (is.null(aoi_wkt)) {
+  #   return("Please draw a location to get a summary of the intersecting features for this dataset.")
+  # }
   
   ds <- tbl(con, "mc_spatial") %>% 
     collect() %>% 
@@ -330,7 +386,7 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
   #   st_intersection))
   
   #browser()
-  if (is.null(aoi_wkt) | is.na(aoi_wkt)){
+  if (is.null(aoi_wkt) || is.na(aoi_wkt)){
     # if no Location
     #aoi_sql <- glue("'ST_MakeEnvelope(-180,-90,180,90,4326)'::geometry")
     aoi_sql <- "world"
@@ -501,6 +557,33 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
   x_df %>% collect() %>% tibble()
 }
 
+get_spatial_tbl <- function(d_spatial_tags, ixns = NULL, aoi_wkt = NA){
+  
+  d <- d_spatial_tags 
+  
+  #browser()
+  
+  # filter by Tags
+  if (length(ixns) > 0){
+    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "mc_spatial_tags") %>% 
+      unlist() %>% unique()
+    d <- d %>%
+      filter(rowid %in% !!rowids)
+  }
+  d <- d_to_tags_html(d) %>% 
+    mutate(
+      Title = as.character(glue("{title} (Source: <a href='{src_url}'>{src_name}</a>)"))) %>% 
+    arrange(Title)
+  
+  # filter by Location
+  #browser()
+  d <-  d %>%
+    mutate(
+      sp_data = map(code, get_spatial_intersection, aoi_wkt))
+  d
+  
+}
+
 get_tags <- function(){
   tbl(con, "tags") %>% 
     collect() %>% 
@@ -628,6 +711,8 @@ load_projects <- function(ixns=NULL){
   prj_times_csv        <<- file.path(dir_data, "project_times.csv")
   prj_permits_csv      <<- file.path(dir_data, "project_permits.csv")
   prj_permit_types_csv <<- file.path(dir_data, "project_permit_types.csv")
+  
+  tech <<- c("Riverine Energy", "Tidal Energy", "Wave Energy")
   
   # TODO: load prj_*  into db, read from db
   prj_sites <<- readr::read_csv(prj_sites_csv, col_types = readr::cols()) %>% 
@@ -759,6 +844,16 @@ plot_projects <- function(){
       tech_name  = p_tech_tbl$name[3],
       y_tech     = y_tech_antn[[3]])  
   fig
+}
+
+sf_to_wkt <- function(sf){
+  
+  if (is.null(sf))
+    return(NULL)
+  
+  values$ply %>% 
+    pull(geometry) %>% 
+    sf::st_as_text()
 }
 
 tabulate_dataset_shp_within_aoi3 <- function(dataset_code, aoi_wkt, output = "kable"){
@@ -934,11 +1029,50 @@ update_project_plot <- function(){
   fig
 }
 
+# load tags ----
+tbl_tags <- tbl(con, "tags")
+df_tags  <- tbl(con, "tags") %>%
+  mutate(
+    tag_sql  = as.character(tag_sql),
+    tag_html = paste0("<span class='me-tag me-", cat, "'>", tag_nocat, "</span>")) %>% 
+  collect()
+
+# load projects ----
+load_projects()
+
+# load management ----
+d_mgt_tags <- tbl(con, "tethys_mgt") %>% 
+  select(rowid, Interaction, `Specific Management Measures`, `Implications of Measure`) %>% 
+  left_join(
+    tbl(con, "tethys_mgt_tags"), by = "rowid")
+d_mgt_n <- tbl(con, "tethys_mgt") %>% summarize(n = n()) %>% pull(n)
+
 # load documents ----
-d_docs <- tbl(con, "ferc_docs") %>% 
+d_docs_tags <- tbl(con, "ferc_docs") %>% 
   left_join(
     tbl(con, "ferc_doc_tags"),
     by = "rowid") %>% 
   arrange(desc(rowid))
 d_docs_n <- tbl(con, "ferc_docs") %>% summarize(n = n()) %>% pull(n)
 
+# load publications ----
+d_pubs_tags <- tbl(con, "tethys_pubs") %>% 
+  select(rowid, uri, title) %>% 
+  left_join(
+    tbl(con, "tethys_pub_tags") %>% 
+      select(-uri),
+    by = "rowid") %>% 
+  distinct_all()
+
+# tbl(con, "tethys_pubs") %>% collect() %>% names() %>% paste(collapse = ", ")
+d_pubs_n <- tbl(con, "tethys_pubs") %>% summarize(n = n()) %>% pull(n)
+
+# load spatial ----
+d_spatial_tags <- tbl(con, "mc_spatial") %>% 
+  filter(ready) %>%
+  left_join(
+    tbl(con, "mc_spatial_tags"),
+    by = "rowid") %>% 
+  distinct_all() %>% 
+  arrange(title)
+d_spatial_n <- tbl(con, "mc_spatial") %>% summarize(n = n()) %>% pull(n)

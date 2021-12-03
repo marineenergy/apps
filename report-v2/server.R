@@ -281,9 +281,13 @@ server <- function(input, output, session) {
   })
   
   # projects ----
-  load_projects()
-  tech <<- c("Riverine Energy", "Tidal Energy", "Wave Energy")
-  
+  # TODO:
+  #   server.R
+  #     get_projects <- reactive({ # limit by tech per ixns })
+  #   scripts/shiny_report.R
+  #     get_projects_map      <- function(projects)
+  #     get_projects_timeline <- function(projects)
+
   #* prj_map ----
   output$prj_map <- renderLeaflet({
     
@@ -411,20 +415,7 @@ server <- function(input, output, session) {
   
   #* get_mgt() ----
   get_mgt <- reactive({
-    
-    # TODO: functionalize for any tabular content
-    if (length(values$ixns) == 0){
-      d <- d_mgt_tags
-    } else {
-      rowids <- sapply(values$ixns, get_rowids_with_ixn, db_tbl = "tethys_mgt_tags") %>% 
-        unlist() %>% unique()
-      d <- d_mgt_tags %>%
-        filter(rowid %in% !!rowids)
-    }
-    
-    # TODO: functionalize for any tabular content
-    # d_1 <- 
-    d_to_tags_html(d)
+    get_mgt_tbl(ixns = values$ixns, d_mgt_tags)
   })
   
   #* box_mgt ----
@@ -439,14 +430,13 @@ server <- function(input, output, session) {
   
   #* tbl_mgt ----
   output$tbl_mgt <- renderDataTable({
-    
     get_mgt()
   }, escape = F, rownames = F)
   
   # documents ----
   #* get_docs() ----
   get_docs <- reactive({
-    get_docs_tbl(d_docs, ixns = values$ixns, cks = input$cks_docs)
+    get_docs_tbl(d_docs_tags, ixns = values$ixns, cks = input$cks_docs)
   })
   
   #* box_docs ----
@@ -467,25 +457,9 @@ server <- function(input, output, session) {
   }, escape = F, rownames = F)
   
   # publications ----
-  
   #* get_pubs() ----
   get_pubs <- reactive({
-    d <- d_pubs
-    if (length(values$ixns) > 0){
-      rowids <- sapply(values$ixns, get_rowids_with_ixn, db_tbl = "tethys_pub_tags") %>% 
-        unlist() %>% unique()
-      d <- d %>%
-        filter(rowid %in% !!rowids)
-    }
-
-    #browser()
-    d <- d_to_tags_html(d)
-    
-    d %>% 
-      mutate(
-        # TODO: include in scripts/update_tags.R:update_tags()
-        across(where(is.character), na_if, "NA"),
-        Title = as.character(glue("<a href='{uri}'>{title}</a>")))
+    get_pubs_tbl(d_pubs_tags, ixns = values$ixns)
   })
   
   #* box_pubs ----
@@ -511,50 +485,14 @@ server <- function(input, output, session) {
   
   #* get_spatial() ----
   get_spatial <- reactive({
-    
     # update mc_spatial table from  [spatial | marineenergy.app - Google Sheet](https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=936111013):
     #   source(file.path(dir_scripts, "db.R")); source(file.path(dir_scripts, "update.R")); update_spatial()
 
-    # TODO: add Github issue for future reference
-    # get_spatial_intersection(dataset_code='ocs-lease-blk', aoi_wkt='POLYGON ((-128.3687 31.86402, -128.3687 49.68904, -116.5255 49.68904, -116.5255 31.86402, -128.3687 31.86402))')
-    # Warning: Error in : Problem with `mutate()` column `sp_data`.
-    # ℹ `sp_data = map(code, get_spatial_intersection, aoi_wkt = aoi_wkt)`.
-    # x Failed to fetch row: ERROR:  lwgeom_intersection: GEOS Error: TopologyException: Input geom 0 is invalid: Self-intersection at or near point -179.95155358242297 47.850116156353714 at -179.95155358242297 47.850116156353714
-    # Fixed by updating to select_sql to using ST_MakeValid() for problematic shapefile: ...select prot_numbe, prot_aprv_, block_numb, blk_fed_ap, mms_region, mms_plan_a, ST_MakeValid(geometry) AS geometry from "shp_AK_BLKCLP")
+    d <- get_spatial_tbl(
+      d_spatial_tags, 
+      ixns    = values$ixns, 
+      aoi_wkt = sf_to_wkt(values$ply))
     
-    d <- d_spatial 
-    
-    # filter by Tags
-    if (length(values$ixns) > 0){
-      rowids <- sapply(values$ixns, get_rowids_with_ixn, db_tbl = "mc_spatial_tags") %>% 
-        unlist() %>% unique()
-      d <- d %>%
-        filter(rowid %in% !!rowids)
-    }
-    d <- d_to_tags_html(d) %>% 
-      mutate(
-        Title = as.character(glue("{title} (Source: <a href='{src_url}'>{src_name}</a>)"))) %>% 
-      arrange(Title)
-    
-    # get Location
-    #browser()
-    aoi_wkt <- ifelse(
-      # !is.null(crud()$finished),
-      # crud()$finished %>% pull(geometry) %>% sf::st_as_text(),
-      !is.null(values$ply),
-      values$ply %>% pull(geometry) %>% sf::st_as_text(),
-      NA)
-    
-    # browser()
-    
-    # filter by Location
-    d <-  d %>%
-      # replace_na(list(buffer_km = 0)) %>%  # "
-      mutate(
-        sp_data = map(code, get_spatial_intersection, aoi_wkt = aoi_wkt)) # , output = "tibble"    
-
-    # TODO: - [ ] get to work when d's nrow == 0
-    #       - [ ] ixn != fish
     d
   })
     
@@ -573,8 +511,6 @@ server <- function(input, output, session) {
   #* tbl_spatial ----
   output$tbl_spatial <- renderDataTable({
     d <- get_spatial()
-    
-    #browser()
     
     d <- d %>% 
       mutate(
@@ -699,12 +635,16 @@ server <- function(input, output, session) {
       title        = rpt_title,
       filetype     = out_ext,
       contents     = list(
-          projects   = input$ck_rpt_prj,
-          management = input$ck_rpt_mgt),
-      interactions = values[["ixns"]])
+          projects     = input$ck_rpt_prj,
+          management   = input$ck_rpt_mgt,
+          documents    = input$ck_rpt_docs,
+          publications = input$ck_rpt_pubs,
+          spatial      = input$ck_rpt_spatial),
+      interactions    = values[["ixns"]],
+      document_checks = input$cks_docs,
+      spatial_aoi_wkt = sf_to_wkt(values$ply))
     # list(params = m) %>% as.yaml() %>% cat()
-    # TODO: Spatial wkt in meta
-    
+
     # hash <- digest(m, algo="crc32")
     # yml <- glue("{dir_rpt_pfx}/{email}/MarineEnergy.app_report_{hash}_shiny.yml")
     # dir.create(dirname(yml), showWarnings = F)
@@ -718,11 +658,11 @@ server <- function(input, output, session) {
         
     # submit report creation job request to API
     q <- m
-    q$contents     <- toJSON(m$contents) # %>% as.character()
-    q$interactions <- toJSON(m$interactions) # %>% as.character()
+    q$contents        <- toJSON(m$contents) # %>% as.character()
+    q$interactions    <- toJSON(m$interactions) # %>% as.character()
+    q$document_checks <- toJSON(m$document_checks) # %>% as.character()
     # as.yaml(q) %>% cat()
 
-    
     r <- GET(url_rpt_pfx, query = q)
     # message(glue("r$url: {r$url}"))
     
