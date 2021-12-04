@@ -604,19 +604,26 @@ server <- function(input, output, session) {
     # input <- list(x
     #   ck_rpt_prj = T,
     #   ck_rpt_mgt = T)
-    m <- list(
+    
+    toJSONlist <- function(x){
+      ifelse(
+        is.null(x), 
+        toJSON(list()),
+        toJSON(x)) }
+    
+    q <- list(
       email        = email,
       date         = format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"),
       title        = rpt_title,
       filetype     = out_ext,
-      contents     = list(
+      contents     = toJSONlist(list(
           projects     = isolate(input$ck_rpt_prj),
           management   = isolate(input$ck_rpt_mgt),
           documents    = isolate(input$ck_rpt_docs),
           publications = isolate(input$ck_rpt_pubs),
-          spatial      = isolate(input$ck_rpt_spatial)),
-      interactions    = values[["ixns"]],
-      document_checks = isolate(input$cks_docs),
+          spatial      = isolate(input$ck_rpt_spatial))),
+      interactions    = toJSONlist(values[["ixns"]]),
+      document_checks = toJSONlist(isolate(input$cks_docs)),
       spatial_aoi_wkt = sf_to_wkt(values$ply))
     # list(params = m) %>% as.yaml() %>% cat()
 
@@ -630,13 +637,15 @@ server <- function(input, output, session) {
     # p$Content      <- list(value = p$Content)
     # p$Interactions <- list(value = p$Interactions)
     # as.yaml(p) %>% cat()
-        
+    
     # submit report creation job request to API
-    q <- m
-    q$contents        <- toJSON(m$contents) # %>% as.character()
-    q$interactions    <- toJSON(m$interactions) # %>% as.character()
-    q$document_checks <- toJSON(m$document_checks) # %>% as.character()
+    #q <- m
+    # q$contents        <- toJSON(m$contents) # %>% as.character()
+    # q$interactions    <- toJSON(m$interactions) # %>% as.character()
+    # q$document_checks <- toJSON() # %>% as.character()
+
     # as.yaml(q) %>% cat()
+    #toJSON(NULL, null="null")
 
     r <- GET(url_rpt_pfx, query = q)
     # message(glue("r$url: {r$url}"))

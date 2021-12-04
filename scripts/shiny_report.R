@@ -301,6 +301,9 @@ get_projects_tbl <- function(d_projects_tags, ixns = NULL){
   
   d <- d_projects_tags 
   
+  #browser()
+  #table(d %>% pull(tag_technology))
+  
   # filter by Tags
   if (length(ixns) > 0){
     rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "project_tags", categories = c("Technology")) %>% 
@@ -335,6 +338,8 @@ get_rowids_with_ixn <- function(db_tbl, ixn, categories = NULL){
   # db_tbl = "tethys_mgt_tags"; ixn = c("Receptor.Fish", "Stressor.PhysicalInteraction.Collision")
   # db_tbl = "mc_spatial_tags"; ixn = values$ixns %>% unlist()
   # ixn = list(c(""Receptor.Birds","Stressor.HabitatChange"))
+  
+  #browser()
   
   # subset interactions by categories available to content type
   if (!is.null(categories)){
