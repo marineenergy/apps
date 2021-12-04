@@ -1,4 +1,5 @@
-shelf(DT, glue, tidyr)
+shelf(DT, glue, readr, tidyr)
+options(readr.show_col_types = FALSE)
 
 add_lines <- function(fig, tech){
   
@@ -308,10 +309,15 @@ get_pubs_tbl <- function(d_pubs_tags, ixns = NULL){
       Title = as.character(glue("<a href='{uri}'>{title}</a>")))
 }
 
-get_rowids_with_ixn <- function(db_tbl, ixn){
+get_rowids_with_ixn <- function(db_tbl, ixn, categories = NULL){
   # db_tbl = "tethys_mgt_tags"; ixn = c("Receptor.Fish", "Stressor.PhysicalInteraction.Collision")
   # db_tbl = "mc_spatial_tags"; ixn = values$ixns %>% unlist()
   # ixn = list(c(""Receptor.Birds","Stressor.HabitatChange"))
+  
+  # subset interactions by categories available to content type
+  ixn_categories <- str_extract(ixn, "^[A-z]+")
+  ixn <- ixn[ixn_categories %in% categories]
+
   sql <- glue("SELECT rowid FROM {db_tbl} WHERE tag_sql ~ '{ixn}.*'") %>% 
     paste(collapse = "\nINTERSECT\n")
   DBI::dbGetQuery(con, sql) %>% 
@@ -565,7 +571,7 @@ get_spatial_tbl <- function(d_spatial_tags, ixns = NULL, aoi_wkt = NA){
   
   # filter by Tags
   if (length(ixns) > 0){
-    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "mc_spatial_tags") %>% 
+    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "mc_spatial_tags", categories = c("Receptor")) %>% 
       unlist() %>% unique()
     d <- d %>%
       filter(rowid %in% !!rowids)
@@ -577,6 +583,8 @@ get_spatial_tbl <- function(d_spatial_tags, ixns = NULL, aoi_wkt = NA){
   
   # filter by Location
   #browser()
+  # if (!is.null(aoi_wkt))
+  #   browser()
   d <-  d %>%
     mutate(
       sp_data = map(code, get_spatial_intersection, aoi_wkt))
@@ -851,7 +859,7 @@ sf_to_wkt <- function(sf){
   if (is.null(sf))
     return(NULL)
   
-  values$ply %>% 
+  sf %>% 
     pull(geometry) %>% 
     sf::st_as_text()
 }
@@ -1038,7 +1046,10 @@ df_tags  <- tbl(con, "tags") %>%
   collect()
 
 # load projects ----
-load_projects()
+#load_projects()
+d_projects_tags <- tbl(con, "projects") %>% 
+  left_join(
+    tbl(con, "project_tags"), by = "rowid")
 
 # load management ----
 d_mgt_tags <- tbl(con, "tethys_mgt") %>% 

@@ -485,9 +485,7 @@ server <- function(input, output, session) {
   
   #* get_spatial() ----
   get_spatial <- reactive({
-    # update mc_spatial table from  [spatial | marineenergy.app - Google Sheet](https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=936111013):
-    #   source(file.path(dir_scripts, "db.R")); source(file.path(dir_scripts, "update.R")); update_spatial()
-
+    
     d <- get_spatial_tbl(
       d_spatial_tags, 
       ixns    = values$ixns, 
@@ -635,13 +633,13 @@ server <- function(input, output, session) {
       title        = rpt_title,
       filetype     = out_ext,
       contents     = list(
-          projects     = input$ck_rpt_prj,
-          management   = input$ck_rpt_mgt,
-          documents    = input$ck_rpt_docs,
-          publications = input$ck_rpt_pubs,
-          spatial      = input$ck_rpt_spatial),
+          projects     = isolate(input$ck_rpt_prj),
+          management   = isolate(input$ck_rpt_mgt),
+          documents    = isolate(input$ck_rpt_docs),
+          publications = isolate(input$ck_rpt_pubs),
+          spatial      = isolate(input$ck_rpt_spatial)),
       interactions    = values[["ixns"]],
-      document_checks = input$cks_docs,
+      document_checks = isolate(input$cks_docs),
       spatial_aoi_wkt = sf_to_wkt(values$ply))
     # list(params = m) %>% as.yaml() %>% cat()
 
@@ -665,11 +663,8 @@ server <- function(input, output, session) {
 
     r <- GET(url_rpt_pfx, query = q)
     # message(glue("r$url: {r$url}"))
-    
-    #Sys.sleep(1)
+
     values$rpts <- get_user_reports(glogin()$email)
-    
-    # content(r)
   })
 
   #* btn_del_rpts ----
