@@ -337,11 +337,17 @@ get_rowids_with_ixn <- function(db_tbl, ixn, categories = NULL){
   # ixn = list(c(""Receptor.Birds","Stressor.HabitatChange"))
   
   # subset interactions by categories available to content type
-  ixn_categories <- str_extract(ixn, "^[A-z]+")
-  ixn <- ixn[ixn_categories %in% categories]
+  if (!is.null(categories)){
+    ixn_categories <- str_extract(ixn, "^[A-z]+")
+    ixn <- ixn[ixn_categories %in% categories]
+  }
 
-  sql <- glue("SELECT rowid FROM {db_tbl} WHERE tag_sql ~ '{ixn}.*'") %>% 
-    paste(collapse = "\nINTERSECT\n")
+  if (length(ixn) > 0){
+    sql <- glue("SELECT rowid FROM {db_tbl} WHERE tag_sql ~ '{ixn}.*'") %>% 
+      paste(collapse = "\nINTERSECT\n")
+  } else {
+    sql <- glue("SELECT DISTINCT rowid FROM {db_tbl}")
+  }
   DBI::dbGetQuery(con, sql) %>% 
     pull(rowid)
 }
