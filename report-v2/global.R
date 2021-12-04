@@ -6,7 +6,7 @@ source(file.path(dir_scripts, "common_2.R"))
 # dir_scripts <<- here::here("scripts")
 # dir_data    <<- here::here("data")
 source(file.path(dir_scripts, "db.R"))
-source(file.path(dir_scripts, "shiny_report.R"))
+source(file.path(dir_scripts, "shiny_report.R")) # loads content d_*
 
 # devtools::install_github("RinteRface/shinydashboardPlus@4f23ece8c1ab50ae8e9505400ea7c266c6a04731") # Dec 7, 2020
 librarian::shelf(
@@ -221,45 +221,6 @@ googleSignInUI_btn_signout <- function(id, logout_name = "Sign Out", logout_clas
     tags$button(id = ns("signout"), logout_name, onclick = "signOut();", class = logout_class))
 }
 
-# projects ----
-load_projects()
-
-# management ----
-d_mgt_tags <- tbl(con, "tethys_mgt") %>% 
-  select(rowid, Interaction, `Specific Management Measures`, `Implications of Measure`) %>% 
-  left_join(
-    tbl(con, "tethys_mgt_tags"), by = "rowid")
-d_mgt_n <- tbl(con, "tethys_mgt") %>% summarize(n = n()) %>% pull(n)
-
-# documents ----
-d_docs <- tbl(con, "ferc_docs") %>% 
-  left_join(
-    tbl(con, "ferc_doc_tags"),
-    by = "rowid") %>% 
-  arrange(desc(rowid))
-d_docs_n <- tbl(con, "ferc_docs") %>% summarize(n = n()) %>% pull(n)
-
-# publications ----
-d_pubs <- tbl(con, "tethys_pubs") %>% 
-  select(rowid, uri, title) %>% 
-  left_join(
-    tbl(con, "tethys_pub_tags") %>% 
-      select(-uri),
-    by = "rowid") %>% 
-  distinct_all()
-
-# tbl(con, "tethys_pubs") %>% collect() %>% names() %>% paste(collapse = ", ")
-d_pubs_n <- tbl(con, "tethys_pubs") %>% summarize(n = n()) %>% pull(n)
-
-# spatial ----
-d_spatial <- tbl(con, "mc_spatial") %>% 
-  filter(ready) %>%
-  left_join(
-    tbl(con, "mc_spatial_tags"),
-    by = "rowid") %>% 
-  distinct_all() %>% 
-  arrange(title)
-d_spatial_n <- tbl(con, "mc_spatial") %>% summarize(n = n()) %>% pull(n)
 
 # reports ----
 dir_rpt_pfx <- "/share/user_reports"
@@ -313,36 +274,4 @@ del_user_report <- function(email, rpt){
 
 file_icons = c(html = "file", pdf="file-pdf", docx = "file-word")
 
-tbl_tags <- tbl(con, "tags")
-df_tags  <- tbl(con, "tags") %>%
-  mutate(
-    tag_sql  = as.character(tag_sql),
-    tag_html = paste0("<span class='me-tag me-", cat, "'>", tag_nocat, "</span>")) %>% 
-  collect()
-  
-d_to_tags_html <- function(d){
-  y <- d %>% 
-    left_join(
-      tbl_tags %>% 
-        select(tag_sql, cat, tag_nocat),
-      by = "tag_sql") %>% 
-    mutate(
-      tag_html = paste0("<span class='me-tag me-", cat, "'>", tag_nocat, "</span>")) %>% 
-    arrange(rowid, desc(cat), tag_nocat) %>% 
-    select(-tag_sql, -cat, -tag_nocat)
-  
-  cols_grpby <- setdiff(colnames(y), "tag_html")
-  
-  #browser()
-  
-  y %>% 
-    group_by(
-      !!!syms(cols_grpby)) %>% 
-    summarize(
-      Tags = str_flatten(tag_html, collapse = " ")) %>% 
-    rename(ID = rowid) %>% 
-    arrange(ID) %>% 
-    collect() %>% 
-    ungroup()
-}
 

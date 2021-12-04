@@ -35,6 +35,7 @@ update_projects <- function(){
   gsheet     <- "https://docs.google.com/spreadsheets/d/1MTlWQgBeV4eNbM2JXNXU3Y-_Y6QcOOfjWFyKWfdMIQM/edit"
   
   # local CSVs
+  prj_tags_csv         <- here("data/project_tags.csv")
   prj_times_csv        <- here("data/project_times.csv")
   prj_permits_csv      <- here("data/project_permits.csv")
   prj_permit_types_csv <- here("data/project_permit_types.csv")
@@ -67,7 +68,7 @@ update_projects <- function(){
       date_beg = as.Date(date_beg, format = "%Y-%m-%d"),
       date_end = as.Date(date_end, format = "%Y-%m-%d")) %>% 
     filter(!is.na(longitude), !is.na(latitude)) %>% 
-    arrange(technology_type, project)
+    arrange(tag_technology, project)
 
   project_permits <- read_sheet(gsheet, "project_permits") %>%
     mutate(
@@ -78,12 +79,25 @@ update_projects <- function(){
     select(project, license_date, permit_type, link) %>% 
     arrange(project, license_date, permit_type)
   
+  projects <- projects %>% 
+    arrange(project) %>% 
+    tibble::rownames_to_column("rowid")
+  
+  project_tags <- projects %>% 
+    mutate(
+      tag_sql = glue("Technology.{tag_technology}")) %>% 
+    select(rowid, tag_sql)
+  
   write_csv(projects       , prj_times_csv)
+  write_csv(project_tags   , prj_tags_csv)
   write_csv(project_permits, prj_permits_csv)
   
   dbWriteTable(con, "projects", projects, overwrite = T)
   dbWriteTable(con, "project_permits", project_permits, overwrite = T)
   #dbListTables(con) %>% sort() %>% str_extract("proj.*") %>% na.omit()
+  dbWriteTable(con, "project_tags", project_tags, overwrite = T)
+  dbExecute(con, "ALTER TABLE project_tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
+  dbExecute(con, "CREATE INDEX idx_project_tags_tag_sql ON project_tags USING GIST (tag_sql);")
   
   # store project names for matching with ferc_docs
   project_names <- projects %>% 
@@ -118,9 +132,9 @@ update_projects <- function(){
       md_permits, by = "project") %>% 
     mutate(
       label_md = glue(
-        "**{project}** (_{technology_type}_)"),
+        "**{project}** (_{tag_technology}_)"),
       popup_md = glue(
-        "**{project}** (_{technology_type}_)<br>
+        "**{project}** (_{tag_technology}_)<br>
       Dates: {date_beg} to {ifelse(format(date_end, '%Y-%m-%d') == format(Sys.Date(), '%Y-%m-%d'), 'ongoing', format(date_end, '%Y-%m-%d'))}<br>
       Location (lon, lat): {longitude}, {latitude}<br>
       {permits_md}"),

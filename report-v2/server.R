@@ -281,128 +281,109 @@ server <- function(input, output, session) {
   })
   
   # projects ----
-  load_projects()
-  tech <<- c("Riverine Energy", "Tidal Energy", "Wave Energy")
-  
+  # TODO:
+  #   server.R
+  #     get_projects <- reactive({ # limit by tech per ixns })
+  #   scripts/shiny_report.R
+  #     get_projects_map      <- function(projects)
+  #     get_projects_timeline <- function(projects)
+
   #* prj_map ----
   output$prj_map <- renderLeaflet({
     
-    map_projects(prj_sites)})
+    map_projects(d_projects)})
   
-  #* prj_map observe Technology tag  ----
+  #* get_projects ----
+  get_projects <- reactive({
+    get_projects_tbl(d_projects_tags, ixns = values$ixns)
+  })
+
+  
+  #* prj_map observe tags  ----
   observe({
-    req(length(values$ixns) > 0)
-    # browser()
-    # output$prj_p <- renderText(suppressWarnings(""))
     
-    # extract technology from interaction tags
-    sql2tech <- c(
-      "Technology.Riverine" = "Riverine Energy", 
-      "Technology.Tidal"    = "Tidal Energy",
-      "Technology.Wave"     = "Wave Energy")
+    d_prjs <- get_projects()
+
+    # map: redraw markers
+    leaflet::leafletProxy("prj_map") %>% 
+      leaflet::clearMarkers() %>% 
+      leaflet::addMarkers(
+        data  = d_prjs,
+        lat   = ~latitude,
+        lng   = ~longitude,
+        label = ~label_html %>% lapply(htmltools::HTML),
+        popup = ~popup_html)
     
-    if (!is.null(values$ixns)){
-      tech <<- sql2tech[intersect(names(sql2tech), values$ixns %>% unlist())]
-    } else if (is.null(values$ixns)) {
-      tech <<- sql2tech
-    }
-    
-    values_unlist  <- values$ixns %>% unlist() 
-    tech_str_match <- grepl("Technology", values_unlist)
-    
-    # if tech type selected, redraw ONLY mkrs corresponding to selected tech types
-    if (TRUE %in% tech_str_match){
-      load_projects()
-      prj_tech <<- prj_sites %>% 
-        filter(technology_type %in% tech)
-      leaflet::leafletProxy("prj_map") %>% 
-        leaflet::clearMarkers() %>% 
-        leaflet::addMarkers(
-          data  = prj_tech,
-          label = ~label_html, 
-          popup = ~popup_html)
-    # if NO tech type selected in ixns, redraw ALL markers
-    } else if (!TRUE %in% tech_str_match){
-      load_projects()
-      prj_tech <<- prj_sites
-      leaflet::leafletProxy("prj_map") %>% 
-        leaflet::clearMarkers() %>% 
-        leaflet::addMarkers(
-          data  = prj_tech,
-          label = ~label_html, 
-          popup = ~popup_html)
-    }
   })
   
   #* prj_p ----
-  calculate_y_tech(tech)
-  output$prj_p <- renderPlotly(
+  #calculate_y_tech(tech)
+  output$prj_p <- renderPlotly({
     suppressWarnings({
-      plot_projects()
-  }))
-
-  #* prj_p observe Technology tag  ----
-  observe({
-    req(length(values$ixns) > 0)
-    
-    # vector: T = tech selected, F = no tech selected
-    values_unlist  <- values$ixns %>% unlist() 
-    tech_str_match <- grepl("Technology", values_unlist)
-  
-    # if no tech type selected in ixns 
-    if (!TRUE %in% tech_str_match){
-      # load_projects()
-      tech <<- c("Riverine Energy", "Tidal Energy", "Wave Energy")
-      message(glue("no explicitly selected tech so plot all tech: {paste(tech, collapse = ', ')}"))
-
-      # calculate_y_tech(tech)
-      output$prj_p <- renderPlotly(
-        suppressWarnings({
-          plot_projects()
-        })
-      )
-    }
-  
-    else if (TRUE %in% tech_str_match){
-      load_projects() 
-      # output$prj_p <- renderText(suppressWarnings(""))
-  
-      # extract technology from interaction tags
-      tags2tech <- c(
-        "Technology.Riverine" = "Riverine Energy", 
-        "Technology.Tidal"    = "Tidal Energy",
-        "Technology.Wave"     = "Wave Energy")
-      
-      # if an ixn exists, find tech selected in the ixn
-      if (!is.null(values$ixns)){
-        tech <<- tags2tech[intersect(names(tags2tech), values$ixns %>% unlist())] %>% 
-          unname()
-      } else {
-        tech <<- tags2tech 
-      }
-      
-      output$prj_p <- renderPlotly(
-        suppressWarnings({
-          update_project_plot()
-          })
-        )
-    }
+      plot_project_timelines(get_projects()) %>% 
+        event_register("plotly_click")
+    })
   })
-  
 
-  #* observe plotly_click ----
+  #* prj_p observe tags  ----
+  # observe({
+  #   req(length(values$ixns) > 0)
+  #   
+  #   # vector: T = tech selected, F = no tech selected
+  #   values_unlist  <- values$ixns %>% unlist() 
+  #   tech_str_match <- grepl("Technology", values_unlist)
+  # 
+  #   # if no tech type selected in ixns 
+  #   if (!TRUE %in% tech_str_match){
+  #     # load_projects()
+  #     tech <<- c("Riverine Energy", "Tidal Energy", "Wave Energy")
+  #     message(glue("no explicitly selected tech so plot all tech: {paste(tech, collapse = ', ')}"))
+  # 
+  #     # calculate_y_tech(tech)
+  #     output$prj_p <- renderPlotly(
+  #       suppressWarnings({
+  #         plot_projects()
+  #       })
+  #     )
+  #   }
+  # 
+  #   else if (TRUE %in% tech_str_match){
+  #     load_projects() 
+  #     # output$prj_p <- renderText(suppressWarnings(""))
+  # 
+  #     # extract technology from interaction tags
+  #     tags2tech <- c(
+  #       "Technology.Riverine" = "Riverine Energy", 
+  #       "Technology.Tidal"    = "Tidal Energy",
+  #       "Technology.Wave"     = "Wave Energy")
+  #     
+  #     # if an ixn exists, find tech selected in the ixn
+  #     if (!is.null(values$ixns)){
+  #       tech <<- tags2tech[intersect(names(tags2tech), values$ixns %>% unlist())] %>% 
+  #         unname()
+  #     } else {
+  #       tech <<- tags2tech 
+  #     }
+  #     
+  #     output$prj_p <- renderPlotly(
+  #       suppressWarnings({
+  #         update_project_plot()
+  #         })
+  #       )
+  #   }
+  # })
+  
+  #* prj_p plotly_click ----
   observe({
 
     # event_register("prj_p", "plotly_click")
     d <- event_data("plotly_click")
     req(d)
 
-    proxy <- leafletProxy("prj_map")
-
-    s <- prj_sites %>%
+    s <- get_projects() %>%
       filter(project == d$y)
 
-    proxy %>%
+    leafletProxy("prj_map") %>%
       flyTo(s$longitude, s$latitude, 8)
 
   })
@@ -411,20 +392,7 @@ server <- function(input, output, session) {
   
   #* get_mgt() ----
   get_mgt <- reactive({
-    
-    # TODO: functionalize for any tabular content
-    if (length(values$ixns) == 0){
-      d <- d_mgt_tags
-    } else {
-      rowids <- sapply(values$ixns, get_rowids_with_ixn, db_tbl = "tethys_mgt_tags") %>% 
-        unlist() %>% unique()
-      d <- d_mgt_tags %>%
-        filter(rowid %in% !!rowids)
-    }
-    
-    # TODO: functionalize for any tabular content
-    # d_1 <- 
-    d_to_tags_html(d)
+    get_mgt_tbl(ixns = values$ixns, d_mgt_tags)
   })
   
   #* box_mgt ----
@@ -439,60 +407,13 @@ server <- function(input, output, session) {
   
   #* tbl_mgt ----
   output$tbl_mgt <- renderDataTable({
-    
     get_mgt()
   }, escape = F, rownames = F)
   
   # documents ----
-  
   #* get_docs() ----
   get_docs <- reactive({
-    d <- d_docs
-    if (length(values$ixns) > 0){
-      rowids <- sapply(values$ixns, get_rowids_with_ixn, db_tbl = "ferc_doc_tags") %>% 
-        unlist() %>% unique()
-      d <- d %>%
-        filter(rowid %in% !!rowids)
-    }
-    if (length(input$cks_docs) > 0){
-      for (col_bln in input$cks_docs){
-        d <- d %>% # collect() %>% nrow() # 1426
-          filter(.data[[col_bln]] == TRUE) # %>% collect() %>% nrow()
-        # message(glue("ck_docs == `{col_bln}` nrow: {d %>% collect() %>% nrow()}"))
-      }
-    }
-    #browser() # TODO 236 #
-    # d %>% filter(rowid == 236) %>% collect()
-    # d_0 <<- d
-    d <- d_to_tags_html(d)
-    
-    # rowid 236 showing up 2x in results
-    # tbl(con, "ferc_docs") %>% arrange(desc(rowid))
-    # tbl(con, "ferc_doc_tags") %>% filter(rowid == 236)
-    
-    d %>% 
-      mutate(
-        # TODO: include in scripts/update_tags.R:update_tags()
-        across(where(is.character), na_if, "NA"),
-        across(starts_with("ck_"), as.character),
-        across(starts_with("ck_"), recode, "TRUE"="✓", "FALSE"="☐"),
-        Doc = ifelse(
-          is.na(prj_doc_attachment),
-          prj_document,
-          paste0(prj_document, ": ", prj_doc_attachment)),
-        Doc = ifelse(
-          is.na(prj_doc_attach_url),
-          Doc,
-          glue("<a href='{prj_doc_attach_url}'>{Doc}</a>"))) %>% 
-      #names()
-      select(
-        ID, Project=project, Document=Doc, Detail=detail, Tags,
-        Ixn = ck_ixn, 
-        Obs = ck_obs, 
-        MP  = ck_mp, 
-        AMP = ck_amp, 
-        PME = ck_pme, 
-        BMP = ck_bmps)
+    get_docs_tbl(d_docs_tags, ixns = values$ixns, cks = input$cks_docs)
   })
   
   #* box_docs ----
@@ -513,25 +434,9 @@ server <- function(input, output, session) {
   }, escape = F, rownames = F)
   
   # publications ----
-  
   #* get_pubs() ----
   get_pubs <- reactive({
-    d <- d_pubs
-    if (length(values$ixns) > 0){
-      rowids <- sapply(values$ixns, get_rowids_with_ixn, db_tbl = "tethys_pub_tags") %>% 
-        unlist() %>% unique()
-      d <- d %>%
-        filter(rowid %in% !!rowids)
-    }
-
-    #browser()
-    d <- d_to_tags_html(d)
-    
-    d %>% 
-      mutate(
-        # TODO: include in scripts/update_tags.R:update_tags()
-        across(where(is.character), na_if, "NA"),
-        Title = as.character(glue("<a href='{uri}'>{title}</a>")))
+    get_pubs_tbl(d_pubs_tags, ixns = values$ixns)
   })
   
   #* box_pubs ----
@@ -558,49 +463,11 @@ server <- function(input, output, session) {
   #* get_spatial() ----
   get_spatial <- reactive({
     
-    # update mc_spatial table from  [spatial | marineenergy.app - Google Sheet](https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=936111013):
-    #   source(file.path(dir_scripts, "db.R")); source(file.path(dir_scripts, "update.R")); update_spatial()
-
-    # TODO: add Github issue for future reference
-    # get_spatial_intersection(dataset_code='ocs-lease-blk', aoi_wkt='POLYGON ((-128.3687 31.86402, -128.3687 49.68904, -116.5255 49.68904, -116.5255 31.86402, -128.3687 31.86402))')
-    # Warning: Error in : Problem with `mutate()` column `sp_data`.
-    # ℹ `sp_data = map(code, get_spatial_intersection, aoi_wkt = aoi_wkt)`.
-    # x Failed to fetch row: ERROR:  lwgeom_intersection: GEOS Error: TopologyException: Input geom 0 is invalid: Self-intersection at or near point -179.95155358242297 47.850116156353714 at -179.95155358242297 47.850116156353714
-    # Fixed by updating to select_sql to using ST_MakeValid() for problematic shapefile: ...select prot_numbe, prot_aprv_, block_numb, blk_fed_ap, mms_region, mms_plan_a, ST_MakeValid(geometry) AS geometry from "shp_AK_BLKCLP")
+    d <- get_spatial_tbl(
+      d_spatial_tags, 
+      ixns    = values$ixns, 
+      aoi_wkt = sf_to_wkt(values$ply))
     
-    d <- d_spatial 
-    
-    # filter by Tags
-    if (length(values$ixns) > 0){
-      rowids <- sapply(values$ixns, get_rowids_with_ixn, db_tbl = "mc_spatial_tags") %>% 
-        unlist() %>% unique()
-      d <- d %>%
-        filter(rowid %in% !!rowids)
-    }
-    d <- d_to_tags_html(d) %>% 
-      mutate(
-        Title = as.character(glue("{title} (Source: <a href='{src_url}'>{src_name}</a>)"))) %>% 
-      arrange(Title)
-    
-    # get Location
-    #browser()
-    aoi_wkt <- ifelse(
-      # !is.null(crud()$finished),
-      # crud()$finished %>% pull(geometry) %>% sf::st_as_text(),
-      !is.null(values$ply),
-      values$ply %>% pull(geometry) %>% sf::st_as_text(),
-      NA)
-    
-    # browser()
-    
-    # filter by Location
-    d <-  d %>%
-      # replace_na(list(buffer_km = 0)) %>%  # "
-      mutate(
-        sp_data = map(code, get_spatial_intersection, aoi_wkt = aoi_wkt)) # , output = "tibble"    
-
-    # TODO: - [ ] get to work when d's nrow == 0
-    #       - [ ] ixn != fish
     d
   })
     
@@ -619,8 +486,6 @@ server <- function(input, output, session) {
   #* tbl_spatial ----
   output$tbl_spatial <- renderDataTable({
     d <- get_spatial()
-    
-    #browser()
     
     d <- d %>% 
       mutate(
@@ -745,12 +610,16 @@ server <- function(input, output, session) {
       title        = rpt_title,
       filetype     = out_ext,
       contents     = list(
-          projects   = input$ck_rpt_prj,
-          management = input$ck_rpt_mgt),
-      interactions = values[["ixns"]])
+          projects     = isolate(input$ck_rpt_prj),
+          management   = isolate(input$ck_rpt_mgt),
+          documents    = isolate(input$ck_rpt_docs),
+          publications = isolate(input$ck_rpt_pubs),
+          spatial      = isolate(input$ck_rpt_spatial)),
+      interactions    = values[["ixns"]],
+      document_checks = isolate(input$cks_docs),
+      spatial_aoi_wkt = sf_to_wkt(values$ply))
     # list(params = m) %>% as.yaml() %>% cat()
-    # TODO: Spatial wkt in meta
-    
+
     # hash <- digest(m, algo="crc32")
     # yml <- glue("{dir_rpt_pfx}/{email}/MarineEnergy.app_report_{hash}_shiny.yml")
     # dir.create(dirname(yml), showWarnings = F)
@@ -764,18 +633,15 @@ server <- function(input, output, session) {
         
     # submit report creation job request to API
     q <- m
-    q$contents     <- toJSON(m$contents) # %>% as.character()
-    q$interactions <- toJSON(m$interactions) # %>% as.character()
+    q$contents        <- toJSON(m$contents) # %>% as.character()
+    q$interactions    <- toJSON(m$interactions) # %>% as.character()
+    q$document_checks <- toJSON(m$document_checks) # %>% as.character()
     # as.yaml(q) %>% cat()
 
-    
     r <- GET(url_rpt_pfx, query = q)
     # message(glue("r$url: {r$url}"))
-    
-    #Sys.sleep(1)
+
     values$rpts <- get_user_reports(glogin()$email)
-    
-    # content(r)
   })
 
   #* btn_del_rpts ----

@@ -266,6 +266,21 @@ ui <- dashboardPage(
                     value     = T,
                     label_on  = "Management",  label_off = "Management",
                     icon_on   = icon("check"), icon_off  = icon("times")),
+                  prettyToggle(
+                    inputId   = "ck_rpt_docs",
+                    value     = T,
+                    label_on  = "Documents",  label_off = "Documents",
+                    icon_on   = icon("check"), icon_off  = icon("times")),
+                  prettyToggle(
+                    inputId   = "ck_rpt_pubs",
+                    value     = T,
+                    label_on  = "Publications",  label_off = "Publications",
+                    icon_on   = icon("check"), icon_off  = icon("times")),
+                  prettyToggle(
+                    inputId   = "ck_rpt_spatial",
+                    value     = T,
+                    label_on  = "Spatial",  label_off = "Spatial",
+                    icon_on   = icon("check"), icon_off  = icon("times")),
                   circle = T, status = "default", icon = icon("cog"), width = "20px",
                   tooltip = tooltipOptions(title = "Click to configure report"))),
               column(

@@ -1,22 +1,22 @@
-project,technology_type,date_beg,date_end,project_status,longitude,latitude
-Igiugig,Riverine Energy,2008-11-10,2021-10-13,Active Project,-155.9151,59.3247
-Mississippi River,Riverine Energy,2009-04-01,2013-06-28,Inactive Project,-91.20356,30.52028
-Admiralty Inlet,Tidal Energy,2007-03-09,2016-03-21,Inactive Project,-122.732,48.182972
-Bourne,Tidal Energy,2016-09-26,2021-10-13,Active Project,-70.5748959,41.7681603
-Cobscook Bay,Tidal Energy,2007-07-23,2021-10-13,Active Project,-67.04563,44.9098
-East Foreland,Tidal Energy,2021-07-26,2021-10-13,Active Project,-151.410567,60.719614
-Muskeget,Tidal Energy,2008-03-01,2016-07-01,Inactive Project,-70.3158,41.3069
-Portsmouth Memorial Bridge,Tidal Energy,2014-08-15,2021-10-13,Active Project,-70.7530428,43.078206
-RITE,Tidal Energy,2002-09-09,2021-10-13,Active Project,-73.94,40.77056
-Western Passage,Tidal Energy,2006-05-30,2021-10-13,Active Project,-66.98717,44.92047
-CalWave,Wave Energy,2014-12-01,2016-12-01,Inactive Project,-120.4285,34.38064
-Camp Rilea,Wave Energy,2015-01-01,2016-01-01,Inactive Project,-123.9678,46.11705
-Duck,Wave Energy,2012-12-01,2013-01-31,Inactive Project,-75.74979,36.18202
-Jeanette's Pier,Wave Energy,2011-01-01,2021-10-13,Active Project,-75.5933,35.9119
-OPT Reedsport,Wave Energy,2006-07-14,2012-08-13,Inactive Project,-124.23806,43.7825
-PacWave-N,Wave Energy,2012-07-01,2021-10-13,Active Project,-124.134,44.69
-PacWave-S,Wave Energy,2014-04-15,2021-10-13,Active Project,-124.22935,44.566394
-SeaRay,Wave Energy,2010-03-15,2012-12-01,Inactive Project,-122.446007,47.661889
-WaveConnect,Wave Energy,2008-03-13,2011-04-29,Inactive Project,-124.2304534,40.7929942
-WETS,Wave Energy,2003-01-01,2021-10-13,Active Project,-157.75418,21.465886
-Yakutat,Wave Energy,2009-12-01,2017-07-01,Inactive Project,-139.763713,59.470604
+rowid,project,tag_technology,date_beg,date_end,project_status,longitude,latitude
+1,Admiralty Inlet,Tidal,2007-03-09,2016-03-21,Inactive Project,-122.732,48.182972
+2,Bourne,Tidal,2016-09-26,2021-12-04,Active Project,-70.5748959,41.7681603
+3,CalWave,Wave,2014-12-01,2016-12-01,Inactive Project,-120.4285,34.38064
+4,Camp Rilea,Wave,2015-01-01,2016-01-01,Inactive Project,-123.9678,46.11705
+5,Cobscook Bay,Tidal,2007-07-23,2021-12-04,Active Project,-67.04563,44.9098
+6,Duck,Wave,2012-12-01,2013-01-31,Inactive Project,-75.74979,36.18202
+7,East Foreland,Tidal,2021-07-26,2021-12-04,Active Project,-151.410567,60.719614
+8,Igiugig,Riverine,2008-11-10,2021-12-04,Active Project,-155.9151,59.3247
+9,Jeanette's Pier,Wave,2011-01-01,2021-12-04,Active Project,-75.5933,35.9119
+10,Mississippi River,Riverine,2009-04-01,2013-06-28,Inactive Project,-91.20356,30.52028
+11,Muskeget,Tidal,2008-03-01,2016-07-01,Inactive Project,-70.3158,41.3069
+12,OPT Reedsport,Wave,2006-07-14,2012-08-13,Inactive Project,-124.23806,43.7825
+13,PacWave-N,Wave,2012-07-01,2021-12-04,Active Project,-124.134,44.69
+14,PacWave-S,Wave,2014-04-15,2021-12-04,Active Project,-124.22935,44.566394
+15,Portsmouth Memorial Bridge,Tidal,2014-08-15,2021-12-04,Active Project,-70.7530428,43.078206
+16,RITE,Tidal,2002-09-09,2021-12-04,Active Project,-73.94,40.77056
+17,SeaRay,Wave,2010-03-15,2012-12-01,Inactive Project,-122.446007,47.661889
+18,WaveConnect,Wave,2008-03-13,2011-04-29,Inactive Project,-124.2304534,40.7929942
+19,Western Passage,Tidal,2006-05-30,2021-12-04,Active Project,-66.98717,44.92047
+20,WETS,Wave,2003-01-01,2021-12-04,Active Project,-157.75418,21.465886
+21,Yakutat,Wave,2009-12-01,2017-07-01,Inactive Project,-139.763713,59.470604
