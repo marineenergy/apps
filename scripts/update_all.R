@@ -12,7 +12,9 @@ shelf(
   tibble, 
   tidyjson)
 
-source(here("functions.R")) # connection object
+source(here("scripts/common.R")) # connection object
+source(here("scripts/db.R")) # connection object
+source(here("scripts/update.R")) # connection object
 
 # update db tables tethys_pubs, tethys_pub_tags; data/tethys_docs.[json|csv]
 update_tethys_pubs()
@@ -34,6 +36,9 @@ update_project_timelines()
 
 # update ferc docs
 update_ferc_docs()
+
+# update spatial
+update_spatial()
 
 # dev cron for updating: tethys_docs, tethys_mgt, tethys_tags, tethys_intxns, ferc_docs
 
