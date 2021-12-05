@@ -490,7 +490,8 @@ server <- function(input, output, session) {
     d <- d %>% 
       mutate(
         `Rows in Results` = map_int(sp_data, nrow)) %>% 
-      select(ID, Title, Tags, `Rows in Results`) # , sp_data)
+      select(ID, Title, Tags, `Rows in Results`) %>% 
+      filter(`Rows in Results` > 0) # , sp_data)
     
     d
     # TODO: 'expand data' buttons for each row which, when clicked result in the corresponding sp_data being displayed as a df
