@@ -366,6 +366,7 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
   
   # dataset_code <- "oil-gas-wells"
   # dataset_code <- "cetacean-pacific-summer"
+  # aoi_wkt <- ""
   # aoi_wkt <- "POLYGON ((-104.7656 22.97593, -104.7656 41.15991, -77.87109 41.15991, -77.87109 22.97593, -104.7656 22.97593))"
   # # testing get_spatial_intersection()
   # test_df<-get_spatial_intersection(dataset_code = dataset_code, aoi_wkt = aoi_wkt) 
@@ -378,7 +379,7 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
   
   # test vals
   # dataset_code = "cetacean-bia"
-  # aoi_wkt = "POLYGON ((-105.9082 22.73295, -105.9082 35.65492, -70.13672 35.65492, -70.13672 22.73295, -105.9082 22.73295))"
+  # aoi_wkt = "POLYGON ((-121.1485 32.58968, -121.1485 34.61747, -116.8416 34.61747, -116.8416 32.58968, -121.1485 32.58968))"
   # aoi_wkt = params$aoi_wkt
   
   # test values: 
@@ -419,16 +420,19 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
     filter(ready) %>% 
     replace_na(list(buffer_nm = 0)) %>% 
     # mutate(buffer_nm = 0) %>% # TEST EFFECTS OF THIS
-    mutate(across(st_intersection, function(x) ifelse(is.na(x), F, x)))
+    mutate(across(st_intersection, function(x){
+      x <- ifelse(is.na(x), F, x)
+      x <- ifelse(x == "T", T, x)
+      x}))
   # st_intersection = ifelse( # TODO: fix spatial data
   #   is.na(st_intersection), 
   #   as.logical('FALSE'), 
   #   st_intersection))
   
   #browser()
-  if (is.null(aoi_wkt) || is.na(aoi_wkt)){
+  if (is.null(aoi_wkt) || is.na(aoi_wkt) | aoi_wkt == ""){
     # if no Location
-    #aoi_sql <- glue("'ST_MakeEnvelope(-180,-90,180,90,4326)'::geometry")
+    #aoi_sql <- glue("ST_MakeEnvelope(-180,-90,180,90,4326)::geometry")
     aoi_sql <- "world"
   } else if (length(aoi_wkt) == 1) {
     # if 1 Location
@@ -455,6 +459,8 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
     #x_df <- dbGetQuery(con, ds$select_sql %>% str_replace_all(",\\W*geometry", "")) %>% tibble()
     x_df <- dbGetQuery(con, ds$select_sql_nogeom) %>% tibble()
     
+    # TODO: summarize_sql so not HUGE table like cetacean-pacific-summer
+    
     if (!is.na(ds$summarize_r))
       eval(parse(text=ds$summarize_r))
     
@@ -465,7 +471,6 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
     # Area weighted statistics ARE required
     ixn_sql <- str_replace({ds$select_sql}, 'geometry', 'geometry, st_intersection(ds.geometry, buf_aoi.geom) as ixn ')
     
-    
     #if (dataset_code == 'ocs-lease-blk') browser()
     
     if (!is.na(ds$summarize_sql)){
@@ -474,7 +479,7 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
         glue("
           with
             buf_aoi as (
-              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom),
+              select ST_BUFFER({aoi_sql}::geography, {ds$buffer_nm} * 1852) as geom),
             tmp_aoi as (
               {ixn_sql} as ds, buf_aoi
               where st_intersects(ds.geometry, buf_aoi.geom))
@@ -487,7 +492,7 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
         glue("
           with
             buf_aoi as (
-              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom)
+              select ST_BUFFER({aoi_sql}::geography, {ds$buffer_nm} * 1852) as geom)
             {ixn_sql} as ds, buf_aoi
             where st_intersects(ds.geometry, buf_aoi.geom)
           "))
@@ -504,7 +509,7 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
         con, glue("
           with 
             buf_aoi as (
-              select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom ),
+              select ST_BUFFER({aoi_sql}::geography, {ds$buffer_nm} * 1852) as geom ),
             tmp_aoi as (
               {ds$select_sql} as ds
               inner join buf_aoi on st_intersects(ds.geometry, buf_aoi.geom) )
@@ -515,7 +520,7 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
         con, query = glue("
           with 
             buf_aoi as (
-              select ST_BUFFER({aoi_sql}, {ds$buffer_nm} * 1852) as geom)
+              select ST_BUFFER({aoi_sql}::geography, {ds$buffer_nm} * 1852) as geom)
             {ds$select_sql} as ds
             inner join buf_aoi on st_intersects(ds.geometry, buf_aoi.geom )
             "))
@@ -543,7 +548,7 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
   #     x_df <- dbGetQuery(con, glue("
   #       with
   #         buf_aoi as (
-  #           select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom),
+  #           select ST_BUFFER({aoi_sql}::geography, {ds$buffer_nm} * 1852) as geom),
   #         tmp_aoi as (
   #           {ixn_sql} as ds, buf_aoi
   #           where st_intersects(ds.geometry, buf_aoi.geom))
@@ -556,7 +561,7 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
   #       glue("
   #         with
   #           buf_aoi as (
-  #             select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom)
+  #             select ST_BUFFER({aoi_sql}::geography, {ds$buffer_nm} * 1852) as geom)
   #           {ixn_sql} as ds, buf_aoi
   #           where st_intersects(ds.geometry, buf_aoi.geom)
   #         "))
@@ -572,7 +577,7 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
   #       con, glue("
   #         with 
   #           buf_aoi as (
-  #             select ST_BUFFER({aoi_sql}, {ds$buffer_nm}) as geom ),
+  #             select ST_BUFFER({aoi_sql}::geography, {ds$buffer_nm} * 1852) as geom ),
   #           tmp_aoi as (
   #             {ds$select_sql} as ds
   #             inner join buf_aoi on st_intersects(ds.geometry, buf_aoi.geom) )
@@ -583,7 +588,7 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
   #       con, glue("
   #         with 
   #           buf_aoi as (
-  #             select ST_BUFFER({aoi_sql}, {ds$buffer_nm} * 1852) as geom)
+  #             select ST_BUFFER({aoi_sql}::geography, {ds$buffer_nm} * 1852) as geom)
   #           {ds$select_sql} as ds
   #           inner join buf_aoi on st_intersects(ds.geometry, buf_aoi.geom )
   #           "))

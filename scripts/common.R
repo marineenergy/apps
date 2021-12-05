@@ -25,6 +25,8 @@ dir_data <<- switch(
   Ben = "~/github/marineenergy/apps_dev/data",
   "/share/github/apps_dev/data")
 
+dir_api <<- "/share/github/api"
+
 get_gsheet_data <- function(sheet = "tags", sheet_id  = "https://docs.google.com/spreadsheets/d/1MTlWQgBeV4eNbM2JXNXU3Y-_Y6QcOOfjWFyKWfdMIQM/edit"){
   librarian::shelf(googlesheets4)
   
