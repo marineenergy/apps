@@ -243,7 +243,7 @@ ui <- dashboardPage(
               column(
                 width = 8,
                 textInput(
-                  "txt_rpt_title", "Report Title")),
+                  "txt_rpt_title", "New Report Title")),
               column(
                 width = 1,
                 dropdownButton(

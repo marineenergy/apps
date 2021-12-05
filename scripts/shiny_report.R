@@ -301,6 +301,9 @@ get_projects_tbl <- function(d_projects_tags, ixns = NULL){
   
   d <- d_projects_tags 
   
+  #browser()
+  #table(d %>% pull(tag_technology))
+  
   # filter by Tags
   if (length(ixns) > 0){
     rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "project_tags", categories = c("Technology")) %>% 
@@ -335,6 +338,8 @@ get_rowids_with_ixn <- function(db_tbl, ixn, categories = NULL){
   # db_tbl = "tethys_mgt_tags"; ixn = c("Receptor.Fish", "Stressor.PhysicalInteraction.Collision")
   # db_tbl = "mc_spatial_tags"; ixn = values$ixns %>% unlist()
   # ixn = list(c(""Receptor.Birds","Stressor.HabitatChange"))
+  
+  #browser()
   
   # subset interactions by categories available to content type
   if (!is.null(categories)){
@@ -401,6 +406,7 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
     # dataset_code='monuments'
     # aoi_wkt='POLYGON ((-180.0668 16.98081, -180.0668 29.87807, -153.4797 29.87807, -153.4797 16.98081, -180.0668 16.98081))'
   
+  #browser()
   message(glue("get_spatial_intersection(dataset_code='{dataset_code}', aoi_wkt='{paste(aoi_wkt, collapse=';')}')"))
   
   # if (is.null(aoi_wkt)) {
@@ -595,8 +601,6 @@ get_spatial_tbl <- function(d_spatial_tags, ixns = NULL, aoi_wkt = NA){
   
   d <- d_spatial_tags 
   
-  #browser()
-  
   # filter by Tags
   if (length(ixns) > 0){
     rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "mc_spatial_tags", categories = c("Receptor")) %>% 
@@ -612,7 +616,6 @@ get_spatial_tbl <- function(d_spatial_tags, ixns = NULL, aoi_wkt = NA){
   # filter by Location
   #browser()
   # if (!is.null(aoi_wkt))
-  #   browser()
   d <-  d %>%
     mutate(
       sp_data = map(code, get_spatial_intersection, aoi_wkt))
@@ -863,6 +866,13 @@ map_projects <- function(d_projects){
     }")
 }
 
+md2html <- function(x){
+  if (purrr::is_empty(x) || is.na(x))
+    return("")
+  htmltools::HTML(markdown::markdownToHTML(
+    text = x, fragment.only = T))
+}
+
 plot_projects <- function(){
   # for initial plotly projects plot
   
@@ -1079,7 +1089,7 @@ plot_project_timelines <- function(d_projects){
 
 sf_to_wkt <- function(sf){
   
-  if (is.null(sf))
+  if (!"sf" %in% class(sf))
     return(NULL)
   
   sf %>% 
@@ -1205,10 +1215,6 @@ tabulate_dataset_shp_within_aoi3 <- function(dataset_code, aoi_wkt, output = "ka
   tbl
 }
 
-tags_sql_to_html <- function(ixns, df_tags){
-  
-}
-
 update_project_plot <- function(){
   # for plot filtered by tech selection
   
@@ -1259,6 +1265,10 @@ update_project_plot <- function(){
       y_tech     = y_tech_antn[[3]])  
   fig
 }
+
+# load gsheet_params ----
+gsheet_params <- get_gsheet_data("parameters") %>% 
+  filter(output == "report") %>% select(-output)
 
 # load tags ----
 tbl_tags <- tbl(con, "tags")
