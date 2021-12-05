@@ -463,6 +463,9 @@ server <- function(input, output, session) {
   #* get_spatial() ----
   get_spatial <- reactive({
     
+    # ST_Force_2D
+    #DBI::dbGetQuery(con, "SELECT ST_Force2D();")
+    #browser()
     d <- get_spatial_tbl(
       d_spatial_tags, 
       ixns    = values$ixns, 

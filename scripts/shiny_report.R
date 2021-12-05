@@ -364,6 +364,7 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
   # TODO: pull latest datasets: https://docs.google.com/spreadsheets/d/1MMVqPr39R5gAyZdY2iJIkkIdYqgEBJYQeGqDk1z-RKQ/edit#gid=936111013
   # datasets_gsheet2db(redo = T)
   
+  # dataset_code <- "coastal-channels"
   # dataset_code <- "oil-gas-wells"
   # dataset_code <- "cetacean-pacific-summer"
   # aoi_wkt <- ""
@@ -430,7 +431,7 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
   #   st_intersection))
   
   #browser()
-  if (is.null(aoi_wkt) || is.na(aoi_wkt) | aoi_wkt == ""){
+  if (is.null(aoi_wkt) || is.na(aoi_wkt) || aoi_wkt == ""){
     # if no Location
     #aoi_sql <- glue("ST_MakeEnvelope(-180,-90,180,90,4326)::geometry")
     aoi_sql <- "world"
@@ -471,9 +472,38 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
     # Area weighted statistics ARE required
     ixn_sql <- str_replace({ds$select_sql}, 'geometry', 'geometry, st_intersection(ds.geometry, buf_aoi.geom) as ixn ')
     
+    # dataset_code <- "coastal-channels"
+    #ixn_sql <- str_replace({ds$select_sql}, 'geometry', 'geometry, ST_MakeValid(st_intersection(ds.geometry, buf_aoi.geom)) as ixn ')
+    # ixn_sql %>% cat()
+    # ixn_sql <- '
+    # select
+    #   objnam,
+    #   themelayer,
+    #   inform,
+    #   drval1,
+    #   quasou,
+    #   quasou_txt,
+    #   sordat,
+    #   fairway,
+    #   dsnm,
+    #   dataaccess,
+    #   datatype,
+    #   st_force2d(geometry) as geometry, ST_MakeValid(st_intersection(ds.geometry, buf_aoi.geom)) as ixn
+    # from shp_maintainedchannels'
+    # r <- DBI::dbGetQuery(con, ixn_sql)
+    # d <- st_read(con, 'shp_maintainedchannels')
+    # d <- tbl(con, 'shp_maintainedchannels')
     #if (dataset_code == 'ocs-lease-blk') browser()
     
     if (!is.na(ds$summarize_sql)){
+      # ds$summarize_sql  <- '
+      #   select 
+      #     fairway as "Fairway",
+      #     round(sum(st_area(geometry::geography) * (st_area(ixn::geography) / st_area(geometry::geography))) / 4047) as "AOI Acres"
+      #   from tmp_aoi
+      #   group by fairway
+      #   order by fairway'
+      
       x_df <- dbGetQuery(
         con,
         glue("

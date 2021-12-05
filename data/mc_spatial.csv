@@ -641,40 +641,6 @@ group by
   fmc_report, sitename_l, instatewat, lifestage, lttdt_link
 order by
   fmc_report, sitename_l, instatewat, lifestage, lttdt_link"
-20,coastal-channels,TRUE,Coastal Maintained Channels,Navigation;Legal & Policy;Human Dimensions;Social & Economic Data;Physical Environment,0,USACE,http://www.usace.army.mil/,shp_maintainedchannels,shp,T,"select
-        objnam,
-        themelayer,
-        inform,
-        drval1,
-        quasou,
-        quasou_txt,
-        sordat,
-        fairway,
-        dsnm,
-        dataaccess,
-        datatype,
-        st_force2d(geom) as geometry
-from shp_maintainedchannels","select
-        objnam,
-        themelayer,
-        inform,
-        drval1,
-        quasou,
-        quasou_txt,
-        sordat,
-        fairway,
-        dsnm,
-        dataaccess,
-        datatype
-from shp_maintainedchannels",NA,"select
-    fairway as ""Fairway"",
-    round(sum(st_area(geometry::geography) * (st_area(ixn::geography) / st_area(geometry::geography))) / 4047) as ""AOI Acres""
-  from 
-    tmp_aoi
-  group by
-    fairway
-  order by
-    fairway"
 21,drill-platforms,TRUE,Drilling Platforms,Physical Environment;Social & Economic Data;Marine Spatial Planning;Human Dimensions,0,BOEM,https://www.boem.gov/,shp_pc_plat;shp_platform,shp,NA,"select
     structure, 
     geometry
