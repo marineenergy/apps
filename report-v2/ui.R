@@ -5,7 +5,7 @@ ui <- dashboardPage(
   #* header ----
   dashboardHeader(
     title = shiny::HTML(
-      "<a class='navbar-brand' href='#'><img alt='Brand' src='./images/logo-horizontal-square.svg' width='40px'></a>MarineEnergy.app"),
+      "<a class='navbar-brand' href='https://marineenergy.app'><img alt='Brand' src='./images/logo-horizontal-square.svg' width='40px'></a>MarineEnergy.app"),
     titleWidth = 310,
     #** navbarMenu ----
     leftUi = navbarMenu(
