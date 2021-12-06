@@ -275,7 +275,7 @@ get_docs_tbl <- function(d_docs_tags, ixns = NULL, cks = NULL){
       Doc = ifelse(
         is.na(prj_doc_attach_url),
         Doc,
-        glue("<a href='{prj_doc_attach_url}'>{Doc}</a>"))) %>% 
+        glue("<a href='{prj_doc_attach_url}' target='_blank'>{Doc}</a>"))) %>% 
     #names()
     select(
       ID, Project=project, Document=Doc, Detail=detail, Tags,
