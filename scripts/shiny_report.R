@@ -240,12 +240,34 @@ get_antn_info <- function(tech, p_tech_tbl){
   
 }
 
+get_content_tag_categories <- function(content, html=F){
+  # content = "documents"
+  
+  tbl <- c(
+    projects     = "project_tags",
+    management   = "tethys_mgt_tags",
+    documents    = "ferc_doc_tags",
+    publications = "tethys_pub_tags",
+    spatial      = "mc_spatial_tags")[content]
+  
+  cats <- dbGetQuery(con,  glue("SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM {tbl};")) %>% 
+    pull("tag_cat") %>% as.character() %>% na.omit() %>% rev()
+  
+  if (html){
+    h <- tibble(
+      cat  = cats,
+      html = map(cat, function(x) span(class=glue("me-tag me-{tolower(x)}"),  x)))
+    cats <- tagList(h$html)
+  }
+  
+  cats
+}
+
 get_docs_tbl <- function(d_docs_tags, ixns = NULL, cks = NULL){
   
   d <- d_docs_tags
   
-  tag_cats <- dbGetQuery(con,  "SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM ferc_doc_tags;") %>% 
-    pull("tag_cat") %>% as.character() %>% na.omit() %>% rev()
+  tag_cats <- get_content_tag_categories("documents")
   
   if (length(ixns) > 0){
     rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "ferc_doc_tags", categories = tag_cats) %>% 
@@ -275,7 +297,7 @@ get_docs_tbl <- function(d_docs_tags, ixns = NULL, cks = NULL){
       Doc = ifelse(
         is.na(prj_doc_attach_url),
         Doc,
-        glue("<a href='{prj_doc_attach_url}'>{Doc}</a>"))) %>% 
+        glue("<a href='{prj_doc_attach_url}' target='_blank'>{Doc}</a>"))) %>% 
     #names()
     select(
       ID, Project=project, Document=Doc, Detail=detail, Tags,
@@ -308,8 +330,7 @@ get_projects_tbl <- function(d_projects_tags, ixns = NULL){
   
   d <- d_projects_tags # %>% show_query()
   
-  tag_cats <- dbGetQuery(con,  "SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM project_tags;") %>% 
-    pull("tag_cat") %>% as.character() %>% na.omit() # , categories = tag_cats
+  tag_cats <- tag_cats <- get_content_tag_categories("projects")
 
   # filter by Tags
   if (length(ixns) > 0){
@@ -326,9 +347,8 @@ get_projects_tbl <- function(d_projects_tags, ixns = NULL){
 get_pubs_tbl <- function(d_pubs_tags, ixns = NULL){
   d <- d_pubs_tags # %>% show_query()
   
-  tag_cats <- dbGetQuery(con,  "SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM tethys_pub_tags;") %>% 
-    pull("tag_cat") %>% as.character() %>% na.omit()
-  
+  tag_cats <- get_content_tag_categories("publications")
+
   if (length(ixns) > 0){
     rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "tethys_pub_tags", categories = tag_cats) %>% 
       unlist() %>% unique()

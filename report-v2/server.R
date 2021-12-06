@@ -32,34 +32,6 @@ server <- function(input, output, session) {
       setView(-93.4, 37.4, 2)
   })
   
-  # tmp <- sf::st_sfc()
-  # class(tmp)[1] <- "sfc_POLYGON"
-  # ply_editable_0 <- sf::st_sf(X_leaflet_id = integer(0), feature_type = character(0), geometry=tmp, crs = 4326)
-  # map_edit <- leaflet(
-  #   options = leafletOptions(
-  #     zoomControl = T,
-  #     attributionControl = F)) %>% 
-  #   addProviderTiles(providers$Esri.OceanBasemap) %>% 
-  #   # addPolygons(data = ply_editable_0, group = "ply_editable") %>% 
-  #   setView(-93.4, 37.4, 4)
-  
-  # Location input
-  # crud <- callModule(
-  #   editMod, 
-  #   leafmap       = map_edit,
-  #   id            = "map_editor", 
-  #   # [edit existing feature within Shiny and save](https://github.com/r-spatial/mapedit/issues/105#issuecomment-552198352)
-  #   targetLayerId = "ply_editable",  # "ply",
-  #   editor        = "leaflet.extras", # "leafpm"
-  #   editorOptions = list(
-  #     polylineOptions = F, markerOptions = F, circleMarkerOptions = F,
-  #     #editOptions = T, 
-  #     singleFeature = T))
-  
-  # output$map_editable <- renderLeaflet({
-  #   req(crud()$all)
-  #   mapview(crud()$all)@map
-  # })
   output$mapeditor <- renderLeaflet({
     library(leaflet.extras)
     
@@ -72,7 +44,6 @@ server <- function(input, output, session) {
       # addPolygons(data = ply_editable_0, group = "ply_editable") %>% 
       setView(-93.4, 37.4, 4)
     
-    #browser()
     m <- m %>% 
       leaflet.extras::addDrawToolbar(
         targetGroup = "ply_editable",
@@ -98,25 +69,8 @@ server <- function(input, output, session) {
     m
   })
  
-  # observe({
-  #   #use the draw_stop event to detect when users finished drawing
-  #   
-  #   # https://github.com/bhaskarvk/leaflet.extras/blob/master/inst/examples/shiny/draw-events/app.R
-  #   #req(input$mapeditor_draw_stop)
-  #   req(input$mapeditor_draw_all_features)
-  #   message("draw_all_features SOLO")
-  # })
-  
-  # observe({
-  #   features <- input$mapeditor_draw_all_features
-  #   message("observe: input$mapeditor_draw_all_features")
-  #   
-  #   
-  # })
-  
   observe({
     #use the draw_stop event to detect when users finished drawing
-    
     # https://github.com/bhaskarvk/leaflet.extras/blob/master/inst/examples/shiny/draw-events/app.R
     #req(input$mapeditor_draw_stop)
     req(input$mapeditor_draw_all_features)
@@ -125,32 +79,12 @@ server <- function(input, output, session) {
     
     feature <- isolate(input$mapeditor_draw_all_features$features[[1]])
     
-    # if(!is.null(isolate(input$mapeditor_draw_stop))){
-    #   message("  New Feature")
-    #   feature <- isolate(input$mapeditor_draw_new_feature)
-    # }
-    # if(!is.null(isolate(input$mapeditor_draw_edited_features))){
-    #   message("  Edited Feature")
-    #   feature <- isolate(input$mapeditor_draw_edited_features)
-    # }
-    # browser()
-    #print(feature)
-    #message("mapeditor_draw_stop")
-    #browser()
-    # polygon_coordinates <- input$mymap_draw_new_feature$geometry$coordinates[[1]]
-    # # see  https://rstudio.github.io/leaflet/shiny.html
-    # bb <- input$mymap_bounds
-    #geom_polygon <- input$feature$geometry
-    #geom_polygon <- feature$geometry
-    # drawn_polygon <- Polygon(do.call(rbind,lapply(polygon_coordinates,function(x){c(x[[1]][1],x[[2]][1])})))
     ply_json <- geojsonio::as.json(feature$geometry)
     # spdf <- geojsonio::geojson_sp(feature)
     ply <- st_read(ply_json, quiet = T)
     #ply_wkt <- st_as_text(st_geometry(ply))
     values$ply <- ply
-    #mymap_proxy = leafletProxy("mymap") %>% clearPopups() %>% addPopups(south,west,coord)
-    #textOutput("wkt")
-    
+
     leafletProxy("map_side") %>%
       clearShapes()
     
@@ -179,44 +113,10 @@ server <- function(input, output, session) {
       footer    = modalButton("Close"),
       easyClose = T))
     
-    # ply <- crud()$finished
-    # if (!is.null(ply)){
-    #   bb <- sf::st_bbox(ply)
-    #   #browser()
-    #   
-    #   leafletProxy("map_editor-map") %>%
-    #     addPolygons(data = ply, group = "ply_editable") %>% 
-    #     flyToBounds(bb[['xmin']], bb[['ymin']], bb[['xmax']], bb[['ymax']])
-    # }    
   })
   
   
-  
-  # observe({
-  #   #ply <- crud()$finished
-  #   ply <- crud()$all
-  #   
-  #   leafletProxy("map_side") %>%
-  #     clearShapes()
-  #   
-  #   if (is.null(ply)){
-  #     actionButton(
-  #       "btn_mod_map", "Add", icon=icon("plus"))
-  #   } else {
-  #     bb <- sf::st_bbox(ply)
-  #     
-  #     leafletProxy("map_side") %>%
-  #       addPolygons(data = ply, group = "ply_editable") %>% 
-  #       flyToBounds(bb[['xmin']], bb[['ymin']], bb[['xmax']], bb[['ymax']])
-  #     
-  #     updateActionButton(
-  #       session,
-  #       "btn_mod_map", "Modify", icon=icon("cog"))
-  #   }
-  # })
-  
   # ixns ----
-  
   
   #* ixn_btns ----
   output$ixn_btns <- renderUI({
@@ -241,10 +141,6 @@ server <- function(input, output, session) {
     
     updateSelectizeInput(
       session, "sel_ixn_tags", selected = "")
-    # updateSelectInput(
-    #   session, 
-    #   "sel_ixn_tags",
-    #   selected = "")
   })
   
   #* btn_mod_ixns ----
@@ -281,12 +177,6 @@ server <- function(input, output, session) {
   })
   
   # projects ----
-  # TODO:
-  #   server.R
-  #     get_projects <- reactive({ # limit by tech per ixns })
-  #   scripts/shiny_report.R
-  #     get_projects_map      <- function(projects)
-  #     get_projects_timeline <- function(projects)
 
   #* prj_map ----
   output$prj_map <- renderLeaflet({
@@ -324,54 +214,6 @@ server <- function(input, output, session) {
         event_register("plotly_click")
     })
   })
-
-  #* prj_p observe tags  ----
-  # observe({
-  #   req(length(values$ixns) > 0)
-  #   
-  #   # vector: T = tech selected, F = no tech selected
-  #   values_unlist  <- values$ixns %>% unlist() 
-  #   tech_str_match <- grepl("Technology", values_unlist)
-  # 
-  #   # if no tech type selected in ixns 
-  #   if (!TRUE %in% tech_str_match){
-  #     # load_projects()
-  #     tech <<- c("Riverine Energy", "Tidal Energy", "Wave Energy")
-  #     message(glue("no explicitly selected tech so plot all tech: {paste(tech, collapse = ', ')}"))
-  # 
-  #     # calculate_y_tech(tech)
-  #     output$prj_p <- renderPlotly(
-  #       suppressWarnings({
-  #         plot_projects()
-  #       })
-  #     )
-  #   }
-  # 
-  #   else if (TRUE %in% tech_str_match){
-  #     load_projects() 
-  #     # output$prj_p <- renderText(suppressWarnings(""))
-  # 
-  #     # extract technology from interaction tags
-  #     tags2tech <- c(
-  #       "Technology.Riverine" = "Riverine Energy", 
-  #       "Technology.Tidal"    = "Tidal Energy",
-  #       "Technology.Wave"     = "Wave Energy")
-  #     
-  #     # if an ixn exists, find tech selected in the ixn
-  #     if (!is.null(values$ixns)){
-  #       tech <<- tags2tech[intersect(names(tags2tech), values$ixns %>% unlist())] %>% 
-  #         unname()
-  #     } else {
-  #       tech <<- tags2tech 
-  #     }
-  #     
-  #     output$prj_p <- renderPlotly(
-  #       suppressWarnings({
-  #         update_project_plot()
-  #         })
-  #       )
-  #   }
-  # })
   
   #* prj_p plotly_click ----
   observe({
@@ -590,24 +432,9 @@ server <- function(input, output, session) {
     out_ext   <- isolate(input$sel_rpt_ext)
     email     <- isolate(glogin()$email) 
     
-    # message(glue("
-    #   input$txt_rpt_title: {rpt_title}
-    #   input$sel_rpt_ext:   {out_ext}
-    #   glogin()$email:      {email}"))
-    
     if (rpt_title == "") 
       return()
     # TODO: message if missing title
-    
-    # metadata
-    # email = "bdbest@gmail.com"; rpt_title = "Test Report"; out_ext = "html"
-    # values <- list(
-    #   ixns = list(
-    #     c("Receptor.Fish", "Stressor.PhysicalInteraction.Collision"),
-    #     c("Technology.Wave", "Receptor.Birds")))
-    # input <- list(x
-    #   ck_rpt_prj = T,
-    #   ck_rpt_mgt = T)
     
     toJSONlist <- function(x){
       ifelse(
@@ -629,27 +456,6 @@ server <- function(input, output, session) {
       interactions    = toJSONlist(values[["ixns"]]),
       document_checks = toJSONlist(isolate(input$cks_docs)),
       spatial_aoi_wkt = sf_to_wkt(values$ply))
-    # list(params = m) %>% as.yaml() %>% cat()
-
-    # hash <- digest(m, algo="crc32")
-    # yml <- glue("{dir_rpt_pfx}/{email}/MarineEnergy.app_report_{hash}_shiny.yml")
-    # dir.create(dirname(yml), showWarnings = F)
-    # write_yaml(m, yml)
-
-    # params for Rmd
-    # p <- m
-    # p$Content      <- list(value = p$Content)
-    # p$Interactions <- list(value = p$Interactions)
-    # as.yaml(p) %>% cat()
-    
-    # submit report creation job request to API
-    #q <- m
-    # q$contents        <- toJSON(m$contents) # %>% as.character()
-    # q$interactions    <- toJSON(m$interactions) # %>% as.character()
-    # q$document_checks <- toJSON() # %>% as.character()
-
-    # as.yaml(q) %>% cat()
-    #toJSON(NULL, null="null")
 
     r <- GET(url_rpt_pfx, query = q)
     # message(glue("r$url: {r$url}"))
@@ -668,14 +474,9 @@ server <- function(input, output, session) {
       slice(irows) %>% 
       pull(url) %>% 
       basename()
-    # message(glue("rpts_del: {paste(rpts_del, collapse=', ')}"))
-    
+
     sapply(rpts_del, del_user_report, email = email)
     
     values$rpts <- get_user_reports(email)
-    
-    # dataTableProxy("tbl_rpts") %>% 
-    #   selectRows(irows)
-    # input$tbl_rpts
   })
 }
