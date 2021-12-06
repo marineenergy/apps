@@ -245,7 +245,7 @@ get_docs_tbl <- function(d_docs_tags, ixns = NULL, cks = NULL){
   d <- d_docs_tags
   
   tag_cats <- dbGetQuery(con,  "SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM ferc_doc_tags;") %>% 
-    pull("tag_cat") %>% as.character() %>% na.omit()
+    pull("tag_cat") %>% as.character() %>% na.omit() %>% rev()
   
   if (length(ixns) > 0){
     rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "ferc_doc_tags", categories = tag_cats) %>% 

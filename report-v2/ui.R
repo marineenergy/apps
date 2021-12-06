@@ -168,9 +168,9 @@ ui <- dashboardPage(
             #span(class="me-tag me-management", "Management missing in data"),
             #span(class="me-tag me-effect?", "Effect missing in db.tags"),
             span(class="me-tag me-stressor",   "Stressor"),
-            span(class="me-tag me-receptor",   "Receptor"),
-            span(class="me-tag me-phase",      "Phase"),
-            span(class="me-tag me-consequence", "Consequence")),
+            span(class="me-tag me-receptor",   "Receptor")),
+            #span(class="me-tag me-phase",      "Phase"),
+            #span(class="me-tag me-consequence", "Consequence")),
         helpText(
           HTML("The FERC eLibrary contains environmental compliance project documents, 
           of which excerpts have been manually tagged for reference.")),
