@@ -243,8 +243,12 @@ get_antn_info <- function(tech, p_tech_tbl){
 get_docs_tbl <- function(d_docs_tags, ixns = NULL, cks = NULL){
   
   d <- d_docs_tags
+  
+  tag_cats <- dbGetQuery(con,  "SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM ferc_doc_tags;") %>% 
+    pull("tag_cat") %>% as.character() %>% na.omit()
+  
   if (length(ixns) > 0){
-    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "ferc_doc_tags") %>% 
+    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "ferc_doc_tags", categories = tag_cats) %>% 
       unlist() %>% unique()
     d <- d %>%
       filter(rowid %in% !!rowids)
@@ -287,8 +291,11 @@ get_mgt_tbl <- function(d_mgt_tags, ixns = NULL){
   
   d <- d_mgt_tags
   
+  tag_cats <- dbGetQuery(con,  "SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM tethys_mgt_tags;") %>% 
+    pull("tag_cat") %>% as.character() %>% na.omit() # , categories = tag_cats
+  
   if (length(ixns) > 0){
-    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "tethys_mgt_tags") %>% 
+    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "tethys_mgt_tags", categories = tag_cats) %>% 
       unlist() %>% unique()
     d <- d %>%
       filter(rowid %in% !!rowids)
@@ -299,14 +306,14 @@ get_mgt_tbl <- function(d_mgt_tags, ixns = NULL){
 
 get_projects_tbl <- function(d_projects_tags, ixns = NULL){
   
-  d <- d_projects_tags 
+  d <- d_projects_tags # %>% show_query()
   
-  #browser()
-  #table(d %>% pull(tag_technology))
-  
+  tag_cats <- dbGetQuery(con,  "SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM project_tags;") %>% 
+    pull("tag_cat") %>% as.character() %>% na.omit() # , categories = tag_cats
+
   # filter by Tags
   if (length(ixns) > 0){
-    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "project_tags", categories = c("Technology")) %>% 
+    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "project_tags", categories = tag_cats) %>% 
       unlist() %>% unique()
     d <- d %>%
       filter(rowid %in% !!rowids)
@@ -317,9 +324,13 @@ get_projects_tbl <- function(d_projects_tags, ixns = NULL){
 }
 
 get_pubs_tbl <- function(d_pubs_tags, ixns = NULL){
-  d <- d_pubs_tags
+  d <- d_pubs_tags # %>% show_query()
+  
+  tag_cats <- dbGetQuery(con,  "SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM tethys_pub_tags;") %>% 
+    pull("tag_cat") %>% as.character() %>% na.omit()
+  
   if (length(ixns) > 0){
-    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "tethys_pub_tags") %>% 
+    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "tethys_pub_tags", categories = tag_cats) %>% 
       unlist() %>% unique()
     d <- d %>%
       filter(rowid %in% !!rowids)
@@ -634,11 +645,14 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
 
 get_spatial_tbl <- function(d_spatial_tags, ixns = NULL, aoi_wkt = NA){
   
-  d <- d_spatial_tags 
+  d <- d_spatial_tags %>% show_query()
+  
+  tag_cats <- dbGetQuery(con,  "SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM mc_spatial_tags;") %>% 
+    pull("tag_cat") %>% as.character() %>% na.omit() # , categories = tag_cats
   
   # filter by Tags
   if (length(ixns) > 0){
-    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "mc_spatial_tags", categories = c("Receptor")) %>% 
+    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "mc_spatial_tags", categories = tag_cats) %>% 
       unlist() %>% unique()
     d <- d %>%
       filter(rowid %in% !!rowids)
@@ -1332,8 +1346,8 @@ d_mgt_n <- tbl(con, "tethys_mgt") %>% summarize(n = n()) %>% pull(n)
 d_docs_tags <- tbl(con, "ferc_docs") %>% 
   left_join(
     tbl(con, "ferc_doc_tags"),
-    by = "rowid") %>% 
-  arrange(desc(rowid))
+    by = "rowid") # %>% 
+  #arrange(desc(rowid))
 d_docs_n <- tbl(con, "ferc_docs") %>% summarize(n = n()) %>% pull(n)
 
 # load publications ----
