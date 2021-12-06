@@ -98,7 +98,9 @@ ui <- dashboardPage(
       #** tab_prj ----
       tabItem(
         tabName = "tab_prj",
-        div("Filters by:", icon("tags"), span(class="me-tag me-technology", "Technology")),
+        div(
+          "Filters by:", icon("tags"), 
+          get_content_tag_categories("projects", html=T)),
         helpText(
           "This page provides an overview of all past and present Marine Energy projects 
           in the United States at different levels of development and provides active links 
@@ -135,14 +137,9 @@ ui <- dashboardPage(
       #** tab_mgt ----
       tabItem(
         tabName = "tab_mgt",
-        div("Filters by:", 
-            icon("tags"), 
-            span(class="me-tag me-technology",  "Technology"),
-            span(class="me-tag me-receptor",    "Receptor"),
-            span(class="me-tag me-stressor",    "Stressor"),
-            span(class="me-tag me-management",  "Management"),
-            span(class="me-tag me-phase",       "Phase"),
-            span(class="me-tag me-consequence", "Consequence")),
+        div(
+          "Filters by:", icon("tags"), 
+          get_content_tag_categories("management", html=T)),
         helpText(
           HTML("The Management Measures tool allows users to search and query the Tethys 
           Management Measures Tool for Marine Renewable Energy - a robust compilation 
@@ -161,16 +158,9 @@ ui <- dashboardPage(
       #** tab_docs ----
       tabItem(
         tabName = "tab_docs",
-        div("Filters by:", 
-            icon("tags"), 
-            span(class="me-tag me-technology", "Technology"),
-            # TODO: handle mismatched ferc_docs.tag_sql
-            #span(class="me-tag me-management", "Management missing in data"),
-            #span(class="me-tag me-effect?", "Effect missing in db.tags"),
-            span(class="me-tag me-stressor",   "Stressor"),
-            span(class="me-tag me-receptor",   "Receptor")),
-            #span(class="me-tag me-phase",      "Phase"),
-            #span(class="me-tag me-consequence", "Consequence")),
+        div(
+          "Filters by:", icon("tags"),
+          get_content_tag_categories("documents", html=T)),
         helpText(
           HTML("The FERC eLibrary contains environmental compliance project documents, 
           of which excerpts have been manually tagged for reference.")),
@@ -195,12 +185,9 @@ ui <- dashboardPage(
       #** tab_pubs ----
       tabItem(
         tabName = "tab_pubs",
-        div("Filters by:", 
-            icon("tags"), 
-            span(class="me-tag me-technology", "Technology"),
-            span(class="me-tag me-stressor",   "Stressor"),
-            span(class="me-tag me-receptor",   "Receptor"),
-            span(class="me-tag me-phase",      "Phase")),
+        div(
+          "Filters by:", icon("tags"), 
+          get_content_tag_categories("publications", html=T)),
         helpText(
           "The", a("Tethys Marine Energy Knowledge Base", 
                    href="https://tethys.pnnl.gov/knowledge-base-marine-energy"),
@@ -215,9 +202,9 @@ ui <- dashboardPage(
       #** tab_spatial ----
       tabItem(
         tabName = "tab_spatial",
-        div("Filters by:", 
-            icon("tags"), 
-            span(class="me-tag me-receptor",   "Receptor")),
+        div(
+          "Filters by:", icon("tags"), 
+          get_content_tag_categories("spatial", html=T)),
         helpText(
           "Spatial intersections are displayed here between the location drawn and datasets loaded from", a("MarineCadastre.gov ", 
                    href="https://MarineCadastre.gov"),
