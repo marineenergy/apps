@@ -1027,7 +1027,7 @@ plot_project_timelines <- function(d_projects){
   
   # ordered permit_types
   permit_types <- readr::read_csv(prj_permit_types_csv) %>%
-    pull(permit_types) %>% 
+    pull(permit_type) %>% 
     intersect(
       d_permits$permit_type)
 

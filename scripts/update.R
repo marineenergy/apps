@@ -19,23 +19,11 @@ update_projects <- function(){
   prj_permit_types_csv <- here("data/project_permit_types.csv")
   prj_sites_csv        <- here("data/project_sites.csv") # with popup info on permits per site
   
-  tibble(
-    permit_types = c(
-      "Notice of Intent/Preliminary Permit Application",
-      "Draft Pilot License App",
-      "Final Pilot License App",
-      "Pilot License Issued",
-      "Draft License App",
-      "Draft Re-License App",
-      "Final License App",
-      "Final Re-License App",
-      "Environmental Assessment",
-      "Settlement Agreement",
-      "Permit Issued",
-      "Re-License Issued")) %>% 
+  get_gsheet_data("project_permit_types") %>% 
+    arrange(order) %>% 
     write_csv(prj_permit_types_csv)
   permit_types <- read_csv(prj_permit_types_csv, col_types = cols()) %>% 
-    pull(permit_types)
+    pull(permit_type)
   
   stopifnot(file.exists(gs4_auth_json))
   gs4_auth(path = gs4_auth_json)
@@ -77,7 +65,8 @@ update_projects <- function(){
   dbExecute(con, "ALTER TABLE project_tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
   dbExecute(con, "CREATE INDEX idx_project_tags_tag_sql ON project_tags USING GIST (tag_sql);")
   
-  # store project names for matching with ferc_docs
+  # OLD: store project names for matching with ferc_docs
+  # used to import eFERC docs into db but should now match
   project_names <- projects %>% 
     select(prj = project) %>% 
     # tibble() %>% collect() %>% 
