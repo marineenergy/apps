@@ -196,13 +196,16 @@ server <- function(input, output, session) {
 
     # map: redraw markers
     leaflet::leafletProxy("prj_map") %>% 
-      leaflet::clearMarkers() %>% 
-      leaflet::addMarkers(
-        data  = d_prjs,
-        lat   = ~latitude,
-        lng   = ~longitude,
-        label = ~label_html %>% lapply(htmltools::HTML),
-        popup = ~popup_html)
+      leaflet::clearMarkers()
+    
+    if (nrow(d_prjs) > 0)
+      leaflet::leafletProxy("prj_map") %>% 
+        leaflet::addMarkers(
+          data  = d_prjs,
+          lat   = ~latitude,
+          lng   = ~longitude,
+          label = ~label_html %>% lapply(htmltools::HTML),
+          popup = ~popup_html)
     
   })
   

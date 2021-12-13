@@ -105,6 +105,9 @@ add_tech_text <- function(fig, p_tech_sel, y_tech, tech_name){
 
 add_tech_labels <- function(fig, d_sites){
   
+  if (nrow(d_sites) == 0)
+    return(fig)
+  
   y_ends <- cumsum(c(Origin=0, table(d_sites$tag_technology)))
   y_tech <- tibble(
     name = names(y_ends),
