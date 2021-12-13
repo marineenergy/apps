@@ -1,13 +1,13 @@
-permit_types
-Notice of Intent/Preliminary Permit Application
-Draft Pilot License App
-Final Pilot License App
-Pilot License Issued
-Draft License App
-Draft Re-License App
-Final License App
-Final Re-License App
-Environmental Assessment
-Settlement Agreement
-Permit Issued
-Re-License Issued
+permit_type,order
+Notice of Intent/Preliminary Permit Application,1
+Draft Pilot License App,2
+Final Pilot License App,3
+Pilot License Issued,4
+Draft License App,5
+Draft Re-License App,6
+Final License App,7
+Final Re-License App,8
+Environmental Assessment,9
+Settlement Agreement,10
+Permit Issued,11
+Re-License Issued,12
