@@ -209,8 +209,10 @@ ui <- dashboardPage(
           "Filters by:", icon("tags"), 
           get_content_tag_categories("spatial", html=T)),
         helpText(
-          "Spatial intersections are displayed here between the location drawn and datasets loaded from", a("MarineCadastre.gov ", 
-                   href="https://MarineCadastre.gov"),
+          "Spatial intersections are displayed here between the location drawn and datasets loaded from", 
+          a("MarineCadastre.gov ", 
+            href="https://MarineCadastre.gov",
+            target="_blank"),
           "of species, habitats and human uses as Receptor tags."),
         fluidRow(
           box(
