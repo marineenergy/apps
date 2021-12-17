@@ -192,7 +192,8 @@ ui <- dashboardPage(
           get_content_tag_categories("publications", html=T)),
         helpText(
           "The", a("Tethys Marine Energy Knowledge Base", 
-                   href="https://tethys.pnnl.gov/knowledge-base-marine-energy"),
+                   href="https://tethys.pnnl.gov/knowledge-base-marine-energy",
+                   target="_blank"),
           "contains curated white and gray literature."),
         fluidRow(
           box(
