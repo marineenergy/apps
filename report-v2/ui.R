@@ -1,7 +1,6 @@
 # ui ----
 ui <- dashboardPage(
   title = "MarineEnergy.app",
-  
   #* header ----
   dashboardHeader(
     title = shiny::HTML(
@@ -18,13 +17,16 @@ ui <- dashboardPage(
     #shiny::tags$li(
       # googleSignInUI_btn_signin("login"), class = "dropdown"),
     #shinydashboardPlus::userOutput("user")
-    # DEBUG
+    #** google signin ----
     shiny::tags$li(googleSignInUI("login"), class = "dropdown")),
 
   #* sidebar ----
   dashboardSidebar(
     width = 310,
+    #** google login ----
     googleSignInUI_head("login"),
+    #** google analytics ----
+    shiny::tags$head(includeScript("www/google-analytics.js")),
     sidebarMenu(
       menuItem(
         "Configure", 
@@ -190,7 +192,8 @@ ui <- dashboardPage(
           get_content_tag_categories("publications", html=T)),
         helpText(
           "The", a("Tethys Marine Energy Knowledge Base", 
-                   href="https://tethys.pnnl.gov/knowledge-base-marine-energy"),
+                   href="https://tethys.pnnl.gov/knowledge-base-marine-energy",
+                   target="_blank"),
           "contains curated white and gray literature."),
         fluidRow(
           box(
@@ -206,8 +209,10 @@ ui <- dashboardPage(
           "Filters by:", icon("tags"), 
           get_content_tag_categories("spatial", html=T)),
         helpText(
-          "Spatial intersections are displayed here between the location drawn and datasets loaded from", a("MarineCadastre.gov ", 
-                   href="https://MarineCadastre.gov"),
+          "Spatial intersections are displayed here between the location drawn and datasets loaded from", 
+          a("MarineCadastre.gov ", 
+            href="https://MarineCadastre.gov",
+            target="_blank"),
           "of species, habitats and human uses as Receptor tags."),
         fluidRow(
           box(

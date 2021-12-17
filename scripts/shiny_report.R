@@ -105,6 +105,9 @@ add_tech_text <- function(fig, p_tech_sel, y_tech, tech_name){
 
 add_tech_labels <- function(fig, d_sites){
   
+  if (nrow(d_sites) == 0)
+    return(fig)
+  
   y_ends <- cumsum(c(Origin=0, table(d_sites$tag_technology)))
   y_tech <- tibble(
     name = names(y_ends),
@@ -362,7 +365,7 @@ get_pubs_tbl <- function(d_pubs_tags, ixns = NULL){
     mutate(
       # TODO: include in scripts/update_tags.R:update_tags()
       across(where(is.character), na_if, "NA"),
-      Title = as.character(glue("<a href='{uri}'>{title}</a>")))
+      Title = as.character(glue("<a href='{uri}' target='_blank'>{title}</a>")))
 }
 
 get_rowids_with_ixn <- function(db_tbl, ixn, categories = NULL){
@@ -665,7 +668,7 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
 
 get_spatial_tbl <- function(d_spatial_tags, ixns = NULL, aoi_wkt = NA){
   
-  d <- d_spatial_tags %>% show_query()
+  d <- d_spatial_tags # %>% show_query()
   
   tag_cats <- dbGetQuery(con,  "SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM mc_spatial_tags;") %>% 
     pull("tag_cat") %>% as.character() %>% na.omit() # , categories = tag_cats
@@ -685,11 +688,13 @@ get_spatial_tbl <- function(d_spatial_tags, ixns = NULL, aoi_wkt = NA){
   # filter by Location
   #browser()
   # if (!is.null(aoi_wkt))
-  d <-  d %>%
+  if (is.null(aoi_wkt) || is.na(aoi_wkt) || aoi_wkt == "")
+    return(d)
+  
+  d %>%
     mutate(
       sp_data = map(code, get_spatial_intersection, aoi_wkt))
-  d
-  
+
 }
 
 get_tags <- function(){
