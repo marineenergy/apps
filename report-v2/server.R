@@ -4,9 +4,10 @@ server <- function(input, output, session) {
   histdata <- rnorm(500)
 
   values <- reactiveValues(
-    ixns   = list(),
-    rpts   = rpts_0,
-    ply    = NULL)
+    ixns    = list(),
+    rpts    = rpts_0,
+    msg_prj = NULL,
+    ply     = NULL)
   # cat(capture.output(dput(values$ixns)))
   
   # login ----
@@ -176,6 +177,7 @@ server <- function(input, output, session) {
       label = glue("Modify (n={ n_ixns })"))
   })
   
+  
   # projects ----
 
   #* prj_map ----
@@ -187,6 +189,36 @@ server <- function(input, output, session) {
   get_projects <- reactive({
     get_projects_tbl(d_projects_tags, ixns = values$ixns)
   })
+  
+  # msg: when no projects associated w/ selected tech
+  # observe({
+  #   # req(values$ixns)
+  #   req(input$btn_add_ixn)
+  #   
+  #   browser()
+  #   
+  #   # move to global eventually:
+  #   tech_all <- tibble(
+  #     tag = tag_choices["Technology"] %>% unlist(recursive = F))
+  #   
+  #   tech_selected <- intersect(tech_all, values$ixns)
+  #  
+  #   tech_tag_full <- readr::read_csv(prj_sites_csv, col_types = readr::cols()) %>% 
+  #     mutate(tag_full = glue("Technology.{tag_technology}")) %>% 
+  #     pull(tag_full) %>% 
+  #     unique()
+  #   
+  #   tech_available <- readr::read_csv(prj_sites_csv, col_types = readr::cols()) %>% 
+  #     mutate(tag_full = setNames(glue("Technology.{tag_technology}"), tag_technology)) %>% 
+  #     select(tag_full) %>% 
+  #     unique()
+  #     
+  #   if (nrow(get_projects()) == 0) {
+  #     values$msg_prj <- glue(
+  #       "Sorry, the technology {tech_selected} does not match any available projects. Instead, please select one of the following available projects: {tech_available}")
+  #   }  
+  # 
+  # })
 
   
   #* prj_map observe tags  ----
@@ -335,11 +367,17 @@ server <- function(input, output, session) {
   output$tbl_spatial <- renderDataTable({
     d <- get_spatial()
     
-    d <- d %>% 
-      mutate(
-        `Rows in Results` = map_int(sp_data, nrow)) %>% 
-      select(ID, Title, Tags, `Rows in Results`) %>% 
-      filter(`Rows in Results` > 0) # , sp_data)
+    
+    if ("sp_data" %in% names(d)){
+      d <- d %>% 
+        mutate(
+          `Rows in Results` = map_int(sp_data, nrow)) %>% 
+        select(ID, Title, Tags, `Rows in Results`) %>% 
+        filter(`Rows in Results` > 0) # , sp_data)
+    } else {
+      d <- d %>% 
+        select(ID, Title, Tags)
+    }
     
     d
     # TODO: 'expand data' buttons for each row which, when clicked result in the corresponding sp_data being displayed as a df

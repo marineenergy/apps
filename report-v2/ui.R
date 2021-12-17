@@ -1,7 +1,6 @@
 # ui ----
 ui <- dashboardPage(
   title = "MarineEnergy.app",
-  
   #* header ----
   dashboardHeader(
     title = shiny::HTML(
@@ -18,13 +17,16 @@ ui <- dashboardPage(
     #shiny::tags$li(
       # googleSignInUI_btn_signin("login"), class = "dropdown"),
     #shinydashboardPlus::userOutput("user")
-    # DEBUG
+    #** google signin ----
     shiny::tags$li(googleSignInUI("login"), class = "dropdown")),
 
   #* sidebar ----
   dashboardSidebar(
     width = 310,
+    #** google login ----
     googleSignInUI_head("login"),
+    #** google analytics ----
+    shiny::tags$head(includeScript("www/google-analytics.js")),
     sidebarMenu(
       menuItem(
         "Configure", 
