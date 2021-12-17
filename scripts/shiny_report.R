@@ -365,7 +365,7 @@ get_pubs_tbl <- function(d_pubs_tags, ixns = NULL){
     mutate(
       # TODO: include in scripts/update_tags.R:update_tags()
       across(where(is.character), na_if, "NA"),
-      Title = as.character(glue("<a href='{uri}'>{title}</a>")))
+      Title = as.character(glue("<a href='{uri}' target='_blank'>{title}</a>")))
 }
 
 get_rowids_with_ixn <- function(db_tbl, ixn, categories = NULL){
