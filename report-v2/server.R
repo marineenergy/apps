@@ -2,7 +2,7 @@
 server <- function(input, output, session) {
   set.seed(122)
   histdata <- rnorm(500)
-
+  
   values <- reactiveValues(
     ixns    = list(),
     rpts    = rpts_0,
@@ -191,34 +191,42 @@ server <- function(input, output, session) {
   })
   
   # msg: when no projects associated w/ selected tech
-  # observe({
-  #   # req(values$ixns)
-  #   req(input$btn_add_ixn)
-  #   
-  #   browser()
-  #   
-  #   # move to global eventually:
-  #   tech_all <- tibble(
-  #     tag = tag_choices["Technology"] %>% unlist(recursive = F))
-  #   
-  #   tech_selected <- intersect(tech_all, values$ixns)
-  #  
-  #   tech_tag_full <- readr::read_csv(prj_sites_csv, col_types = readr::cols()) %>% 
-  #     mutate(tag_full = glue("Technology.{tag_technology}")) %>% 
-  #     pull(tag_full) %>% 
-  #     unique()
-  #   
-  #   tech_available <- readr::read_csv(prj_sites_csv, col_types = readr::cols()) %>% 
-  #     mutate(tag_full = setNames(glue("Technology.{tag_technology}"), tag_technology)) %>% 
-  #     select(tag_full) %>% 
-  #     unique()
-  #     
-  #   if (nrow(get_projects()) == 0) {
-  #     values$msg_prj <- glue(
-  #       "Sorry, the technology {tech_selected} does not match any available projects. Instead, please select one of the following available projects: {tech_available}")
-  #   }  
-  # 
-  # })
+  observe({
+    req(values$ixns)
+    req(input$btn_add_ixn)
+
+    # browser()
+    if (nrow(get_projects()) == 0) {
+      
+      tech_sel <- unlist(values$ixns) %>% str_subset("^Technology.")
+      
+      tech_avail <- d_projects_tags %>% 
+        group_by(tag_sql) %>% 
+        summarize() %>% 
+        pull(tag_sql) %>% 
+        as.character()
+    
+      values$msg_prj <- glue(
+        "Sorry, Technology {ixn_to_colorhtml(tech_sel, df_tags, is_html=T)} does not match Technology 
+        associated with available projects: {ixn_to_colorhtml(tech_avail, df_tags, is_html=T)}.")
+    } 
+    
+  })
+  
+  #* msg_prj ----
+  output$msg_prj <- renderUI({
+    if (is.null(values$msg_prj))
+      return(NULL)
+    div(
+      class="alert alert-warning", role="alert",
+      HTML(values$msg_prj))
+  })
+  outputOptions(output, "msg_prj", suspendWhenHidden = FALSE)
+  
+  output$n_prj <- renderText({
+    nrow(get_projects())
+  })
+  outputOptions(output, "n_prj", suspendWhenHidden = FALSE)
 
   
   #* prj_map observe tags  ----

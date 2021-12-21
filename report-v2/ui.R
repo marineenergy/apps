@@ -36,51 +36,8 @@ ui <- dashboardPage(
           h5(icon("tags"), "Interactions"),
           selectizeInput(
             "sel_ixn_tags", "Tags", tag_choices,
-            multiple = T
-            # options  = list(render = I('{
-            #   option: function(item, escape){
-            #     return "<div><strong>" + escape(item) + "</strong>"
-            #   }
-            # }'))
-            ),
-            # options  = list(render = I('{
-            #   option: function(item, escape){
-            #     return "<div><strong>" + escape(item) + "</strong>"
-            #   }
-            # }'))),
-          # selectInput("sel_ixn_tags", "Tags", tag_choices, multiple = T),
-            # style = "background-color: red;"),
-          uiOutput("ixn_btns")
-          # selectInput(
-          #   "sel_ixn_tags", "Tags", tag_choices, multiple = T),
-          # uiOutput("ixn_btns"),
-          
-          # tags$label("for"="sel_ixn_tags", "Tags", class="input-label"),
-          # tags$select(
-          #   id = "sel_ixn_tag", 
-          #   # "onfocus"='this.size=13;', "onblur"='this.size=1;' ,
-          #   # "onchange"='this.size=1; this.blur();',
-          #   tags$option(value = "none", ""),
-          #   tags$optgroup("label"="Stressor",
-          #                 tags$option(value = "Stressor 1"),
-          #                 tags$option(value = "Stressor 2"),
-          #                 tags$option(value = "Stressor 3")),
-          #   tags$optgroup("label"="Technology",
-          #                 tags$option(value = "Tech 1"),
-          #                 tags$option(value = "Tech 2"),
-          #                 tags$option(value = "Tech 3"))
-            # input use as is in the ui or in the server (make sure id is linked in the css)
-          
-        ),
-
-        # tags$optgroup(tag_choices_html$Stressor),
-        # tags$optgroup(tag_choices_html$Receptor),
-        # tags$optgroup(tag_choices_html$Phase),
-        # tags$optgroup(tag_choices_html$Management),
-        # tags$optgroup(tag_choices_html$Consequence)
-            
-            # HTML(tag_choices_html))), 
-   
+            multiple = T),
+          uiOutput("ixn_btns")),
         wellPanel(
           h5(icon("map-marked"), "Location"),
           div(
@@ -113,28 +70,31 @@ ui <- dashboardPage(
           tags$a(
             "Tethys Knowledge Base.", 
             href="https://tethys.pnnl.gov/knowledge-base", target="_blank")),
-        
-        fluidRow(
-          box(
-            title = "Map of Projects", width = 6,
-            leafletOutput("prj_map"),
-            helpText(
-              "To learn more about a project, select the blue pin on the map with your 
+        conditionalPanel(
+          condition = "output.msg_prj",
+          htmlOutput("msg_prj")),
+    
+        conditionalPanel(
+          condition = "output.n_prj > 0",
+          fluidRow(
+            box(
+              title = "Map of Projects", width = 6,
+              leafletOutput("prj_map"),
+              helpText(
+                "To learn more about a project, select the blue pin on the map with your 
               cursor and a pop up will open with the project’s name, timeline, geographic 
               coordinates and a list of all submitted permitting and licensing materials to 
               date. Where available, the permitting/licensing documents have been linked to 
               a downloadable PDF of the document or to pages with additional information.")),
-          box(
-            title = "Timeline of Projects", width = 6,
-            plotlyOutput("prj_p", height="700px"),
-            helpText(
-              "The figure above shows all past and present Marine Energy projects 
-              and the permitting milestones of each over time organized by energy type 
-              (riverine, tidal, and wave). Click on the triangles in the plot to zoom the 
-              map to the study location of interest. You can access relevant FERC documents 
-              per project and permitting milestones by clicking on the study location icon in the map.")))),
-      
-      #verbatimTextOutput("click")),
+            box(
+              title = "Timeline of Projects", width = 6,
+              plotlyOutput("prj_p", height="700px"),
+              helpText(
+                "The figure above shows all past and present Marine Energy projects 
+                  and the permitting milestones of each over time organized by energy type 
+                  (riverine, tidal, and wave). Click on the triangles in the plot to zoom the 
+                  map to the study location of interest. You can access relevant FERC documents 
+                  per project and permitting milestones by clicking on the study location icon in the map."))))),
       
       #** tab_mgt ----
       tabItem(
