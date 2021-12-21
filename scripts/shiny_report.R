@@ -1359,6 +1359,11 @@ d_projects <- tbl(con, "project_sites") %>%
 d_projects_tags <- tbl(con, "project_sites") %>% 
   left_join(
     tbl(con, "project_tags"), by = "rowid")
+projects_tech_avail <- d_projects_tags %>% 
+  group_by(tag_sql) %>% 
+  summarize() %>% 
+  pull(tag_sql) %>% 
+  as.character()
 
 # load management ----
 d_mgt_tags <- tbl(con, "tethys_mgt") %>% 

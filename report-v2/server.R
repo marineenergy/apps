@@ -193,23 +193,17 @@ server <- function(input, output, session) {
   # msg: when no projects associated w/ selected tech
   observe({
     req(values$ixns)
-    req(input$btn_add_ixn)
 
-    # browser()
-    if (nrow(get_projects()) == 0) {
-      
-      tech_sel <- unlist(values$ixns) %>% str_subset("^Technology.")
-      
-      tech_avail <- d_projects_tags %>% 
-        group_by(tag_sql) %>% 
-        summarize() %>% 
-        pull(tag_sql) %>% 
-        as.character()
+    tech_sel     <- unlist(values$ixns) %>% str_subset("^Technology.")
+    tech_missing <- setdiff(tech_sel, projects_tech_avail)
     
+    if (length(tech_missing) > 0) {
       values$msg_prj <- glue(
         "Sorry, Technology {ixn_to_colorhtml(tech_sel, df_tags, is_html=T)} does not match Technology 
-        associated with available projects: {ixn_to_colorhtml(tech_avail, df_tags, is_html=T)}.")
-    } 
+        associated with available projects: {ixn_to_colorhtml(projects_tech_avail, df_tags, is_html=T)}.")
+    } else {
+      values$msg_prj <- NULL
+    }
     
   })
   
