@@ -349,23 +349,82 @@ get_projects_tbl <- function(d_projects_tags, ixns = NULL){
 
 get_pubs_tbl <- function(d_pubs_tags, ixns = NULL){
   d <- d_pubs_tags # %>% show_query()
-  
+
   tag_cats <- get_content_tag_categories("publications")
 
   if (length(ixns) > 0){
-    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "tethys_pub_tags", categories = tag_cats) %>% 
+    browser() # dput(ixns) # ixns = list(c("Receptor.MarineMammals", "Stressor.Noise.Underwater"))
+
+    # TODO: make iterable over all tags in ixns
+    # if "Stressor.Noise.Underwater" not in "tethys_pub_tags" & has level > 2
+    #tag <- "Stressor.Noise.Underwater.Test4th"
+    #tag <- "Stressor.FAKE"
+    #tag <- "Stressor.Noise.Underwater"
+    #tag <- "Stressor.Noise"
+    
+    nrow_tag <- function(tag){
+      dbGetQuery(con, glue("SELECT COUNT(*) AS count FROM tethys_pub_tags WHERE tag_sql = '{tag}'")) %>% pull(count)
+    }
+
+    tag_0 <- tag
+    if (nrow_tag(tag) == 0){
+      q   <- str_split(tag, pattern = "\\.", simplify = F)[[1]] 
+      lvl <- length(q)
+      while (nrow_tag(tag) == 0 & lvl > 2){
+        lvl <- lvl - 1
+        tag <- paste(q[1:lvl], collapse=".")
+      }
+    }
+    if (tag_0 != tag){
+      # TODO: modify ixns with replaced tag
+      # TODO: add message ixns with replaced tag
+    }
+    
+    # then check if higher level exists. if so, update to that one and share message
+        
+    # get hierarchy of labels as chrs
+    ixns_labels <- str_split(ixns, pattern = "\\.", simplify = F) 
+    
+    get_updated_ixns <- function(ixn) {
+      # for each ixn [[]] in ixns_labels:
+      glue("{ixn[1]}.{ixn[2]}") # ideally would make more general, i.e. glue all but the last element
+    }
+    
+    ixns_updated <- map(ixns_labels, get_updated_ixns) 
+    # TODO: find ALL CHILDREN of ixns_updated
+    
+    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "tethys_pub_tags", categories = tag_cats) %>%
       unlist() %>% unique()
-    d <- d %>%
+    d_filtered <- d %>%
       filter(rowid %in% !!rowids)
-  }
-  
+    
+    # if (nrow(d_filtered %>% collect()) > 0) {
+    #   # FALSE for Noise/Underwater
+    #   # continue
+    # }
+    
+    # if missing nested tags, refer to next level in ltree hierarchy
+    if (nrow(d_filtered %>% collect()) == 0) {
+      # warning msg goes here:
+      
+    } # ends: if (nrow(d_filtered %>% collect()) == 0)
+  } # ends: if (length(ixns) > 0)
+   
+  # subset interactions by categories available to content type
+
   d <- d_to_tags_html(d)
   
-  d %>% 
+  d <- d %>% 
     mutate(
       # TODO: include in scripts/update_tags.R:update_tags()
       across(where(is.character), na_if, "NA"),
       Title = as.character(glue("<a href='{uri}' target='_blank'>{title}</a>")))
+  
+  # TODO: add attribute with message that can be handled by either reactive variables in Shiny or non-reactive in report
+  if (has_modified_tags){
+    attr(d, "ixns_new") <- ixns_new
+    attr(d, "message") <- glue("The following tags got modified: {paste()}")
+  }
 }
 
 get_rowids_with_ixn <- function(db_tbl, ixn, categories = NULL){
@@ -1178,6 +1237,8 @@ tabulate_dataset_shp_within_aoi3 <- function(dataset_code, aoi_wkt, output = "ka
   # dataset_code = "cetacean-bia"; aoi_wkt = params$aoi_wkt; output = "kable"
   # dataset_code = "cetacean-pacific-summer"; aoi_wkt = params$aoi_wkt; output = "kable"
   
+  # dataset_code='oil-gas-lease'; aoi_wkt='POLYGON ((-165.5718 5.996829, -165.5718 62.37497, -30.61896 62.37497, -30.61896 5.996829, -165.5718 5.996829))'; output = "kable"
+  
   message(glue("tab..._shp_within_aoi(dataset_code='{dataset_code}', aoi_wkt='{paste(aoi_wkt, collapse=';')}')"))
   
   if (is.null(aoi_wkt))
@@ -1200,7 +1261,35 @@ tabulate_dataset_shp_within_aoi3 <- function(dataset_code, aoi_wkt, output = "ka
   # Different set of queries required for data sets that do or
   #   do not need area weighted statistics 
   if (ds$st_intersection){
-    # Area weighted statistics ARE required
+    # Area weighted statistics ARE required; cat(ds$select_sql)
+    
+#     ds$select_sql <- 'select
+#         sanctuary, 
+#         area_name, 
+#         mms_region, 
+#         mms_plan_a as mms_plan_area, 
+#         notes_1 as category,
+#         notes as subcategory, 
+#         notes_12 as e_cfr,
+#         nm as nautical_miles,
+#         acres,  
+#         geometry
+# from (
+#         select 
+#                 sanctuary, area_name, mms_region, mms_plan_a, 
+#                 notes, notes_1, notes_12, acres, nm, ST_MakeValid(geometry) AS geometry
+#         from "shp_WithdrawalUpdate10-2017"
+#         UNION
+#         select
+#                 sanctuary, area_name, mms_region, mms_plan_a, 
+#                 notes, notes_1, notes_12, acres, nm, ST_MakeValid(geometry) AS geometry
+#         from "shp_AlaskaRegionWithdrawArea"
+#         UNION
+#         select
+#                 sanctuary, area_name, mms_region, mms_plan_a, 
+#                 notes, notes_1, notes_12, null as acres, null as nm, ST_MakeValid(geometry) AS geometry
+#         from "shp_PacificRegionWithdrawAreas")' # ST_MakeValid(geometry)
+    
     ixn_sql <- str_replace({ds$select_sql}, 'geometry', 'geometry, st_intersection(ds.geometry, buf_aoi.geom) as ixn ')
     
     if (!is.na(ds$summarize_sql)){
@@ -1401,3 +1490,4 @@ d_spatial_tags <- tbl(con, "mc_spatial") %>%
   distinct_all() %>% 
   arrange(title)
 d_spatial_n <- tbl(con, "mc_spatial") %>% summarize(n = n()) %>% pull(n)
+
