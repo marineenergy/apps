@@ -155,6 +155,9 @@ ui <- dashboardPage(
                    href="https://tethys.pnnl.gov/knowledge-base-marine-energy",
                    target="_blank"),
           "contains curated white and gray literature."),
+        conditionalPanel(
+          condition = "output.msg_pub_tag",
+          htmlOutput("msg_pub_tag")),
         fluidRow(
           box(
             title = uiOutput("box_pubs", inline=T), width = 12,

@@ -317,7 +317,23 @@ server <- function(input, output, session) {
   get_pubs <- reactive({
     get_pubs_tbl(d_pubs_tags, ixns = values$ixns)
   })
+
+  # observeEvent(input$btn_add_ixn, {
+  #   req(values$ixns)
+  #   browser()
+  # })
+
   
+  #* msg_pub_tag ---
+  output$msg_pub_tag <- renderUI({
+    if (is.null(attributes(get_pubs())$message))
+      return(NULL)
+    div(
+      class="alert alert-warning", role="alert",
+      HTML(attributes(get_pubs())$message))
+  })
+  outputOptions(output, "msg_pub_tag", suspendWhenHidden = FALSE)
+
   #* box_pubs ----
   output$box_pubs <- renderText({
     n_ixns <- length(values$ixns)
@@ -370,7 +386,7 @@ server <- function(input, output, session) {
     d <- get_spatial()
     
     
-    if ("sp_data" %in% names(d)){
+    if ("sp_data" %in% names(d)){c
       d <- d %>% 
         mutate(
           `Rows in Results` = map_int(sp_data, nrow)) %>% 

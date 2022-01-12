@@ -347,84 +347,128 @@ get_projects_tbl <- function(d_projects_tags, ixns = NULL){
   d
 }
 
+
+# functions used in get_pubs_tbl() 
+
+nrow_tag <- function(tag){
+  dbGetQuery(con, glue("SELECT COUNT(*) AS count FROM tethys_pub_tags WHERE tag_sql = '{tag}'")) %>% pull(count)
+}
+
+update_tag <- function(tag) { # iterate over all tags in each ixn
+  tag_0 <- tag # original tag 
+  if (nrow_tag(tag) == 0){
+    q   <- str_split(tag, pattern = "\\.", simplify = F)[[1]]
+    lvl <- length(q)
+    while (nrow_tag(tag) == 0 & lvl > 2){
+      lvl <- lvl - 1
+      tag <- paste(q[1:lvl], collapse = ".")
+    }
+  }
+  tag
+}
+
+get_updated_ixns <- function(ixn) { # iterate over all elements in ixns
+  map_chr(ixn, update_tag) 
+}
+
+find_mod_tags <- function(ixns, ixns_new) {  # for each ixn
+  # ixns_old     <- ixns %>% unlist()
+  ixns_old     <- ixns %>% unlist(recursive = F)
+  # ixns_updated <- ixns_new %>% unlist()
+  ixns_updated <- ixns_new %>% unlist(recursive = F)
+  
+  has_modified_tags <- !setequal(ixns_old, ixns_updated)
+  old_tags <- setdiff(ixns_old, ixns_updated) # returns ORIGINAL tags that have been modified
+  mod_tags <- setdiff(ixns_updated, ixns_old) # returns UPDATED tags not present in original
+  
+  tibble(
+    has_modified_tags = has_modified_tags, 
+    old_tags          = old_tags, 
+    old_tags_html     = sapply(old_tags, ixn_to_colorhtml, df_tags, is_html=T),
+    mod_tags          = mod_tags,
+    mod_tags_html     = sapply(mod_tags, ixn_to_colorhtml, df_tags, is_html=T))
+  
+  # list(
+  #   has_modified_tags = has_modified_tags, 
+  #   old_tags          = old_tags, 
+  #   old_tags_html     = sapply(old_tags, ixn_to_colorhtml, df_tags, is_html=T),
+  #   mod_tags          = mod_tags,
+  #   mod_tags_html     = sapply(mod_tags, ixn_to_colorhtml, df_tags, is_html=T))
+}
+
 get_pubs_tbl <- function(d_pubs_tags, ixns = NULL){
   d <- d_pubs_tags # %>% show_query()
 
   tag_cats <- get_content_tag_categories("publications")
-
+  
+  if (length(ixns) == 0){
+    ixns_new <- NULL
+  }
+  
+  attr(d, "ixns_new") <- NULL
+  attr(d, "message")  <- NULL
+  
   if (length(ixns) > 0){
-    browser() # dput(ixns) # ixns = list(c("Receptor.MarineMammals", "Stressor.Noise.Underwater"))
+    # browser() # dput(ixns) # 
+    # ixns = list(c("Receptor.MarineMammals", "Stressor.Noise.Underwater"), c("Stressor.Noise.Airborne", "Receptor.MarineMammals"))
+    # ixns = list(c("Receptor.MarineMammals", "Stressor.Noise.Underwater"), c("Stressor.Noise.Airborne", "Receptor.MarineMammals"))
+    
+    # length(ixns) = 2
 
-    # TODO: make iterable over all tags in ixns
     # if "Stressor.Noise.Underwater" not in "tethys_pub_tags" & has level > 2
     #tag <- "Stressor.Noise.Underwater.Test4th"
     #tag <- "Stressor.FAKE"
-    #tag <- "Stressor.Noise.Underwater"
-    #tag <- "Stressor.Noise"
-    
-    nrow_tag <- function(tag){
-      dbGetQuery(con, glue("SELECT COUNT(*) AS count FROM tethys_pub_tags WHERE tag_sql = '{tag}'")) %>% pull(count)
-    }
-
-    tag_0 <- tag
-    if (nrow_tag(tag) == 0){
-      q   <- str_split(tag, pattern = "\\.", simplify = F)[[1]] 
-      lvl <- length(q)
-      while (nrow_tag(tag) == 0 & lvl > 2){
-        lvl <- lvl - 1
-        tag <- paste(q[1:lvl], collapse=".")
-      }
-    }
-    if (tag_0 != tag){
-      # TODO: modify ixns with replaced tag
-      # TODO: add message ixns with replaced tag
-    }
-    
-    # then check if higher level exists. if so, update to that one and share message
-        
-    # get hierarchy of labels as chrs
-    ixns_labels <- str_split(ixns, pattern = "\\.", simplify = F) 
-    
-    get_updated_ixns <- function(ixn) {
-      # for each ixn [[]] in ixns_labels:
-      glue("{ixn[1]}.{ixn[2]}") # ideally would make more general, i.e. glue all but the last element
-    }
-    
-    ixns_updated <- map(ixns_labels, get_updated_ixns) 
-    # TODO: find ALL CHILDREN of ixns_updated
-    
-    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "tethys_pub_tags", categories = tag_cats) %>%
+    ixns_new <- map(ixns, get_updated_ixns)
+    rowids <- sapply(ixns_new, get_rowids_with_ixn, db_tbl = "tethys_pub_tags", categories = tag_cats) %>%
       unlist() %>% unique()
-    d_filtered <- d %>%
+    d <- d %>%
       filter(rowid %in% !!rowids)
-    
-    # if (nrow(d_filtered %>% collect()) > 0) {
-    #   # FALSE for Noise/Underwater
-    #   # continue
-    # }
-    
-    # if missing nested tags, refer to next level in ltree hierarchy
-    if (nrow(d_filtered %>% collect()) == 0) {
-      # warning msg goes here:
-      
-    } # ends: if (nrow(d_filtered %>% collect()) == 0)
   } # ends: if (length(ixns) > 0)
    
   # subset interactions by categories available to content type
-
   d <- d_to_tags_html(d)
-  
   d <- d %>% 
     mutate(
       # TODO: include in scripts/update_tags.R:update_tags()
       across(where(is.character), na_if, "NA"),
       Title = as.character(glue("<a href='{uri}' target='_blank'>{title}</a>")))
   
-  # TODO: add attribute with message that can be handled by either reactive variables in Shiny or non-reactive in report
-  if (has_modified_tags){
-    attr(d, "ixns_new") <- ixns_new
-    attr(d, "message") <- glue("The following tags got modified: {paste()}")
+  if (length(ixns) > 0) {
+    mod_tags_lookup <- map2_dfr(ixns, ixns_new, find_mod_tags) 
+    n_mod_tags_total <- mod_tags_lookup %>% 
+      pull(old_tags) %>% unlist() %>% unique() %>% length()
+    
+    if (TRUE %in% mod_tags_lookup$has_modified_tags) {
+      attr(d, "ixns_new") <- ixns_new
+      if (n_mod_tags_total == 1) {
+        attr(d, "message") <- glue("The following tag has been modified: {paste(mod_tags_lookup$old_tags_html, collapse = ', ')}, replaced with {paste(mod_tags_lookup$mod_tags_html, collapse = ', ')}.")
+      } else if (n_mod_tags_total > 1) {
+        attr(d, "message") <- NULL
+        attr(d, "message") <- glue("The following tags have been modified: {paste(mod_tags_lookup$old_tags_html, mod_tags_lookup$mod_tags_html, collapse = '; ', sep = ', replaced with ')}.")
+        # attr(d, "message") <- glue("The following tags have been modified: {paste(mod_tags_lookup$old_tags_html, collapse = ', ')}, replaced with {paste(mod_tags_lookup$mod_tags_html, collapse = ', ')}.")
+      }
+    }
   }
+
+  
+  # # if 1 or fewer ixns
+  # if (length(ixns) == 1) { 
+  #   if (mod_tags_lookup$has_modified_tags) {
+  #     attr(d, "ixns_new") <- ixns_new 
+  #     if (length(mod_tags_lookup$mod_tags) == 1) {
+  #       attr(d, "message") <- glue("The following tag has been modified: {paste(mod_tags_lookup$old_tags_html, collapse = ', ')}, replaced with {paste(mod_tags_lookup$mod_tags_html, collapse = ', ')}.")
+  #     } else if (length(mod_tags_lookup$mod_tags) > 1) {
+  #       attr(d, "message") <- glue("The following tags have been modified: {paste(mod_tags_lookup$old_tags_html, collapse = ', ')}, replaced with {paste(mod_tags_lookup$mod_tags_html, collapse = ', ')}.")
+  #     }
+  #   } 
+  # }
+
+  
+  # TODO: generalize if >1 ixns (i.e. if user selected 'add another ixn')
+  # problem: if that new ixn contains a tag with no pubs assoc'd with it, 
+  # next level of hierarchy is selected but no msg appears
+
+  d
 }
 
 get_rowids_with_ixn <- function(db_tbl, ixn, categories = NULL){
