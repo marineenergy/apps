@@ -356,14 +356,9 @@ nrow_tag <- function(tag){
 
 update_tag <- function(tag) { # iterate over all tags in each ixn
   tag_0 <- tag # original tag 
-  if (nrow_tag(tag) == 0){
-    q   <- str_split(tag, pattern = "\\.", simplify = F)[[1]]
-    lvl <- length(q)
-    while (nrow_tag(tag) == 0 & lvl > 2){
-      lvl <- lvl - 1
-      tag <- paste(q[1:lvl], collapse = ".")
-    }
-  }
+  q <- str_split(tag, pattern = "\\.", simplify = F)[[1]]
+  while (nrow_tag(tag) == 0 && length(q) > 2)
+    tag <- paste(q[1:(length(q) - 1)], collapse = ".")
   tag
 }
 
@@ -373,27 +368,21 @@ get_updated_ixns <- function(ixn) { # iterate over all elements in ixns
 
 find_mod_tags <- function(ixns, ixns_new) {  # for each ixn
   # ixns_old     <- ixns %>% unlist()
-  ixns_old     <- ixns %>% unlist(recursive = F)
-  # ixns_updated <- ixns_new %>% unlist()
-  ixns_updated <- ixns_new %>% unlist(recursive = F)
-  
-  has_modified_tags <- !setequal(ixns_old, ixns_updated)
-  old_tags <- setdiff(ixns_old, ixns_updated) # returns ORIGINAL tags that have been modified
-  mod_tags <- setdiff(ixns_updated, ixns_old) # returns UPDATED tags not present in original
   
   tibble(
-    has_modified_tags = has_modified_tags, 
-    old_tags          = old_tags, 
-    old_tags_html     = sapply(old_tags, ixn_to_colorhtml, df_tags, is_html=T),
-    mod_tags          = mod_tags,
-    mod_tags_html     = sapply(mod_tags, ixn_to_colorhtml, df_tags, is_html=T))
-  
-  # list(
-  #   has_modified_tags = has_modified_tags, 
-  #   old_tags          = old_tags, 
-  #   old_tags_html     = sapply(old_tags, ixn_to_colorhtml, df_tags, is_html=T),
-  #   mod_tags          = mod_tags,
-  #   mod_tags_html     = sapply(mod_tags, ixn_to_colorhtml, df_tags, is_html=T))
+    tag     = ixns %>% unlist(recursive = F),
+    mod_tag = ixns_new %>% unlist(recursive = F)) %>% 
+    filter(
+      tag != mod_tag) %>% 
+    mutate(
+      tag_html     = map_chr(tag, ixn_to_colorhtml, df_tags, is_html=T),
+      mod_tag_html = map_chr(mod_tag, ixn_to_colorhtml, df_tags, is_html=T)) %>% 
+    group_by(
+      mod_tag, mod_tag_html) %>% 
+    summarize(
+      tags      = paste(tag     , collapse = ','),
+      tags_html = paste(tag_html, collapse = ', '),
+      .groups = "drop")
 }
 
 get_pubs_tbl <- function(d_pubs_tags, ixns = NULL){
@@ -401,17 +390,27 @@ get_pubs_tbl <- function(d_pubs_tags, ixns = NULL){
 
   tag_cats <- get_content_tag_categories("publications")
   
-  if (length(ixns) == 0){
-    ixns_new <- NULL
-  }
+  # if (length(ixns) == 0){
+  #   ixns_new <- NULL
+  # }
+  ixns_new <- ixns
   
   attr(d, "ixns_new") <- NULL
   attr(d, "message")  <- NULL
   
+  # tbl(con, "tags") %>% 
+  #   anti_join(
+  #     tbl(con, "tethys_pub_tags"),
+  #     by="tag_sql") %>% 
+  #   filter(category != "Consequence") %>% 
+  #   collect() %>% 
+  #   View()
+  # # Receptor.Fish.DemersalFish
+  
   if (length(ixns) > 0){
     # browser() # dput(ixns) # 
     # ixns = list(c("Receptor.MarineMammals", "Stressor.Noise.Underwater"), c("Stressor.Noise.Airborne", "Receptor.MarineMammals"))
-    # ixns = list(c("Receptor.MarineMammals", "Stressor.Noise.Underwater"), c("Stressor.Noise.Airborne", "Receptor.MarineMammals"))
+    # ixns = list(c("Receptor.MarineMammals", "Stressor.Noise.Underwater"), c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Receptor.Fish.DemersalFish"))
     
     # length(ixns) = 2
 
@@ -433,41 +432,18 @@ get_pubs_tbl <- function(d_pubs_tags, ixns = NULL){
       across(where(is.character), na_if, "NA"),
       Title = as.character(glue("<a href='{uri}' target='_blank'>{title}</a>")))
   
-  if (length(ixns) > 0) {
-    mod_tags_lookup <- map2_dfr(ixns, ixns_new, find_mod_tags) 
-    n_mod_tags_total <- mod_tags_lookup %>% 
-      pull(old_tags) %>% unlist() %>% unique() %>% length()
+  if (!identical(ixns, ixns_new)) {
+    d_mod_tags <- find_mod_tags(ixns, ixns_new)
+    n_mod_tags <- nrow(d_mod_tags)
     
-    if (TRUE %in% mod_tags_lookup$has_modified_tags) {
-      attr(d, "ixns_new") <- ixns_new
-      if (n_mod_tags_total == 1) {
-        attr(d, "message") <- glue("The following tag has been modified: {paste(mod_tags_lookup$old_tags_html, collapse = ', ')}, replaced with {paste(mod_tags_lookup$mod_tags_html, collapse = ', ')}.")
-      } else if (n_mod_tags_total > 1) {
-        attr(d, "message") <- NULL
-        attr(d, "message") <- glue("The following tags have been modified: {paste(mod_tags_lookup$old_tags_html, mod_tags_lookup$mod_tags_html, collapse = '; ', sep = ', replaced with ')}.")
-        # attr(d, "message") <- glue("The following tags have been modified: {paste(mod_tags_lookup$old_tags_html, collapse = ', ')}, replaced with {paste(mod_tags_lookup$mod_tags_html, collapse = ', ')}.")
-      }
-    }
+    attr(d, "ixns_new") <- ixns_new
+    tags_mod_html <- with(d_mod_tags, glue(
+      "{tags_html} -> {mod_tag_html}")) %>% 
+      paste(collapse = "; ")
+    attr(d, "message") <- glue(
+      "The following tag{ifelse(n_mod_tags > 1,'s have',' has')} been modified to the available parent tag: {tags_mod_html}.")
   }
-
   
-  # # if 1 or fewer ixns
-  # if (length(ixns) == 1) { 
-  #   if (mod_tags_lookup$has_modified_tags) {
-  #     attr(d, "ixns_new") <- ixns_new 
-  #     if (length(mod_tags_lookup$mod_tags) == 1) {
-  #       attr(d, "message") <- glue("The following tag has been modified: {paste(mod_tags_lookup$old_tags_html, collapse = ', ')}, replaced with {paste(mod_tags_lookup$mod_tags_html, collapse = ', ')}.")
-  #     } else if (length(mod_tags_lookup$mod_tags) > 1) {
-  #       attr(d, "message") <- glue("The following tags have been modified: {paste(mod_tags_lookup$old_tags_html, collapse = ', ')}, replaced with {paste(mod_tags_lookup$mod_tags_html, collapse = ', ')}.")
-  #     }
-  #   } 
-  # }
-
-  
-  # TODO: generalize if >1 ixns (i.e. if user selected 'add another ixn')
-  # problem: if that new ixn contains a tag with no pubs assoc'd with it, 
-  # next level of hierarchy is selected but no msg appears
-
   d
 }
 
