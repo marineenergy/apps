@@ -589,6 +589,7 @@ update_spatial <- function(){
   dbExecute(con, "CREATE INDEX idx_mc_spatial_tags_rowid ON mc_spatial_tags USING BTREE (rowid);")
   dbExecute(con, "CREATE INDEX idx_mc_spatial_rowid ON mc_spatial USING BTREE (rowid);")
 }
+#update_spatial()
 
 update_tethys_intxns <- function(verbose=F){
   

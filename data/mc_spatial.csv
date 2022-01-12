@@ -365,17 +365,17 @@ order by
 from (
         select 
                 sanctuary, area_name, mms_region, mms_plan_a, 
-                notes, notes_1, notes_12, acres, nm, geometry
+                notes, notes_1, notes_12, acres, nm, ST_MakeValid(geometry) AS geometry
         from ""shp_WithdrawalUpdate10-2017""
         UNION
         select
                 sanctuary, area_name, mms_region, mms_plan_a, 
-                notes, notes_1, notes_12, acres, nm, geometry
+                notes, notes_1, notes_12, acres, nm, ST_MakeValid(geometry) AS geometry
         from ""shp_AlaskaRegionWithdrawArea""
         UNION
         select
                 sanctuary, area_name, mms_region, mms_plan_a, 
-                notes, notes_1, notes_12, null as acres, null as nm, geometry
+                notes, notes_1, notes_12, null as acres, null as nm, ST_MakeValid(geometry) AS geometry
         from ""shp_PacificRegionWithdrawAreas"")","select
         sanctuary, 
         area_name, 
