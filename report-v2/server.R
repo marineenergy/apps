@@ -306,6 +306,20 @@ server <- function(input, output, session) {
   }, escape = F, rownames = F)
   
   # documents ----
+  # * get docs ixns ----
+  observe({
+    values$ixns_docs <- values$ixns
+  })
+  
+  # observeEvent(input$btn_add_ixn, {
+  #   browser()
+  # })
+  
+  # #* get_pubs() ----
+  # get_pubs <- reactive({
+  #   # get_pubs_tbl(d_pubs_tags, ixns = values$ixns)
+  #   get_pubs_tbl(d_pubs_tags, ixns = values$ixns_pubs)
+  # })
   #* get_docs() ----
   get_docs <- reactive({
     get_docs_tbl(d_docs_tags, ixns = values$ixns_docs, cks = input$cks_docs)
@@ -319,7 +333,7 @@ server <- function(input, output, session) {
       class="alert alert-warning", role="alert",
       HTML(attributes(get_docs())$message))
   })
-  outputOptions(output, "msg_mgt_tag", suspendWhenHidden = FALSE)
+  outputOptions(output, "msg_docs_tag", suspendWhenHidden = FALSE)
   
   #* box_docs ----
   output$box_docs <- renderText({

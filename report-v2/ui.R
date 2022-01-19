@@ -129,6 +129,9 @@ ui <- dashboardPage(
         helpText(
           HTML("The FERC eLibrary contains environmental compliance project documents, 
           of which excerpts have been manually tagged for reference.")),
+        conditionalPanel(
+          condition = "output.msg_docs_tag",
+          htmlOutput("msg_docs_tag")),
         checkboxGroupInput(
           "cks_docs", 
           "Binary Filters:",

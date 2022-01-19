@@ -266,51 +266,6 @@ get_content_tag_categories <- function(content, html=F){
   cats
 }
 
-get_docs_tbl <- function(d_docs_tags, ixns = NULL, cks = NULL){
-  
-  d <- d_docs_tags
-  
-  tag_cats <- get_content_tag_categories("documents")
-  
-  if (length(ixns) > 0){
-    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "ferc_doc_tags", categories = tag_cats) %>% 
-      unlist() %>% unique()
-    d <- d %>%
-      filter(rowid %in% !!rowids)
-  }
-  if (length(cks) > 0){
-    for (col_bln in cks){
-      d <- d %>% # collect() %>% nrow() # 1426
-        filter(.data[[col_bln]] == TRUE) # %>% collect() %>% nrow()
-      # message(glue("ck_docs == `{col_bln}` nrow: {d %>% collect() %>% nrow()}"))
-    }
-  }
-  d <- d_to_tags_html(d)
-  
-  d %>% 
-    mutate(
-      # TODO: include in scripts/update_tags.R:update_tags()
-      across(where(is.character), na_if, "NA"),
-      across(starts_with("ck_"), as.character),
-      across(starts_with("ck_"), recode, "TRUE"="✓", "FALSE"="☐"),
-      Doc = ifelse(
-        is.na(prj_doc_attachment),
-        prj_document,
-        paste0(prj_document, ": ", prj_doc_attachment)),
-      Doc = ifelse(
-        is.na(prj_doc_attach_url),
-        Doc,
-        glue("<a href='{prj_doc_attach_url}' target='_blank'>{Doc}</a>"))) %>% 
-    #names()
-    select(
-      ID, Project=project, Document=Doc, Detail=detail, Tags,
-      Ixn = ck_ixn, 
-      Obs = ck_obs, 
-      MP  = ck_mp, 
-      AMP = ck_amp, 
-      PME = ck_pme, 
-      BMP = ck_bmps)
-}
 
 nrow_tag <- function(tag, db_tbl){
   # db_tbl = d_db; tag = tag
@@ -353,9 +308,51 @@ find_mod_tags <- function(ixns, ixns_new) {  # for each ixn
 }
 
 
+nrow_tag <- function(tag, db_tbl){
+  # db_tbl = d_db; tag = tag
+  dbGetQuery(con, glue("{paste('SELECT COUNT(*) AS count FROM', db_tbl)} WHERE tag_sql = '{tag}'")) %>% 
+    pull(count)
+}
+# nrow_tag <- function(tag){
+#   dbGetQuery(con, glue("SELECT COUNT(*) AS count FROM tethys_pub_tags WHERE tag_sql = '{tag}'")) %>% pull(count)
+# }
+
+update_tag <- function(tag, db_tbl) { # iterate over all tags per ixn
+  # tag = "Stressor.Noise.Airborne"; db_tbl = "tethys_pub_tags" 
+  tag_0 <- tag # original tag 
+  q <- str_split(tag, pattern = "\\.", simplify = F)[[1]]
+  while (nrow_tag(tag, db_tbl) == 0 && length(q) > 2)
+    tag <- paste(q[1:(length(q) - 1)], collapse = ".")
+  tag
+}
+
+get_updated_ixns <- function(ixn, db_tbl) { # iterate over all elements in ixns
+  map2_chr(ixn, db_tbl, update_tag)
+  # map_chr(ixn, update_tag) 
+}
+
+find_mod_tags <- function(ixns, ixns_new) {  # for each ixn
+  tibble(
+    tag     = ixns     %>% unlist(recursive = F),
+    mod_tag = ixns_new %>% unlist(recursive = F)) %>% 
+    filter(
+      tag != mod_tag) %>% 
+    mutate(
+      tag_html     = map_chr(tag    , ixn_to_colorhtml, df_tags, is_html=T),
+      mod_tag_html = map_chr(mod_tag, ixn_to_colorhtml, df_tags, is_html=T)) %>% 
+    group_by(
+      mod_tag, mod_tag_html) %>% 
+    summarize(
+      tags      = paste(tag     , collapse = ','),
+      tags_html = paste(tag_html, collapse = ', '),
+      .groups = "drop")
+}
+
+
 
 # converting tag updating to a generalized fxn
-get_d_mod <- function(ixns, d, tag_cats, db_tbl, add_title) {
+# TODO: rename to get_content_tags()
+get_d_mod <- function(ixns, d, tag_cats, db_tbl, cks = NULL, add_title) {
   
   # d <- d_mgt_tags
   # if (length(ixns) > 0) {
@@ -368,19 +365,25 @@ get_d_mod <- function(ixns, d, tag_cats, db_tbl, add_title) {
   
   # test values
   # ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"))
+  
+  # for docs:
+  # ixns = list(c("Stressor.Noise.Underwater", "Receptor.Fish.DemersalFish", "Consequence.Collision"))
+  # db_tbl = "ferc_doc_tags"; d = d_docs_tags; cks = NULL
+  
   # d = d_pubs_tags
   # tag_cats = c("Technology", "Stressor", "Receptor")
-  # d_db = "tethys_pub_tags"
+  # db_tbl = "tethys_pub_tags"
   # add_title = T
   
   ixns_new <- ixns
-
+  
   attr(d, "ixns_new") <- NULL
   attr(d, "message")  <- NULL
   
   if (length(ixns) > 0){
     # ixns_new <- map2_chr(ixns, get_updated_ixns)
-    ixns_new <- map(ixns, get_updated_ixns)
+    # ixns_new <- map(ixns, get_updated_ixns)
+    ixns_new <- map2(ixns, db_tbl, get_updated_ixns)
     # ixns_new <- map(ixns, function(ixn, db_tbl = d){
     #   map2_chr(ixn, db_tbl, update_tag)})
     rowids <- sapply(ixns_new, get_rowids_with_ixn, db_tbl = db_tbl, categories = tag_cats) %>% 
@@ -388,16 +391,28 @@ get_d_mod <- function(ixns, d, tag_cats, db_tbl, add_title) {
     d <- d %>%
       filter(rowid %in% !!rowids)
   }
-
-  # subset interactions by categories available to content type
+  
+  # test if docs
+  if (!is.null(cks)){ # T for docs
+    # browser()
+    if (length(cks) > 0){
+      for (col_bln in cks){
+        d <- d %>% # collect() %>% nrow() # 1426
+          filter(.data[[col_bln]] == TRUE) # %>% collect() %>% nrow()
+        # message(glue("ck_docs == `{col_bln}` nrow: {d %>% collect() %>% nrow()}"))
+      }
+    }
+  }
+  
   d <- d_to_tags_html(d)
+  
   if (add_title) { # T for pubs, F for mgt
     d <- d %>%
       mutate(
         across(where(is.character), na_if, "NA"),
         Title = as.character(glue("<a href='{uri}' target='_blank'>{title}</a>")))
   }
- 
+  
   if (!identical(ixns, ixns_new)) {
     d_mod_tags <- find_mod_tags(ixns, ixns_new)
     n_mod_tags <- nrow(d_mod_tags)
@@ -411,6 +426,65 @@ get_d_mod <- function(ixns, d, tag_cats, db_tbl, add_title) {
   }
   d
 }
+
+get_docs_tbl <- function(d_docs_tags, ixns = NULL, cks = NULL){
+  
+  d <- d_docs_tags
+  
+  tag_cats <- get_content_tag_categories("documents")
+  
+  # if (length(ixns) > 0){
+  #   rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "ferc_doc_tags", categories = tag_cats) %>% 
+  #     unlist() %>% unique()
+  #   d <- d %>%
+  #     filter(rowid %in% !!rowids)
+  # }
+  # if (length(cks) > 0){
+  #   for (col_bln in cks){
+  #     d <- d %>% # collect() %>% nrow() # 1426
+  #       filter(.data[[col_bln]] == TRUE) # %>% collect() %>% nrow()
+  #     # message(glue("ck_docs == `{col_bln}` nrow: {d %>% collect() %>% nrow()}"))
+  #   }
+  # }
+  # d <- d_to_tags_html(d)
+  # test
+  # source(here("scripts/db.R")); source(here("scripts/common.R"))
+  # cks = NULL
+  # d %>% 
+  d <- get_d_mod(
+    ixns = ixns, d = d_docs_tags, tag_cats = tag_cats, 
+    db_tbl = "ferc_doc_tags", cks = cks, add_title = F) 
+  
+  # if (length(ixns) > 0) {
+  #   browser()
+  # }
+ 
+  d <- d %>% 
+    mutate(
+      # TODO: include in scripts/update_tags.R:update_tags()
+      across(where(is.character), na_if, "NA"),
+      across(starts_with("ck_"), as.character),
+      across(starts_with("ck_"), recode, "TRUE"="✓", "FALSE"="☐"),
+      Doc = ifelse(
+        is.na(prj_doc_attachment),
+        prj_document,
+        paste0(prj_document, ": ", prj_doc_attachment)),
+      Doc = ifelse(
+        is.na(prj_doc_attach_url),
+        Doc,
+        glue("<a href='{prj_doc_attach_url}' target='_blank'>{Doc}</a>"))) %>% 
+    #names()
+    select(
+      ID, Project=project, Document=Doc, Detail=detail, Tags,
+      Ixn = ck_ixn, 
+      Obs = ck_obs, 
+      MP  = ck_mp, 
+      AMP = ck_amp, 
+      PME = ck_pme, 
+      BMP = ck_bmps)
+}
+
+
 
 
 # test:
