@@ -4,10 +4,13 @@ server <- function(input, output, session) {
   histdata <- rnorm(500)
   
   values <- reactiveValues(
-    ixns    = list(),
-    rpts    = rpts_0,
-    msg_prj = NULL,
-    ply     = NULL)
+    ixns      = list(),
+    ixns_mgt  = list(),
+    ixns_docs = list(),
+    ixns_pubs = list(),
+    rpts      = rpts_0,
+    msg_prj   = NULL,
+    ply       = NULL)
   # cat(capture.output(dput(values$ixns)))
   
   # login ----
@@ -268,15 +271,28 @@ server <- function(input, output, session) {
   })
   
   # management ----
+  # * get mgt ixns ----
+  observe({
+    values$ixns_mgt <- values$ixns
+  })
   
   #* get_mgt() ----
   get_mgt <- reactive({
-    get_mgt_tbl(ixns = values$ixns, d_mgt_tags)
+    get_mgt_tbl(ixns = values$ixns_mgt, d_mgt_tags)
   })
+  
+  #* msg_mgt_tag ----
+  output$msg_mgt_tag <- renderUI({
+    if (is.null(attributes(get_mgt())$message))
+      return(NULL)
+    div(
+      class="alert alert-warning", role="alert",
+      HTML(attributes(get_mgt())$message))
+  })
+  outputOptions(output, "msg_mgt_tag", suspendWhenHidden = FALSE)
   
   #* box_mgt ----
   output$box_mgt <- renderText({
-    
     n_ixns <- length(values$ixns)
     ifelse(
       n_ixns == 0,
@@ -292,8 +308,18 @@ server <- function(input, output, session) {
   # documents ----
   #* get_docs() ----
   get_docs <- reactive({
-    get_docs_tbl(d_docs_tags, ixns = values$ixns, cks = input$cks_docs)
+    get_docs_tbl(d_docs_tags, ixns = values$ixns_docs, cks = input$cks_docs)
   })
+  
+  #* msg_docs_tag ----
+  output$msg_docs_tag <- renderUI({
+    if (is.null(attributes(get_docs())$message))
+      return(NULL)
+    div(
+      class="alert alert-warning", role="alert",
+      HTML(attributes(get_docs())$message))
+  })
+  outputOptions(output, "msg_mgt_tag", suspendWhenHidden = FALSE)
   
   #* box_docs ----
   output$box_docs <- renderText({
@@ -313,9 +339,16 @@ server <- function(input, output, session) {
   }, escape = F, rownames = F)
   
   # publications ----
+  # * get pubs ixns ----
+  observe({
+    # req(values$ixns)
+    values$ixns_pubs <- values$ixns
+  })
+  
   #* get_pubs() ----
   get_pubs <- reactive({
-    get_pubs_tbl(d_pubs_tags, ixns = values$ixns)
+    # get_pubs_tbl(d_pubs_tags, ixns = values$ixns)
+    get_pubs_tbl(d_pubs_tags, ixns = values$ixns_pubs)
   })
 
   # observeEvent(input$btn_add_ixn, {
@@ -324,7 +357,7 @@ server <- function(input, output, session) {
   # })
 
   
-  #* msg_pub_tag ---
+  #* msg_pub_tag ----
   output$msg_pub_tag <- renderUI({
     if (is.null(attributes(get_pubs())$message))
       return(NULL)

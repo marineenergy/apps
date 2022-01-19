@@ -456,13 +456,6 @@ update_tethys_pubs <- function(){
   cmd <- glue('cat {tethys_docs_csv} | psql -h postgis -p 5432 -U admin -c "COPY tethys_pubs (rowid, uri, title, data) FROM STDIN WITH (FORMAT CSV, HEADER TRUE);" gis')
   system(cmd)
   
-  # dbExecute(con, "ALTER TABLE tethys_pubs ADD COLUMN title TEXT")
-  # # tbl(con, "tethys_pubs")
-  # dbExecute(con, "
-  #   UPDATE tethys_pubs 
-  #   SET
-  #     title = data -> 'title' ->> 0")
-  
   # update tables for easier querying
   docs <- dbGetQuery(
     con, 
@@ -473,7 +466,7 @@ update_tethys_pubs <- function(){
    FROM tethys_pubs") %>% 
     arrange(rowid) %>% 
     tibble()
-  # docs # 6,484 rows
+  # docs # 6,484 rows # 2022-01-17: 3,495 rows?
   # docs %>% head(10) %>% View()
   
   # TODO: evaluate counts of tags, esp. "Environment"

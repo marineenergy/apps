@@ -110,6 +110,9 @@ ui <- dashboardPage(
           <br>
           Source: <a href='https://tethys.pnnl.gov/management-measures' target='_blank'>
             Management Measures Tool for Marine Renewable Energy | Tethys</a>")),
+        conditionalPanel(
+          condition = "output.msg_mgt_tag",
+          htmlOutput("msg_mgt_tag")),
         fluidRow(
           box(
             title = uiOutput("box_mgt", inline=T), width = 12,

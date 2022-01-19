@@ -312,21 +312,162 @@ get_docs_tbl <- function(d_docs_tags, ixns = NULL, cks = NULL){
       BMP = ck_bmps)
 }
 
-get_mgt_tbl <- function(d_mgt_tags, ixns = NULL){
+nrow_tag <- function(tag, db_tbl){
+  # db_tbl = d_db; tag = tag
+  dbGetQuery(con, glue("{paste('SELECT COUNT(*) AS count FROM', db_tbl)} WHERE tag_sql = '{tag}'")) %>% 
+    pull(count)
+}
+# nrow_tag <- function(tag){
+#   dbGetQuery(con, glue("SELECT COUNT(*) AS count FROM tethys_pub_tags WHERE tag_sql = '{tag}'")) %>% pull(count)
+# }
+
+update_tag <- function(tag, db_tbl) { # iterate over all tags per ixn
+  # tag = "Stressor.Noise.Airborne"; db_tbl = "tethys_pub_tags" 
+  tag_0 <- tag # original tag 
+  q <- str_split(tag, pattern = "\\.", simplify = F)[[1]]
+  while (nrow_tag(tag, db_tbl) == 0 && length(q) > 2)
+    tag <- paste(q[1:(length(q) - 1)], collapse = ".")
+  tag
+}
+
+get_updated_ixns <- function(ixn) { # iterate over all elements in ixns
+  map2_chr(ixn, db_tbl, update_tag) 
+  # map_chr(ixn, update_tag) 
+}
+
+find_mod_tags <- function(ixns, ixns_new) {  # for each ixn
+  tibble(
+    tag     = ixns     %>% unlist(recursive = F),
+    mod_tag = ixns_new %>% unlist(recursive = F)) %>% 
+    filter(
+      tag != mod_tag) %>% 
+    mutate(
+      tag_html     = map_chr(tag    , ixn_to_colorhtml, df_tags, is_html=T),
+      mod_tag_html = map_chr(mod_tag, ixn_to_colorhtml, df_tags, is_html=T)) %>% 
+    group_by(
+      mod_tag, mod_tag_html) %>% 
+    summarize(
+      tags      = paste(tag     , collapse = ','),
+      tags_html = paste(tag_html, collapse = ', '),
+      .groups = "drop")
+}
+
+
+
+# converting tag updating to a generalized fxn
+get_d_mod <- function(ixns, d, tag_cats, db_tbl, add_title) {
   
-  d <- d_mgt_tags
+  # d <- d_mgt_tags
+  # if (length(ixns) > 0) {
+  #   browser()
+  # }
   
-  tag_cats <- dbGetQuery(con,  "SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM tethys_mgt_tags;") %>% 
-    pull("tag_cat") %>% as.character() %>% na.omit() # , categories = tag_cats
+  # tag_cats <- dbGetQuery(con,  "SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM tethys_mgt_tags;") %>% 
+  #   pull("tag_cat") %>% as.character() %>% na.omit() # , categories = tag_cats
+  
+  
+  # test values
+  # ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"))
+  # d = d_pubs_tags
+  # tag_cats = c("Technology", "Stressor", "Receptor")
+  # d_db = "tethys_pub_tags"
+  # add_title = T
+  
+  ixns_new <- ixns
+
+  attr(d, "ixns_new") <- NULL
+  attr(d, "message")  <- NULL
   
   if (length(ixns) > 0){
-    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "tethys_mgt_tags", categories = tag_cats) %>% 
+    # ixns_new <- map2_chr(ixns, get_updated_ixns)
+    ixns_new <- map(ixns, get_updated_ixns)
+    # ixns_new <- map(ixns, function(ixn, db_tbl = d){
+    #   map2_chr(ixn, db_tbl, update_tag)})
+    rowids <- sapply(ixns_new, get_rowids_with_ixn, db_tbl = db_tbl, categories = tag_cats) %>% 
       unlist() %>% unique()
     d <- d %>%
       filter(rowid %in% !!rowids)
   }
+
+  # subset interactions by categories available to content type
+  d <- d_to_tags_html(d)
+  if (add_title) { # T for pubs, F for mgt
+    d <- d %>%
+      mutate(
+        across(where(is.character), na_if, "NA"),
+        Title = as.character(glue("<a href='{uri}' target='_blank'>{title}</a>")))
+  }
+ 
+  if (!identical(ixns, ixns_new)) {
+    d_mod_tags <- find_mod_tags(ixns, ixns_new)
+    n_mod_tags <- nrow(d_mod_tags)
+    
+    attr(d, "ixns_new") <- ixns_new
+    tags_mod_html <- with(d_mod_tags, glue(
+      "{tags_html} -> {mod_tag_html}")) %>% 
+      paste(collapse = "; ")
+    attr(d, "message") <- glue(
+      "The following tag{ifelse(n_mod_tags > 1,'s have',' has')} been modified to the available parent tag: {tags_mod_html}.")
+  }
+  d
+}
+
+
+# test:
+# ixns_test = list(c("Receptor.MarineMammals", "Stressor.Noise.Underwater"), c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Receptor.Fish.DemersalFish"))
+# mgt_tag_cats =   tag_cats <- dbGetQuery(con,  "SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM tethys_mgt_tags;") %>% 
+#   pull("tag_cat") %>% as.character() %>% na.omit() # , categories = tag_cats
+# 
+# source(here("scripts/db.R"))
+# source(here("scripts/common.R"))
+# mgt_test <- get_d_mod(ixns = ixns_test, d = d_mgt_tags, tag_cats = mgt_tag_cats, d_db = "tethys_mgt_tags", add_title = F)
+# mgt_test <- get_d_mod(ixns = ixns, d = d_mgt_tags, tag_cats = mgt_tag_cats, d_db = "tethys_mgt_tags", add_title = F)
+
+
+
+get_mgt_tbl <- function(d_mgt_tags, ixns = NULL){
+  # d <- d_mgt_tags
+  tag_cats <- dbGetQuery(con,  "SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM tethys_mgt_tags;") %>% 
+    pull("tag_cat") %>% as.character() %>% na.omit() # , categories = tag_cats
   
-  d_to_tags_html(d)
+  get_d_mod(
+    ixns = ixns, d = d_mgt_tags, tag_cats = tag_cats, 
+    db_tbl = "tethys_mgt_tags", add_title = F)
+  
+  ## testing out new fxn
+  #########
+  # ixns_new <- ixns
+  # 
+  # attr(d, "ixns_new") <- NULL
+  # attr(d, "message")  <- NULL
+  # 
+  # if (length(ixns) > 0){
+  #   browser()
+  #   ixns_new <- map(ixns, get_updated_ixns)
+  #   
+  #   rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "tethys_mgt_tags", categories = tag_cats) %>% 
+  #     unlist() %>% unique()
+  #   d <- d %>%
+  #     filter(rowid %in% !!rowids)
+  # } # ends: if (length(ixns) > 0)
+  # 
+  # # subset interactions by categories available to content type
+  # d <- d_to_tags_html(d)
+  # 
+  # if (!identical(ixns, ixns_new)) {
+  #   d_mod_tags <- find_mod_tags(ixns, ixns_new)
+  #   n_mod_tags <- nrow(d_mod_tags)
+  #   
+  #   attr(d, "ixns_new") <- ixns_new
+  #   tags_mod_html <- with(d_mod_tags, glue(
+  #     "{tags_html} -> {mod_tag_html}")) %>% 
+  #     paste(collapse = "; ")
+  #   attr(d, "message") <- glue(
+  #     "The following tag{ifelse(n_mod_tags > 1,'s have',' has')} been modified to the available parent tag: {tags_mod_html}.")
+  # }
+  # 
+  # d
+
 }
 
 get_projects_tbl <- function(d_projects_tags, ixns = NULL){
@@ -348,103 +489,60 @@ get_projects_tbl <- function(d_projects_tags, ixns = NULL){
 }
 
 
-# functions used in get_pubs_tbl() 
-
-nrow_tag <- function(tag){
-  dbGetQuery(con, glue("SELECT COUNT(*) AS count FROM tethys_pub_tags WHERE tag_sql = '{tag}'")) %>% pull(count)
-}
-
-update_tag <- function(tag) { # iterate over all tags in each ixn
-  tag_0 <- tag # original tag 
-  q <- str_split(tag, pattern = "\\.", simplify = F)[[1]]
-  while (nrow_tag(tag) == 0 && length(q) > 2)
-    tag <- paste(q[1:(length(q) - 1)], collapse = ".")
-  tag
-}
-
-get_updated_ixns <- function(ixn) { # iterate over all elements in ixns
-  map_chr(ixn, update_tag) 
-}
-
-find_mod_tags <- function(ixns, ixns_new) {  # for each ixn
-  # ixns_old     <- ixns %>% unlist()
-  
-  tibble(
-    tag     = ixns %>% unlist(recursive = F),
-    mod_tag = ixns_new %>% unlist(recursive = F)) %>% 
-    filter(
-      tag != mod_tag) %>% 
-    mutate(
-      tag_html     = map_chr(tag, ixn_to_colorhtml, df_tags, is_html=T),
-      mod_tag_html = map_chr(mod_tag, ixn_to_colorhtml, df_tags, is_html=T)) %>% 
-    group_by(
-      mod_tag, mod_tag_html) %>% 
-    summarize(
-      tags      = paste(tag     , collapse = ','),
-      tags_html = paste(tag_html, collapse = ', '),
-      .groups = "drop")
-}
 
 get_pubs_tbl <- function(d_pubs_tags, ixns = NULL){
-  d <- d_pubs_tags # %>% show_query()
-
-  tag_cats <- get_content_tag_categories("publications")
-  
-  # if (length(ixns) == 0){
-  #   ixns_new <- NULL
+  # if (length(ixns) > 0) {
+  #   browser()
   # }
-  ixns_new <- ixns
-  
-  attr(d, "ixns_new") <- NULL
-  attr(d, "message")  <- NULL
-  
-  # tbl(con, "tags") %>% 
-  #   anti_join(
-  #     tbl(con, "tethys_pub_tags"),
-  #     by="tag_sql") %>% 
-  #   filter(category != "Consequence") %>% 
-  #   collect() %>% 
-  #   View()
-  # # Receptor.Fish.DemersalFish
-  
-  if (length(ixns) > 0){
-    # browser() # dput(ixns) # 
-    # ixns = list(c("Receptor.MarineMammals", "Stressor.Noise.Underwater"), c("Stressor.Noise.Airborne", "Receptor.MarineMammals"))
-    # ixns = list(c("Receptor.MarineMammals", "Stressor.Noise.Underwater"), c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Receptor.Fish.DemersalFish"))
-    
-    # length(ixns) = 2
+  # d        <- d_pubs_tags # %>% show_query()
+  tag_cats <- get_content_tag_categories("publications")
 
-    # if "Stressor.Noise.Underwater" not in "tethys_pub_tags" & has level > 2
-    #tag <- "Stressor.Noise.Underwater.Test4th"
-    #tag <- "Stressor.FAKE"
-    ixns_new <- map(ixns, get_updated_ixns)
-    rowids <- sapply(ixns_new, get_rowids_with_ixn, db_tbl = "tethys_pub_tags", categories = tag_cats) %>%
-      unlist() %>% unique()
-    d <- d %>%
-      filter(rowid %in% !!rowids)
-  } # ends: if (length(ixns) > 0)
-   
-  # subset interactions by categories available to content type
-  d <- d_to_tags_html(d)
-  d <- d %>% 
-    mutate(
-      # TODO: include in scripts/update_tags.R:update_tags()
-      across(where(is.character), na_if, "NA"),
-      Title = as.character(glue("<a href='{uri}' target='_blank'>{title}</a>")))
+
+  get_d_mod(
+    ixns = ixns, d = d_pubs_tags, tag_cats = tag_cats, 
+    db_tbl = "tethys_pub_tags", add_title = T)
   
-  if (!identical(ixns, ixns_new)) {
-    d_mod_tags <- find_mod_tags(ixns, ixns_new)
-    n_mod_tags <- nrow(d_mod_tags)
-    
-    attr(d, "ixns_new") <- ixns_new
-    tags_mod_html <- with(d_mod_tags, glue(
-      "{tags_html} -> {mod_tag_html}")) %>% 
-      paste(collapse = "; ")
-    attr(d, "message") <- glue(
-      "The following tag{ifelse(n_mod_tags > 1,'s have',' has')} been modified to the available parent tag: {tags_mod_html}.")
-  }
   
-  d
+  # testing out new fxn
+  ########
+  # ixns_new <- ixns
+  # 
+  # attr(d, "ixns_new") <- NULL
+  # attr(d, "message")  <- NULL
+  # 
+  # if (length(ixns) > 0){
+  #   # browser() # dput(ixns) # 
+  #   # ixns = list(c("Receptor.MarineMammals", "Stressor.Noise.Underwater"), c("Stressor.Noise.Airborne", "Receptor.MarineMammals"))
+  #   # ixns = list(c("Receptor.MarineMammals", "Stressor.Noise.Underwater"), c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Receptor.Fish.DemersalFish"))
+  # 
+  #   ixns_new <- map(ixns, get_updated_ixns)
+  #   rowids <- sapply(ixns_new, get_rowids_with_ixn, db_tbl = "tethys_pub_tags", categories = tag_cats) %>%
+  #     unlist() %>% unique()
+  #   d <- d %>%
+  #     filter(rowid %in% !!rowids)
+  # } # ends: if (length(ixns) > 0)
+  #  
+  # # subset interactions by categories available to content type
+  # d <- d_to_tags_html(d)
+  # d <- d %>% 
+  #   mutate(
+  #     # TODO: include in scripts/update_tags.R:update_tags()
+  #     across(where(is.character), na_if, "NA"),
+  #     Title = as.character(glue("<a href='{uri}' target='_blank'>{title}</a>")))
+  # 
+  # if (!identical(ixns, ixns_new)) {
+  #   d_mod_tags <- find_mod_tags(ixns, ixns_new)
+  #   n_mod_tags <- nrow(d_mod_tags)
+  #   
+  #   attr(d, "ixns_new") <- ixns_new
+  #   tags_mod_html <- with(d_mod_tags, glue(
+  #     "{tags_html} -> {mod_tag_html}")) %>% 
+  #     paste(collapse = "; ")
+  #   attr(d, "message") <- glue(
+  #     "The following tag{ifelse(n_mod_tags > 1,'s have',' has')} been modified to the available parent tag: {tags_mod_html}.")
+  # }
+  
+  # d
 }
 
 get_rowids_with_ixn <- function(db_tbl, ixn, categories = NULL){
