@@ -141,7 +141,7 @@ ui <- dashboardPage(
             "MP: Monitoring Plan?"                                  = "ck_mp",
             "AMP: Adaptive Management Plan?"                        = "ck_amp",
             "PME: Protection, mitigation, and ehnhancement?"        = "ck_pme",
-            "BMP: Best Management Practices applied?"               = "ck_bmp")),
+            "BMP: Best Management Practices applied?"               = "ck_bmps")),
         fluidRow(
           box(
             title = uiOutput("box_docs", inline=T), width = 12,

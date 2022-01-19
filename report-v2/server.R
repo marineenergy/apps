@@ -315,11 +315,11 @@ server <- function(input, output, session) {
   #   browser()
   # })
   
-  # #* get_pubs() ----
-  # get_pubs <- reactive({
-  #   # get_pubs_tbl(d_pubs_tags, ixns = values$ixns)
-  #   get_pubs_tbl(d_pubs_tags, ixns = values$ixns_pubs)
+  # observeEvent(input$cks_docs, {
+  #   # req(input$btn_add_ixn)
+  #   browser()
   # })
+
   #* get_docs() ----
   get_docs <- reactive({
     get_docs_tbl(d_docs_tags, ixns = values$ixns_docs, cks = input$cks_docs)
@@ -335,6 +335,7 @@ server <- function(input, output, session) {
   })
   outputOptions(output, "msg_docs_tag", suspendWhenHidden = FALSE)
   
+  
   #* box_docs ----
   output$box_docs <- renderText({
     n_ixns <- length(values$ixns)
@@ -344,7 +345,7 @@ server <- function(input, output, session) {
     ifelse(
       n_ixns == 0 & n_cks == 0,
       HTML(glue("FERC Documents <small>({d_docs_n} rows)</small>")),
-      HTML(glue("FERC Documents <small>({n_docs} of {d_docs_n} rows; filtered by {n_ixns} interactions & {n_cks} checkboxes </small>")))
+      HTML(glue("FERC Documents <small>({n_docs} of {d_docs_n} rows; filtered by {n_ixns} interactions & {n_cks} checkboxes)</small>")))
   })
   
   #* tbl_docs ----
@@ -387,9 +388,9 @@ server <- function(input, output, session) {
     n_pubs <- nrow(get_pubs())
     
     ifelse(
-      n_ixns == 0,
+      n_ixns == 0, 
       HTML(glue("Tethys Publications <small>({d_pubs_n} rows)</small>")),
-      HTML(glue("Tethys Publications <small>({n_pubs} of {d_pubs_n} rows; filtered by {n_ixns} interactions</small>")))
+      HTML(glue("Tethys Publications <small>({n_pubs} of {d_pubs_n} rows; filtered by {n_ixns} interactions)</small>")))
   })
   
   #* tbl_pubs ----
