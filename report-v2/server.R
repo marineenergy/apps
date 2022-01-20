@@ -4,13 +4,14 @@ server <- function(input, output, session) {
   histdata <- rnorm(500)
   
   values <- reactiveValues(
-    ixns      = list(),
-    ixns_mgt  = list(),
-    ixns_docs = list(),
-    ixns_pubs = list(),
-    rpts      = rpts_0,
-    msg_prj   = NULL,
-    ply       = NULL)
+    ixns         = list(),
+    ixns_mgt     = list(),
+    ixns_docs    = list(),
+    ixns_pubs    = list(),
+    ixns_spatial = list(),
+    rpts         = rpts_0,
+    msg_prj      = NULL,
+    ply          = NULL)
   # cat(capture.output(dput(values$ixns)))
   
   # login ----
@@ -356,7 +357,6 @@ server <- function(input, output, session) {
   # publications ----
   # * get pubs ixns ----
   observe({
-    # req(values$ixns)
     values$ixns_pubs <- values$ixns
   })
   
@@ -403,6 +403,11 @@ server <- function(input, output, session) {
   
   # spatial ----
   
+  # * get spatial ixns ----
+  observe({
+    values$ixns_spatial <- values$ixns
+  })
+  
   #* get_spatial() ----
   get_spatial <- reactive({
     
@@ -411,12 +416,22 @@ server <- function(input, output, session) {
     #browser()
     d <- get_spatial_tbl(
       d_spatial_tags, 
-      ixns    = values$ixns, 
+      ixns    = values$ixns_spatial, 
       aoi_wkt = sf_to_wkt(values$ply))
     
     d
   })
     
+  #* msg_spatial_tag ----
+  output$msg_spatial_tag <- renderUI({
+    if (is.null(attributes(get_spatial())$message))
+      return(NULL)
+    div(
+      class="alert alert-warning", role="alert",
+      HTML(attributes(get_spatial())$message))
+  })
+  outputOptions(output, "msg_spatial_tag", suspendWhenHidden = FALSE)
+  
   #* box_spatial ----
   output$box_spatial <- renderText({
     n_ixns    <- length(values$ixns)

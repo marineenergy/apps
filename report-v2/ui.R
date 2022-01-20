@@ -183,6 +183,9 @@ ui <- dashboardPage(
             href="https://MarineCadastre.gov",
             target="_blank"),
           "of species, habitats and human uses as Receptor tags."),
+        conditionalPanel(
+          condition = "output.msg_spatial_tag",
+          htmlOutput("msg_spatial_tag")),
         fluidRow(
           box(
             title = uiOutput("box_spatial", inline=T), # TODO: figure out initial statement for spatial without Location or Tags
