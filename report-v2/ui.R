@@ -73,7 +73,6 @@ ui <- dashboardPage(
         conditionalPanel(
           condition = "output.msg_prj",
           htmlOutput("msg_prj")),
-    
         conditionalPanel(
           condition = "output.n_prj > 0",
           fluidRow(
@@ -111,8 +110,8 @@ ui <- dashboardPage(
           Source: <a href='https://tethys.pnnl.gov/management-measures' target='_blank'>
             Management Measures Tool for Marine Renewable Energy | Tethys</a>")),
         conditionalPanel(
-          condition = "output.msg_mgt_tag",
-          htmlOutput("msg_mgt_tag")),
+          condition = "output.msg_mgt",
+          htmlOutput("msg_mgt")),
         fluidRow(
           box(
             title = uiOutput("box_mgt", inline=T), width = 12,
@@ -130,8 +129,8 @@ ui <- dashboardPage(
           HTML("The FERC eLibrary contains environmental compliance project documents, 
           of which excerpts have been manually tagged for reference.")),
         conditionalPanel(
-          condition = "output.msg_docs_tag",
-          htmlOutput("msg_docs_tag")),
+          condition = "output.msg_docs",
+          htmlOutput("msg_docs")),
         checkboxGroupInput(
           "cks_docs", 
           "Binary Filters:",
@@ -162,8 +161,8 @@ ui <- dashboardPage(
                    target="_blank"),
           "contains curated white and gray literature."),
         conditionalPanel(
-          condition = "output.msg_pub_tag",
-          htmlOutput("msg_pub_tag")),
+          condition = "output.msg_pubs",
+          htmlOutput("msg_pubs")),
         fluidRow(
           box(
             title = uiOutput("box_pubs", inline=T), width = 12,
@@ -184,8 +183,8 @@ ui <- dashboardPage(
             target="_blank"),
           "of species, habitats and human uses as Receptor tags."),
         conditionalPanel(
-          condition = "output.msg_spatial_tag",
-          htmlOutput("msg_spatial_tag")),
+          condition = "output.msg_spatial",
+          htmlOutput("msg_spatial")),
         fluidRow(
           box(
             title = uiOutput("box_spatial", inline=T), # TODO: figure out initial statement for spatial without Location or Tags

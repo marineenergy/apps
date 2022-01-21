@@ -45,20 +45,6 @@ add_lines <- function(fig, d_sites){
       shapes = c(list(brdr), lns))
 }
 
-add_prj_sgmts <- function(fig, d_sites) {
-  fig %>% 
-    plotly::add_segments(
-      data   = d_sites, # %>%
-      # TODO: squeeze labels by wrapping lines or some such
-      # mutate(project = recode(project, `Portsmouth Memorial Bridge`="Portsmouth\n Memorial\n Bridge")),
-      x     = ~date_beg,
-      xend  = ~date_end,
-      y     = ~project,
-      yend  = ~project,
-      color = ~project_status,
-      line  = list(width = 10)) 
-}
-
 add_prj_mkrs <- function(fig, d_permits, symbls_type, cols_type) {
   fig %>% 
     plotly::add_markers(
@@ -76,31 +62,20 @@ add_prj_mkrs <- function(fig, d_permits, symbls_type, cols_type) {
         '<br><b>Project Name:</b> ', d_permits$project,
         '<br><b>Permit Type:</b> ' , d_permits$permit_type,
         '<br><b>Technology:</b> '  , d_permits$tag_technology))
-        # '<b>License Date:</b> '    , ~license_date, 
-        # '<br><b>Project Name:</b> ', ~project, 
-        # '<br><b>Permit Type:</b> ' , ~permit_type,
-        # '<br><b>Technology:</b> '  , ~tag_technology))
 }
 
-add_tech_text <- function(fig, p_tech_sel, y_tech, tech_name){
-  get_antn_info(tech = tech, p_tech_tbl = p_tech_tbl)
-  if (p_tech_sel == 0) {
-    fig 
-  } else {
-    fig %>% 
-      plotly::layout(
-        annotations = list(
-          x         = 1,
-          y         = y_tech,
-          showarrow = FALSE,
-          text      = glue("<b>{tech_name}</b>"),
-          xref      = "paper",
-          yref      = "paper",
-          align     = "center",
-          font      = list(size = 8),
-          textangle = "90",
-          yshift    = 8))
-  }
+add_prj_sgmts <- function(fig, d_sites) {
+  fig %>% 
+    plotly::add_segments(
+      data   = d_sites, # %>%
+      # TODO: squeeze labels by wrapping lines or some such
+      # mutate(project = recode(project, `Portsmouth Memorial Bridge`="Portsmouth\n Memorial\n Bridge")),
+      x     = ~date_beg,
+      xend  = ~date_end,
+      y     = ~project,
+      yend  = ~project,
+      color = ~project_status,
+      line  = list(width = 10)) 
 }
 
 add_tech_labels <- function(fig, d_sites){
@@ -129,39 +104,6 @@ add_tech_labels <- function(fig, d_sites){
       textangle = "90")
 }
 
-calculate_y_tech <- function(tech) {
-  # calculate y placement of antns and tech lines 
-  
-  if ("Riverine Energy" %in% tech) {
-    n_riv_sel <- n_riv
-  } else if (!("Riverine Energy" %in% tech)) {
-    n_riv_sel <- as.integer(0)
-  }
-  if ("Wave Energy" %in% tech) {
-    n_wav_sel <- n_wav
-  } else if (!("Wave Energy" %in% tech)) {
-    n_wav_sel <- as.integer(0)
-  }
-  if ("Tidal Energy" %in% tech) {
-    n_tid_sel <- n_tid
-  } else if (!("Tidal Energy" %in% tech)) {
-    n_tid_sel <- as.integer(0)
-  }
-  n_projects <<- n_riv_sel + n_wav_sel + n_tid_sel
-  p_riv_sel  <<- n_riv_sel/n_projects
-  p_tid_sel  <<- n_tid_sel/n_projects
-  p_wav_sel  <<- n_wav_sel/n_projects
-  
-  p_tech_tbl <<- 
-    tibble(
-      tech        = c("Riverine Energy", "Tidal Energy", "Wave Energy"),
-      p_tech_sel  = c(p_riv_sel,          p_tid_sel,     p_wav_sel),
-      n_tech      = c(n_riv,              n_tid,         n_wav)) %>% 
-    mutate(
-      p_tech_all  = n_tech/(sum(n_tech)),
-      name        = stringr::str_replace(tech, " Energy", ""))
-}
-
 d_to_tags_html <- function(d){
   y <- d %>% 
     left_join(
@@ -181,177 +123,193 @@ d_to_tags_html <- function(d){
     group_by(
       !!!syms(cols_grpby)) %>% 
     summarize(
-      Tags = str_flatten(tag_html, collapse = " ")) %>% 
+      Tags = str_flatten(tag_html, collapse = " "),
+      .groups = "drop") %>% 
     rename(ID = rowid) %>% 
     arrange(ID) %>% 
     collect() %>% 
     ungroup()
 }
 
-filter_prj_by_tech <- function(tech, prj_sites, d_times, d_permits) {
-  # filter projects by selected technology
+get_content_data <- function(ixns, type = "publications", ...){
   
-  prj_sites <<- prj_sites %>% filter(technology_type %in% tech) %>% 
-    mutate(
-      project = factor(
-        project,
-        levels = prj_sites %>% sf::st_drop_geometry() %>% distinct(project) %>% pull(project)))
-  
-  d_times   <<- d_times   %>% filter(technology_type %in% tech) %>% 
-    mutate(
-      project = factor(
-        project, 
-        levels = d_times %>% distinct(project) %>% pull(project)))
-  
-  d_permits <<- d_permits %>% filter(technology_type %in% tech) %>% 
-    mutate(
-      project = factor(
-        project, 
-        levels = d_permits %>% distinct(project) %>% pull(project)))
-  # levels = d_permits %>% 
-  #   filter(technology_type %in% tech) %>% 
-  #   distinct(project) %>% 
-  #   pull(project)))
-}
-
-get_antn_info <- function(tech, p_tech_tbl){
-  calculate_y_tech(tech)
-  ybase      <<- list()
-  ybase[[1]] <<- 1.005      
-  ybase[[2]] <<- ybase[[1]] - p_tech_tbl$p_tech_sel[1]
-  ybase[[3]] <<- ybase[[2]] - p_tech_tbl$p_tech_sel[2]
-  
-  # antns <<- list()
-  
-  y_tech_antn <<- list()
-  for (i in 1:nrow(p_tech_tbl)) {
-    y_tech_antn[[i]] <<- ybase[[i]] - 0.5*(p_tech_tbl$p_tech_sel[i])
-  }
-  
-  
-  # antns[[i]] <<- list(
-  #   x         = 1,
-  #   y         = ybase[[i]] - 0.5*(p_tech_tbl$p_tech_sel[i]),
-  #   showarrow = FALSE,
-  #   text      = glue("<b>{p_tech_tbl$name[i]}</b>"),
-  #   xref      = "paper",
-  #   yref      = "paper",
-  #   align     = "center",
-  #   font      = list(size = 8),
-  #   textangle = "90",
-  #   yshift    = 8)
-  
-}
-
-get_d_mod <- function(ixns, d, tag_cats, db_tbl, cks = NULL, add_title) {
-  # test values
   # ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"))
   # ixns = list(c("Stressor.Noise.Underwater", "Receptor.Fish.DemersalFish", "Consequence.Collision"))
+  # type = "publications"; ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Receptor.Fish", "Management.Compliance"))
+  # type = "publications"; ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Stressor.Noise.Airborne", "Receptor.MarineMammals"))
+  # type = "publications"; ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Technology.Tidal", "Receptor.Fish", "Consequence.Collision"))
+  # type = "publications"; ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Technology.Tidal", "Receptor.Fish", "Consequence.Collision"), c("Receptor.Fish", "Management.Compliance"))
   
-  # for docs:
-  # db_tbl = "ferc_doc_tags"; d = d_docs_tags; cks = NULL; add_title = F
-  
-  # for pubs:
-  # db_tbl = "tethys_pub_tags"; d = d_pubs_tags; cks = NULL; add_title = T
-  # tag_cats = c("Technology", "Stressor", "Receptor")
-  
-  ixns_new <- ixns
-  
-  attr(d, "ixns_new") <- NULL
-  attr(d, "message")  <- NULL
-
-  if (length(ixns) > 0){
-    ixns_new <- map2(ixns, db_tbl, get_updated_ixns)
-    rowids <- sapply(
-      ixns_new, get_rowids_with_ixn, db_tbl = db_tbl, categories = tag_cats) %>% 
-      unlist() %>% unique()
-    d <- d %>%
-      filter(rowid %in% !!rowids)
-  }
-  
-  # for docs ONLY
-  if (!is.null(cks)){ 
-    if (length(cks) > 0){
-      for (col_bln in cks){
-        d <- d %>% 
-          filter(.data[[col_bln]] == TRUE) 
-      }
+  tbl_tags <- get_content_tags_tbl(type)
+  get_rowids_per_ixn <- function(tags){
+    if (length(tags) > 0){
+      sql <- glue("SELECT rowid FROM {tbl_tags} WHERE tag_sql ~ '{tags}.*'") %>% 
+        paste(collapse = "\nINTERSECT\n")
+    } else {
+      sql <- glue("SELECT DISTINCT rowid FROM {tbl_tags}")
     }
+    DBI::dbGetQuery(con, sql) %>% 
+      pull(rowid)
   }
   
-  d <- d_to_tags_html(d)
+  rowids <- map(
+    ixns, get_rowids_per_ixn) %>% 
+    unlist() %>% sort() %>% unique()
+  
+  # functions of lazy data, ie before collect(), per content type
+  get_prj_tags <- function(){
+    tbl(con, "project_sites") %>% 
+      left_join(
+        tbl(con, "project_tags"), by = "rowid")  }
+  get_mgt_tags <- function(){
+    tbl(con, "tethys_mgt") %>% 
+      select(rowid, Interaction, `Specific Management Measures`, `Implications of Measure`) %>% 
+      left_join(
+        tbl(con, "tethys_mgt_tags"), by = "rowid")  }
+  get_doc_tags <- function(){
+    tbl(con, "ferc_docs") %>% 
+      left_join(
+        tbl(con, "ferc_doc_tags"),
+        by = "rowid")  }
+  get_pub_tags <- function(){
+    tbl(con, "tethys_pubs") %>% 
+      select(rowid, uri, title) %>% 
+      left_join(
+        tbl(con, "tethys_pub_tags") %>% 
+          select(-uri),
+        by = "rowid")  }
+  get_spa_tags <- function(){
+    tbl(con, "mc_spatial") %>% 
+      filter(ready) %>%
+      left_join(
+        tbl(con, "mc_spatial_tags"),
+        by = "rowid")  }
   
   
-  if (add_title) { # T for pubs ONLY
-    d <- d %>%
-      mutate(
-        across(where(is.character), na_if, "NA"),
-        Title = as.character(glue(
-          "<a href='{uri}' target='_blank'>{title}</a>")))
-  }
+  # get lazy data per content type
+  d <- list(
+    projects     = get_prj_tags(),
+    management   = get_mgt_tags(),
+    documents    = get_doc_tags(),
+    publications = get_pub_tags(),
+    spatial      = get_spa_tags())[[type]]
   
-  # TODO: this section runs regardless of tab selected 
-  # if (content_type == "pubs") {
-  #   browser()
-  #   d <- d %>%
-  #     mutate(
-  #       across(where(is.character), na_if, "NA"),
-  #       Title = as.character(glue("<a href='{uri}' target='_blank'>{title}</a>")))
-  #   
-  # } else if (content_type == "spatial") {
-  #   d <- d %>% 
-  #     mutate(
-  #       Title = as.character(glue("{title} (Source: <a href='{src_url}'>{src_name}</a>)"))) %>% 
-  #     arrange(Title)
-  # }
-  ####
-  if (!identical(ixns, ixns_new)) {
-    d_mod_tags <- find_mod_tags(ixns, ixns_new)
-    n_mod_tags <- nrow(d_mod_tags)
-    
-    if (n_mod_tags == 1) {
-      n_tags <- d_mod_tags %>% pull(tags_list) %>% unlist() %>% length()
-    } else if (n_mod_tags > 1) { 
-      n_tags <- d_mod_tags %>% pull(tags_list) %>% 
-        map(function(x) length(x)) %>% 
-        unlist() %>% sum()
-    }
-
-    # browser()  
-    attr(d, "ixns_new") <- ixns_new
-    tags_mod_html <- with(d_mod_tags, glue(
-      "{tags_html} -> {mod_tag_html}")) %>% 
-      paste(collapse = "; ")
-    # browser()
-    attr(d, "message") <- glue(
-      "The following tag{ifelse(n_tags > 1,'s have',' has')} been modified to the available parent tag{ifelse(n_mod_tags > 1, 's', '')}: {tags_mod_html}.")
-  }
-  d
+  if (!is.null(rowids))
+    d <- filter(d, rowid %in% !!rowids)
+  
+  d <- d_to_tags_html(d) %>%  
+    mutate(
+      across(where(is.character), na_if, "NA"))
+  
+  if (!is.null(attr(ixns, "message")))
+    attr(d, "message") <- attr(ixns, "message")
+  
+  d 
 }
 
-get_docs_tbl <- function(d_docs_tags, ixns = NULL, cks = NULL){
-  ixns     <- get_content_ixns(ixns, "management")
-  tag_cats <- get_content_tag_categories("documents")
-  db_tbl   <- "ferc_doc_tags"
-  attr(d, "message") <- NULL
-
-  rowids <- sapply(
-    ixns, get_rowids_with_ixn, db_tbl = db_tbl, categories = tag_cats) %>% 
-    unlist() %>% unique()
+get_content_ixns <- function(ixns, type = "publications"){
+  # type = "publications"; ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Receptor.Fish", "Management.Compliance"))
+  # type = "publications"; ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Stressor.Noise.Airborne", "Receptor.MarineMammals"))
+  # type = "publications"; ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Technology.Tidal", "Receptor.Fish", "Consequence.Collision"))
+  # type = "publications"; ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Technology.Tidal", "Receptor.Fish", "Consequence.Collision"), c("Receptor.Fish", "Management.Compliance"))
   
-  d <- d_docs_tags %>%
-    filter(rowid %in% !!rowids) %>% 
-    d_to_tags_html()
+  # ixns_0 <- ixns
+  attr(ixns, "message") <- NULL
+  
+  # subset interactions by categories available to content type
+  content_cats <- get_content_tag_categories(type)
+  tags_dropped <- NULL
+  ixns <- map(ixns, function(ixn){
+    # TODO: add message about which content tags in inxns getting filtered by content type
+    ixn_cats <- str_extract(ixn, "^[A-z0-9]+")
+    ixn <- ixn[ixn_cats %in% content_cats] })
+  
+  # strip missing children from tags
+  # ixns_1 <- ixns # ixns <- ixns_1
+  tags_parented <- NULL
+  tbl_tags <- get_content_tags_tbl(type)
+  nrow_tag <- function(tag) {
+    dbGetQuery(con, glue("{paste('SELECT COUNT(*) AS count FROM', tbl_tags)} WHERE tag_sql = '{tag}'")) %>% 
+      pull(count) }
+  ixns <- map(ixns, function(ixn) {
+    map_chr(ixn, function(tag) {
+      tag_0 <- tag
+      q <- str_split(tag, pattern = "\\.", simplify = F)[[1]]
+      while (nrow_tag(tag) == 0 && length(q) > 2) 
+        tag <- paste(q[1:(length(q) - 1)], collapse = ".")
+      if (tag != tag_0)
+        assign(
+          "tags_parented",
+          c(tags_parented, setNames(tag_0, tag)),
+          envir = parent.env(parent.env(environment(NULL))))
+      tag }) })
+  
+  if (length(tags_parented) > 0 ){
+    d_tags_parented <- tibble(
+      tag_0 = tags_parented,
+      tag   = names(tags_parented)) %>% 
+      mutate(
+        tag_0_html = map_chr(tag_0, ixn_to_colorhtml, df_tags, is_html=T),
+        tag_html   = map_chr(tag,   ixn_to_colorhtml, df_tags, is_html=T)) %>% 
+      group_by(
+        tag, tag_html) %>% 
+      summarize(
+        tags      = paste(tag_0     , collapse = ','),
+        tags_html = paste(tag_0_html, collapse = ', '),
+        tags_list = list(tag_0),
+        .groups   = "drop")
+    tags_parented_html <- with(d_tags_parented, glue(
+      "{tags_html} -> {tag_html}")) %>% 
+      paste(collapse = "; ")
+    attr(ixns, "message") <- glue(
+      # c(ixns, glue(
+      "The following tag{ifelse(nrow(d_tags_parented) > 1,'s have',' has')} 
+      been modified to the available parent tag{ifelse(nrow(d_tags_parented) > 1, 's', '')}: 
+      {tags_parented_html}.")
+  }
+  
+  ixns
+}
+
+get_content_tag_categories <- function(type, html=F){
+  # content = "documents"
+  tbl   <- get_content_tags_tbl(type)
+  
+  cats <- dbGetQuery(con,  glue("SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM {tbl};")) %>% 
+    pull("tag_cat") %>% as.character() %>% na.omit() %>% rev()
+  
+  if (html){
+    h <- tibble(
+      cat  = cats,
+      html = map(cat, function(x) span(class=glue("me-tag me-{tolower(x)}"),  x)))
+    cats <- tagList(h$html)
+  }
+  
+  cats
+}
+
+get_content_tags_tbl <- function(type = "publications"){
+  c(
+    projects     = "project_tags",
+    management   = "tethys_mgt_tags",
+    documents    = "ferc_doc_tags",
+    publications = "tethys_pub_tags",
+    spatial      = "mc_spatial_tags")[type]
+}
+
+get_docs_tbl <- function(ixns = NULL, cks = NULL, type = "documents"){
+  ixns  <- get_content_ixns(ixns, type)
+  d     <- get_content_data(ixns, type)
+  
+  # filter by checkboxes
   if (!is.null(cks) && length(cks) > 0){
     for (col_bln in cks){
       d <- d %>% 
-        filter(.data[[col_bln]] == TRUE) 
-    }
-  }
+        filter(.data[[col_bln]] == TRUE)  }  }
+  
   d <- d %>% 
     mutate(
       # TODO: include in scripts/update_tags.R:update_tags()
-      across(where(is.character), na_if, "NA"),
       across(starts_with("ck_"), as.character),
       across(starts_with("ck_"), recode, "TRUE"="✓", "FALSE"="☐"),
       Doc = ifelse(
@@ -371,229 +329,31 @@ get_docs_tbl <- function(d_docs_tags, ixns = NULL, cks = NULL){
       PME = ck_pme, 
       BMP = ck_bmps)
   
-  if (!is.null(attributes(ixns)$message)) {
-    attr(d, "message") <- attributes(ixns)$message
-  } 
-  d
-  
-  # d <- get_d_mod(
-  #   ixns = ixns, d = d_docs_tags, tag_cats = tag_cats, 
-  #   db_tbl = "ferc_doc_tags", cks = cks, add_title = F) 
-  # 
-  # if (length(ixns) > 0) {
-  #   browser()
-  # }
-  
-}
-
-get_mgt_tbl <- function(d_mgt_tags, ixns = NULL){
-  # tag_cats <- dbGetQuery(con, "SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM tethys_mgt_tags;") %>% 
-  #   pull("tag_cat") %>% as.character() %>% na.omit() 
-  ixns     <- get_content_ixns(ixns, "management")
-  db_tbl   <- "tethys_mgt_tags"
-  tag_cats <- get_content_tag_categories("management")
-  attr(d, "message") <- NULL
-
-  rowids <- sapply(
-    ixns, get_rowids_with_ixn, db_tbl = db_tbl, categories = tag_cats) %>% 
-    unlist() %>% unique()
-  
-  d <- d_mgt_tags %>%
-    filter(rowid %in% !!rowids) %>% 
-    d_to_tags_html()
-  
-  if (!is.null(attributes(ixns)$message)) {
-    attr(d, "message") <- attributes(ixns)$message
-  } 
-
-  d
-  # get_d_mod(
-  #   ixns = ixns, d = d_mgt_tags, tag_cats = tag_cats, 
-  #   db_tbl = "tethys_mgt_tags", add_title = F)
-}
-
-get_projects_tbl <- function(d_projects_tags, ixns = NULL){
-
-  d <- d_projects_tags # %>% show_query()
-  
-  tag_cats <- get_content_tag_categories("projects")
-
-  # filter by Tags
-  if (length(ixns) > 0){
-    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "project_tags", categories = tag_cats) %>% 
-      unlist() %>% unique()
-    d <- d %>%
-      filter(rowid %in% !!rowids)
-  }
-  d <- d_to_tags_html(d)
+  if (!is.null(attr(ixns, "message")))
+    attr(d, "message") <- attr(ixns, "message")
   
   d
 }
 
-# get_content_tbl <- function(type){
-get_content_tbl <- function(type = "publications"){
-  c(
-    projects     = "project_tags",
-    management   = "tethys_mgt_tags",
-    documents    = "ferc_doc_tags",
-    publications = "tethys_pub_tags",
-    spatial      = "mc_spatial_tags")[type]
+get_mgt_tbl <- function(ixns = NULL, type = "management"){
+  ixns  <- get_content_ixns(ixns, type)
+  d     <- get_content_data(ixns, type)
+  d
 }
 
-get_content_tag_categories <- function(type, html=F){
-  # content = "documents"
-  tbl   <- get_content_tbl(type)
-  
-  cats <- dbGetQuery(con,  glue("SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM {tbl};")) %>% 
-    pull("tag_cat") %>% as.character() %>% na.omit() %>% rev()
-  
-  if (html){
-    h <- tibble(
-      cat  = cats,
-      html = map(cat, function(x) span(class=glue("me-tag me-{tolower(x)}"),  x)))
-    cats <- tagList(h$html)
-  }
-  
-  cats
+get_projects_tbl <- function(ixns = NULL, type = "projects"){
+  ixns <- get_content_ixns(ixns, type)
+  d    <- get_content_data(ixns, type)
+  d
 }
 
-
-get_content_ixns <- function(ixns, type = "publications"){
-  # ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"))
-  # ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Technology.Tidal", "Receptor.Fish", "Consequence.Collision"))
-
-  ixns_0 <- ixns
-  attr(ixns, "message") <- NULL
-  
-  db_tbl   <- get_content_tbl(type)
-  nrow_tag <- function(tag) {
-    dbGetQuery(con, glue("{paste('SELECT COUNT(*) AS count FROM', db_tbl)} WHERE tag_sql = '{tag}'")) %>% 
-      pull(count)
-  }
-  
-  find_mod_tags <- function(ixns, ixns_new) {  # for each ixn
-    tibble(
-      tag     = ixns     %>% unlist(recursive = F),
-      mod_tag = ixns_new %>% unlist(recursive = F)) %>% 
-      filter(
-        tag != mod_tag) %>% 
-      mutate(
-        tag_html     = map_chr(tag    , ixn_to_colorhtml, df_tags, is_html=T),
-        mod_tag_html = map_chr(mod_tag, ixn_to_colorhtml, df_tags, is_html=T)) %>% 
-      group_by(
-        mod_tag, mod_tag_html) %>% 
-      summarize(
-        tags      = paste(tag     , collapse = ','),
-        tags_html = paste(tag_html, collapse = ', '),
-        tags_list = list(tag),
-        .groups   = "drop")
-  }
-  
-  tag_cats <- get_content_tag_categories(type)
-  # tag_cats <- c("Technology", "Stressor", "Receptor", "Consequence")
-  # tag <- ixns[[2]][3]
-  # test
-  tag_cats <- c("Technology", "Stressor", "Receptor")
-  if (length(ixns) > 0) {
-    ixns <- map(ixns, function(ixn) {
-      map(ixn, function(tag) {
-        tag_0 <- tag # original tag 
-        q <- str_split(tag, pattern = "\\.", simplify = F)[[1]]
-        # drop n/a tag categories: find if categ of tags is in tag_cats
-        if (!(q[1] %in% tag_cats)) {
-          tag <- NULL
-        } else {
-          while (nrow_tag(tag) == 0 && length(q) > 2) 
-            tag <- paste(q[1:(length(q) - 1)], collapse = ".")
-        }
-        if (!is.null(tag))
-          tag
-      }) 
-    }) %>% map(function(x) x[lengths(x) > 0])
-  }
-  
-  if (!identical(ixns_0, ixns)) {
-    d_mod_tags <- find_mod_tags(ixns_0, ixns)
-    n_mod_tags <- nrow(d_mod_tags)
-    
-    if (n_mod_tags == 1) {
-      n_tags <- d_mod_tags %>% pull(tags_list) %>% unlist() %>% length()
-    } else if (n_mod_tags > 1) { 
-      n_tags <- d_mod_tags %>% pull(tags_list) %>% 
-        map(function(x) length(x)) %>% 
-        unlist() %>% sum()
-    }
-    
-    # browser()  
-    tags_mod_html <- with(d_mod_tags, glue(
-      "{tags_html} -> {mod_tag_html}")) %>% 
-      paste(collapse = "; ")
-    attr(ixns, "message") <- glue(
-      # c(ixns, glue(
-      "The following tag{ifelse(n_tags > 1,'s have',' has')} been modified to the available parent tag{ifelse(n_mod_tags > 1, 's', '')}: {tags_mod_html}.")
-      # )
-  }
-  
-  ixns
-}
-
-get_pubs_tbl <- function(d_pubs_tags, ixns = NULL){
-  # test ixns
-  # ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Technology.Tidal", "Receptor.Fish", "Consequence.Collision"))
-  
-  ixns     <- get_content_ixns(ixns, "publications")
-  db_tbl   <- "tethys_pub_tags"
-  tag_cats <- get_content_tag_categories("publications")
-  attr(d, "message") <- NULL
-  
-  rowids <- sapply(
-    ixns, get_rowids_with_ixn, db_tbl = db_tbl, categories = tag_cats) %>% 
-    unlist() %>% unique()
-  
-  # if (length(ixns) > 0) {
-  #   browser()
-  # }
-  
-  d <- d_pubs_tags %>%
-    filter(rowid %in% !!rowids) %>% 
-    d_to_tags_html() %>%
+get_pubs_tbl <- function(ixns = NULL, type = "publications"){
+  ixns <- get_content_ixns(ixns, type)
+  d    <- get_content_data(ixns, type) %>% 
     mutate(
-      across(where(is.character), na_if, "NA"),
       Title = as.character(glue(
         "<a href='{uri}' target='_blank'>{title}</a>")))
-  if (!is.null(attributes(ixns)$message)) {
-    attr(d, "message") <- attributes(ixns)$message
-  } 
   d
-  # get_d_mod(
-  #   ixns = ixns, d = d_pubs_tags, tag_cats = tag_cats, 
-  #   db_tbl = "tethys_pub_tags", add_title = T)
-  # content_type = "pubs")
-}
-
-
-
-get_rowids_with_ixn <- function(db_tbl, ixn, categories = NULL){
-  # db_tbl = "tethys_mgt_tags"; ixn = c("Receptor.Fish", "Stressor.PhysicalInteraction.Collision")
-  # db_tbl = "mc_spatial_tags"; ixn = values$ixns %>% unlist()
-  # ixn = list(c(""Receptor.Birds","Stressor.HabitatChange"))
-  
-  #browser()
-  
-  # subset interactions by categories available to content type
-  if (!is.null(categories)){
-    ixn_categories <- str_extract(ixn, "^[A-z]+")
-    ixn <- ixn[ixn_categories %in% categories]
-  }
-
-  if (length(ixn) > 0){
-    sql <- glue("SELECT rowid FROM {db_tbl} WHERE tag_sql ~ '{ixn}.*'") %>% 
-      paste(collapse = "\nINTERSECT\n")
-  } else {
-    sql <- glue("SELECT DISTINCT rowid FROM {db_tbl}")
-  }
-  DBI::dbGetQuery(con, sql) %>% 
-    pull(rowid)
 }
 
 get_spatial_intersection <- function(dataset_code, aoi_wkt){
@@ -872,37 +632,14 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
 }
 
 # TODO: add spatial msg
-get_spatial_tbl <- function(d_spatial_tags, ixns = NULL, aoi_wkt = NA){
+get_spatial_tbl <- function(ixns = NULL, aoi_wkt = NA, type = "spatial"){
   
-  
-  d <- d_spatial_tags # %>% show_query()
-  
-  tag_cats <- dbGetQuery(con,  "SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM mc_spatial_tags;") %>% 
-    pull("tag_cat") %>% as.character() %>% na.omit() # , categories = tag_cats
-  
-  # # test:
-  # d <- get_d_mod(
-  #   ixns = ixns, d = d_spatial_tags,
-  #   tag_cats = tag_cats, db_tbl = "mc_spatial_tags", 
-  #   cks = NULL, add_title = F) 
-  # TODO: update add_title code in get_d_mod; this won't work because add_title code is different for spatial
-  # content_type = "spatial")
-    
-  # filter by Tags
-  if (length(ixns) > 0){
-    rowids <- sapply(ixns, get_rowids_with_ixn, db_tbl = "mc_spatial_tags", categories = tag_cats) %>%
-      unlist() %>% unique()
-    d <- d %>%
-      filter(rowid %in% !!rowids)
-  }
-  d <- d_to_tags_html(d) %>%
+  ixns  <- get_content_ixns(ixns, type)
+  d     <- get_content_data(ixns, type) %>%
     mutate(
       Title = as.character(glue("{title} (Source: <a href='{src_url}'>{src_name}</a>)"))) %>%
     arrange(Title)
 
-  # filter by Location
-  #browser()
-  # if (!is.null(aoi_wkt))
   if (is.null(aoi_wkt) || is.na(aoi_wkt) || aoi_wkt == "")
     return(d)
   
@@ -952,6 +689,18 @@ get_tags_nocat <- function(){
     arrange(desc(category), tag)
 }
 
+ixn_to_colorhtml <- function(ixns, df_tags, is_html = NULL){
+  if (is.null(is_html))
+    is_html <- knitr::is_html_output()
+  if (is_html){
+    ixns_to_colorhtml_df(ixns, df_tags) %>% 
+      pull(Interaction) %>% 
+      paste(collapse = ', ')
+  } else {
+    ixns
+  }
+}
+
 ixns_to_colorhtml_df <- function(ixns, df_tags){
   # from tag_sql character vector produce data.frame of Interaction with colored HTML tags
   # shiny: tbl_ixns
@@ -990,18 +739,6 @@ ixns_to_colorhtml_df <- function(ixns, df_tags){
     select(-rowid)
 }
 
-ixn_to_colorhtml <- function(ixns, df_tags, is_html = NULL){
-  if (is.null(is_html))
-    is_html <- knitr::is_html_output()
-  if (is_html){
-    ixns_to_colorhtml_df(ixns, df_tags) %>% 
-      pull(Interaction) %>% 
-      paste(collapse = ', ')
-  } else {
-    ixns
-  }
-}
-
 lgnd_x_y <- function(fig, d_sites) {
   fig %>% 
     plotly::layout(
@@ -1033,109 +770,11 @@ lgnd_x_y <- function(fig, d_sites) {
         font = list(size = 10)))
 }
 
-load_projects <- function(ixns=NULL){
-  # p_csvs <- list.files("/share/github/apps/data", "project_.*")
-  # file.copy(file.path("/share/github/apps/data", p_csvs), file.path("/share/github/apps_dev/data", p_csvs), overwrite = T)
-  prj_sites_csv        <<- file.path(dir_data, "project_sites.csv")
-  prj_times_csv        <<- file.path(dir_data, "project_times.csv")
-  prj_permits_csv      <<- file.path(dir_data, "project_permits.csv")
-  prj_permit_types_csv <<- file.path(dir_data, "project_permit_types.csv")
-  
-  tech <<- c("Riverine Energy", "Tidal Energy", "Wave Energy")
-  
-  # TODO: load prj_*  into db, read from db
-  prj_sites <<- readr::read_csv(prj_sites_csv, col_types = readr::cols()) %>% 
-    sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = F)
-  
-  d_times <<- readr::read_csv(prj_times_csv, col_types = readr::cols())  %>% 
-    arrange(technology_type, project) %>% 
-    mutate(technology_type = factor(technology_type))
-  
-  d_times <<- d_times %>% 
-    mutate(
-      # order projects by technology_type, then project
-      project = factor(project, levels = d_times$project))
-  # levels(d_times$project) # Igiugig,...,Yakutat
-  
-  d_permits <<- readr::read_csv(prj_permits_csv, col_types = readr::cols()) %>% 
-    left_join(
-      d_times %>% 
-        select(project, technology_type), 
-      by = "project") %>% 
-    arrange(technology_type, project)
-  d_permits <<- d_permits %>% 
-    mutate(
-      # order projects by technology_type, then project
-      project = factor(project, levels = distinct(d_permits, project) %>% pull(project)))
-  # levels(d_permits$project) # Igiugig,...,Yakutat
-  
-  # order permit_types
-  permit_types <<- readr::read_csv(prj_permit_types_csv, col_types = readr::cols()) %>% 
-    pull(permit_types)
-  permit_types <<- permit_types %>% 
-    intersect(d_permits$permit_type)
-  d_permits <<- d_permits %>% 
-    mutate(
-      # order permit types by permit_types
-      permit_type = permit_type %>% factor(levels = permit_types))
-  
-  # # extract technology from interaction tags
-  # tags2tech <- c(
-  #   "Technology.Riverine" = "Riverine Energy",
-  #   "Technology.Tidal"    = "Tidal Energy",
-  #   "Technology.Wave"     = "Wave Energy")
-  # if (!is.null(ixns)){
-  #   # if ixns exist
-  #   # tech contains only the tags2tech names that are also in values$ixns
-  #   tech <- tags2tech[intersect(names(tags2tech), values$ixns %>% unlist())]
-  #   # tech <- tags2tech[1:2]
-  # } else {
-  #   # else tech is all of tags2tech
-  #   tech <- tags2tech
-  # }
-  
-  # # filter by technology
-  # prj_sites <<- prj_sites %>%
-  #   filter(technology_type %in% tech)
-  # d_times <<- d_times %>%
-  #   filter(technology_type %in% tech)
-  # d_permits <<- d_permits %>%
-  #   filter(technology_type %in% tech)
-  
-  prj_sites$label_html <- prj_sites$label_html %>% lapply(htmltools::HTML)
-  prj_sites$popup_html <- prj_sites$popup_html %>% lapply(htmltools::HTML)
-  
-  # colors & symbols
-  #project_statuses <<- unique(d_times$project_status)
-  project_statuses <<- c("Active Project", "Inactive Project")
-  cols_type   <<- colorRampPalette(RColorBrewer::brewer.pal(n=11, name = 'PiYG'))(length(permit_types))
-  cols_status <<- c("#30A4E1", "#999999") # Active/Inactive Projects
-  cols        <<- setNames(
-    c(cols_type, cols_status), 
-    c(permit_types, project_statuses))
-  symbls_type  <<- c(rep('triangle-up', 3), 'triangle-down', 'triangle-up', 'triangle-down', 'triangle-up', 'triangle-down', rep('triangle-up', 3))
-  symbls_status <<- rep(NA, 2)
-  symbls <<- setNames(
-    c(symbls_type,  symbls_status), 
-    c(permit_types, project_statuses))
-  
-  # technology_type numbers for horizontal line and label placement along y axis
-  n_tech <<- d_times %>% 
-    group_by(technology_type) %>% 
-    summarize(n = n())
-  n_riv <<- n_tech %>% filter(technology_type == "Riverine Energy") %>% pull(n)
-  n_tid <<- n_tech %>% filter(technology_type == "Tidal Energy")    %>% pull(n)
-  n_wav <<- n_tech %>% filter(technology_type == "Wave Energy")     %>% pull(n)
-}
+map_projects <- function(){
 
-map_projects <- function(d_projects){
-  # only uses d_projects$project; rest from db
-  
   prj_sites <- tbl(con, "project_sites") %>% 
     collect() %>% 
-    filter(project %in% d_projects$project) %>% 
     mutate(
-      # label_html = glue("{project} ({tag_technology})"),
       label_html = label_html %>% lapply(htmltools::HTML),
       popup_html = popup_html %>% lapply(htmltools::HTML))
   
@@ -1161,48 +800,10 @@ md2html <- function(x){
     text = x, fragment.only = T))
 }
 
-plot_projects <- function(){
-  # for initial plotly projects plot
-  
-  load_projects()
-  
-  tech <<- c("Riverine Energy", "Tidal Energy", "Wave Energy")
-  filter_prj_by_tech(tech, prj_sites, d_times, d_permits)
-  calculate_y_tech(tech)
-  fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700) 
-  fig <- fig %>% 
-    lgnd_x_y(time_data       = d_times)   %>% 
-    add_prj_sgmts(time_data  = d_times)   %>% 
-    add_prj_mkrs(permit_data = d_permits) %>% 
-    add_lines(tech) %>% 
-    add_tech_text(
-      p_tech_sel = p_tech_tbl$p_tech_sel[1],
-      tech_name  = p_tech_tbl$name[1],
-      y_tech     = y_tech_antn[[1]]) %>% 
-    add_tech_text(
-      p_tech_sel = p_tech_tbl$p_tech_sel[2],
-      tech_name  = p_tech_tbl$name[2],
-      y_tech     = y_tech_antn[[2]]) %>% 
-    add_tech_text(
-      p_tech_sel = p_tech_tbl$p_tech_sel[3],
-      tech_name  = p_tech_tbl$name[3],
-      y_tech     = y_tech_antn[[3]])  
-  fig
-}
-
 plot_project_timelines <- function(d_projects){
   # just use d_projects$project; rest from database
   
-  # d_projects <- tbl(con, "projects") %>% collect()
-  # d_projects <- tbl(con, "projects") %>% collect() %>% filter(tag_technology == "Tidal") 
-  # d_projects <- tbl(con, "projects") %>% collect() %>% filter(tag_technology %in% c("Tidal", "Wave")) 
-  
-  # prj_sites_csv        <<- file.path(dir_data, "project_sites.csv")
-  # prj_times_csv        <<- file.path(dir_data, "project_times.csv")
-  # prj_permits_csv      <<- file.path(dir_data, "project_permits.csv")
   prj_permit_types_csv <<- file.path(dir_data, "project_permit_types.csv")
-  
-  # tech <<- c("Riverine Energy", "Tidal Energy", "Wave Energy")
   
   d_sites <- tbl(con, "project_sites") %>% 
     collect() %>% 
@@ -1216,18 +817,6 @@ plot_project_timelines <- function(d_projects){
       project = factor(project, levels = d_sites$project))
   
   # TODO: load prj_*  into db, read from db
-  # prj_sites <<- readr::read_csv(prj_sites_csv, col_types = readr::cols()) %>% 
-  #   sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = F)
-  
-  # d_times <<- readr::read_csv(prj_times_csv, col_types = readr::cols())  %>% 
-  #   arrange(technology_type, project) %>% 
-  #   mutate(technology_type = factor(technology_type))
-  
-  # d_times <<- d_times %>% 
-  #   mutate(
-  #     # order projects by technology_type, then project
-  #     project = factor(project, levels = d_times$project))
-  # # levels(d_times$project) # Igiugig,...,Yakutat
   
   d_permits <- tbl(con, "project_permits") %>% 
     collect() %>% 
@@ -1236,13 +825,6 @@ plot_project_timelines <- function(d_projects){
         select(project, tag_technology),
       by = "project") %>% 
     arrange(tag_technology, project)
-  
-  # d_permits <<- readr::read_csv(prj_permits_csv, col_types = readr::cols()) %>% 
-  #   left_join(
-  #     d_times %>% 
-  #       select(project, technology_type), 
-  #     by = "project") %>% 
-  #   arrange(technology_type, project)
   
   # ordered permit_types
   permit_types <- readr::read_csv(prj_permit_types_csv) %>%
@@ -1256,47 +838,11 @@ plot_project_timelines <- function(d_projects){
       project     = factor(project, levels = distinct(d_permits, project) %>% pull(project)),
       # order permit types by permit_types
       permit_type = factor(permit_type, levels = permit_types))
-  # levels(d_permits$project) # Igiugig,...,Yakutat
-  
-  # order permit_types
-  # permit_types <- readr::read_csv(prj_permit_types_csv, col_types = readr::cols()) %>% 
-  #   pull(permit_types)
-  # permit_types <- permit_types %>% 
-  #   intersect(d_permits$permit_type)
-  # 
-  # d_permits <<- d_permits %>% 
-  #   mutate(
-  #     # order permit types by permit_types
-  #     permit_type = permit_type %>% factor(levels = permit_types))
-  
-  # # extract technology from interaction tags
-  # tags2tech <- c(
-  #   "Technology.Riverine" = "Riverine Energy",
-  #   "Technology.Tidal"    = "Tidal Energy",
-  #   "Technology.Wave"     = "Wave Energy")
-  # if (!is.null(ixns)){
-  #   # if ixns exist
-  #   # tech contains only the tags2tech names that are also in values$ixns
-  #   tech <- tags2tech[intersect(names(tags2tech), values$ixns %>% unlist())]
-  #   # tech <- tags2tech[1:2]
-  # } else {
-  #   # else tech is all of tags2tech
-  #   tech <- tags2tech
-  # }
-  
-  # # filter by technology
-  # prj_sites <<- prj_sites %>%
-  #   filter(technology_type %in% tech)
-  # d_times <<- d_times %>%
-  #   filter(technology_type %in% tech)
-  # d_permits <<- d_permits %>%
-  #   filter(technology_type %in% tech)
-  
+
   d_sites$label_html <- lapply(d_sites$label_html, htmltools::HTML)
   d_sites$popup_html <- lapply(d_sites$popup_html, htmltools::HTML)
   
   # colors & symbols
-  #project_statuses <<- unique(d_times$project_status)
   project_statuses <- c("Active Project", "Inactive Project")
   cols_type   <- colorRampPalette(RColorBrewer::brewer.pal(n=11, name = 'PiYG'))(length(permit_types))
   cols_status <- c("#30A4E1", "#999999") # Active/Inactive Projects
@@ -1318,39 +864,11 @@ plot_project_timelines <- function(d_projects){
   n_tid <- sum(d_sites$tag_technology == "Tidal")
   n_wav <- sum(d_sites$tag_technology == "Wave")
   
-  # tech <<- c("Riverine Energy", "Tidal Energy", "Wave Energy")
-  # filter_prj_by_tech(tech, prj_sites, d_times, d_permits)
   d_permits <- d_permits %>% 
     semi_join(
       d_sites,
       by = "project")
   
-  # calculate_y_tech(tech)
-  # if ("Riverine Energy" %in% tech) {
-  # if (n_riv > 0) {
-  #   n_riv_sel <- n_riv
-  # # } else if (!("Riverine Energy" %in% tech)) {
-  # } else {
-  #   n_riv_sel <- as.integer(0)
-  # }
-  # # if ("Wave Energy" %in% tech) {
-  # if (n_wav > 0) {
-  #   n_wav_sel <- n_wav
-  # # } else if (!("Wave Energy" %in% tech)) {
-  # } else {
-  #   n_wav_sel <- as.integer(0)
-  # }
-  # # if ("Tidal Energy" %in% tech) {
-  # if (n_tid > 0) {
-  #   n_tid_sel <- n_tid
-  # # } else if (!("Tidal Energy" %in% tech)) {
-  # } else {
-  #   n_tid_sel <- as.integer(0)
-  # }
-  # n_projects <- n_riv_sel + n_wav_sel + n_tid_sel
-  # p_riv_sel  <- n_riv_sel/n_projects
-  # p_tid_sel  <- n_tid_sel/n_projects
-  # p_wav_sel  <- n_wav_sel/n_projects
   n_projects <- nrow(d_projects)
   p_riv <- n_riv/n_projects
   p_tid <- n_tid/n_projects
@@ -1360,10 +878,7 @@ plot_project_timelines <- function(d_projects){
     tibble(
       tech    = c("Riverine", "Tidal", "Wave"),
       p_tech  = c(p_riv,      p_tid,   p_wav),
-      n_tech  = c(n_riv,      n_tid,   n_wav)) #%>% 
-    # mutate(
-    #   p_tech_all  = n_tech/(sum(n_tech)))
-      # name        = stringr::str_replace(tech, " Energy", ""))
+      n_tech  = c(n_riv,      n_tid,   n_wav))
   
   fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700) 
   fig <- fig %>% 
@@ -1533,60 +1048,15 @@ tabulate_dataset_shp_within_aoi3 <- function(dataset_code, aoi_wkt, output = "ka
   tbl
 }
 
-update_project_plot <- function(){
-  # for plot filtered by tech selection
-  
-  load_projects()
-  tech <<- tech
-  filter_prj_by_tech(tech, prj_sites, d_times, d_permits)
-  calculate_y_tech(tech)
-  fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700) 
-  fig <- fig %>% 
-    lgnd_x_y(time_data       = d_times)   %>% 
-    add_prj_sgmts(time_data  = d_times)   %>% 
-    add_prj_mkrs(permit_data = d_permits) %>% 
-    add_lines(tech) %>% 
-    add_tech_text(
-      p_tech_sel = p_tech_tbl$p_tech_sel[1],
-      tech_name  = p_tech_tbl$name[1],
-      y_tech     = y_tech_antn[[1]]) %>% 
-    add_tech_text(
-      p_tech_sel = p_tech_tbl$p_tech_sel[2],
-      tech_name  = p_tech_tbl$name[2],
-      y_tech     = y_tech_antn[[2]]) %>% 
-    add_tech_text(
-      p_tech_sel = p_tech_tbl$p_tech_sel[3],
-      tech_name  = p_tech_tbl$name[3],
-      y_tech     = y_tech_antn[[3]])  
-  
-  # update plot
-  tech <<- tech
-  filter_prj_by_tech(tech, prj_sites, d_times, d_permits)
-  calculate_y_tech(tech)
-  fig <- plotly::plot_ly(colors = cols, symbols = symbls, height = 700) 
-  fig <- fig %>% 
-    lgnd_x_y(time_data       = d_times)   %>% 
-    add_prj_sgmts(time_data  = d_times)   %>% 
-    add_prj_mkrs(permit_data = d_permits) %>% 
-    add_lines(tech) %>% 
-    add_tech_text(
-      p_tech_sel = p_tech_tbl$p_tech_sel[1],
-      tech_name  = p_tech_tbl$name[1],
-      y_tech     = y_tech_antn[[1]]) %>% 
-    add_tech_text(
-      p_tech_sel = p_tech_tbl$p_tech_sel[2],
-      tech_name  = p_tech_tbl$name[2],
-      y_tech     = y_tech_antn[[2]]) %>% 
-    add_tech_text(
-      p_tech_sel = p_tech_tbl$p_tech_sel[3],
-      tech_name  = p_tech_tbl$name[3],
-      y_tech     = y_tech_antn[[3]])  
-  fig
-}
-
 # load gsheet_params ----
-gsheet_params <- get_gsheet_data("parameters") %>% 
-  filter(output == "report") %>% select(-output)
+gsheet_params_csv <- here("data/gsheet_parameters.csv")
+reload_params     <- F
+if (!file.exists(gsheet_params_csv) | reload_params){
+  gsheet_params <- get_gsheet_data("parameters") %>% 
+    filter(output == "report") %>% select(-output)
+  write_csv(gsheet_params, gsheet_params_csv)
+}
+gsheet_params <- read_csv(gsheet_params_csv)
 
 # load tags ----
 tbl_tags <- tbl(con, "tags")
@@ -1600,49 +1070,23 @@ df_tags  <- tbl(con, "tags") %>%
 #load_projects()
 d_projects <- tbl(con, "project_sites") %>% 
   collect()
-d_projects_tags <- tbl(con, "project_sites") %>% 
+projects_tech_avail <- tbl(con, "project_sites") %>% 
   left_join(
-    tbl(con, "project_tags"), by = "rowid")
-projects_tech_avail <- d_projects_tags %>% 
+    tbl(con, "project_tags"), by = "rowid") %>% 
   group_by(tag_sql) %>% 
   summarize() %>% 
   pull(tag_sql) %>% 
   as.character()
 
 # load management ----
-d_mgt_tags <- tbl(con, "tethys_mgt") %>% 
-  select(rowid, Interaction, `Specific Management Measures`, `Implications of Measure`) %>% 
-  left_join(
-    tbl(con, "tethys_mgt_tags"), by = "rowid")
 d_mgt_n <- tbl(con, "tethys_mgt") %>% summarize(n = n()) %>% pull(n)
 
 # load documents ----
-d_docs_tags <- tbl(con, "ferc_docs") %>% 
-  left_join(
-    tbl(con, "ferc_doc_tags"),
-    by = "rowid") # %>% 
-  #arrange(desc(rowid))
 d_docs_n <- tbl(con, "ferc_docs") %>% summarize(n = n()) %>% pull(n)
 
 # load publications ----
-d_pubs_tags <- tbl(con, "tethys_pubs") %>% 
-  select(rowid, uri, title) %>% 
-  left_join(
-    tbl(con, "tethys_pub_tags") %>% 
-      select(-uri),
-    by = "rowid") %>% 
-  distinct_all()
-
-# tbl(con, "tethys_pubs") %>% collect() %>% names() %>% paste(collapse = ", ")
 d_pubs_n <- tbl(con, "tethys_pubs") %>% summarize(n = n()) %>% pull(n)
 
 # load spatial ----
-d_spatial_tags <- tbl(con, "mc_spatial") %>% 
-  filter(ready) %>%
-  left_join(
-    tbl(con, "mc_spatial_tags"),
-    by = "rowid") %>% 
-  distinct_all() %>% 
-  arrange(title)
 d_spatial_n <- tbl(con, "mc_spatial") %>% summarize(n = n()) %>% pull(n)
 

@@ -5,10 +5,6 @@ server <- function(input, output, session) {
   
   values <- reactiveValues(
     ixns         = list(),
-    ixns_mgt     = list(),
-    ixns_docs    = list(),
-    ixns_pubs    = list(),
-    ixns_spatial = list(),
     rpts         = rpts_0,
     msg_prj      = NULL,
     ply          = NULL)
@@ -184,15 +180,15 @@ server <- function(input, output, session) {
   
   # projects ----
 
+  #* get_projects ----
+  get_projects <- reactive({
+    get_projects_tbl(ixns = values$ixns)
+  })
+  
   #* prj_map ----
   output$prj_map <- renderLeaflet({
     
-    map_projects(d_projects)})
-  
-  #* get_projects ----
-  get_projects <- reactive({
-    get_projects_tbl(d_projects_tags, ixns = values$ixns)
-  })
+    map_projects()})
   
   # msg: when no projects associated w/ selected tech
   observe({
@@ -213,11 +209,12 @@ server <- function(input, output, session) {
   
   #* msg_prj ----
   output$msg_prj <- renderUI({
-    if (is.null(values$msg_prj))
+    msg <- attr(get_projects(), "message")
+    if (is.null(msg))
       return(NULL)
     div(
       class="alert alert-warning", role="alert",
-      HTML(values$msg_prj))
+      HTML(msg))
   })
   outputOptions(output, "msg_prj", suspendWhenHidden = FALSE)
   
@@ -272,28 +269,22 @@ server <- function(input, output, session) {
   })
   
   # management ----
-  # * get mgt ixns ----
-  observe({
-    values$ixns_mgt <- values$ixns
-  })
-  # observeEvent(input$btn_add_ixn, {
-  #   browser()
-  # })
-  # 
+
   #* get_mgt() ----
   get_mgt <- reactive({
-    get_mgt_tbl(ixns = values$ixns_mgt, d_mgt_tags)
+    get_mgt_tbl(ixns = values$ixns)
   })
   
-  #* msg_mgt_tag ----
-  output$msg_mgt_tag <- renderUI({
-    if (is.null(attributes(get_mgt())$message))
+  #* msg_mgt ----
+  output$msg_mgt <- renderUI({
+    msg <- attr(get_mgt(), "message")
+    if (is.null(msg))
       return(NULL)
     div(
       class="alert alert-warning", role="alert",
-      HTML(attributes(get_mgt())$message))
+      HTML(msg))
   })
-  outputOptions(output, "msg_mgt_tag", suspendWhenHidden = FALSE)
+  outputOptions(output, "msg_mgt", suspendWhenHidden = FALSE)
   
   #* box_mgt ----
   output$box_mgt <- renderText({
@@ -310,34 +301,22 @@ server <- function(input, output, session) {
   }, escape = F, rownames = F)
   
   # documents ----
-  # * get docs ixns ----
-  observe({
-    values$ixns_docs <- values$ixns
-  })
-  
-  # observeEvent(input$btn_add_ixn, {
-  #   browser()
-  # })
-  
-  # observeEvent(input$cks_docs, {
-  #   # req(input$btn_add_ixn)
-  #   browser()
-  # })
 
   #* get_docs() ----
   get_docs <- reactive({
-    get_docs_tbl(d_docs_tags, ixns = values$ixns_docs, cks = input$cks_docs)
+    get_docs_tbl(ixns = values$ixns, cks = input$cks_docs)
   })
   
-  #* msg_docs_tag ----
-  output$msg_docs_tag <- renderUI({
-    if (is.null(attributes(get_docs())$message))
+  #* msg_docs ----
+  output$msg_docs <- renderUI({
+    msg <- attr(get_docs(), "message")
+    if (is.null(msg))
       return(NULL)
     div(
       class="alert alert-warning", role="alert",
-      HTML(attributes(get_docs())$message))
+      HTML(msg))
   })
-  outputOptions(output, "msg_docs_tag", suspendWhenHidden = FALSE)
+  outputOptions(output, "msg_docs", suspendWhenHidden = FALSE)
   
   
   #* box_docs ----
@@ -358,32 +337,21 @@ server <- function(input, output, session) {
   }, escape = F, rownames = F)
   
   # publications ----
-  # * get pubs ixns ----
-  observe({
-    values$ixns_pubs <- values$ixns
-  })
-  
   #* get_pubs() ----
   get_pubs <- reactive({
-    # get_pubs_tbl(d_pubs_tags, ixns = values$ixns)
-    get_pubs_tbl(d_pubs_tags, ixns = values$ixns_pubs)
+    get_pubs_tbl(ixns = values$ixns)
   })
 
-  # observeEvent(input$btn_add_ixn, {
-  #   req(values$ixns)
-  #   browser()
-  # })
-
-  
-  #* msg_pub_tag ----
-  output$msg_pub_tag <- renderUI({
-    if (is.null(attributes(get_pubs())$message))
+  #* msg_pubs ----
+  output$msg_pubs <- renderUI({
+    msg <- attr(get_pubs(), "message")
+    if (is.null(msg))
       return(NULL)
     div(
       class="alert alert-warning", role="alert",
-      HTML(attributes(get_pubs())$message))
+      HTML(msg))
   })
-  outputOptions(output, "msg_pub_tag", suspendWhenHidden = FALSE)
+  outputOptions(output, "msg_pubs", suspendWhenHidden = FALSE)
 
   #* box_pubs ----
   output$box_pubs <- renderText({
@@ -406,11 +374,6 @@ server <- function(input, output, session) {
   
   # spatial ----
   
-  # * get spatial ixns ----
-  observe({
-    values$ixns_spatial <- values$ixns
-  })
-  
   #* get_spatial() ----
   get_spatial <- reactive({
     
@@ -418,22 +381,22 @@ server <- function(input, output, session) {
     #DBI::dbGetQuery(con, "SELECT ST_Force2D();")
     #browser()
     d <- get_spatial_tbl(
-      d_spatial_tags, 
-      ixns    = values$ixns_spatial, 
+      ixns    = values$ixns, 
       aoi_wkt = sf_to_wkt(values$ply))
     
     d
   })
     
-  #* msg_spatial_tag ----
-  output$msg_spatial_tag <- renderUI({
-    if (is.null(attributes(get_spatial())$message))
+  #* msg_spatial ----
+  output$msg_spatial <- renderUI({
+    msg <- attr(get_spatial(), "message")
+    if (is.null(msg))
       return(NULL)
     div(
       class="alert alert-warning", role="alert",
-      HTML(attributes(get_spatial())$message))
+      HTML(msg))
   })
-  outputOptions(output, "msg_spatial_tag", suspendWhenHidden = FALSE)
+  outputOptions(output, "msg_spatial", suspendWhenHidden = FALSE)
   
   #* box_spatial ----
   output$box_spatial <- renderText({
@@ -450,7 +413,6 @@ server <- function(input, output, session) {
   #* tbl_spatial ----
   output$tbl_spatial <- renderDataTable({
     d <- get_spatial()
-    
     
     if ("sp_data" %in% names(d)){c
       d <- d %>% 

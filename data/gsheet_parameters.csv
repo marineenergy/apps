@@ -1,0 +1,18 @@
+content,variable,value
+projects,rmd_noixn,_projects.Rmd
+management,description_md,"The Management Measures tool allows users to search and query the Tethys Management Measures Tool for Marine Renewable Energy - a robust compilation of marine energy management measures identified by international Marine Renewable Energy regulators and researchers.<br>
+Source: [Management Measures Tool for Marine Renewable Energy | Tethys](https://tethys.pnnl.gov/management-measures)"
+management,rmd_ixn,_mgt_ixn.Rmd
+management,rmd_noixn,_mgt_noixn.Rmd
+documents,rmd_ixn,_docs_ixn.Rmd
+documents,rmd_noixn,_docs_noixn.Rmd
+publications,rmd_ixn,_pubs_ixn.Rmd
+publications,rmd_noixn,_pubs_noixn.Rmd
+spatial,rmd_ixn,_spatial_ixn.Rmd
+spatial,rmd_noixn,_spatial_noixn.Rmd
+spatial,rmd_pfx,_spatial_pfx.Rmd
+projects,description_md,NA
+documents,description_md,"The FERC eLibrary contains environmental compliance project documents, 
+          of which excerpts have been manually tagged for reference."
+publications,description_md,The [Tethys Marine Energy Knowledge Base](https://tethys.pnnl.gov/knowledge-base-marine-energy) contains curated white and gray literature.
+spatial,description_md,"Spatial intersections are displayed here between the location drawn and datasets loaded from [MarineCadastre.gov](https://MarineCadastre.gov) of species, habitats and human uses as Receptor tags."
