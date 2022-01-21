@@ -17,13 +17,13 @@ machine <<- dplyr::case_when(
 
 dir_scripts <<- switch(
   machine,
-  Ben = "~/github/marineenergy/apps_dev/scripts",
-  "/share/github/apps_dev/scripts")
+  Ben = "~/github/marineenergy/apps/scripts",
+  "/share/github/apps/scripts")
 
 dir_data <<- switch(
   machine,
-  Ben = "~/github/marineenergy/apps_dev/data",
-  "/share/github/apps_dev/data")
+  Ben = "~/github/marineenergy/apps/data",
+  "/share/github/apps/data")
 
 dir_api <<- "/share/github/api"
 

@@ -4,10 +4,10 @@ server <- function(input, output, session) {
   histdata <- rnorm(500)
   
   values <- reactiveValues(
-    ixns    = list(),
-    rpts    = rpts_0,
-    msg_prj = NULL,
-    ply     = NULL)
+    ixns         = list(),
+    rpts         = rpts_0,
+    msg_prj      = NULL,
+    ply          = NULL)
   # cat(capture.output(dput(values$ixns)))
   
   # login ----
@@ -180,15 +180,15 @@ server <- function(input, output, session) {
   
   # projects ----
 
+  #* get_projects ----
+  get_projects <- reactive({
+    get_projects_tbl(ixns = values$ixns)
+  })
+  
   #* prj_map ----
   output$prj_map <- renderLeaflet({
     
-    map_projects(d_projects)})
-  
-  #* get_projects ----
-  get_projects <- reactive({
-    get_projects_tbl(d_projects_tags, ixns = values$ixns)
-  })
+    map_projects()})
   
   # msg: when no projects associated w/ selected tech
   observe({
@@ -209,11 +209,12 @@ server <- function(input, output, session) {
   
   #* msg_prj ----
   output$msg_prj <- renderUI({
-    if (is.null(values$msg_prj))
+    msg <- attr(get_projects(), "message")
+    if (is.null(msg))
       return(NULL)
     div(
       class="alert alert-warning", role="alert",
-      HTML(values$msg_prj))
+      HTML(msg))
   })
   outputOptions(output, "msg_prj", suspendWhenHidden = FALSE)
   
@@ -268,15 +269,25 @@ server <- function(input, output, session) {
   })
   
   # management ----
-  
+
   #* get_mgt() ----
   get_mgt <- reactive({
-    get_mgt_tbl(ixns = values$ixns, d_mgt_tags)
+    get_mgt_tbl(ixns = values$ixns)
   })
+  
+  #* msg_mgt ----
+  output$msg_mgt <- renderUI({
+    msg <- attr(get_mgt(), "message")
+    if (is.null(msg))
+      return(NULL)
+    div(
+      class="alert alert-warning", role="alert",
+      HTML(msg))
+  })
+  outputOptions(output, "msg_mgt", suspendWhenHidden = FALSE)
   
   #* box_mgt ----
   output$box_mgt <- renderText({
-    
     n_ixns <- length(values$ixns)
     ifelse(
       n_ixns == 0,
@@ -290,10 +301,23 @@ server <- function(input, output, session) {
   }, escape = F, rownames = F)
   
   # documents ----
+
   #* get_docs() ----
   get_docs <- reactive({
-    get_docs_tbl(d_docs_tags, ixns = values$ixns, cks = input$cks_docs)
+    get_docs_tbl(ixns = values$ixns, cks = input$cks_docs)
   })
+  
+  #* msg_docs ----
+  output$msg_docs <- renderUI({
+    msg <- attr(get_docs(), "message")
+    if (is.null(msg))
+      return(NULL)
+    div(
+      class="alert alert-warning", role="alert",
+      HTML(msg))
+  })
+  outputOptions(output, "msg_docs", suspendWhenHidden = FALSE)
+  
   
   #* box_docs ----
   output$box_docs <- renderText({
@@ -304,7 +328,7 @@ server <- function(input, output, session) {
     ifelse(
       n_ixns == 0 & n_cks == 0,
       HTML(glue("FERC Documents <small>({d_docs_n} rows)</small>")),
-      HTML(glue("FERC Documents <small>({n_docs} of {d_docs_n} rows; filtered by {n_ixns} interactions & {n_cks} checkboxes </small>")))
+      HTML(glue("FERC Documents <small>({n_docs} of {d_docs_n} rows; filtered by {n_ixns} interactions & {n_cks} checkboxes)</small>")))
   })
   
   #* tbl_docs ----
@@ -315,24 +339,19 @@ server <- function(input, output, session) {
   # publications ----
   #* get_pubs() ----
   get_pubs <- reactive({
-    get_pubs_tbl(d_pubs_tags, ixns = values$ixns)
+    get_pubs_tbl(ixns = values$ixns)
   })
 
-  # observeEvent(input$btn_add_ixn, {
-  #   req(values$ixns)
-  #   browser()
-  # })
-
-  
-  #* msg_pub_tag ---
-  output$msg_pub_tag <- renderUI({
-    if (is.null(attributes(get_pubs())$message))
+  #* msg_pubs ----
+  output$msg_pubs <- renderUI({
+    msg <- attr(get_pubs(), "message")
+    if (is.null(msg))
       return(NULL)
     div(
       class="alert alert-warning", role="alert",
-      HTML(attributes(get_pubs())$message))
+      HTML(msg))
   })
-  outputOptions(output, "msg_pub_tag", suspendWhenHidden = FALSE)
+  outputOptions(output, "msg_pubs", suspendWhenHidden = FALSE)
 
   #* box_pubs ----
   output$box_pubs <- renderText({
@@ -340,9 +359,9 @@ server <- function(input, output, session) {
     n_pubs <- nrow(get_pubs())
     
     ifelse(
-      n_ixns == 0,
+      n_ixns == 0, 
       HTML(glue("Tethys Publications <small>({d_pubs_n} rows)</small>")),
-      HTML(glue("Tethys Publications <small>({n_pubs} of {d_pubs_n} rows; filtered by {n_ixns} interactions</small>")))
+      HTML(glue("Tethys Publications <small>({n_pubs} of {d_pubs_n} rows; filtered by {n_ixns} interactions)</small>")))
   })
   
   #* tbl_pubs ----
@@ -362,13 +381,23 @@ server <- function(input, output, session) {
     #DBI::dbGetQuery(con, "SELECT ST_Force2D();")
     #browser()
     d <- get_spatial_tbl(
-      d_spatial_tags, 
       ixns    = values$ixns, 
       aoi_wkt = sf_to_wkt(values$ply))
     
     d
   })
     
+  #* msg_spatial ----
+  output$msg_spatial <- renderUI({
+    msg <- attr(get_spatial(), "message")
+    if (is.null(msg))
+      return(NULL)
+    div(
+      class="alert alert-warning", role="alert",
+      HTML(msg))
+  })
+  outputOptions(output, "msg_spatial", suspendWhenHidden = FALSE)
+  
   #* box_spatial ----
   output$box_spatial <- renderText({
     n_ixns    <- length(values$ixns)
@@ -384,7 +413,6 @@ server <- function(input, output, session) {
   #* tbl_spatial ----
   output$tbl_spatial <- renderDataTable({
     d <- get_spatial()
-    
     
     if ("sp_data" %in% names(d)){c
       d <- d %>% 

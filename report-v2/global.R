@@ -1,10 +1,7 @@
 # libraries ----
-#source("/share/github/apps_dev/scripts/common.R")
-#source(file.path(dir_scripts, "common.R"))
+source(here::here("scripts/common.R"))
 dir_scripts <<- here::here("scripts")
-source(file.path(dir_scripts, "common.R"))
-# dir_scripts <<- here::here("scripts")
-# dir_data    <<- here::here("data")
+dir_data    <<- here::here("data")
 source(file.path(dir_scripts, "db.R"))
 source(file.path(dir_scripts, "shiny_report.R")) # loads content d_*
 
@@ -12,6 +9,7 @@ source(file.path(dir_scripts, "shiny_report.R")) # loads content d_*
 librarian::shelf(
   DT, r-lib/gargle, MarkEdmondson1234/googleAuthR, htmltools, httr, jsonlite, leaflet, mapedit, plotly, purrr,
   sf, shinydashboard, RinteRface/shinydashboardPlus, shiny, shinycssloaders, shinyjs, shinyWidgets)
+renderDataTable <- DT::renderDataTable
 # devtools::session_info() # confirm versions, esp shinydashboardPlus
 # library(reactlog)
 # reactlog_enable()
@@ -19,6 +17,8 @@ librarian::shelf(
 # runApp("/share/github/apps_cdob/report-v2")
 # once app has closed, display reactlog from shiny
 # shiny::reactlogShow()
+
+# options(warn=2) # convert warnings to errors
 
 # navbar ----
 dashboardHeader <- function(
@@ -273,5 +273,3 @@ del_user_report <- function(email, rpt){
 }
 
 file_icons = c(html = "file", pdf="file-pdf", docx = "file-word")
-
-
