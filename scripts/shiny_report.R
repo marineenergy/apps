@@ -330,33 +330,24 @@ get_d_mod <- function(ixns, d, tag_cats, db_tbl, cks = NULL, add_title) {
 }
 
 get_docs_tbl <- function(d_docs_tags, ixns = NULL, cks = NULL){
-  
+  ixns     <- get_content_ixns(ixns, "management")
   tag_cats <- get_content_tag_categories("documents")
-  
-  # d <- get_d_mod(
-  #   ixns = ixns, d = d_docs_tags, tag_cats = tag_cats, 
-  #   db_tbl = "ferc_doc_tags", cks = cks, add_title = F) 
-  # 
-  # if (length(ixns) > 0) {
-  #   browser()
-  # }
-  
+  db_tbl   <- "ferc_doc_tags"
+  attr(d, "message") <- NULL
+
   rowids <- sapply(
-    ixns_pubs, get_rowids_with_ixn, db_tbl = db_tbl, categories = tag_cats) %>% 
+    ixns, get_rowids_with_ixn, db_tbl = db_tbl, categories = tag_cats) %>% 
     unlist() %>% unique()
-  d <- d %>%
-    filter(rowid %in% !!rowids)
-  d
   
-  # for docs ONLY
+  d <- d_docs_tags %>%
+    filter(rowid %in% !!rowids) %>% 
+    d_to_tags_html()
   if (!is.null(cks) && length(cks) > 0){
     for (col_bln in cks){
       d <- d %>% 
         filter(.data[[col_bln]] == TRUE) 
     }
   }
-  
-  
   d <- d %>% 
     mutate(
       # TODO: include in scripts/update_tags.R:update_tags()
@@ -379,21 +370,53 @@ get_docs_tbl <- function(d_docs_tags, ixns = NULL, cks = NULL){
       AMP = ck_amp, 
       PME = ck_pme, 
       BMP = ck_bmps)
+  
+  if (!is.null(attributes(ixns)$message)) {
+    attr(d, "message") <- attributes(ixns)$message
+  } 
+  d
+  
+  # d <- get_d_mod(
+  #   ixns = ixns, d = d_docs_tags, tag_cats = tag_cats, 
+  #   db_tbl = "ferc_doc_tags", cks = cks, add_title = F) 
+  # 
+  # if (length(ixns) > 0) {
+  #   browser()
+  # }
+  
 }
 
 get_mgt_tbl <- function(d_mgt_tags, ixns = NULL){
-  tag_cats <- dbGetQuery(con, "SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM tethys_mgt_tags;") %>% 
-    pull("tag_cat") %>% as.character() %>% na.omit() 
-  get_d_mod(
-    ixns = ixns, d = d_mgt_tags, tag_cats = tag_cats, 
-    db_tbl = "tethys_mgt_tags", add_title = F)
+  # tag_cats <- dbGetQuery(con, "SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM tethys_mgt_tags;") %>% 
+  #   pull("tag_cat") %>% as.character() %>% na.omit() 
+  ixns     <- get_content_ixns(ixns, "management")
+  db_tbl   <- "tethys_mgt_tags"
+  tag_cats <- get_content_tag_categories("management")
+  attr(d, "message") <- NULL
+
+  rowids <- sapply(
+    ixns, get_rowids_with_ixn, db_tbl = db_tbl, categories = tag_cats) %>% 
+    unlist() %>% unique()
+  
+  d <- d_mgt_tags %>%
+    filter(rowid %in% !!rowids) %>% 
+    d_to_tags_html()
+  
+  if (!is.null(attributes(ixns)$message)) {
+    attr(d, "message") <- attributes(ixns)$message
+  } 
+
+  d
+  # get_d_mod(
+  #   ixns = ixns, d = d_mgt_tags, tag_cats = tag_cats, 
+  #   db_tbl = "tethys_mgt_tags", add_title = F)
 }
 
 get_projects_tbl <- function(d_projects_tags, ixns = NULL){
 
   d <- d_projects_tags # %>% show_query()
   
-  tag_cats <- tag_cats <- get_content_tag_categories("projects")
+  tag_cats <- get_content_tag_categories("projects")
 
   # filter by Tags
   if (length(ixns) > 0){
@@ -407,6 +430,7 @@ get_projects_tbl <- function(d_projects_tags, ixns = NULL){
   d
 }
 
+# get_content_tbl <- function(type){
 get_content_tbl <- function(type = "publications"){
   c(
     projects     = "project_tags",
@@ -433,16 +457,16 @@ get_content_tag_categories <- function(type, html=F){
   cats
 }
 
+
 get_content_ixns <- function(ixns, type = "publications"){
   # ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"))
-  # ixns = list(
-  #   c("Stressor.Noise.Airborne", "Receptor.MarineMammals"),
-  #   c("Technology.Tidal", "Receptor.Fish", "Consequence.Collision"))
-  
+  # ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Technology.Tidal", "Receptor.Fish", "Consequence.Collision"))
+
   ixns_0 <- ixns
   attr(ixns, "message") <- NULL
   
-  nrow_tag <- function(tag){
+  db_tbl   <- get_content_tbl(type)
+  nrow_tag <- function(tag) {
     dbGetQuery(con, glue("{paste('SELECT COUNT(*) AS count FROM', db_tbl)} WHERE tag_sql = '{tag}'")) %>% 
       pull(count)
   }
@@ -465,19 +489,27 @@ get_content_ixns <- function(ixns, type = "publications"){
         .groups   = "drop")
   }
   
-  
-  db_tbl   <- get_content_tbl(type)
   tag_cats <- get_content_tag_categories(type)
-  
-  if (length(ixns) > 0){
+  # tag_cats <- c("Technology", "Stressor", "Receptor", "Consequence")
+  # tag <- ixns[[2]][3]
+  # test
+  tag_cats <- c("Technology", "Stressor", "Receptor")
+  if (length(ixns) > 0) {
     ixns <- map(ixns, function(ixn) {
-      map_chr(ixn, function(tag) {
+      map(ixn, function(tag) {
         tag_0 <- tag # original tag 
         q <- str_split(tag, pattern = "\\.", simplify = F)[[1]]
-        while (nrow_tag(tag) == 0 && length(q) > 2)
-          tag <- paste(q[1:(length(q) - 1)], collapse = ".")
-        tag
-      }) })
+        # drop n/a tag categories: find if categ of tags is in tag_cats
+        if (!(q[1] %in% tag_cats)) {
+          tag <- NULL
+        } else {
+          while (nrow_tag(tag) == 0 && length(q) > 2) 
+            tag <- paste(q[1:(length(q) - 1)], collapse = ".")
+        }
+        if (!is.null(tag))
+          tag
+      }) 
+    }) %>% map(function(x) x[lengths(x) > 0])
   }
   
   if (!identical(ixns_0, ixns)) {
@@ -496,39 +528,47 @@ get_content_ixns <- function(ixns, type = "publications"){
     tags_mod_html <- with(d_mod_tags, glue(
       "{tags_html} -> {mod_tag_html}")) %>% 
       paste(collapse = "; ")
-    # browser()
-    attr(ixns, "message") <- c(ixns, glue(
-      "The following tag{ifelse(n_tags > 1,'s have',' has')} been modified to the available parent tag{ifelse(n_mod_tags > 1, 's', '')}: {tags_mod_html}."))
+    attr(ixns, "message") <- glue(
+      # c(ixns, glue(
+      "The following tag{ifelse(n_tags > 1,'s have',' has')} been modified to the available parent tag{ifelse(n_mod_tags > 1, 's', '')}: {tags_mod_html}.")
+      # )
   }
   
   ixns
 }
 
 get_pubs_tbl <- function(d_pubs_tags, ixns = NULL){
-  ixns_pubs <- get_content_ixns(ixns, "publications")
+  # test ixns
+  # ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Technology.Tidal", "Receptor.Fish", "Consequence.Collision"))
   
+  ixns     <- get_content_ixns(ixns, "publications")
+  db_tbl   <- "tethys_pub_tags"
+  tag_cats <- get_content_tag_categories("publications")
+  attr(d, "message") <- NULL
+  
+  rowids <- sapply(
+    ixns, get_rowids_with_ixn, db_tbl = db_tbl, categories = tag_cats) %>% 
+    unlist() %>% unique()
+  
+  # if (length(ixns) > 0) {
+  #   browser()
+  # }
+  
+  d <- d_pubs_tags %>%
+    filter(rowid %in% !!rowids) %>% 
+    d_to_tags_html() %>%
+    mutate(
+      across(where(is.character), na_if, "NA"),
+      Title = as.character(glue(
+        "<a href='{uri}' target='_blank'>{title}</a>")))
+  if (!is.null(attributes(ixns)$message)) {
+    attr(d, "message") <- attributes(ixns)$message
+  } 
+  d
   # get_d_mod(
   #   ixns = ixns, d = d_pubs_tags, tag_cats = tag_cats, 
   #   db_tbl = "tethys_pub_tags", add_title = T)
-    # content_type = "pubs")
-  
-  rowids <- sapply(
-    ixns_pubs, get_rowids_with_ixn, db_tbl = db_tbl, categories = tag_cats) %>% 
-    unlist() %>% unique()
-  d <- d %>%
-    filter(rowid %in% !!rowids)
-  d
-  
-  d <- d_to_tags_html(d)
-  
-  if (add_title) { # T for pubs ONLY
-    d <- d %>%
-      mutate(
-        across(where(is.character), na_if, "NA"),
-        Title = as.character(glue(
-          "<a href='{uri}' target='_blank'>{title}</a>")))
-  }
-  
+  # content_type = "pubs")
 }
 
 

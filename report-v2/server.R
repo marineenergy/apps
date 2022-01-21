@@ -276,7 +276,10 @@ server <- function(input, output, session) {
   observe({
     values$ixns_mgt <- values$ixns
   })
-  
+  # observeEvent(input$btn_add_ixn, {
+  #   browser()
+  # })
+  # 
   #* get_mgt() ----
   get_mgt <- reactive({
     get_mgt_tbl(ixns = values$ixns_mgt, d_mgt_tags)
