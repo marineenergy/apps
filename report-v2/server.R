@@ -188,7 +188,7 @@ server <- function(input, output, session) {
   #* prj_map ----
   output$prj_map <- renderLeaflet({
     
-    map_projects()})
+    map_projects(get_projects())})
   
   # msg: when no projects associated w/ selected tech
   observe({
@@ -244,9 +244,9 @@ server <- function(input, output, session) {
     
   })
   
-  #* prj_p ----
+  #* prj_timeline ----
   #calculate_y_tech(tech)
-  output$prj_p <- renderPlotly({
+  output$prj_timeline <- renderPlotly({
     suppressWarnings({
       plot_project_timelines(get_projects()) %>% 
         event_register("plotly_click")
