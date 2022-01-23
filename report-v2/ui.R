@@ -87,7 +87,7 @@ ui <- dashboardPage(
               a downloadable PDF of the document or to pages with additional information.")),
             box(
               title = "Timeline of Projects", width = 6,
-              plotlyOutput("prj_p", height="700px"),
+              plotlyOutput("prj_timeline", height="700px"),
               helpText(
                 "The figure above shows all past and present Marine Energy projects 
                   and the permitting milestones of each over time organized by energy type 

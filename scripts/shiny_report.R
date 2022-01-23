@@ -770,10 +770,11 @@ lgnd_x_y <- function(fig, d_sites) {
         font = list(size = 10)))
 }
 
-map_projects <- function(){
+map_projects <- function(d_projects){
 
   prj_sites <- tbl(con, "project_sites") %>% 
     collect() %>% 
+    filter(project %in% d_projects$project) %>%
     mutate(
       label_html = label_html %>% lapply(htmltools::HTML),
       popup_html = popup_html %>% lapply(htmltools::HTML))
@@ -1049,7 +1050,7 @@ tabulate_dataset_shp_within_aoi3 <- function(dataset_code, aoi_wkt, output = "ka
 }
 
 # load gsheet_params ----
-gsheet_params_csv <- here("data/gsheet_parameters.csv")
+gsheet_params_csv <- glue(dir_scripts, "/../data/gsheet_parameters.csv")
 reload_params     <- F
 if (!file.exists(gsheet_params_csv) | reload_params){
   gsheet_params <- get_gsheet_data("parameters") %>% 
