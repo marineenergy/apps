@@ -197,9 +197,16 @@ ui <- dashboardPage(
       tabItem(
         tabName = "tab_rpt",
         # DEBUG: login off
-        # uiOutput("txt_rpt_login"),
-        # conditionalPanel(
-        #   condition = "input['login-g_email'] != null && input['login-g_email'] != ''",
+        conditionalPanel(
+          condition = "input['login-g_email'] == null || input['login-g_email'] == ''",
+          tagList(
+            "In order to generate reports, you'll need to",
+            tags$b("Sign in"), "with Google via the button in the upper right. 
+            You do not need a Google email, merely an account associated with any email,
+            which can be easily created at ", 
+            a(href="https://accounts.google.com", "accounts.google.com"), ".")),
+        conditionalPanel(
+          condition = "input['login-g_email'] != null && input['login-g_email'] != ''",
           fluidRow(
             box(
               title = "New Report", width = 12,
@@ -257,9 +264,7 @@ ui <- dashboardPage(
               withSpinner(
                 color = "#3C8DBC",
                 DTOutput("tbl_rpts")),
-              actionButton("btn_del_rpts", "Delete selected report(s)", icon=icon("minus"))))
-          # DEBUG: login off
-          # ))
+              actionButton("btn_del_rpts", "Delete selected report(s)", icon=icon("minus")))))
         )
       
       

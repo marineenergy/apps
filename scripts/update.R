@@ -406,9 +406,11 @@ update_tethys_pubs <- function(){
   # source(here("scripts/common.R")); source(here("scripts/db.R"))
   shelf(jsonlite, purrr, readr)
   
-  tethys_docs_url  <- glue("https://tethys.pnnl.gov/api/primre_export")
-  tethys_docs_json <- here("data/tethys_docs.json") # TODO: rm data/tethys.json
-  tethys_docs_csv  <- here("data/tethys_docs.csv")  # TODO: rm data/tethys.csv
+  # TODO: only get latest modifications since last update and modify/add those records in the database
+  date_mod <- "2010-01-01"
+  tethys_docs_url  <- glue("https://tethys.pnnl.gov/api/primre_export?modifiedDate={date_mod}")
+  tethys_docs_json <- here(glue("data/tethys_docs_modifiedDate-{date_mod}.json")) # TODO: rm data/tethys.json
+  tethys_docs_csv  <- here(glue("data/tethys_docs_modifiedDate-{date_mod}.csv"))  # TODO: rm data/tethys.csv
   
   download.file(tethys_docs_url, tethys_docs_json)
   
