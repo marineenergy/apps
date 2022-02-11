@@ -211,7 +211,7 @@ get_content_ixns <- function(ixns, type = "publications"){
   # type = "publications"; ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Receptor.Fish", "Management.Compliance"))
   # type = "publications"; ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Stressor.Noise.Airborne", "Receptor.MarineMammals"))
   # type = "publications"; ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Technology.Tidal", "Receptor.Fish", "Consequence.Collision"))
-  # type = "publications"; ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Technology.Tidal", "Receptor.Fish", "Consequence.Collision"), c("Receptor.Fish", "Management.Compliance"))
+  # type = "projects"; ixns = list(c("Technology.OffshoreWind"), c("Technology.Tidal", "Receptor.Fish", "Consequence.Collision"))
   
   # ixns_0 <- ixns
   attr(ixns, "message") <- NULL
@@ -225,12 +225,14 @@ get_content_ixns <- function(ixns, type = "publications"){
     ixn <- ixn[ixn_cats %in% content_cats] })
   
   # strip missing children from tags
-  # ixns_1 <- ixns # ixns <- ixns_1
   tags_parented <- NULL
-  tbl_tags <- get_content_tags_tbl(type)
+  tbl_tags      <- get_content_tags_tbl(type)
+  
   nrow_tag <- function(tag) {
-    dbGetQuery(con, glue("{paste('SELECT COUNT(*) AS count FROM', tbl_tags)} WHERE tag_sql = '{tag}'")) %>% 
-      pull(count) }
+    dbGetQuery(con, glue("SELECT COUNT(*) AS count FROM {tbl_tags} WHERE tag_sql = '{tag}'")) %>% 
+      pull(count) %>% 
+      as.integer()}
+  
   ixns <- map(ixns, function(ixn) {
     map_chr(ixn, function(tag) {
       tag_0 <- tag
@@ -266,6 +268,34 @@ get_content_ixns <- function(ixns, type = "publications"){
       "The following tag{ifelse(nrow(d_tags_parented) > 1,'s have',' has')} 
       been modified to the available parent tag{ifelse(nrow(d_tags_parented) > 1, 's', '')}: 
       {tags_parented_html}.")
+  }
+  
+  # message for missing tags
+  #browser()
+  if (length(ixns) > 0 ){
+    tags_missing <- tibble(
+      tag_sql = unlist(ixns)) %>% 
+      mutate(
+        n = map_int(tag_sql, nrow_tag)) %>% 
+      filter(n == 0) %>% 
+      left_join(
+        tbl(con, "tags") %>% 
+          collect() %>% 
+          mutate(tag_sql = as.character(tag_sql)),
+        by = "tag_sql") %>% 
+      arrange(desc(cat), tag_nocat) %>% 
+      mutate(
+        tag_html = paste0("<span class='me-tag me-", cat, "'>", tag_nocat, "</span>")) %>% 
+      pull(tag_html)
+    tags_missing
+    if (length(tags_missing) > 0 ){
+      msg <- glue("The following tags are missing from <strong>{str_to_title(type)}</strong>: ", paste(tags_missing, collapse=', '), ".")
+      if (is.null(attr(ixns, "message"))){
+        attr(ixns, "message") <- msg
+      } else {
+        attr(ixns, "message") <- paste(attr(ixns, "message"), msg)
+      }
+    }
   }
   
   ixns
