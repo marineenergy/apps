@@ -11,8 +11,8 @@ librarian::shelf(
   sf, shinydashboard, RinteRface/shinydashboardPlus, shiny, shinycssloaders, shinyjs, shinyWidgets)
 renderDataTable <- DT::renderDataTable
 # devtools::session_info() # confirm versions, esp shinydashboardPlus
-library(reactlog)
-reactlog_enable()
+# library(reactlog)
+# reactlog_enable()
 # run a shiny app
 # runApp("/share/github/apps_dev/report-v2")
 # once app has closed, display reactlog from shiny
