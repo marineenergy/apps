@@ -16,6 +16,9 @@ source(here("scripts/common.R")) # connection object
 source(here("scripts/db.R")) # connection object
 source(here("scripts/update.R")) # connection object
 
+# update db tables: tags
+update_tags()
+
 # update db tables tethys_pubs, tethys_pub_tags; data/tethys_docs.[json|csv]
 update_tethys_pubs()
 

@@ -191,6 +191,8 @@ update_tags <- function(){
 }
 
 update_ferc_docs <- function(){
+  # OLD: now using db directly with edit app
+  
   source(here("scripts/db.R"))
   prjs <- dbReadTable(con, "project_names") %>% collect() %>% tibble()
   
@@ -399,6 +401,33 @@ update_ferc_docs <- function(){
   # DBI::dbListTables(con) %>% sort() %>% stringr::str_subset("^shp_", negate=T)
 }
 
+update_ferc_doc_tags_technology <- function(){
+  # run only once for one-time ∆ Technology.Current/Riverine/Tidal
+
+  d <- tbl(con, "ferc_doc_tags") %>% 
+    collect() %>% 
+    mutate(
+      tag_sql = as.character(tag_sql))
+  d %>% 
+    filter(str_detect(tag_sql, "^Technology.")) %>% pull(tag_sql) %>% table()
+  # Technology.Riverine    Technology.Tidal     Technology.Wave 
+  #                  19                  47                 154
+  
+  docs_tags <- d %>% 
+    mutate(
+      tag_sql = recode(
+        tag_sql, 
+        Technology.Riverine = "Technology.Current.Riverine", 
+        Technology.Tidal    = "Technology.Current.Tidal"))
+  docs_tags %>% 
+    filter(str_detect(tag_sql, "^Technology.")) %>% pull(tag_sql) %>% table()
+  # Technology.Current.Riverine    Technology.Current.Tidal             Technology.Wave 
+  #                          19                          47                         154 
+  dbWriteTable(con, "ferc_doc_tags", docs_tags, overwrite=T)
+  dbExecute(con, "ALTER TABLE ferc_doc_tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
+  dbExecute(con, "CREATE INDEX idx_ferc_doc_tags_tag_sql ON ferc_doc_tags USING GIST (tag_sql);")
+}
+
 
 update_tethys_pubs <- function(){
   # update db tables: tethys_pubs, tethys_pub_tags; plus data/tethys_docs.[json|csv]
@@ -407,16 +436,19 @@ update_tethys_pubs <- function(){
   shelf(jsonlite, purrr, readr)
   
   # TODO: only get latest modifications since last update and modify/add those records in the database
-  date_mod <- "2010-01-01"
-  tethys_docs_url  <- glue("https://tethys.pnnl.gov/api/primre_export?modifiedDate={date_mod}")
-  tethys_docs_json <- here(glue("data/tethys_docs_modifiedDate-{date_mod}.json")) # TODO: rm data/tethys.json
-  tethys_docs_csv  <- here(glue("data/tethys_docs_modifiedDate-{date_mod}.csv"))  # TODO: rm data/tethys.csv
+  # date_mod <- "2010-01-01"
+  # tethys_docs_url  <- glue("https://tethys.pnnl.gov/api/primre_export?modifiedDate={date_mod}")
+  # tethys_docs_json <- here(glue("data/tethys_docs_modifiedDate-{date_mod}.json")) # TODO: rm data/tethys.json
+  # tethys_docs_csv  <- here(glue("data/tethys_docs_modifiedDate-{date_mod}.csv"))  # TODO: rm data/tethys.csv
+  tethys_docs_url  <- glue("https://tethys.pnnl.gov/api/primre_export")
+  tethys_docs_json <- here(glue("data/tethys_docs.json")) # TODO: rm data/tethys.json
+  tethys_docs_csv  <- here(glue("data/tethys_docs.csv"))  # TODO: rm data/tethys.csv
   
   download.file(tethys_docs_url, tethys_docs_json)
   
   tethys <- read_json(tethys_docs_json)
-  #tethys_content <- tethys[["..JSON"]][[1]]
-  tethys_content <- tethys
+  tethys_content <- tethys[["..JSON"]][[1]]
+  #tethys_content <- tethys
   # tethys_content[[1]]
   # names(tethys_content[[1]])
   #  [1] "URI"              "type"             "landingPage"      "sourceURL"        "title"           
@@ -490,11 +522,17 @@ update_tethys_pubs <- function(){
         uri, "https://tethys.pnnl.gov/node/", "") %>% 
         as.integer()) %>% 
     tibble()
-  
+  # doc_tags %>%
+  #   filter(uri == "https://tethys.pnnl.gov/node/1332305")
+  # nrow(filter(doc_tags, tag == "Tidal"))   # 0    WHOAH!?
+  # nrow(filter(doc_tags, tag == "Current")) # 969
+
   tag_lookup <- get_gsheet_data("tag_lookup") %>% 
     filter(content == "tethys_pubs") %>% 
     select(-content, -content_tag_extra)
   # TODO: match Effect.* content_tag with tag_sql
+  # tag_lookup %>% 
+  #   filter(tag_sql == "Technology.Tidal")
   
   doc_tags <- doc_tags %>% 
     left_join(
@@ -504,9 +542,9 @@ update_tethys_pubs <- function(){
   # TODO: rename table tethys_pub_tags -> tethys_doc_tags and read fxns in Shiny report app
   dbWriteTable(con, "tethys_pub_tags", doc_tags, overwrite=T)
   dbExecute(con, "ALTER TABLE tethys_pub_tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
-  dbExecute(con, "CREATE INDEX idx_tethys_pub_tags_tag_sql ON tethys_pub_tags USING GIST (tag_sql);")
-  dbExecute(con, "CREATE INDEX idx_tethys_pub_rowid ON tethys_pub_tags USING BTREE (rowid);")
-  dbExecute(con, "CREATE INDEX idx_tethys_pubs_rowid ON tethys_pubs USING BTREE (rowid);")
+  dbExecute(con, "CREATE INDEX IF NOT EXISTS idx_tethys_pub_tags_tag_sql ON tethys_pub_tags USING GIST (tag_sql);")
+  dbExecute(con, "CREATE INDEX IF NOT EXISTS idx_tethys_pub_tags ON tethys_pub_tags USING BTREE (rowid);")
+  dbExecute(con, "CREATE INDEX IF NOT EXISTS idx_tethys_pubs ON tethys_pubs USING BTREE (rowid);")
   # doc_tags # 14,505 rows
   # doc_tags # 16,034 rows after UNION
   
@@ -524,26 +562,18 @@ update_tethys_pubs <- function(){
       content, tag_category, content_tag, content_tag_extra, tag_sql) %>% 
     write_csv(here("data/tethys_pub_tag_lookup.csv"))
   
-  # TODO: explore docs without tags
-  # docs_tech <- dbGetQuery(
-  #   con, 
-  #   "SELECT
-  #    uri, 
-  #    json_array_elements(data->'technologyType') ->> 0 as tag
-  #  FROM tethys_pubs") %>% 
-  #   arrange(uri, tag_tech) %>% 
-  #   tibble()
-  # docs_tech
-  #
-  # docs_without_tags <- setdiff(docs %>% select(uri), doc_tags %>% select(uri))
-  # docs_without_tags # 0 rows
-  # docs_without_tech <- setdiff(docs %>% select(uri), docs_tech %>% select(uri)) %>% 
-  #   left_join(
-  #     pubs %>% 
-  #       select(uri, title, tags)) %>% 
-  #   arrange(desc(title))
-  # docs_without_tech # 5,158 rows
-  # View(docs_without_tech)
+  # stop if missing lookup to tags, except skipped
+  tags_skip <- c("Environment")
+  doc_tags_missing <- doc_tags %>% 
+    filter(
+      is.na(tag_sql),
+      !tag %in% tags_skip) %>% 
+    group_by(tag) %>% 
+    summarize(n = n(), .groups = "drop")
+  if (nrow(doc_tags_missing) > 0 ){
+    tags_n_str <- paste(with(doc_tags_missing, glue("{tag} ({n})")), collapse = ", ")
+    stop(glue("Missing in tag_lookup: {tags_n_str}"))
+  }
 }
 
 update_spatial <- function(){
@@ -727,6 +757,35 @@ update_tethys_mgt <- function(){
   dbWriteTable(con, "tethys_mgt_tags", mgt_tags, overwrite = T)
   dbExecute(con, "ALTER TABLE tethys_mgt_tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
 }
+
+update_ferc_doc_tags_technology <- function(){
+  # run only once for one-time ∆ Technology.Current/Riverine/Tidal
+  
+  d <- tbl(con, "tethys_mgt_tags") %>% 
+    collect() %>% 
+    mutate(
+      tag_sql = as.character(tag_sql))
+  d %>% 
+    filter(str_detect(tag_sql, "^Technology.")) %>% pull(tag_sql) %>% table()
+  # Technology.Tidal  Technology.Wave 
+  #              133              119 
+  
+  mgt_tags <- d %>% 
+    mutate(
+      tag_sql = recode(
+        tag_sql, 
+        Technology.Riverine = "Technology.Current.Riverine", 
+        Technology.Tidal    = "Technology.Current.Tidal"))
+  mgt_tags %>% 
+    filter(str_detect(tag_sql, "^Technology.")) %>% pull(tag_sql) %>% table()
+  # Technology.Current.Tidal          Technology.Wave 
+  #                      133                      119
+
+  dbWriteTable(con, "tethys_mgt_tags", mgt_tags, overwrite = T)
+  dbExecute(con, "ALTER TABLE tethys_mgt_tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
+  dbExecute(con, "CREATE INDEX idx_tethys_mgt_tags ON tethys_mgt_tags USING GIST (tag_sql);")
+}
+
 
 update_tethys_tags <- function(){
   
