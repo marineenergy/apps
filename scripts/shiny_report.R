@@ -107,17 +107,16 @@ add_tech_labels <- function(fig, d_sites){
 d_to_tags_html <- function(d){
   y <- d %>% 
     left_join(
-      tbl_tags %>% 
+      tbl(con, "tags") %>% 
         select(tag_sql, cat, tag_nocat),
       by = "tag_sql") %>% 
     mutate(
       tag_html = paste0("<span class='me-tag me-", cat, "'>", tag_nocat, "</span>")) %>% 
+    collect() %>% 
     arrange(rowid, desc(cat), tag_nocat) %>% 
     select(-tag_sql, -cat, -tag_nocat)
   
   cols_grpby <- setdiff(colnames(y), c("tag", "tag_html", "tag_category"))
-  
-  #browser()
   
   y %>% 
     group_by(
@@ -139,6 +138,9 @@ get_content_data <- function(ixns, type = "publications", ...){
   # type = "publications"; ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Stressor.Noise.Airborne", "Receptor.MarineMammals"))
   # type = "publications"; ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Technology.Tidal", "Receptor.Fish", "Consequence.Collision"))
   # type = "publications"; ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Technology.Tidal", "Receptor.Fish", "Consequence.Collision"), c("Receptor.Fish", "Management.Compliance"))
+  
+  # if (type=="projects")
+  #   browser()
   
   tbl_tags <- get_content_tags_tbl(type)
   get_rowids_per_ixn <- function(tags){
@@ -213,6 +215,8 @@ get_content_ixns <- function(ixns, type = "publications"){
   # type = "publications"; ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Technology.Tidal", "Receptor.Fish", "Consequence.Collision"))
   # type = "projects"; ixns = list(c("Technology.OffshoreWind"), c("Technology.Tidal", "Receptor.Fish", "Consequence.Collision"))
   
+  # type = "management"; ixns = list("Technology.Current.Tidal")
+  
   # ixns_0 <- ixns
   attr(ixns, "message") <- NULL
   
@@ -233,8 +237,18 @@ get_content_ixns <- function(ixns, type = "publications"){
       pull(count) %>% 
       as.integer()}
   
-  ixns <- map(ixns, function(ixn) {
-    map_chr(ixn, function(tag) {
+  # tbl(con, tbl_tags) %>% 
+  #   collect() %>% 
+  #   filter(str_detect(tag_sql, "^Technology")) %>% 
+  #   pull(tag_sql) %>% 
+  # Technology.Tidal  Technology.Wave 
+  #              133              119 
+  
+  # if (type == "management")
+  #   browser()
+  
+  ixns <- map(ixns, function(ixn) { # ixn = ixns[[1]]
+    map_chr(ixn, function(tag) {    # tag = ixn[[1]]
       tag_0 <- tag
       q <- str_split(tag, pattern = "\\.", simplify = F)[[1]]
       while (nrow_tag(tag) == 0 && length(q) > 2) 
@@ -271,7 +285,6 @@ get_content_ixns <- function(ixns, type = "publications"){
   }
   
   # message for missing tags
-  #browser()
   if (length(ixns) > 0 ){
     tags_missing <- tibble(
       tag_sql = unlist(ixns)) %>% 
@@ -437,7 +450,6 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
     # dataset_code='monuments'
     # aoi_wkt='POLYGON ((-180.0668 16.98081, -180.0668 29.87807, -153.4797 29.87807, -153.4797 16.98081, -180.0668 16.98081))'
   
-  #browser()
   message(glue("get_spatial_intersection(dataset_code='{dataset_code}', aoi_wkt='{paste(aoi_wkt, collapse=';')}')"))
   
   # if (is.null(aoi_wkt)) {
@@ -459,7 +471,6 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
   #   as.logical('FALSE'), 
   #   st_intersection))
   
-  #browser()
   if (is.null(aoi_wkt) || is.na(aoi_wkt) || aoi_wkt == ""){
     # if no Location
     #aoi_sql <- glue("ST_MakeEnvelope(-180,-90,180,90,4326)::geometry")
@@ -472,10 +483,8 @@ get_spatial_intersection <- function(dataset_code, aoi_wkt){
     aoi_wkts <- glue("'SRID=4326;{aoi_wkt}'::geometry")
     aoi_sql  <- glue("ST_COLLECT(\n{paste(aoi_wkts, collapse=',\n')})") 
   }
-  #browser()
   
   if (aoi_sql == "world"){
-    #browser()
     
     #if(dataset_code == "oil-gas-wells") browser()
     # ds$select_sql %>% str_replace_all(",\\W*geometry", "") %>% cat()
@@ -918,6 +927,7 @@ plot_project_timelines <- function(d_projects){
     add_prj_mkrs(d_permits, symbls_type, cols_type) %>% 
     add_lines(d_sites) %>% 
     add_tech_labels(d_sites)
+  
   fig
 }
 
