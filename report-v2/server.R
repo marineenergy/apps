@@ -85,7 +85,7 @@ server <- function(input, output, session) {
     #req(input$mapeditor_draw_stop)
     req(input$mapeditor_draw_all_features)
     
-    message("observe output$mapeditor_draw_all_features - beg")
+    #message("observe output$mapeditor_draw_all_features - beg")
     
     feature <- isolate(input$mapeditor_draw_all_features$features[[1]])
     
@@ -113,13 +113,13 @@ server <- function(input, output, session) {
         "btn_mod_map", "Modify", icon=icon("cog"))
     }
     
-    message("observe output$mapeditor_draw_all_features - end")
+    #message("observe output$mapeditor_draw_all_features - end")
   })
   
   # *observe btn_mod_map
   observeEvent(input$btn_mod_map, {
     
-    message("observe btn_mod_map - beg")
+    #message("observe btn_mod_map - beg")
     
     showModal(modalDialog(
       title     = "Modify Location",
@@ -129,7 +129,7 @@ server <- function(input, output, session) {
       footer    = modalButton("Close"),
       easyClose = T))
     
-    message("observe btn_mod_map - end")
+    #message("observe btn_mod_map - end")
   })
   
   
@@ -138,7 +138,7 @@ server <- function(input, output, session) {
   #* ixn_btns ----
   output$ixn_btns <- renderUI({
     
-    message("ixn_btns - beg")
+    #message("ixn_btns - beg")
     
     if (length(values$ixns) == 0){
       tags <- actionButton(
@@ -151,7 +151,7 @@ server <- function(input, output, session) {
           "btn_mod_ixns", "Modify (n=0)", icon=icon("cog"), width="120px", style="display:inline-block;margin-right:15px;float:right"))
     }
     
-    message("ixn_btns - end")
+    #message("ixn_btns - end")
     tags
   })
   
@@ -160,20 +160,20 @@ server <- function(input, output, session) {
   
     req(input$sel_ixn_tags)
     
-    message("btn_add_ixn - beg")
+    #message("btn_add_ixn - beg")
     
     values$ixns <- append(values$ixns, list(input$sel_ixn_tags))
     
     updateSelectizeInput(
       session, "sel_ixn_tags", selected = "")
     
-    message("btn_add_ixn - end")
+    #message("btn_add_ixn - end")
   })
   
   #* btn_mod_ixns ----
   observeEvent(input$btn_mod_ixns, {
     
-    message("btn_mod_ixns - beg")
+    #message("btn_mod_ixns - beg")
     
     showModal(modalDialog(
       title = "Modify Interactions",
@@ -183,7 +183,7 @@ server <- function(input, output, session) {
       footer    = modalButton("Close"),
       easyClose = T))
     
-    message("btn_mod_ixns - end")
+    #message("btn_mod_ixns - end")
   })
   
   #* tbl_ixns ----
@@ -191,11 +191,11 @@ server <- function(input, output, session) {
     
     req(values$ixns)
     
-    message("tbl_ixns - beg")
+    #message("tbl_ixns - beg")
     
     d <- ixns_to_colorhtml_df(values$ixns, df_tags)
     
-    message("tbl_ixns - end")
+    #message("tbl_ixns - end")
     
     d
   }, escape = F)
@@ -205,16 +205,16 @@ server <- function(input, output, session) {
   observeEvent(input$btn_del_ixns, {
     req(values$ixns, input$tbl_ixns_rows_selected)
     
-    message("btn_del_ixns - beg")
+    #message("btn_del_ixns - beg")
     
     values$ixns <- values$ixns[-input$tbl_ixns_rows_selected]
   
-    message("btn_del_ixns - end")
+    #message("btn_del_ixns - end")
   })
   
   #* btn_mod_inxns.n ----
   observe({
-    message("btn_mod_inxns.n - beg")
+    #message("btn_mod_inxns.n - beg")
     
     n_ixns <- length(values$ixns)
     
@@ -223,7 +223,7 @@ server <- function(input, output, session) {
       "btn_mod_ixns", 
       label = glue("Modify (n={ n_ixns })"))
     
-    message("btn_mod_inxns.n - end")
+    #message("btn_mod_inxns.n - end")
   })
   
   
@@ -232,11 +232,11 @@ server <- function(input, output, session) {
   #* get_projects ----
   get_projects <- reactive({
     
-    # message("get_projects - beg")
+    # #message("get_projects - beg")
     
     prj <- get_projects_tbl(ixns = values$ixns)
     
-    # message("get_projects - end")
+    # #message("get_projects - end")
     
     prj
   })
@@ -244,11 +244,11 @@ server <- function(input, output, session) {
   #* prj_map ----
   output$prj_map <- renderLeaflet({
     
-    # message("prj_map - beg")
+    # #message("prj_map - beg")
     
     m <- map_projects(get_projects())
     
-    # message("prj_map - end")
+    # #message("prj_map - end")
     
     m
   })
@@ -274,7 +274,7 @@ server <- function(input, output, session) {
   #* msg_prj ----
   output$msg_prj <- renderUI({
     
-    # message("msg_prj - beg")
+    # #message("msg_prj - beg")
     #browser()
     
     msg <- attr(get_projects(), "message")
@@ -286,18 +286,18 @@ server <- function(input, output, session) {
         HTML(msg))
     }
     
-    # message("msg_prj - end")
+    # #message("msg_prj - end")
     m
   })
   outputOptions(output, "msg_prj", suspendWhenHidden = FALSE)
   
   output$n_prj <- renderText({
     
-    # message("n_prj - beg")
+    # #message("n_prj - beg")
     
     n <- nrow(get_projects())
     
-    # message("n_prj - end")
+    # #message("n_prj - end")
     n
   })
   outputOptions(output, "n_prj", suspendWhenHidden = FALSE)
@@ -306,7 +306,7 @@ server <- function(input, output, session) {
   #* prj_map observe tags  ----
   observe({
     
-    # message("prj_map observe tags - beg")
+    # #message("prj_map observe tags - beg")
     
     d_prjs <- get_projects()
 
@@ -325,21 +325,21 @@ server <- function(input, output, session) {
           popup = ~popup_html)
 
     #browser()
-    # message("prj_map observe tags - end")
+    # #message("prj_map observe tags - end")
   })
   
   #* prj_timeline ----
   #calculate_y_tech(tech)
   output$prj_timeline <- renderPlotly({
     
-    #message("prj_timeline - beg")
+    ##message("prj_timeline - beg")
     
     suppressWarnings({
       plot_project_timelines(get_projects()) %>% 
         event_register("plotly_click")
     })
     
-    #message("prj_timeline - end")
+    ##message("prj_timeline - end")
     # p
   })
   
@@ -350,7 +350,7 @@ server <- function(input, output, session) {
     d <- event_data("plotly_click")
     req(d)
     
-    # message("prj_p plotly_click - beg")
+    # #message("prj_p plotly_click - beg")
 
     s <- get_projects() %>%
       filter(project == d$y)
@@ -358,7 +358,7 @@ server <- function(input, output, session) {
     leafletProxy("prj_map") %>%
       flyTo(s$longitude, s$latitude, 8)
 
-    # message("prj_p plotly_click - end")
+    # #message("prj_p plotly_click - end")
   })
   
   # management ----
@@ -366,11 +366,11 @@ server <- function(input, output, session) {
   #* get_mgt() ----
   get_mgt <- reactive({
     
-    message("get_mgt() - beg")
+    #message("get_mgt() - beg")
     
     d <- get_mgt_tbl(ixns = values$ixns)
     
-    message("get_mgt() - end")
+    #message("get_mgt() - end")
     
     d
   })
@@ -378,7 +378,7 @@ server <- function(input, output, session) {
   #* msg_mgt ----
   output$msg_mgt <- renderUI({
     
-    message("msg_mgt - beg")
+    #message("msg_mgt - beg")
     
     msg <- attr(get_mgt(), "message")
     if (is.null(msg)){
@@ -389,7 +389,7 @@ server <- function(input, output, session) {
         HTML(msg))
     }
     
-    message("msg_mgt - end")
+    #message("msg_mgt - end")
     m
   })
   outputOptions(output, "msg_mgt", suspendWhenHidden = FALSE)
@@ -397,7 +397,7 @@ server <- function(input, output, session) {
   #* box_mgt ----
   output$box_mgt <- renderText({
     
-    message("box_mgt - beg")
+    #message("box_mgt - beg")
     
     n_ixns <- length(values$ixns)
     m <- ifelse(
@@ -405,18 +405,18 @@ server <- function(input, output, session) {
       HTML(glue("Management Measures <small>({d_mgt_n} rows)</small>")),
       HTML(glue("Management Measures <small>({nrow(get_mgt())} of {d_mgt_n} rows; filtered by {n_ixns} interactions)</small>")))
     
-    message("box_mgt - end")
+    #message("box_mgt - end")
     m
   })
   
   #* tbl_mgt ----
   output$tbl_mgt <- renderDataTable({
     
-    message("tbl_mgt - beg")
+    #message("tbl_mgt - beg")
     
     d <- get_mgt()
     
-    message("tbl_mgt - end")
+    #message("tbl_mgt - end")
     
     d
   }, escape = F, rownames = F)
@@ -426,11 +426,11 @@ server <- function(input, output, session) {
   #* get_docs() ----
   get_docs <- reactive({
     
-    message("get_docs() - beg")
+    #message("get_docs() - beg")
     
     d <- get_docs_tbl(ixns = values$ixns, cks = input$cks_docs)
     
-    message("get_docs() - end")
+    #message("get_docs() - end")
     
     d
   })
@@ -438,7 +438,7 @@ server <- function(input, output, session) {
   #* msg_docs ----
   output$msg_docs <- renderUI({
     
-    message("msg_docs - beg")
+    #message("msg_docs - beg")
     
     msg <- attr(get_docs(), "message")
     if (is.null(msg)){
@@ -449,7 +449,7 @@ server <- function(input, output, session) {
         HTML(msg))
     }
     
-    message("msg_docs - end")
+    #message("msg_docs - end")
     m
   })
   outputOptions(output, "msg_docs", suspendWhenHidden = FALSE)
@@ -458,7 +458,7 @@ server <- function(input, output, session) {
   #* box_docs ----
   output$box_docs <- renderText({
     
-    message("box_docs - beg")
+    #message("box_docs - beg")
     
     n_ixns <- length(values$ixns)
     n_cks  <- length(input$cks_docs)
@@ -469,7 +469,7 @@ server <- function(input, output, session) {
       HTML(glue("FERC Documents <small>({d_docs_n} rows)</small>")),
       HTML(glue("FERC Documents <small>({n_docs} of {d_docs_n} rows; filtered by {n_ixns} interactions & {n_cks} checkboxes)</small>")))
   
-    message("msg_docs - end")
+    #message("msg_docs - end")
     
     m
   })
@@ -477,11 +477,11 @@ server <- function(input, output, session) {
   #* tbl_docs ----
   output$tbl_docs <- renderDataTable({
     
-    message("tbl_docs - beg")
+    #message("tbl_docs - beg")
     
     d <- get_docs()
     
-    message("tbl_docs - end")
+    #message("tbl_docs - end")
     
     d
   }, escape = F, rownames = F)
@@ -490,11 +490,11 @@ server <- function(input, output, session) {
   #* get_pubs() ----
   get_pubs <- reactive({
     
-    message("get_pubs() - beg")
+    #message("get_pubs() - beg")
     
     d <- get_pubs_tbl(ixns = values$ixns)
     
-    message("get_pubs() - beg")
+    #message("get_pubs() - beg")
     
     d 
   })
@@ -502,7 +502,7 @@ server <- function(input, output, session) {
   #* msg_pubs ----
   output$msg_pubs <- renderUI({
     
-    message("msg_pubs - beg")
+    #message("msg_pubs - beg")
     
     msg <- attr(get_pubs(), "message")
     if (is.null(msg)){
@@ -513,7 +513,7 @@ server <- function(input, output, session) {
         HTML(msg))
     }
     
-    message("msg_pubs - end")
+    #message("msg_pubs - end")
     
     m
   })
@@ -522,7 +522,7 @@ server <- function(input, output, session) {
   #* box_pubs ----
   output$box_pubs <- renderText({
     
-    message("box_pubs - beg")
+    #message("box_pubs - beg")
     
     n_ixns <- length(values$ixns)
     n_pubs <- nrow(get_pubs())
@@ -532,7 +532,7 @@ server <- function(input, output, session) {
       HTML(glue("Tethys Publications <small>({d_pubs_n} rows)</small>")),
       HTML(glue("Tethys Publications <small>({n_pubs} of {d_pubs_n} rows; filtered by {n_ixns} interactions)</small>")))
   
-    message("box_pubs - end")
+    #message("box_pubs - end")
     
     m
   })
@@ -540,13 +540,13 @@ server <- function(input, output, session) {
   #* tbl_pubs ----
   output$tbl_pubs <- renderDataTable({
     
-    message("tbl_pubs - beg")
+    #message("tbl_pubs - beg")
     
    d <- get_pubs() %>% 
       #select(-uri, -title, -tag)
       select(ID, Title, Tags)
     
-    message("tbl_pubs - end")
+    #message("tbl_pubs - end")
     
     d
   }, escape = F, rownames = F)
@@ -557,7 +557,7 @@ server <- function(input, output, session) {
   #* get_spatial() ----
   get_spatial <- reactive({
     
-    message("get_spatial() - beg")
+    #message("get_spatial() - beg")
     
     # ST_Force_2D
     #DBI::dbGetQuery(con, "SELECT ST_Force2D();")
@@ -565,14 +565,14 @@ server <- function(input, output, session) {
       ixns    = values$ixns, 
       aoi_wkt = sf_to_wkt(values$ply))
     
-    message("get_spatial() - end")
+    #message("get_spatial() - end")
     d
   })
     
   #* msg_spatial ----
   output$msg_spatial <- renderUI({
     
-    message("msg_spatial - beg")
+    #message("msg_spatial - beg")
     
     msg <- attr(get_spatial(), "message")
     if (is.null(msg)){
@@ -583,7 +583,7 @@ server <- function(input, output, session) {
         HTML(msg))
     }
     
-    message("msg_spatial - end")
+    #message("msg_spatial - end")
     m
   })
   outputOptions(output, "msg_spatial", suspendWhenHidden = FALSE)
@@ -591,7 +591,7 @@ server <- function(input, output, session) {
   #* box_spatial ----
   output$box_spatial <- renderText({
     
-    message("box_spatial - beg")
+    #message("box_spatial - beg")
     
     n_ixns    <- length(values$ixns)
     n_spatial <- nrow(get_spatial())
@@ -601,7 +601,7 @@ server <- function(input, output, session) {
       HTML(glue("MarineCadastre Spatial datasets <small>({d_spatial_n} rows)</small>")),
       HTML(glue("MarineCadastre Spatial datasets <small>({n_spatial} of {d_spatial_n} rows; filtered by {n_ixns} interactions)</small>")))
     
-    message("box_spatial - end")
+    #message("box_spatial - end")
     
     m
   })
@@ -610,7 +610,7 @@ server <- function(input, output, session) {
   #* tbl_spatial ----
   output$tbl_spatial <- renderDataTable({
     
-    message("tbl_spatial - beg")
+    #message("tbl_spatial - beg")
     
     d <- get_spatial()
     
@@ -625,7 +625,7 @@ server <- function(input, output, session) {
         select(ID, Title, Tags)
     }
     
-    message("tbl_spatial - end")
+    #message("tbl_spatial - end")
     d
     # TODO: 'expand data' buttons for each row which, when clicked result in the corresponding sp_data being displayed as a df
   }, escape = F, rownames = F)
@@ -636,19 +636,19 @@ server <- function(input, output, session) {
   #* get_email() ----
   get_email <- reactive({
     
-    message("get_email() - beg")
+    #message("get_email() - beg")
     
     email <- input$`login-g_email`
     if (is.null(email)){
-      #message("get_email() is.null")
+      ##message("get_email() is.null")
       values$rpts <- rpts_0
       email <- NULL
     } else {
-      #message(glue("get_email(): {email}"))
+      ##message(glue("get_email(): {email}"))
       values$rpts <- get_user_reports(email)
     }
     
-    message("get_email() - end")
+    #message("get_email() - end")
     
     email
   })
@@ -657,7 +657,7 @@ server <- function(input, output, session) {
   #* txt_rpt_login ----
   output$txt_rpt_login <- renderText({
     
-    message("txt_rpt_login - beg")
+    #message("txt_rpt_login - beg")
     
     m <- ifelse(
       is.null(get_email()),
@@ -677,7 +677,7 @@ server <- function(input, output, session) {
         from Configure in the sidebar along with the checked content.
         </span>"))
     
-    message("txt_rpt_login - end")
+    #message("txt_rpt_login - end")
     
     m
   })
