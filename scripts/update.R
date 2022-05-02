@@ -444,10 +444,15 @@ update_tethys_pubs <- function(){
   tethys_docs_json <- here(glue("data/tethys_docs.json")) # TODO: rm data/tethys.json
   tethys_docs_csv  <- here(glue("data/tethys_docs.csv"))  # TODO: rm data/tethys.csv
   
+  # file.exists(tethys_docs_json)
   download.file(tethys_docs_url, tethys_docs_json)
   
   tethys <- read_json(tethys_docs_json)
-  tethys_content <- tethys[["..JSON"]][[1]]
+  if (length(tethys) > 100){ 
+    tethys_content <- tethys
+  } else {
+    tethys_content <- tethys[["..JSON"]][[1]]
+  }
   #tethys_content <- tethys
   # tethys_content[[1]]
   # names(tethys_content[[1]])
@@ -479,6 +484,7 @@ update_tethys_pubs <- function(){
   	  title TEXT,
   	  data JSON NOT NULL);")
   dbExecute(con, sql)
+  # dbExecute(con, "SELECT * INTO tethys_pubs_old FROM tethys_pubs;")
   dbExecute(con, "DELETE FROM tethys_pubs;")
   #tbl(con, "tethys_pubs")
   
@@ -500,7 +506,7 @@ update_tethys_pubs <- function(){
    FROM tethys_pubs") %>% 
     arrange(rowid) %>% 
     tibble()
-  # docs # 6,484 rows # 2022-01-17: 3,495 rows?
+  # docs # 6,484 rows # 2022-01-17: 3,495 rows? # 2022-04-19: 3,619 rows
   # docs %>% head(10) %>% View()
   
   # TODO: evaluate counts of tags, esp. "Environment"
@@ -522,11 +528,36 @@ update_tethys_pubs <- function(){
         uri, "https://tethys.pnnl.gov/node/", "") %>% 
         as.integer()) %>% 
     tibble()
+  
+  # doc_tags_old <- dbGetQuery(
+  #   con, 
+  #   "SELECT 
+  #    uri, 
+  #    json_array_elements(data->'tags')           ->> 0 as tag
+  #  FROM tethys_pubs_old
+  # UNION
+  #  SELECT
+  #    uri, 
+  #    json_array_elements(data->'technologyType') ->> 0 as tag
+  #  FROM tethys_pubs_old") %>% 
+  #   arrange(uri, tag) %>%
+  #   mutate(
+  #     rowid = str_replace(
+  #       uri, "https://tethys.pnnl.gov/node/", "") %>% 
+  #       as.integer()) %>% 
+  #   tibble()
+  
   # doc_tags %>%
   #   filter(uri == "https://tethys.pnnl.gov/node/1332305")
   # nrow(filter(doc_tags, tag == "Tidal"))   # 0    WHOAH!?
   # nrow(filter(doc_tags, tag == "Current")) # 969
-
+  doc_tags %>% 
+    filter(str_detect(tag, "Current")) %>% 
+    pull(tag) %>% 
+    table()
+  # Current/Ocean Current      Current/Riverine         Current/Tidal 
+  #                    34                    76                   900
+  
   tag_lookup <- get_gsheet_data("tag_lookup") %>% 
     filter(content == "tethys_pubs") %>% 
     select(-content, -content_tag_extra)
@@ -538,8 +569,28 @@ update_tethys_pubs <- function(){
     left_join(
       tag_lookup,
       by = c("tag" = "content_tag"))
+  # doc_tags_old <- doc_tags_old %>% 
+  #   left_join(
+  #     tag_lookup,
+  #     by = c("tag" = "content_tag"))
+  
+  doc_tags %>% 
+    filter(tag_category == "Technology") %>% 
+    # pull(tag) %>% 
+    group_by(tag) %>% 
+    summarize(n = n())
+  #   tag                       n
+  #   <chr>                 <int>
+  # 1 Current/Ocean Current    34
+  # 2 Current/Riverine         76
+  # 3 Current/Tidal           900
+  # 4 OTEC                     86
+  # 5 Salinity Gradient        19
+  # 6 Wave                    675
   
   # TODO: rename table tethys_pub_tags -> tethys_doc_tags and read fxns in Shiny report app
+  # dbExecute(con, "ALTER TABLE tethys_pub_tags RENAME TO tethys_pub_tags_old")
+  
   dbWriteTable(con, "tethys_pub_tags", doc_tags, overwrite=T)
   dbExecute(con, "ALTER TABLE tethys_pub_tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
   dbExecute(con, "CREATE INDEX IF NOT EXISTS idx_tethys_pub_tags_tag_sql ON tethys_pub_tags USING GIST (tag_sql);")
@@ -570,6 +621,12 @@ update_tethys_pubs <- function(){
       !tag %in% tags_skip) %>% 
     group_by(tag) %>% 
     summarize(n = n(), .groups = "drop")
+  # doc_tags_old %>% 
+  #   filter(
+  #     is.na(tag_sql),
+  #     !tag %in% tags_skip) %>% 
+  #   group_by(tag) %>% 
+  #   summarize(n = n(), .groups = "drop")
   if (nrow(doc_tags_missing) > 0 ){
     tags_n_str <- paste(with(doc_tags_missing, glue("{tag} ({n})")), collapse = ", ")
     stop(glue("Missing in tag_lookup: {tags_n_str}"))
@@ -616,7 +673,10 @@ update_spatial <- function(){
 }
 #update_spatial()
 
-update_tethys_intxns <- function(verbose=F){
+update_tethys_intxns <- function(verbose=T){
+  
+  librarian::shelf(
+    rvest, tidyr)
   
   tethys_pfx <- "https://tethys.pnnl.gov/knowledge-base-marine-energy"
   tags_csv   <- here("data/tethys_tags.csv")
@@ -630,7 +690,7 @@ update_tethys_intxns <- function(verbose=F){
       message(glue("url: {url}"))
     
     tbls <- read_html(url) %>% 
-      html_table() 
+      rvest::html_table() 
     
     if (length(tbls) == 0){
       num_refs <- 0 %>% as.integer()
@@ -648,7 +708,7 @@ update_tethys_intxns <- function(verbose=F){
   stressor <- d_tags %>% 
     filter(facet == "stressor") %>% pull(item_label)
   
-  d_s_r <- expand_grid(receptor, stressor) %>% 
+  d_s_r <- tidyr::expand_grid(receptor, stressor) %>% 
     left_join(
       d_tags %>% 
         filter(facet == "receptor") %>% 
