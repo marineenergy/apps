@@ -251,8 +251,10 @@ get_content_ixns <- function(ixns, type = "publications"){
     map_chr(ixn, function(tag) {    # tag = ixn[[1]]
       tag_0 <- tag
       q <- str_split(tag, pattern = "\\.", simplify = F)[[1]]
-      while (nrow_tag(tag) == 0 && length(q) > 2) 
+      while (nrow_tag(tag) == 0 && length(q) > 2){
         tag <- paste(q[1:(length(q) - 1)], collapse = ".")
+        q <- str_split(tag, pattern = "\\.", simplify = F)[[1]]
+      }
       if (tag != tag_0)
         assign(
           "tags_parented",
