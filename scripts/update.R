@@ -728,7 +728,7 @@ update_tethys_intxns <- function(verbose=T){
   write_csv(d_s_r, s_r_csv)
 }
 
-update_tethys_mgt <- function(){
+update_tethys_mgt_0 <- function(){
   
   mgt_url      <- "https://tethys.pnnl.gov/management-measures"
   mgt_csv      <- here("data/tethys_mgt.csv")
@@ -736,6 +736,103 @@ update_tethys_mgt <- function(){
   
   # read web
   mgt <- read_html(mgt_url) %>% 
+    html_table() %>% 
+    .[[1]] %>%
+    mutate(across(where(is.character), ~na_if(., "n/a"))) %>% 
+    tibble()
+  
+  #paste(names(mgt), collapse = ", ")
+  # Technology, Management Measure Category, Phase of Project, Stressor, Receptor, 
+  #   Specific Receptor, Interaction, Specific Management Measures, Implications of Measure
+  mgt <- mgt %>% 
+    group_by(Interaction, `Specific Management Measures`, `Implications of Measure`) %>% 
+    nest() %>% 
+    ungroup() %>% 
+    rowid_to_column("rowid")
+  
+  # write mgt_csv
+  mgt %>% 
+    select(-data) %>% 
+    write_csv(mgt_csv)
+  
+  # OLD: match tags from tag_lookup in db
+  # tag_lookup <- tbl(con, "tag_lookup") %>% 
+  #   filter(content == "tethys_mgt")
+  tag_lookup <- get_gsheet_data("tag_lookup") %>% 
+    filter(content == "tethys_mgt") %>% 
+    select(-content)
+  #table(tag_lookup$tag_category)
+  # Management      Phase   Receptor   Stressor Technology 
+  #          5          3         39         22          2
+  # TODO: update db tag_lookup, optional?
+  
+  get_tag_content <- function(d_r){
+    # d_r <- mgt$data[[1]]
+    d_r %>% 
+      select(
+        Technology, 
+        Stressor, 
+        Management = `Management Measure Category`,
+        Phase      = `Phase of Project`) %>% 
+      pivot_longer(
+        everything(), 
+        names_to  = "tag_category", 
+        values_to = "content_tag") %>% 
+      bind_rows(
+        d_r %>% 
+          select(
+            content_tag       = Receptor, 
+            content_tag_extra = `Specific Receptor`) %>% 
+          mutate(
+            tag_category = "Receptor") %>% 
+          select(tag_category, content_tag, content_tag_extra)) %>% 
+      distinct(tag_category, content_tag, content_tag_extra) %>% 
+      arrange(desc(tag_category), content_tag, content_tag_extra)
+  }
+  
+  mgt_tags <- mgt %>%
+    select(rowid, data) %>% 
+    mutate(
+      tags = map(data, get_tag_content)) %>% 
+    select(-data) %>% 
+    unnest(tags) %>% 
+    left_join(
+      tag_lookup,
+      by = c("tag_category", "content_tag", "content_tag_extra")) %>% 
+    arrange(rowid, tag_sql, tag_category, content_tag, content_tag_extra)
+  
+  mgt_tags_missing_tag_sql <- mgt_tags %>% filter(is.na(tag_sql))
+  stopifnot(nrow(mgt_tags_missing_tag_sql) == 0)
+  
+  mgt_tags %>% 
+    select(rowid, tag_sql) %>% 
+    write_csv(mgt_tags_csv)
+  
+  mgt      <- read_csv(mgt_csv, col_types = cols())
+  mgt_tags <- read_csv(mgt_tags_csv, col_types = cols())
+  
+  # TODO: ALTER TABLE tethys_mgt_tags ALTER COLUMN rowid PRIMARY KEY.
+  # TODO: ADD FOREIGN KEYS for tethys_mgt
+  dbWriteTable(con, "tethys_mgt"     , mgt     , overwrite = T)
+  dbWriteTable(con, "tethys_mgt_tags", mgt_tags, overwrite = T)
+  dbExecute(con, "ALTER TABLE tethys_mgt_tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
+}
+
+update_tethys_mgt <- function(){
+  
+  mgt_api          <- "https://tethys.pnnl.gov/export/tethys-management-measures-tool.csv"
+  mgt_api_csv      <- here("data/tethys_mgt_api.csv")
+  mgt_api_tags_csv <- here("data/tethys_mgt_tags.csv")
+  
+  mgt_0 <- read_csv(here("data/tethys_mgt.csv"))
+  
+  # read web
+  mgt <- read_csv(mgt_api)
+  
+  names(mgt)
+  names(mgt_0)
+  
+  %>% 
     html_table() %>% 
     .[[1]] %>%
     mutate(across(where(is.character), ~na_if(., "n/a"))) %>% 
