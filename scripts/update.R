@@ -118,6 +118,51 @@ update_projects <- function(){
   dbWriteTable(con, "project_sites", prj_sites, overwrite = T)
 }
 
+
+update_ba <- function(){
+  
+  # dir_scripts <<- here::here("scripts")
+  # source(file.path(dir_scripts, "common.R"))
+  # source(file.path(dir_scripts, "db.R"))
+  
+  librarian::shelf(
+    dplyr, glue, googlesheets4, here, htmltools, markdown, purrr, readr, sf, stringr)
+  
+  # google sheet key from Google Console service account
+  #   https://console.cloud.google.com/iam-admin/serviceaccounts/details/111453668228815650069/keys?authuser=2&organizationId=651265387478&project=marineenergy4gargle
+  gs4_auth_json <- "/share/data/marineenergy4gargle.json" 
+  
+  # [_ba_docs - Google Sheets](https://docs.google.com/spreadsheets/d/17QQ9A0G0SxIOfiuFCJFzikQ088cQbO_MMTBbjEHa9FU/edit#gid=1744703571)
+  #   + shared sheet with: shares@marineenergy4gargle.iam.gserviceaccount.com
+  gsheet_ba  <- "https://docs.google.com/spreadsheets/d/17QQ9A0G0SxIOfiuFCJFzikQ088cQbO_MMTBbjEHa9FU/edit"
+  
+  # local CSVs
+  ba_projects_csv <- here("data/ba_projects.csv")
+  ba_sites_csv    <- here("data/ba_sites.csv")
+  # ba_docs_csv     <- here("data/ba_docs.csv")
+
+  d_ba_projects <- get_gsheet_data(
+    "ba_projects", sheet_id = gsheet_ba) %>% 
+    arrange(ba_project_code)
+  write_csv(d_ba_projects, ba_projects_csv)
+
+  d_ba_sites <- get_gsheet_data(
+    "ba_sites", sheet_id = gsheet_ba) %>% 
+    arrange(ba_project_code, site_description)
+  write_csv(d_ba_sites, ba_sites_csv)
+  
+  # d_ba_docs <- get_gsheet_data(
+  #   "ba_docs", sheet_id = gsheet_ba) %>%
+  #   arrange(ba_project_code, ba_doc)
+  # write_csv(d_ba_docs, ba_docs_csv)
+  
+  dbWriteTable(con, "ba_projects", d_ba_projects, overwrite = T)
+  dbWriteTable(con, "ba_sites", d_ba_sites, overwrite = T)
+  # dbWriteTable(con, "ba_docs", d_ba_docs, overwrite = T)
+  # dbExecute(con, "ALTER TABLE project_tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
+  # dbExecute(con, "CREATE INDEX idx_project_tags_tag_sql ON project_tags USING GIST (tag_sql);")
+}
+
 update_tags <- function(){
   source(here("scripts/db.R"))
   
@@ -829,14 +874,14 @@ update_tethys_mgt <- function(){
   # read web
   mgt <- read_csv(mgt_api)
   
-  names(mgt)
-  names(mgt_0)
-  
-  %>% 
-    html_table() %>% 
-    .[[1]] %>%
-    mutate(across(where(is.character), ~na_if(., "n/a"))) %>% 
-    tibble()
+  # names(mgt)
+  # names(mgt_0)
+  # 
+  # %>% 
+  #   html_table() %>% 
+  #   .[[1]] %>%
+  #   mutate(across(where(is.character), ~na_if(., "n/a"))) %>% 
+  #   tibble()
   
   #paste(names(mgt), collapse = ", ")
   # Technology, Management Measure Category, Phase of Project, Stressor, Receptor, 
