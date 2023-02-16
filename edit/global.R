@@ -60,6 +60,11 @@ get_new_tags <- function(d, flds = ferc_tag_names) {
 # DATA SETUP ----
 # TODO: find home for creation of these in db, borrowing from prj_subpages_test.Rmd
 
+# dbListTables(con) %>% str_subset("ferc")
+# [1] "ferc"                 "ferc_prj"             "ferc_projects"        "ferc_docs"           
+# [5] "ferc_project_doc_sec" "ferc_doc_tags" 
+# dbReadTable(con, "ferc_project_doc_sec")
+
 # by prj
 prj_sites_lookup <- read_csv(here("data/project_sites.csv")) %>% 
   arrange(project)

@@ -11,7 +11,7 @@ tagList(
     
     # documents ----
     tabPanel(
-      "Documents", value = "docs",
+      "Document Interactions", value = "docs",
       span(
         span(
           actionButton(
@@ -27,7 +27,7 @@ tagList(
              reference.")),
       span(
         span("Please add new projects, project documents, and document sections on "),
-        shiny::tags$a("Project Docs page.", onclick="customHref('prj_docs')")),
+        shiny::tags$a("Documents tab.", onclick="customHref('prj_docs')")),
       br(),
       span(
         HTML("Then, click <b>Refresh FERC docs table</b> at right for them to 
@@ -67,7 +67,7 @@ tagList(
     
     # project docs: prj_doc_sec inputs ----
     tabPanel(
-      "Project Docs", value = "prj_docs",
+      "Documents", value = "prj_docs",
       
       fluidRow(
         
