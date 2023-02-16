@@ -253,6 +253,38 @@ server <- function(input, output, session) {
     m
   })
   
+  #* ba_map ----
+  output$ba_map <- renderLeaflet({
+    
+    # #message("ba_map - beg")
+    
+    ba_sites <- tbl(con, "ba_sites") %>% 
+      collect() %>% 
+      mutate(
+        label_html = glue(
+          "<b>{ba_project_code}</b><br>
+          at {site_description}") %>% lapply(htmltools::HTML))
+    
+    m <- leaflet::leaflet(
+      data    = ba_sites, width = "100%",
+      options = leaflet::leafletOptions(
+        zoomControl = F)) %>% 
+      leaflet::addProviderTiles(leaflet::providers$Esri.OceanBasemap) %>% 
+      leaflet::addMarkers(
+        lat   = ~lat,
+        lng   = ~lon,
+        label = ~label_html,
+        popup = ~label_html,
+        clusterOptions = 
+          markerClusterOptions()) %>% 
+      htmlwidgets::onRender("function(el, x) {
+          L.control.zoom({ position: 'topright' }).addTo(this) }")
+    
+    # #message("ba_map - end")
+    
+    m
+  })
+  
   # OLD: now handled by attr(get_projects(), "message")
   # msg: when no projects associated w/ selected tech
   # observe({
@@ -469,13 +501,44 @@ server <- function(input, output, session) {
       HTML(glue("FERC Documents <small>({d_docs_n} rows)</small>")),
       HTML(glue("FERC Documents <small>({n_docs} of {d_docs_n} rows; filtered by {n_ixns} interactions & {n_cks} checkboxes)</small>")))
   
-    #message("msg_docs - end")
+    #message("box_docs - end")
+    
+    m
+  })
+  
+  #* box_ba ----
+  output$box_ba <- renderText({
+    
+    #message("box_ba - beg")
+    
+    n_ixns <- length(values$ixns)
+    n_cks  <- length(input$cks_docs)
+    n_docs <- nrow(get_docs())
+    
+    m <- ifelse(
+      n_ixns == 0 & n_cks == 0,
+      HTML(glue("FERC Documents <small>({d_docs_n} rows)</small>")),
+      HTML(glue("FERC Documents <small>({n_docs} of {d_docs_n} rows; filtered by {n_ixns} interactions & {n_cks} checkboxes)</small>")))
+  
+    #message("box_ba - end")
     
     m
   })
   
   #* tbl_docs ----
   output$tbl_docs <- renderDataTable({
+    
+    #message("tbl_docs - beg")
+    
+    d <- get_docs()
+    
+    #message("tbl_docs - end")
+    
+    d
+  }, escape = F, rownames = F)
+  
+  #* tbl_ba ----
+  output$tbl_ba <- renderDataTable({
     
     #message("tbl_docs - beg")
     

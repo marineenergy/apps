@@ -11,6 +11,7 @@ ui <- dashboardPage(
       navbarTab(tabName = "tab_prj",     "Projects"),
       navbarTab(tabName = "tab_mgt",     "Management"),
       navbarTab(tabName = "tab_docs",    "Documents"),
+      navbarTab(tabName = "tab_ba",      "BioAssessments"),
       navbarTab(tabName = "tab_pubs",    "Publications"),
       navbarTab(tabName = "tab_spatial", "Spatial"),
       navbarTab(tabName = "tab_rpt",     "Reports")),
@@ -148,6 +149,41 @@ ui <- dashboardPage(
               color = "#3C8DBC",
               dataTableOutput("tbl_docs"))))),
       
+      
+      #** tab_ba ----
+      tabItem(
+        tabName = "tab_ba",
+        # div(
+        #   "Filters by:", icon("tags"),
+        #   get_content_tag_categories("documents", html=T)),
+        helpText(
+          HTML("Biological Assessments are ... [Sharon's blurb here]")),
+        # conditionalPanel(
+        #   condition = "output.msg_docs",
+        #   htmlOutput("msg_docs")),
+        tabsetPanel(
+          #*** ba_subtab_map ----
+          tabPanel(
+            "Map of BA Projects",
+            leafletOutput("ba_map")),
+          #*** ba_subtab_tbl ----
+          tabPanel(
+            "Table of Excerpts",
+            checkboxGroupInput(
+              "cks_docs", 
+              "Binary Filters:",
+              c(
+                "Ixn: Presented as potential interaction?"              = "ck_ixn",
+                "Obs: Described from observations at the project site?" = "ck_obs",
+                "MP: Monitoring Plan?"                                  = "ck_mp",
+                "AMP: Adaptive Management Plan?"                        = "ck_amp",
+                "BMP: Best Management Practices applied?"               = "ck_bmps")),
+            fluidRow(
+              box(
+                title = uiOutput("box_ba", inline=T), width = 12,
+                withSpinner(
+                  color = "#3C8DBC",
+                  dataTableOutput("tbl_ba"))))) )),
       
       #** tab_pubs ----
       tabItem(
