@@ -1,0 +1,132 @@
+---
+title: project subpages (test)
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+dir_scripts <<- here::here("scripts")
+source(file.path(dir_scripts, "common_2.R"))
+source(file.path(dir_scripts, "db.R"))
+source(file.path(dir_scripts, "shiny_report.R"))
+source(file.path(dir_scripts, "update.R"))
+
+
+# prj_sites_csv <- here("data/project_sites.csv")
+
+
+
+
+
+
+
+
+
+
+
+
+# ferc_prj_doc_sec <- ferc_prj %>% 
+#   select(
+#     prj = project, prj_doc = prj_document, 
+#     prj_doc_sec = prj_doc_attachment, prj_doc_sec_url = prj_doc_attach_url) %>% 
+#   group_by(prj, prj_doc, prj_doc_sec, prj_doc_sec_url) %>% 
+#   summarize()
+# ferc_prj_doc_sec %>% write_csv(here("data/project_doc_sec.csv"))
+
+# ferc_prj_doc <- ferc_prj_doc_sec %>% 
+#   group_by(prj, prj_doc) %>% 
+#   summarize()
+# ferc_prj_doc %>% write_csv(here("data/project_doc.csv"))
+# View(ferc_prj)
+
+
+
+
+
+
+# this also works though.
+x <- get_ferc() %>% mutate(prj = map_chr(prj_document, match_prj))
+
+
+
+
+
+
+```
+
+
+```{r}
+#   prj_match <- prj_doc %>%
+  #     str_extract(
+  #       coll(
+  #         prj_names %>%
+  #           str_replace_all("-", " ") %>%
+  #           str_sub(),
+  #         ignore_case = T)) %>%
+  #     na.omit() %>%
+  #     unlist(recursive = T) %>%
+  #     first()
+  #   if (is.na(prj_match)) {
+  #     prj_match <- prj_doc %>%
+  #       str_extract(
+  #         coll(
+  #           alt_prj_names %>%
+  #               str_replace_all("-", " ") %>%
+  #               str_sub(),
+  #             ignore_case = T)) %>%
+  #       na.omit() %>%
+  #       unlist(recursive = T) %>%
+  #       first()
+  #   }
+  #   prj_match
+  # }
+
+
+prj_docs %>% slice(30) %>% match_prj
+
+  mutate(project = map(prj_document, match_prj)) %>% 
+  relocate(project) %>% 
+  arrange(project)
+
+```
+
+```{r}
+
+# dt table
+datatable(
+  prj_docs,
+    options = list(
+    columnDefs = list(
+      list(visible = FALSE, targets = c(0, 2:4)),
+      list(orderable = FALSE, className = 'details-control', targets = 1),
+      list(className = 'dt-left', targets = 1:3),
+      list(className = 'dt-right', targets = 4)
+    )
+  ),
+  callback = JS("
+  table.column(1).nodes().to$().css({cursor: 'pointer'});
+  var format = function(d) {
+    return '<div style=\"background-color:#eee; padding: .5em;\">' + 
+            'Project: ' + d[1] + 
+            ', Doc: ' + d[2] + 
+            ', Sections: ' + d[3] + 
+            ', URL: ' + d[4] + '</div>';
+  };
+  table.on('click', 'td.details-control', function() {
+    var td = $(this), row = table.row(td.closest('tr'));
+    if (row.child.isShown()) {
+      row.child.hide();
+      td.html('&oplus;');
+    } else {
+      row.child(format(row.data())).show();
+      td.html('&CircleMinus;');
+    }
+  });"
+)) 
+
+```
+
+
