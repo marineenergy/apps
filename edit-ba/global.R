@@ -10,7 +10,7 @@ source(file.path(dir_scripts, "update.R"))
 # LIBRARIES ----
 # devtools::install_github("DavidPatShuiFong/DTedit@f1617e253d564bce9b2aa67e0662d4cf04d7931f")
 shelf(
-  bbest/DTedit, # DavidPatShuiFong/DTedit, # [@bbest pr](https://github.com/DavidPatShuiFong/DTedit/pull/35)
+  DavidPatShuiFong/DTedit, # [@bbest pr](https://github.com/DavidPatShuiFong/DTedit/pull/35)
   DBI, DT, 
   glue, purrr, readr, tidyr,
   shiny, shinycssloaders)
@@ -26,35 +26,61 @@ options(readr.show_col_types = FALSE)
 #options(error = recover)
 
 # initialize tables if missing ----
+db_tbls <- dbListTables(con)
 
-tbl(con, "ferc_doc_tags")
-tbl(con, "ba_doc_tags") %>% 
-  
+if (!"ba_docs" %in% db_tbls){
+  # NOTE: this table gets written by update_ba() in update.R
+  d_ba_docs <- tbl(con, "ferc_docs") |> 
+    collect() |> 
+    slice(0) |> 
+    rename(
+      ba_project  = project,
+      ba_doc_file = prj_document,
+      ba_doc_url  = prj_doc_attach_url) |> 
+    select(-ck_pme)
+  # setdiff(d_ba_docs |> colnames(), tbl(con, "ba_docs") |> colnames()) |> paste(collapse = ", ")
+  # detail, 
+  # prj_doc_attachment,                     # what level is this?
+  # ck_ixn, ck_obs, ck_mp, ck_amp, ck_bmps
+  # TODO: fix similar fields above in ferc_docs, since these fields should be in separate subtable to ferc_docs, ie ferc_doc_excerpts
+}
+
+if (!"ba_doc_excerpts" %in% db_tbls){
+  d_ba_doc_excerpts <- tbl(con, "ferc_docs") |> 
+    collect() |> 
+    slice(0) |> 
+    rename(
+      ba_doc_file = prj_doc_attach_url,
+      excerpt     = detail) |> 
+    select(
+      ba_doc_file, excerpt, rowid, ck_ixn, ck_obs, ck_mp, ck_amp, ck_bmps)
+
+  dbWriteTable(con, "ba_doc_excerpts", d_ba_doc_excerpts, overwrite = T)
+  # TODO: indexes
+}
+
+if (!"ba_doc_excerpt_tags" %in% db_tbls){
+  d_ba_doc_excerpt_tags <- tbl(con, "ferc_doc_tags") |> 
+    collect() |> 
+    slice(0) |> 
+    select(
+      rowid, tag_sql)
+  dbWriteTable(con, "ba_doc_excerpt_tags", d_ba_doc_excerpt_tags)
+  # TODO: indexes
+}
 
 # FXNS REFERENCED IN CALLBACKS ----
 
 # convert data from dtedit to ba_docs format  
-get_new_docs <- function(d, flds = ba_doc_names) {
-  d %>%
-    select(
-      -document, -project, -prj_doc_sec, -prj_doc_sec_values, 
-      -prj_document, -prj_doc_attachment, -prj_doc_attach_url) %>% 
-    left_join(prj_doc_sec_lookup, by = "prj_doc_sec_display") %>%
-    rename(
-      project = prj, prj_document = doc, prj_doc_attachment = sec,
-      prj_doc_attach_url = url) %>% 
-    # separate(
-    #   prj_doc_sec_values,
-    #   into = c('project', 'prj_document', 'prj_doc_attachment'),
-    #   sep  = ";;") %>% 
-    select(flds) %>% 
-    relocate(flds) %>% 
-    arrange(rowid)
+get_new_excerpts <- function(d) {
+  
+  flds_excerpts <- colnames(tbl(con, "ba_doc_excerpts"))
+  d |> 
+    select(all_of(flds_excerpts))
 } 
 
 # convert data from dtedit to ba_doc_tags format
-get_new_tags <- function(d, flds = ba_tag_names) {
-  # tbl(con, "ba_doc_tags") %>% collect() %>% names() %>% paste(collapse = ', ')
+get_new_tags <- function(d) {
 
   d %>% 
     select(rowid, tag_named) %>% 
@@ -73,117 +99,91 @@ get_new_tags <- function(d, flds = ba_tag_names) {
 
 # prj_sites_lookup <- read_csv(here("data/project_sites.csv")) %>%
 #   arrange(project)
-prj_sites_lookup <- tbl(con, "ba_sites") |> 
-  arrange(ba_project_code) |> 
+ba_projects <- tbl(con, "ba_projects") |> 
+  arrange(ba_project) |> 
+  pull(ba_project)
+
+d_ba_docs <- tbl(con, "ba_docs") |> 
   collect()
 
+# skipping doc sections ----
 # prj_doc_sec_lookup <- dbReadTable(con, "ferc_project_doc_sec") %>%
 #   tibble() %>% collect() %>%
 #   filter(!is.na(prj))
-prj_doc_sec_lookup <- tbl(con, "ba_project_doc_sec") |> 
-  filter(!is.na(ba_project_code)) |> 
-  collect()
-  
 # prj_doc_lookup <- prj_doc_sec_lookup %>% 
 #   group_by(prj, doc) %>% summarize() %>% ungroup()
-prj_doc_lookup <- prj_doc_sec_lookup |> 
-  group_by(ba_project_code, ba_doc) |> 
-  summarize(.groups = "drop")
 
 # CALLBACK FXNS ----
 
 # INSERT
 ba.insert.callback <- function(data, row) {
-  # browser()
-  d <- data %>% slice(row) %>% 
-    na_if("NA") %>% na_if("") %>% 
-    mutate(rowid = max(get_ba()$rowid) + 1)
-  d_docs <- get_new_docs(d) # %>% tibble() # data to INSERT into ba_docs
-  d_tags <- get_new_tags(d) # %>% tibble()  # data to INSERT into ba_doc_tags
+  
+  # not_list <- function(x){ !is.list(x) }
+  d <- data |>
+    slice(row) |> 
+    # na_if("NA") |> 
+    # na_if("") |> 
+    # mutate(across(where(not_list), ~na_if(., "NA"))) |> 
+    mutate(
+      rowid = ifelse(nrow(get_ba_doc_excerpts()) == 0, 1, max(get_ba_doc_excerpts()$rowid) + 1))
+  
+  # TODO: other elements to add, like ba_docs? handling of NAs?
+  d_excerpts <- get_new_excerpts(d) # data to INSERT into ba_docs
+  d_tags     <- get_new_tags(d)     # data to INSERT into ba_doc_extract_tags
   
   conn <- poolCheckout(con)
-  sql_insert_docs <- glue_data_sql(
-    d_docs,
-    "INSERT INTO ba_docs VALUES
-      ({rowid}, {detail}, {project},
-      {prj_document}, {prj_doc_attachment}, {prj_doc_attach_url},
-      {ck_ixn}, {ck_obs}, {ck_mp}, {ck_amp}, {ck_pme}, {ck_bmps})",
-    .con = conn)
+  dbAppendTable(conn, "ba_doc_excerpts", d_excerpts)
+  dbAppendTable(conn, "ba_doc_excerpt_tags", d_tags)
   poolReturn(conn)
-  res <- try(dbExecute(con, sql_insert_docs))
-  if ("try-error" %in% class(res)) stop(res)
-  dbAppendTable(con, "ba_doc_tags", d_tags)
-  # DBI::dbAppendTable(conn, "ba_doc_tags", d_tags)
   
-  get_ba()
+  get_ba_doc_excerpts()
 }
 
 # UPDATE
 ba.update.callback <- function(data, olddata, row) {
   # browser()
-  d <- data %>% slice(row) %>% 
-    tibble() %>% 
-    mutate(across(starts_with("ck_"), as.logical)) %>% 
-    na_if("NA") %>% 
-    na_if("") 
-  d_docs <- get_new_docs(d)  # data to UPDATE ba_docs
-  d_tags <- get_new_tags(d)  # data to be APPENDED to ba_doc_tags
+  d <- data |>
+    slice(row) |>
+    tibble() |>
+    mutate(across(starts_with("ck_"), as.logical)) # |> 
+    # na_if("NA") %>% 
+    # na_if("") 
+  stopifnot(nrow(d) == 1)
   
+  d_excerpts <- get_new_excerpts(d) # data to INSERT into ba_docs
+  d_tags     <- get_new_tags(d)     # data to INSERT into ba_doc_extract_tags
+
   conn <- poolCheckout(con)
-  sql_update_docs <- glue_data_sql(
-    d_docs,
-    "UPDATE ba_docs 
-      SET
-        rowid              = {rowid}, 
-        detail             = {detail}, 
-        project            = {project},
-        prj_document       = {prj_document}, 
-        prj_doc_attachment = {prj_doc_attachment}, 
-        prj_doc_attach_url = {prj_doc_attach_url},
-        ck_ixn             = {ck_ixn}, 
-        ck_obs             = {ck_obs}, 
-        ck_mp              = {ck_mp}, 
-        ck_amp             = {ck_amp}, 
-        ck_pme             = {ck_pme}, 
-        ck_bmps            = {ck_bmps}
-      WHERE rowid = {rowid}",
-    .con = conn)
+  dbExecute(conn, glue("DELETE FROM ba_doc_excerpts WHERE rowid = {d$rowid}"))
+  dbAppendTable(conn, "ba_doc_excerpts", d_excerpts)
+  dbExecute(conn, glue("DELETE FROM ba_doc_excerpt_tags WHERE rowid = {d$rowid}"))
+  dbAppendTable(conn, "ba_doc_excerpt_tags", d_tags)
   poolReturn(conn)
-  sql_delete_tags <- glue("
-    DELETE FROM ba_doc_tags WHERE rowid = {d$rowid};")
   
-  res <- try(dbExecute(con, sql_update_docs))
-  if ("try-error" %in% class(res)) stop(res)
-  
-  res <- try(dbExecute(con, sql_delete_tags))
-  if ("try-error" %in% class(res)) stop(res)
-  DBI::dbAppendTable(con, "ba_doc_tags", d_tags)
-  # DBI::dbAppendTable(conn, "ba_doc_tags", d_tags)
-  
-  get_ba()
+  get_ba_doc_excerpts()
 }
 
 # DELETE
 ba.delete.callback <- function(data, row) {
-  # browser()
-  d <- data %>% slice(row) %>% na_if("NA") %>% na_if("")
-  sql_delete_docs <- glue("DELETE FROM ba_docs WHERE rowid = {d$rowid};")
-  sql_delete_tags <- glue("DELETE FROM ba_doc_tags WHERE rowid = {d$rowid}")
   
-  res <- try(dbExecute(con, sql_delete_docs))
-  if ("try-error" %in% class(res)) stop(res)
+  d <- data |> 
+    slice(row) # |> na_if("NA") |> na_if("")
   
-  res <- try(dbExecute(con, sql_delete_tags))
-  if ("try-error" %in% class(res)) stop(res)
+  conn <- poolCheckout(con)
+  dbExecute(conn, glue("DELETE FROM ba_doc_excerpts WHERE rowid = {d$rowid}"))
+  dbExecute(conn, glue("DELETE FROM ba_doc_excerpt_tags WHERE rowid = {d$rowid}"))
+  poolReturn(conn)
   
-  get_ba()
+  get_ba_doc_excerpts()
 }
 
 #* get additional data ----
-ba <- get_ba() 
+ba <- get_ba_doc_excerpts() # get_ba() # TODO: rename ba -> d_ba_doc_excerpts
 tags <- get_tags() 
-ba_doc_names <- dbReadTable(con, "ba_docs") %>% names()
-ba_tag_names <- dbReadTable(con, "ba_doc_tags") %>% names()
+# ferc_doc_names <- dbReadTable(con, "ferc_docs") %>% names()
+# ferc_tag_names <- dbReadTable(con, "ferc_doc_tags") %>% names()
+# ba_doc_flds         <- tbl(con, "ba_docs")         %>% colnames()
+# ba_doc_excerpt_flds <- tbl(con, "ba_doc_excerpts") %>% colnames()
 
 # * get input choices ----
 tag_choices <- list()
@@ -218,27 +218,22 @@ for (category in unique(tags$category[tags$category != "Management"])){ # catego
 #* get labels for dtedit ----
 # construct first column: cat(paste(str_pad(glue('"{names(ba)}"'), max(nchar(names(ba))), "right"), collapse = '\n'))
 labels <- tribble(
-  ~fld                 ,  ~view_label,  ~edit_label,                                                 ~delete_label,
-  # -------------------|-------------|------------------------------------------------------------|----------------
-  "rowid"              ,   "ID"      ,   NA                                                       ,  "ID",
-  "project"            ,   "Project" ,   NA                                                       ,  "Project",
-  "document"           ,   "Document",   NA                                                       ,  NA,
-  "prj_document"       ,    NA       ,   NA                                                       ,  "Document",
-  "prj_doc_attachment" ,    "Section",   NA                                                       ,  "Document section",
-  "prj_doc_sec"        ,    NA       ,   NA                                                       ,  NA,
-  "prj_doc_sec_display",    NA       ,   "Project, document, and document section (if applicable)",  NA,
-  "prj_doc_sec_values" ,    NA       ,   NA                                                       ,  NA,
-  "detail"             ,    "Detail" ,   "Key interaction detail"                                 ,  "Key interaction detail",
-  "tag_sql"            ,    NA       ,   NA                                                       ,  NA,
-  "tag_named"          ,    NA       ,   "Tags"                                                   ,  "Tags",
-  "tag_html"           ,    "Tags"   ,   NA                                                       ,  NA,
-  "prj_doc_attach_url" ,    NA       ,   NA                                                       ,  NA,
-  "ck_ixn"             ,    "Ixn"    ,   "Presented as potential interaction?"                    ,  "Presented as potential interaction?",
-  "ck_obs"             ,    "Obs"    ,   "Described from observations at the project site?"       ,  "Described from observations at the project site?",   
-  "ck_mp"              ,    "MP?"    ,   "Monitoring plan (MP)?"                                  ,  "Monitoring plan (MP)?",
-  "ck_amp"             ,    "AMP?"   ,   "Adaptive management plan (AMP)?"                        ,  "Adaptive management plan (AMP)?",
-  "ck_pme"             ,    "PME?"   ,   "Protection mitigation and enhancement (PME)?"           ,  "Protection mitigation and enhancement (PME)?",
-  "ck_bmps"            ,    "BMPs?"  ,   "Best management practices (BMPs) applied?"              ,  "Best management practices (BMPs) applied?" 
+  ~fld                 ,  ~view_label   ,  ~edit_label,                                                 ~delete_label,
+  # -------------------|----------------|------------------------------------------------------------|----------------
+  "ba_project"         ,   "BA Project" ,   "BA Project"                                             ,  "BA Project",
+  "ba_doc_file"        ,    NA          ,   "BA Document"                                            ,  "BA Document",
+  "ba_doc_url"         ,    NA          ,   NA                                                       ,  NA,
+  "ba_doc_html"        ,   "BA Document",   NA                                                       ,  NA,
+  "rowid"              ,    NA          ,   NA                                                       ,  NA,
+  "excerpt"            ,   "Excerpt"    ,   "Excerpt"                                                ,  "Excerpt",
+  "tag_sql"            ,    NA          ,   NA                                                       ,  NA,
+  "tag_named"          ,    NA          ,   "Tags"                                                   ,  "Tags",
+  "tag_html"           ,    "Tags"      ,   NA                                                       ,  NA,
+  "ck_ixn"             ,    "Ixn"       ,   "Presented as potential interaction?"                    ,  "Presented as potential interaction?",
+  "ck_obs"             ,    "Obs"       ,   "Described from observations at the project site?"       ,  "Described from observations at the project site?",   
+  "ck_mp"              ,    "MP?"       ,   "Monitoring plan (MP)?"                                  ,  "Monitoring plan (MP)?",
+  "ck_amp"             ,    "AMP?"      ,   "Adaptive management plan (AMP)?"                        ,  "Adaptive management plan (AMP)?",
+  "ck_bmps"            ,    "BMPs?"     ,   "Best management practices (BMPs) applied?"              ,  "Best management practices (BMPs) applied?" 
 )
 
 

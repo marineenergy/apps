@@ -1,10 +1,10 @@
-rowid,ba_project_code,ba_project_title,tag_technology,locations_count,ba_project_name
-1,AMP - Lake Washington,AMP - Lake Washington,Current.Tidal,1,NA
-2,AMP - WA,AMP - WA,Current.Tidal,2,NA
-3,iAMP - Newport,iAMP - Newport,Current.Tidal,2,NA
-4,iAMP - Sequim,iAMP - Sequim,Current.Tidal,2,NA
-5,iAMP - WETS,iAMP - WETS,Current.Tidal,1,NA
-6,SnoPUD - WA,SnoPUD - WA,Current.Tidal,3,NA
-7,Sounds - Admiralty,Sounds - Admiralty,Current.Tidal,1,NA
-8,Tanana - AK,Tanana - AK,Current.Riverine,1,NA
-9,Yakutat - AK,Yakutat - AK,Current.Tidal,1,NA
+ba_project,tag_technology
+AMP - Lake Washington,Technology.Current.Tidal
+AMP - WA,Technology.Current.Tidal
+iAMP - Newport,Technology.Current.Tidal
+iAMP - Sequim,Technology.Current.Tidal
+iAMP - WETS,Technology.Current.Tidal
+SnoPUD - WA,Technology.Current.Tidal
+Sounds - Admiralty,Technology.Current.Tidal
+Tanana - AK,Technology.Current.Riverine
+Yakutat - AK,Technology.Current.Tidal

@@ -11,7 +11,7 @@ tagList(
     
     # documents ----
     tabPanel(
-      "Document Interactions", value = "docs",
+      "BA Document Excerpts", value = "docs",
       span(
         span(
           actionButton(
@@ -26,8 +26,8 @@ tagList(
              documents, of which excerpts have been manually tagged for 
              reference.")),
       span(
-        span("Please add new projects, project documents, and document sections on "),
-        shiny::tags$a("Documents tab.", onclick="customHref('prj_docs')")),
+        span("Please add new BA project documents on "),
+        shiny::tags$a("BA Documents tab.", onclick="customHref('tab_docs')")),
       br(),
       span(
         HTML("Then, click <b>Refresh BioAssessment docs table</b> at right for them to 
@@ -65,9 +65,9 @@ tagList(
     ),
     
     
-    # project docs: prj_doc_sec inputs ----
+    # project docs: prj_doc inputs ----
     tabPanel(
-      "Documents", value = "prj_docs",
+      "BA Documents", value = "tab_docs",
       
       fluidRow(
         
@@ -85,14 +85,13 @@ tagList(
               word-break: break-word; 
             "},
             helpText(
-              "Add new projects, project docs, and project doc sections below."),
+              "Add new BA project docs below."),
             
             # PROJECT
             selectizeInput(
               "sel_prj",
-              "Project",
-              choices = prj_doc_sec_lookup$prj,
-              # prj_sites_lookup$project,
+              "BA Project",
+              choices = ba_projects,
               options = list(
                 create = T,
                 onInitialize = I(
@@ -104,8 +103,8 @@ tagList(
             # DOC
             selectizeInput(
               "sel_prj_doc",
-              "Project Document", 
-              choices = prj_doc_sec_lookup$doc,
+              "BA Project Document", 
+              choices = d_ba_docs$ba_doc_file,
               # choices = prj_doc_lookup$doc, 
               options = list(
                 create = T,
@@ -113,30 +112,6 @@ tagList(
                   'function() { this.setValue("") }'),
                 placeholder = 
                   "Select from menu or type to add new doc")),
-            
-            # SECTION
-            selectizeInput(
-              "sel_prj_doc_sec",
-              "Project Document Section",
-              choices = prj_doc_sec_lookup$sec,
-              options = list(
-                create = T,
-                onInitialize = I(
-                  'function() { this.setValue("") }'),
-                placeholder = 
-                  "Select from menu or type to add new section")),
-            
-            # URL
-            selectizeInput(
-              "sel_prj_doc_sec_url",
-              "Project Document Section URL",
-              choices = prj_doc_sec_lookup$url,
-              options = list(
-                create = T,
-                onInitialize = I(
-                  'function() { this.setValue("") }'),
-                placeholder = 
-                  "Select from menu or type to add URL")),
             
             # SAVE/UPDATE
             actionButton(
@@ -147,7 +122,7 @@ tagList(
             br()
           )), 
         
-        # * table of existing projects ----
+        # * table of existing BA projects ----
         column(
           width = 8,
           div(
@@ -160,7 +135,7 @@ tagList(
               padding: 0px 10px 20px 60px;",
             h3("Existing projects"),
             withSpinner(
-              DTOutput("prj_table"), 
+              DTOutput("prj_doc_table"), 
               type = 8, color = "#007BFE"))
         )
       )
