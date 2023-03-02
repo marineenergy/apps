@@ -823,8 +823,17 @@ map_projects <- function(d_projects){
   leaflet::leaflet(
     data    = prj_sites, width = "100%",
     options = leaflet::leafletOptions(
-      zoomControl = F)) %>% 
-    leaflet::addProviderTiles(leaflet::providers$Esri.OceanBasemap) %>% 
+      zoomControl = F)) |> 
+    # add base: blue bathymetry and light brown/green topography
+    addProviderTiles(
+      "Esri.OceanBasemap",
+      options = providerTileOptions(
+        variant = "Ocean/World_Ocean_Base")) |>
+    # add reference: placename labels and borders
+    addProviderTiles(
+      "Esri.OceanBasemap",
+      options = providerTileOptions(
+        variant = "Ocean/World_Ocean_Reference")) |>
     leaflet::addMarkers(
       lat   = ~latitude,
       lng   = ~longitude,

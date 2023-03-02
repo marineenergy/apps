@@ -2,8 +2,17 @@ shinyServer(function(input, output, session) {
 
   output$map <- renderLeaflet({
     leaflet(
-      data = prj_sites, width = "100%") %>% 
-      addProviderTiles(providers$Esri.OceanBasemap) %>% 
+      data = prj_sites, width = "100%") |>
+      # add base: blue bathymetry and light brown/green topography
+      addProviderTiles(
+        "Esri.OceanBasemap",
+        options = providerTileOptions(
+          variant = "Ocean/World_Ocean_Base")) |>
+      # add reference: placename labels and borders
+      addProviderTiles(
+        "Esri.OceanBasemap",
+        options = providerTileOptions(
+          variant = "Ocean/World_Ocean_Reference")) |>
       addMarkers(
         label        = ~label_html, 
         popup        = ~popup_html) })

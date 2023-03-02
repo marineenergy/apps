@@ -29,8 +29,17 @@ server <- function(input, output, session) {
     m <- leaflet(
       options = leafletOptions(
         zoomControl        = F,
-        attributionControl = F)) %>%
-      addProviderTiles(providers$Esri.OceanBasemap) %>% 
+        attributionControl = F)) |> 
+      # add base: blue bathymetry and light brown/green topography
+      addProviderTiles(
+        "Esri.OceanBasemap",
+        options = providerTileOptions(
+          variant = "Ocean/World_Ocean_Base")) |>
+      # add reference: placename labels and borders
+      addProviderTiles(
+        "Esri.OceanBasemap",
+        options = providerTileOptions(
+          variant = "Ocean/World_Ocean_Reference")) |>
       setView(-93.4, 37.4, 2)
     
     message("output$map_side - end")
@@ -47,8 +56,17 @@ server <- function(input, output, session) {
     m <- leaflet(
       options = leafletOptions(
         zoomControl = T,
-        attributionControl = F)) %>% 
-      addProviderTiles(providers$Esri.OceanBasemap) %>% 
+        attributionControl = F)) |> 
+      # add base: blue bathymetry and light brown/green topography
+      addProviderTiles(
+        "Esri.OceanBasemap",
+        options = providerTileOptions(
+          variant = "Ocean/World_Ocean_Base")) |>
+      # add reference: placename labels and borders
+      addProviderTiles(
+        "Esri.OceanBasemap",
+        options = providerTileOptions(
+          variant = "Ocean/World_Ocean_Reference")) |>
       # addPolygons(data = ply_editable_0, group = "ply_editable") %>% 
       setView(-93.4, 37.4, 4)
     
@@ -268,15 +286,24 @@ server <- function(input, output, session) {
     m <- leaflet::leaflet(
       data    = ba_sites, width = "100%",
       options = leaflet::leafletOptions(
-        zoomControl = F)) %>% 
-      leaflet::addProviderTiles(leaflet::providers$Esri.OceanBasemap) %>% 
+        zoomControl = F)) |> 
+      # add base: blue bathymetry and light brown/green topography
+      leaflet::addProviderTiles(
+        "Esri.OceanBasemap",
+        options = providerTileOptions(
+          variant = "Ocean/World_Ocean_Base")) |>
+      # add reference: placename labels and borders
+      leaflet::addProviderTiles(
+        "Esri.OceanBasemap",
+        options = providerTileOptions(
+          variant = "Ocean/World_Ocean_Reference")) |>
       leaflet::addMarkers(
         lat   = ~lat,
         lng   = ~lon,
         label = ~label_html,
         popup = ~label_html,
         clusterOptions = 
-          markerClusterOptions()) %>% 
+          markerClusterOptions()) |> 
       htmlwidgets::onRender("function(el, x) {
           L.control.zoom({ position: 'topright' }).addTo(this) }")
     
