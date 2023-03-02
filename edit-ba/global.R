@@ -25,6 +25,12 @@ options(readr.show_col_types = FALSE)
 
 #options(error = recover)
 
+# initialize tables if missing ----
+
+tbl(con, "ferc_doc_tags")
+tbl(con, "ba_doc_tags") %>% 
+  
+
 # FXNS REFERENCED IN CALLBACKS ----
 
 # convert data from dtedit to ba_docs format  
@@ -65,16 +71,24 @@ get_new_tags <- function(d, flds = ba_tag_names) {
 # [5] "ba_project_doc_sec" "ba_doc_tags" 
 # dbReadTable(con, "ba_project_doc_sec")
 
-# by prj
-prj_sites_lookup <- read_csv(here("data/project_sites.csv")) %>% 
-  arrange(project)
-# by prj_doc_sec: all prj doc sec data
-prj_doc_sec_lookup <- dbReadTable(con, "ba_project_doc_sec") %>% 
-  tibble() %>% collect() %>% 
-  filter(!is.na(prj))
-# by prj_doc
-prj_doc_lookup <- prj_doc_sec_lookup %>% 
-  group_by(prj, doc) %>% summarize() %>% ungroup()
+# prj_sites_lookup <- read_csv(here("data/project_sites.csv")) %>%
+#   arrange(project)
+prj_sites_lookup <- tbl(con, "ba_sites") |> 
+  arrange(ba_project_code) |> 
+  collect()
+
+# prj_doc_sec_lookup <- dbReadTable(con, "ferc_project_doc_sec") %>%
+#   tibble() %>% collect() %>%
+#   filter(!is.na(prj))
+prj_doc_sec_lookup <- tbl(con, "ba_project_doc_sec") |> 
+  filter(!is.na(ba_project_code)) |> 
+  collect()
+  
+# prj_doc_lookup <- prj_doc_sec_lookup %>% 
+#   group_by(prj, doc) %>% summarize() %>% ungroup()
+prj_doc_lookup <- prj_doc_sec_lookup |> 
+  group_by(ba_project_code, ba_doc) |> 
+  summarize(.groups = "drop")
 
 # CALLBACK FXNS ----
 

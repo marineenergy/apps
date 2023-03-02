@@ -22,10 +22,10 @@ merge_tags_named <- function(tag_list_col) {
 get_ba <- function() {
   # read in ba_docs and merge w/ table created by inner join b/w
   # ba_doc_tags and tags lookup
-  d_ba <- tbl(con, "ba_docs") %>% 
+  d_ba <- tbl(con, "ba_docs") |> 
     collect() %>% 
     left_join(
-      tbl(con, "ba_doc_tags") %>% 
+      tbl(con, "ba_doc_tags") |> 
         collect() %>% 
         mutate(tag_sql = as.character(tag_sql)) %>%
         inner_join(
