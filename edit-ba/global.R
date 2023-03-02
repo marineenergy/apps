@@ -27,8 +27,8 @@ options(readr.show_col_types = FALSE)
 
 # FXNS REFERENCED IN CALLBACKS ----
 
-# convert data from dtedit to ferc_docs format  
-get_new_docs <- function(d, flds = ferc_doc_names) {
+# convert data from dtedit to ba_docs format  
+get_new_docs <- function(d, flds = ba_doc_names) {
   d %>%
     select(
       -document, -project, -prj_doc_sec, -prj_doc_sec_values, 
@@ -46,9 +46,9 @@ get_new_docs <- function(d, flds = ferc_doc_names) {
     arrange(rowid)
 } 
 
-# convert data from dtedit to ferc_doc_tags format
-get_new_tags <- function(d, flds = ferc_tag_names) {
-  # tbl(con, "ferc_doc_tags") %>% collect() %>% names() %>% paste(collapse = ', ')
+# convert data from dtedit to ba_doc_tags format
+get_new_tags <- function(d, flds = ba_tag_names) {
+  # tbl(con, "ba_doc_tags") %>% collect() %>% names() %>% paste(collapse = ', ')
 
   d %>% 
     select(rowid, tag_named) %>% 
@@ -60,16 +60,16 @@ get_new_tags <- function(d, flds = ferc_tag_names) {
 # DATA SETUP ----
 # TODO: find home for creation of these in db, borrowing from prj_subpages_test.Rmd
 
-# dbListTables(con) %>% str_subset("ferc")
-# [1] "ferc"                 "ferc_prj"             "ferc_projects"        "ferc_docs"           
-# [5] "ferc_project_doc_sec" "ferc_doc_tags" 
-# dbReadTable(con, "ferc_project_doc_sec")
+# dbListTables(con) %>% str_subset("ba")
+# [1] "ba"                 "ba_prj"             "ba_projects"        "ba_docs"           
+# [5] "ba_project_doc_sec" "ba_doc_tags" 
+# dbReadTable(con, "ba_project_doc_sec")
 
 # by prj
 prj_sites_lookup <- read_csv(here("data/project_sites.csv")) %>% 
   arrange(project)
 # by prj_doc_sec: all prj doc sec data
-prj_doc_sec_lookup <- dbReadTable(con, "ferc_project_doc_sec") %>% 
+prj_doc_sec_lookup <- dbReadTable(con, "ba_project_doc_sec") %>% 
   tibble() %>% collect() %>% 
   filter(!is.na(prj))
 # by prj_doc
@@ -79,18 +79,18 @@ prj_doc_lookup <- prj_doc_sec_lookup %>%
 # CALLBACK FXNS ----
 
 # INSERT
-ferc.insert.callback <- function(data, row) {
+ba.insert.callback <- function(data, row) {
   # browser()
   d <- data %>% slice(row) %>% 
     na_if("NA") %>% na_if("") %>% 
-    mutate(rowid = max(get_ferc()$rowid) + 1)
-  d_docs <- get_new_docs(d) # %>% tibble() # data to INSERT into ferc_docs
-  d_tags <- get_new_tags(d) # %>% tibble()  # data to INSERT into ferc_doc_tags
+    mutate(rowid = max(get_ba()$rowid) + 1)
+  d_docs <- get_new_docs(d) # %>% tibble() # data to INSERT into ba_docs
+  d_tags <- get_new_tags(d) # %>% tibble()  # data to INSERT into ba_doc_tags
   
   conn <- poolCheckout(con)
   sql_insert_docs <- glue_data_sql(
     d_docs,
-    "INSERT INTO ferc_docs VALUES
+    "INSERT INTO ba_docs VALUES
       ({rowid}, {detail}, {project},
       {prj_document}, {prj_doc_attachment}, {prj_doc_attach_url},
       {ck_ixn}, {ck_obs}, {ck_mp}, {ck_amp}, {ck_pme}, {ck_bmps})",
@@ -98,27 +98,27 @@ ferc.insert.callback <- function(data, row) {
   poolReturn(conn)
   res <- try(dbExecute(con, sql_insert_docs))
   if ("try-error" %in% class(res)) stop(res)
-  dbAppendTable(con, "ferc_doc_tags", d_tags)
-  # DBI::dbAppendTable(conn, "ferc_doc_tags", d_tags)
+  dbAppendTable(con, "ba_doc_tags", d_tags)
+  # DBI::dbAppendTable(conn, "ba_doc_tags", d_tags)
   
-  get_ferc()
+  get_ba()
 }
 
 # UPDATE
-ferc.update.callback <- function(data, olddata, row) {
+ba.update.callback <- function(data, olddata, row) {
   # browser()
   d <- data %>% slice(row) %>% 
     tibble() %>% 
     mutate(across(starts_with("ck_"), as.logical)) %>% 
     na_if("NA") %>% 
     na_if("") 
-  d_docs <- get_new_docs(d)  # data to UPDATE ferc_docs
-  d_tags <- get_new_tags(d)  # data to be APPENDED to ferc_doc_tags
+  d_docs <- get_new_docs(d)  # data to UPDATE ba_docs
+  d_tags <- get_new_tags(d)  # data to be APPENDED to ba_doc_tags
   
   conn <- poolCheckout(con)
   sql_update_docs <- glue_data_sql(
     d_docs,
-    "UPDATE ferc_docs 
+    "UPDATE ba_docs 
       SET
         rowid              = {rowid}, 
         detail             = {detail}, 
@@ -136,25 +136,25 @@ ferc.update.callback <- function(data, olddata, row) {
     .con = conn)
   poolReturn(conn)
   sql_delete_tags <- glue("
-    DELETE FROM ferc_doc_tags WHERE rowid = {d$rowid};")
+    DELETE FROM ba_doc_tags WHERE rowid = {d$rowid};")
   
   res <- try(dbExecute(con, sql_update_docs))
   if ("try-error" %in% class(res)) stop(res)
   
   res <- try(dbExecute(con, sql_delete_tags))
   if ("try-error" %in% class(res)) stop(res)
-  DBI::dbAppendTable(con, "ferc_doc_tags", d_tags)
-  # DBI::dbAppendTable(conn, "ferc_doc_tags", d_tags)
+  DBI::dbAppendTable(con, "ba_doc_tags", d_tags)
+  # DBI::dbAppendTable(conn, "ba_doc_tags", d_tags)
   
-  get_ferc()
+  get_ba()
 }
 
 # DELETE
-ferc.delete.callback <- function(data, row) {
+ba.delete.callback <- function(data, row) {
   # browser()
   d <- data %>% slice(row) %>% na_if("NA") %>% na_if("")
-  sql_delete_docs <- glue("DELETE FROM ferc_docs WHERE rowid = {d$rowid};")
-  sql_delete_tags <- glue("DELETE FROM ferc_doc_tags WHERE rowid = {d$rowid}")
+  sql_delete_docs <- glue("DELETE FROM ba_docs WHERE rowid = {d$rowid};")
+  sql_delete_tags <- glue("DELETE FROM ba_doc_tags WHERE rowid = {d$rowid}")
   
   res <- try(dbExecute(con, sql_delete_docs))
   if ("try-error" %in% class(res)) stop(res)
@@ -162,14 +162,14 @@ ferc.delete.callback <- function(data, row) {
   res <- try(dbExecute(con, sql_delete_tags))
   if ("try-error" %in% class(res)) stop(res)
   
-  get_ferc()
+  get_ba()
 }
 
 #* get additional data ----
-ferc <- get_ferc() 
+ba <- get_ba() 
 tags <- get_tags() 
-ferc_doc_names <- dbReadTable(con, "ferc_docs") %>% names()
-ferc_tag_names <- dbReadTable(con, "ferc_doc_tags") %>% names()
+ba_doc_names <- dbReadTable(con, "ba_docs") %>% names()
+ba_tag_names <- dbReadTable(con, "ba_doc_tags") %>% names()
 
 # * get input choices ----
 tag_choices <- list()
@@ -187,12 +187,12 @@ for (category in unique(tags$category[tags$category != "Management"])){ # catego
 }
 
 # prj_doc_sec_choices <- list()
-# for (project in unique(get_ferc()$project)){ 
+# for (project in unique(get_ba()$project)){ 
 #   prj_doc_sec_choices <- append(
 #     prj_doc_sec_choices,
 #     setNames(
 #       list(
-#         ferc %>% 
+#         ba %>% 
 #           filter(project == !!project) %>% 
 #           pull(prj_doc_sec) %>% 
 #           unlist()),
@@ -202,7 +202,7 @@ for (category in unique(tags$category[tags$category != "Management"])){ # catego
 
 # * get labels (dtedit fld names)
 #* get labels for dtedit ----
-# construct first column: cat(paste(str_pad(glue('"{names(ferc)}"'), max(nchar(names(ferc))), "right"), collapse = '\n'))
+# construct first column: cat(paste(str_pad(glue('"{names(ba)}"'), max(nchar(names(ba))), "right"), collapse = '\n'))
 labels <- tribble(
   ~fld                 ,  ~view_label,  ~edit_label,                                                 ~delete_label,
   # -------------------|-------------|------------------------------------------------------------|----------------
@@ -230,7 +230,7 @@ labels <- tribble(
 
 # UPDATE DTEDIT PAGE on click
 # update_dtedit_page <- function() {
-#   prj_doc_sec_lookup <- dbReadTable(con, "ferc_project_doc_sec") %>% 
+#   prj_doc_sec_lookup <- dbReadTable(con, "ba_project_doc_sec") %>% 
 #     tibble() %>% collect()
 #   d_prj_doc <- prj_doc_sec_lookup %>% 
 #     group_by(prj, doc) %>% summarize() %>% ungroup()

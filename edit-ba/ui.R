@@ -16,13 +16,13 @@ tagList(
         span(
           actionButton(
             "refresh_btn",
-            "Refresh FERC docs table",
+            "Refresh BioAssessment docs table",
             icon  = icon("sync"),
             class = "btn btn-primary btn-lg btn-block")),
         span(
-          h3("Editable FERC Documents"))),
+          h3("Editable BioAssessment Documents"))),
       helpText(
-        HTML("The FERC eLibrary contains environmental compliance project 
+        HTML("The BioAssessment library contains Biological Assessment and Evaluation
              documents, of which excerpts have been manually tagged for 
              reference.")),
       span(
@@ -30,7 +30,7 @@ tagList(
         shiny::tags$a("Documents tab.", onclick="customHref('prj_docs')")),
       br(),
       span(
-        HTML("Then, click <b>Refresh FERC docs table</b> at right for them to 
+        HTML("Then, click <b>Refresh BioAssessment docs table</b> at right for them to 
              become available as input choices.")),
       hr(),
       div(
@@ -47,9 +47,9 @@ tagList(
           HTML("Records are ordered by <b>Project</b>. To view recently added 
                records first, toggle <b>ID</b> twice."))),
       hr(), 
-      # * ferc docs table (dtedit) ----
+      # * ba docs table (dtedit) ----
       div(
-        id = "ferc_docs_table",
+        id = "ba_docs_table",
         # div(
           # actionButton(
           #   "sort_recent_btn",
@@ -58,7 +58,7 @@ tagList(
           #   class = "btn btn-primary"),
           # style = "padding: 0 5px 10px 0;"),
         shinycssloaders::withSpinner(
-          uiOutput("ferc_dt_edit"),
+          uiOutput("ba_dt_edit"),
           # loading spinner:
           type = 8, color = "#007BFE"),
         style = "padding: 5px;")
