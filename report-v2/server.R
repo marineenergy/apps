@@ -280,8 +280,8 @@ server <- function(input, output, session) {
       collect() %>% 
       mutate(
         label_html = glue(
-          "<b>{ba_project_code}</b><br>
-          at {site_description}") %>% lapply(htmltools::HTML))
+          "<b>{ba_project}</b><br>
+          at {site_name}") %>% lapply(htmltools::HTML))
     
     m <- leaflet::leaflet(
       data    = ba_sites, width = "100%",

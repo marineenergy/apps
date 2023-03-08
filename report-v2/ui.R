@@ -157,7 +157,13 @@ ui <- dashboardPage(
         #   "Filters by:", icon("tags"),
         #   get_content_tag_categories("documents", html=T)),
         helpText(
-          HTML("Biological Assessments are ... [Sharon's blurb here]")),
+          HTML("For a proposed project that is likely to affect species listed 
+          as endangered or threatened under the Endangered Species Act (ESA) or
+          their designated critical habitat, the U.S. Department of Energy (DOE) 
+          must provide the National Marine Fisheries Service (NMFS) and/or the 
+          US Fish and Wildlife Service (USFWS) with a Biological Assessment (BA) 
+          or Biological Evaluation (BE) and seek concurrence that the project is 
+          unlikely to adversely affect the species or habitat.")),
         # conditionalPanel(
         #   condition = "output.msg_docs",
         #   htmlOutput("msg_docs")),
