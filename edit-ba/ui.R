@@ -16,7 +16,7 @@ tagList(
         span(
           actionButton(
             "refresh_btn",
-            "Refresh BioAssessment docs table",
+            "Refresh BioAssessment Docs",
             icon  = icon("sync"),
             class = "btn btn-primary btn-lg btn-block")),
         span(
@@ -26,11 +26,14 @@ tagList(
              documents, of which excerpts have been manually tagged for 
              reference.")),
       span(
-        span("Please add new BA project documents on "),
-        shiny::tags$a("BA Documents tab.", onclick="customHref('tab_docs')")),
+        span("Please add new BA projects and project documents into the "),
+        shiny::tags$a(
+          "BA Documents Google Sheet", 
+          target = "_blank", 
+          href   = "https://docs.google.com/spreadsheets/d/17QQ9A0G0SxIOfiuFCJFzikQ088cQbO_MMTBbjEHa9FU/edit")),
       br(),
       span(
-        HTML("Then, click <b>Refresh BioAssessment docs table</b> at right for them to 
+        HTML("Then, click <b>Refresh BioAssessment Docs</b> for them to 
              become available as input choices.")),
       hr(),
       div(
@@ -62,83 +65,6 @@ tagList(
           # loading spinner:
           type = 8, color = "#007BFE"),
         style = "padding: 5px;")
-    ),
-    
-    
-    # project docs: prj_doc inputs ----
-    tabPanel(
-      "BA Documents", value = "tab_docs",
-      
-      fluidRow(
-        
-        column(
-          width = 4,
-          div(
-            style = {"
-              display: inline;
-              white-space: initial;
-              position: fixed;
-              overflow-wrap: break-word;
-              padding: 10px 10px 20px 10px;
-              overflow: hidden;
-              word-wrap: break-word; 
-              word-break: break-word; 
-            "},
-            helpText(
-              "Add new BA project docs below."),
-            
-            # PROJECT
-            selectizeInput(
-              "sel_prj",
-              "BA Project",
-              choices = ba_projects,
-              options = list(
-                create = T,
-                onInitialize = I(
-                  'function() { this.setValue("") }'),
-                placeholder = 
-                  "Select from menu or type to add new project")),
-            # TODO: (BB did for ecoidx-up) if new project, update google sheet [data | marineenergy.app - Google Sheets](https://docs.google.com/spreadsheets/d/1MTlWQgBeV4eNbM2JXNXU3Y-_Y6QcOOfjWFyKWfdMIQM/edit#gid=5178015)
-            
-            # DOC
-            selectizeInput(
-              "sel_prj_doc",
-              "BA Project Document", 
-              choices = d_ba_docs$ba_doc_file,
-              # choices = prj_doc_lookup$doc, 
-              options = list(
-                create = T,
-                onInitialize = I(
-                  'function() { this.setValue("") }'),
-                placeholder = 
-                  "Select from menu or type to add new doc")),
-            
-            # SAVE/UPDATE
-            actionButton(
-              "save_sel",
-              "Save",
-              icon = icon("save"),
-              class = "btn-primary"),
-            br()
-          )), 
-        
-        # * table of existing BA projects ----
-        column(
-          width = 8,
-          div(
-            style = "
-              display: inline;
-              position: relative;
-              overflow-wrap: break-word;
-              overflow: hidden;
-              float: center;
-              padding: 0px 10px 20px 60px;",
-            h3("Existing projects"),
-            withSpinner(
-              DTOutput("prj_doc_table"), 
-              type = 8, color = "#007BFE"))
-        )
-      )
     )
   )
 )

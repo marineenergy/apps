@@ -318,6 +318,8 @@ shinyServer(function(input, output, session) {
     # update_dtedit_page()  # in global.R
     # browser()
     
+    update_ba()
+    
     ba_doc_files_rx(
       tbl(con, "ba_docs") |> 
         pull(ba_doc_file))
