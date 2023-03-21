@@ -143,9 +143,12 @@ ba.insert.callback <- function(data, row) {
       rowid = ifelse(nrow(get_ba_doc_excerpts()) == 0, 1, max(get_ba_doc_excerpts()$rowid) + 1))
   
   if (d$ck_gpt){
-    cmd <- glue('python "{gpt_py}" "{d$excerpt}" "{gpt_version}"')
+    tmp_txt <- tempfile(fileext=".txt")
+    writeLines(d$excerpt, tmp_txt)
+    cmd <- glue('python "{gpt_py}" "{tmp_txt}" "{gpt_version}"')
     res <- system(cmd, intern = T)
-    if (!str_detect(res, "Error"))
+    unlink(tmp_txt)
+    if (!str_detect(res, "Error|Sorry|sorry"))
       d$tag_named[[1]] <- union(str_split(res, ", ")[[1]], d$tag_named[[1]])
   }
   d <- d |> 
@@ -173,9 +176,12 @@ ba.update.callback <- function(data, olddata, row) {
   stopifnot(nrow(d) == 1)
   
   if (d$ck_gpt){
-    cmd <- glue('python "{gpt_py}" "{d$excerpt}" "{gpt_version}"')
+    tmp_txt <- tempfile(fileext=".txt")
+    writeLines(d$excerpt, tmp_txt)
+    cmd <- glue('python "{gpt_py}" "{tmp_txt}" "{gpt_version}"')
     res <- system(cmd, intern = T)
-    if (!str_detect(res, "Error"))
+    unlink(tmp_txt)
+    if (!str_detect(res, "Error|Sorry|sorry"))
       d$tag_named[[1]] <- union(str_split(res, ", ")[[1]], d$tag_named[[1]])
   }
   d <- d |> 
