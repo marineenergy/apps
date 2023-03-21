@@ -7,6 +7,10 @@ source(file.path(dir_scripts, "edit_interface.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
 source(file.path(dir_scripts, "update.R"))
 
+# GPT params
+gpt_py      <- "/share/github/ba/tag_excerpt_gpt.py"
+gpt_version <- "4"
+
 # LIBRARIES ----
 # devtools::install_github("DavidPatShuiFong/DTedit@f1617e253d564bce9b2aa67e0662d4cf04d7931f")
 shelf(
@@ -28,6 +32,7 @@ options(readr.show_col_types = FALSE)
 # initialize tables if missing ----
 db_tbls <- dbListTables(con)
 
+# tbl(con, "ba_docs")
 if (!"ba_docs" %in% db_tbls){
   # NOTE: this table gets written by update_ba() in update.R
   d_ba_docs <- tbl(con, "ferc_docs") |> 
@@ -59,6 +64,16 @@ if (!"ba_doc_excerpts" %in% db_tbls){
   # TODO: indexes
 }
 
+# drop ba_doc_excerpts.ck_* fields if still there
+flds_ck <- tbl(con, "ba_doc_excerpts") |> 
+  colnames() |> 
+  str_subset("ck_")
+if (length(flds_ck) > 0){
+  sql_drops <- glue("DROP COLUMN {flds_ck}")
+  dbExecute(con, glue("ALTER TABLE ba_doc_excerpts {paste(sql_drops, collapse=', ')}"))
+}
+
+# tbl(con, "ba_doc_excerpt_tags")
 if (!"ba_doc_excerpt_tags" %in% db_tbls){
   d_ba_doc_excerpt_tags <- tbl(con, "ferc_doc_tags") |> 
     collect() |> 
@@ -127,7 +142,17 @@ ba.insert.callback <- function(data, row) {
     mutate(
       rowid = ifelse(nrow(get_ba_doc_excerpts()) == 0, 1, max(get_ba_doc_excerpts()$rowid) + 1))
   
+  if (d$ck_gpt){
+    cmd <- glue('python "{gpt_py}" "{d$excerpt}" "{gpt_version}"')
+    res <- system(cmd, intern = T)
+    if (!str_detect(res, "Error"))
+      d$tag_named[[1]] <- union(str_split(res, ", ")[[1]], d$tag_named[[1]])
+  }
+  d <- d |> 
+    select(-ck_gpt)
+  
   # TODO: other elements to add, like ba_docs? handling of NAs?
+  
   d_excerpts <- get_new_excerpts(d) # data to INSERT into ba_docs
   d_tags     <- get_new_tags(d)     # data to INSERT into ba_doc_extract_tags
   
@@ -144,11 +169,17 @@ ba.update.callback <- function(data, olddata, row) {
   # browser()
   d <- data |>
     slice(row) |>
-    tibble() |>
-    mutate(across(starts_with("ck_"), as.logical)) # |> 
-    # na_if("NA") %>% 
-    # na_if("") 
+    tibble()
   stopifnot(nrow(d) == 1)
+  
+  if (d$ck_gpt){
+    cmd <- glue('python "{gpt_py}" "{d$excerpt}" "{gpt_version}"')
+    res <- system(cmd, intern = T)
+    if (!str_detect(res, "Error"))
+      d$tag_named[[1]] <- union(str_split(res, ", ")[[1]], d$tag_named[[1]])
+  }
+  d <- d |> 
+    select(-ck_gpt)
   
   d_excerpts <- get_new_excerpts(d) # data to INSERT into ba_docs
   d_tags     <- get_new_tags(d)     # data to INSERT into ba_doc_extract_tags
@@ -187,70 +218,27 @@ tags <- get_tags()
 
 # * get input choices ----
 tag_choices <- list()
-for (category in unique(tags$category[tags$category != "Management"])){ # category = tags$category[1]
+for (category in unique(tags$category)){ # category = unique(tags$category)[1]
   tag_choices <- append(
     tag_choices,
     setNames(
       list(
         tags %>% 
-          filter(category != "Management") %>% # mgmt under tethys so exclude
           filter(category == !!category) %>% 
           pull(tag_named) %>% 
           unlist()),
       category)) 
 }
 
-# prj_doc_sec_choices <- list()
-# for (project in unique(get_ba()$project)){ 
-#   prj_doc_sec_choices <- append(
-#     prj_doc_sec_choices,
-#     setNames(
-#       list(
-#         ba %>% 
-#           filter(project == !!project) %>% 
-#           pull(prj_doc_sec) %>% 
-#           unlist()),
-#       project)) 
-# }
-
-
-# * get labels (dtedit fld names)
-#* get labels for dtedit ----
+# * get labels for dtedit ----
 # construct first column: cat(paste(str_pad(glue('"{names(ba)}"'), max(nchar(names(ba))), "right"), collapse = '\n'))
 labels <- tribble(
-  ~fld                 ,  ~view_label   ,  ~edit_label,                                                 ~delete_label,
-  # -------------------|----------------|------------------------------------------------------------|----------------
-  "ba_project"         ,   "BA Project" ,   "BA Project"                                             ,  "BA Project",
-  "ba_doc_file"        ,    NA          ,   "BA Document"                                            ,  "BA Document",
-  "ba_doc_url"         ,    NA          ,   NA                                                       ,  NA,
-  "ba_doc_html"        ,   "BA Document",   NA                                                       ,  NA,
-  "rowid"              ,    NA          ,   NA                                                       ,  NA,
-  "excerpt"            ,   "Excerpt"    ,   "Excerpt"                                                ,  "Excerpt",
-  "tag_sql"            ,    NA          ,   NA                                                       ,  NA,
-  "tag_named"          ,    NA          ,   "Tags"                                                   ,  "Tags",
-  "tag_html"           ,    "Tags"      ,   NA                                                       ,  NA,
-  "ck_ixn"             ,    "Ixn"       ,   "Presented as potential interaction?"                    ,  "Presented as potential interaction?",
-  "ck_obs"             ,    "Obs"       ,   "Described from observations at the project site?"       ,  "Described from observations at the project site?",   
-  "ck_mp"              ,    "MP?"       ,   "Monitoring plan (MP)?"                                  ,  "Monitoring plan (MP)?",
-  "ck_amp"             ,    "AMP?"      ,   "Adaptive management plan (AMP)?"                        ,  "Adaptive management plan (AMP)?",
-  "ck_bmps"            ,    "BMPs?"     ,   "Best management practices (BMPs) applied?"              ,  "Best management practices (BMPs) applied?" 
-)
-
-
-# UPDATE DTEDIT PAGE on click
-# update_dtedit_page <- function() {
-#   prj_doc_sec_lookup <- dbReadTable(con, "ba_project_doc_sec") %>% 
-#     tibble() %>% collect()
-#   d_prj_doc <- prj_doc_sec_lookup %>% 
-#     group_by(prj, doc) %>% summarize() %>% ungroup()
-#   prj_doc_sec_choices(
-#     prj_doc_sec_lookup %>% pull(prj_doc_sec_display) %>% sort() %>% unique())
-#   showModal(
-#     modalDialog(
-#       "Input choices have been refreshed from those added on project docs page.",
-#       footer    = modalButton("Continue"),
-#       easyClose = TRUE,
-#       size      = "s",
-#       fade      = TRUE,
-#       style     = "font-weight: bold;"))
-# }
+  ~fld                 ,  ~view_label   ,  ~edit_label                  ,  ~delete_label,
+  # -------------------|----------------|-------------------------------|----------------
+  "ba_doc_file"        , "BA Document"  ,   "BA Document"               ,  "BA Document",
+  "rowid"              , "ID"           ,   NA                          ,  NA,
+  "excerpt"            , "Excerpt"      ,   "Excerpt"                   ,  "Excerpt",
+  "tag_sql"            , NA             ,   NA                          ,  NA,
+  "tag_named"          , NA             ,   "Tags"                      ,  "Tags",
+  "tag_html"           , "Tags"         ,   NA                          ,  NA,
+  "ck_gpt"             , NA             ,   "Auto Tag (with OpenAI GPT)",  NA)

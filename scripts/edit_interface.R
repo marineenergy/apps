@@ -132,9 +132,6 @@ get_ba_docs <- function() {
 get_ba_doc_excerpts <- function() {
   
   d_ba_doc_excerpts <- tbl(con, "ba_doc_excerpts") |> 
-    left_join(
-      tbl(con, "ba_docs"),
-      by = "ba_doc_file") |> 
     collect() |> 
     left_join(
       tbl(con, "ba_doc_excerpt_tags") |> 
@@ -146,7 +143,7 @@ get_ba_doc_excerpts <- function() {
           by = "tag_sql"),
       by = "rowid",
       multiple = "all") |> 
-    arrange(ba_project, ba_doc_file, rowid, tag_sql) |> 
+    arrange(ba_doc_file, rowid, tag_sql) |> 
     group_by(rowid) |> 
     tidyr::nest(
       tag_sql   = tag_sql,         # for UPDATING / storage
@@ -155,18 +152,13 @@ get_ba_doc_excerpts <- function() {
     mutate(
       tag_sql       = map(tag_sql,   merge_tags),
       tag_named     = map(tag_named, merge_tags_named),
-      tag_html      = map(tag_html,  merge_tags_html),
-      # document -> document_html
-      ba_doc_html = ifelse(
-        is.na(ba_doc_url),
-        ba_doc_file,
-        glue(
-          "<a href='{ba_doc_url}' target='_blank'>{ba_doc_file}</a>") |> 
-          as.character()) ) |> 
+      tag_html      = map(tag_html,  merge_tags_html)) |> 
     relocate(
-      ba_project, ba_doc_file, ba_doc_url, ba_doc_html, rowid, excerpt, tag_sql, tag_named, tag_html) |> 
+      ba_doc_file, rowid, excerpt, tag_sql, tag_named, tag_html) |> 
     # select(-ba_doc_file, -ba_doc_url) |> 
-    arrange(ba_project, ba_doc_file) |> 
+    arrange(ba_doc_file, rowid) |> 
+    mutate(
+      ck_gpt = FALSE) |> 
     data.frame()
   
   d_ba_doc_excerpts

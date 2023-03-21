@@ -43,11 +43,12 @@ tagList(
           span(class="me-tag me-technology",  "Technology"),
           span(class="me-tag me-stressor",    "Stressor"),
           span(class="me-tag me-receptor",    "Receptor"),
+          span(class="me-tag me-management",  "Management"),
           span(class="me-tag me-phase",       "Phase"),
           span(class="me-tag me-consequence", "Consequence")),
         br(), 
         span(
-          HTML("Records are ordered by <b>Project</b>. To view recently added 
+          HTML("Records are ordered by <b>BA Document</b> filename. To view recently added 
                records first, toggle <b>ID</b> twice."))),
       hr(), 
       # * ba docs table (dtedit) ----
