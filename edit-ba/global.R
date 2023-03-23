@@ -7,20 +7,24 @@ source(file.path(dir_scripts, "edit_interface.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
 source(file.path(dir_scripts, "update.R"))
 
-# GPT params
-gpt_py      <- "/share/github/ba/tag_excerpt_gpt.py"
-gpt_version <- "4"
-
 # LIBRARIES ----
 # devtools::install_github("DavidPatShuiFong/DTedit@f1617e253d564bce9b2aa67e0662d4cf04d7931f")
 shelf(
   DavidPatShuiFong/DTedit, # [@bbest pr](https://github.com/DavidPatShuiFong/DTedit/pull/35)
   DBI, DT, 
   glue, purrr, readr, tidyr,
-  shiny, shinycssloaders)
+  shiny, shinycssloaders, shinyFeedback)
 #devtools::load_all("/share/github/DTedit") 
 #devtools::install_local("/share/github/DTedit") # value <- ifelse(is.na(value), FALSE, value) # FIXES ERROR if NA: missing value where TRUE/FALSE needed
 options(readr.show_col_types = FALSE)
+
+# fs::file_touch(here::here("edit-ba/restart.txt"))
+
+# GPT params
+gpt_py       <- "/share/github/ba/tag_excerpt_gpt.py"
+gpt_versions <- c("4","3.5")
+#gpt_version <- "3.5"
+gpt_version_init <- "4"
 
 # launch with reactlog
 #   library(reactlog); reactlog_enable(); app <- runApp(here::here("edit"))
@@ -140,19 +144,20 @@ ba.insert.callback <- function(data, row) {
     # na_if("") |> 
     # mutate(across(where(not_list), ~na_if(., "NA"))) |> 
     mutate(
-      rowid = ifelse(nrow(get_ba_doc_excerpts()) == 0, 1, max(get_ba_doc_excerpts()$rowid) + 1))
+      rowid = ifelse(nrow(get_ba_doc_excerpts(gpt_version_init)) == 0, 1, max(get_ba_doc_excerpts(gpt_version_init)$rowid) + 1))
   
   if (d$ck_gpt){
     tmp_txt <- tempfile(fileext=".txt")
     writeLines(d$excerpt, tmp_txt)
-    cmd <- glue('python "{gpt_py}" "{tmp_txt}" "{gpt_version}"')
+    cmd <- glue('python "{gpt_py}" "{tmp_txt}" "{d$gpt_version}"')
+    message(cmd)
     res <- system(cmd, intern = T)
     unlink(tmp_txt)
     if (!str_detect(res, "Error|Sorry|sorry"))
       d$tag_named[[1]] <- union(str_split(res, ", ")[[1]], d$tag_named[[1]])
   }
   d <- d |> 
-    select(-ck_gpt)
+    select(-ck_gpt, -gpt_version, -excerpt_html)
   
   # TODO: other elements to add, like ba_docs? handling of NAs?
   
@@ -164,7 +169,7 @@ ba.insert.callback <- function(data, row) {
   dbAppendTable(conn, "ba_doc_excerpt_tags", d_tags)
   poolReturn(conn)
   
-  get_ba_doc_excerpts()
+  get_ba_doc_excerpts(gpt_version_init)
 }
 
 # UPDATE
@@ -178,14 +183,15 @@ ba.update.callback <- function(data, olddata, row) {
   if (d$ck_gpt){
     tmp_txt <- tempfile(fileext=".txt")
     writeLines(d$excerpt, tmp_txt)
-    cmd <- glue('python "{gpt_py}" "{tmp_txt}" "{gpt_version}"')
+    cmd <- glue('python "{gpt_py}" "{tmp_txt}" "{d$gpt_version}"')
+    message(cmd)
     res <- system(cmd, intern = T)
     unlink(tmp_txt)
     if (!str_detect(res, "Error|Sorry|sorry"))
       d$tag_named[[1]] <- union(str_split(res, ", ")[[1]], d$tag_named[[1]])
   }
   d <- d |> 
-    select(-ck_gpt)
+    select(-ck_gpt, -gpt_version, -excerpt_html)
   
   d_excerpts <- get_new_excerpts(d) # data to INSERT into ba_docs
   d_tags     <- get_new_tags(d)     # data to INSERT into ba_doc_extract_tags
@@ -197,7 +203,7 @@ ba.update.callback <- function(data, olddata, row) {
   dbAppendTable(conn, "ba_doc_excerpt_tags", d_tags)
   poolReturn(conn)
   
-  get_ba_doc_excerpts()
+  get_ba_doc_excerpts(gpt_version_init)
 }
 
 # DELETE
@@ -211,11 +217,11 @@ ba.delete.callback <- function(data, row) {
   dbExecute(conn, glue("DELETE FROM ba_doc_excerpt_tags WHERE rowid = {d$rowid}"))
   poolReturn(conn)
   
-  get_ba_doc_excerpts()
+  get_ba_doc_excerpts(gpt_version_init)
 }
 
 #* get additional data ----
-ba <- get_ba_doc_excerpts() # get_ba() # TODO: rename ba -> d_ba_doc_excerpts
+ba <- get_ba_doc_excerpts(gpt_version_init) # get_ba() # TODO: rename ba -> d_ba_doc_excerpts
 tags <- get_tags() 
 # ferc_doc_names <- dbReadTable(con, "ferc_docs") %>% names()
 # ferc_tag_names <- dbReadTable(con, "ferc_doc_tags") %>% names()
@@ -223,18 +229,22 @@ tags <- get_tags()
 # ba_doc_excerpt_flds <- tbl(con, "ba_doc_excerpts") %>% colnames()
 
 # * get input choices ----
-tag_choices <- list()
-for (category in unique(tags$category)){ # category = unique(tags$category)[1]
-  tag_choices <- append(
-    tag_choices,
-    setNames(
-      list(
-        tags %>% 
-          filter(category == !!category) %>% 
-          pull(tag_named) %>% 
-          unlist()),
-      category)) 
+get_tag_choices <- function(tags){
+  tag_choices <- list()
+  for (category in unique(tags$category)){ # category = unique(tags$category)[1]
+    tag_choices <- append(
+      tag_choices,
+      setNames(
+        list(
+          tags %>% 
+            filter(category == !!category) %>% 
+            pull(tag_named) %>% 
+            unlist()),
+        category)) 
+  }
+  tag_choices
 }
+tag_choices <- get_tag_choices(tags)
 
 # * get labels for dtedit ----
 # construct first column: cat(paste(str_pad(glue('"{names(ba)}"'), max(nchar(names(ba))), "right"), collapse = '\n'))
@@ -243,8 +253,10 @@ labels <- tribble(
   # -------------------|----------------|-------------------------------|----------------
   "ba_doc_file"        , "BA Document"  ,   "BA Document"               ,  "BA Document",
   "rowid"              , "ID"           ,   NA                          ,  NA,
-  "excerpt"            , "Excerpt"      ,   "Excerpt"                   ,  "Excerpt",
+  "excerpt"            , NA             ,   "Excerpt"                   ,  "Excerpt",
+  "excerpt_html"       , "Excerpt"      ,   NA                          ,  NA,
   "tag_sql"            , NA             ,   NA                          ,  NA,
   "tag_named"          , NA             ,   "Tags"                      ,  "Tags",
   "tag_html"           , "Tags"         ,   NA                          ,  NA,
+  "gpt_version"        , NA             ,   "GPT version"               ,  NA,
   "ck_gpt"             , NA             ,   "Auto Tag (with OpenAI GPT)",  NA)

@@ -169,6 +169,9 @@ update_ba <- function(){
 update_tags <- function(){
   source(here("scripts/db.R"))
   
+  tags_csv       <- here("data/tags.csv")
+  tag_lookup_csv <- here("data/tag_lookup.csv")
+  
   # rename original tags
   # DBI::dbSendQuery(con, "ALTER TABLE tags RENAME TO tags_0;")
   # dbListTables(con) %>% sort()
@@ -213,6 +216,10 @@ update_tags <- function(){
   #   Management  = "All Management Categories",
   #   Consequence = "All Consequences")
   # stopifnot(all(tags %>% distinct(category) %>% pull(category) %in% names(categories_all)))
+  
+  # write tags and tag_lookup to csv (eg for reading into edit-ba app)
+  readr::write_csv(tags, tags_csv)
+  readr::write_csv(tag_lookup, tag_lookup_csv)
   
   # add columns for fast, pretty printing to shiny and reports
   tags <- tags %>% 

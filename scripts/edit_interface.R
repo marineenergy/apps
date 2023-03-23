@@ -129,7 +129,7 @@ get_ba_docs <- function() {
   d_ba_docs
 }
 
-get_ba_doc_excerpts <- function() {
+get_ba_doc_excerpts <- function(gpt_version = "3.5", ck_gpt = FALSE) {
   
   d_ba_doc_excerpts <- tbl(con, "ba_doc_excerpts") |> 
     collect() |> 
@@ -158,7 +158,10 @@ get_ba_doc_excerpts <- function() {
     # select(-ba_doc_file, -ba_doc_url) |> 
     arrange(ba_doc_file, rowid) |> 
     mutate(
-      ck_gpt = FALSE) |> 
+      excerpt_html  = map_chr(
+        excerpt, stringr::str_replace_all, pattern="[\n|\r|\r\n|\n\r]", replacement="<br>"),
+      ck_gpt      = !!ck_gpt,
+      gpt_version = !!gpt_version) |> 
     data.frame()
   
   d_ba_doc_excerpts

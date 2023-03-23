@@ -28,13 +28,25 @@ tagList(
       span(
         span("Please add new BA projects and project documents into the "),
         shiny::tags$a(
-          "BA Documents Google Sheet", 
+          "ba-docs - Google Sheet", 
           target = "_blank", 
-          href   = "https://docs.google.com/spreadsheets/d/17QQ9A0G0SxIOfiuFCJFzikQ088cQbO_MMTBbjEHa9FU/edit")),
+          href   = "https://docs.google.com/spreadsheets/d/17QQ9A0G0SxIOfiuFCJFzikQ088cQbO_MMTBbjEHa9FU/edit"),
+        "."),
       br(),
       span(
         HTML("Then, click <b>Refresh BioAssessment Docs</b> for them to 
              become available as input choices.")),
+      br(),
+      br(),
+      span(
+        HTML("Tags also get reloaded from the Google Sheet into the database when
+             you click <b>Refresh BioAssessment Docs</b>. You can view the full 
+             set of tags in the "),
+        shiny::tags$a(
+          "data | marineenergy.app - Google Sheet", 
+          target = "_blank", 
+          href   = "https://docs.google.com/spreadsheets/d/1MTlWQgBeV4eNbM2JXNXU3Y-_Y6QcOOfjWFyKWfdMIQM/edit#gid=1679546569"),
+        "."),
       hr(),
       div(
         span(

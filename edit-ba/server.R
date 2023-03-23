@@ -10,34 +10,41 @@ shinyServer(function(input, output, session) {
   #* dtedit() object ----
   badt <-  dtedit(
     input, output,
-    name            = 'ba_dt_edit',
-    thedata         = get_ba_doc_excerpts(),
-    view.cols       = labels %>% filter(!is.na(view_label)) %>% pull(fld),
-    edit.cols       = labels %>% filter(!is.na(edit_label)) %>% pull(fld),
-    edit.label.cols = labels %>% filter(!is.na(edit_label)) %>% pull(edit_label),
+    name       = 'ba_dt_edit',
+    thedata    = get_ba_doc_excerpts(gpt_version_init),
+    view.cols       = labels %>% filter(!is.na(view_label)) %>% pull(fld),        # "ba_doc_file" "rowid"   "excerpt_html" "tag_html" 
+    edit.cols       = labels %>% filter(!is.na(edit_label)) %>% pull(fld),        # "ba_doc_file" "excerpt" "tag_named"    "gpt_version" "ck_gpt"
+    edit.label.cols = labels %>% filter(!is.na(edit_label)) %>% pull(edit_label), # "BA Document" "Excerpt" "Tags"         "GPT version" "Auto Tag (with OpenAI GPT)"
     delete.info.label.cols = labels %>% 
-      filter(!is.na(view_label)) %>% pull(view_label),
+      filter(!is.na(view_label)) %>% pull(view_label),                            # "BA Document" "ID"      "Excerpt"      "Tags"
     input.types = c(
       ba_doc_file         = "selectizeInputReactive",
       excerpt             = "textAreaInput",
-      tag_named           = "selectInputMultiple"),
+      tag_named           = "selectInputMultiple",
+      gpt_version         = "selectInput",
+      ck_gpt              = "checkboxInput"),
     input.choices = list(
       ba_doc_file         = 'ba_doc_file_list',
-      tag_named           = tag_choices), 
+      tag_named           = tag_choices,
+      gpt_version         = gpt_versions), 
     input.choices.reactive = list(
       ba_doc_file_list = ba_doc_files_rx),
     selectize = T, 
     datatable.rownames = F,
     datatable.call = function(...) {
       arguments <- list(...)
-      arguments$escape   <- 0
+      arguments$escape   <- 1
       arguments$class    <- 'display'
       arguments$colnames <- labels %>%
         filter(!is.na(view_label)) %>% pull(view_label)
       # arguments$extensions <- "Buttons"
       
       do.call(DT::datatable, arguments) %>%
-        DT::formatStyle(c("excerpt", "tag_html"), fontSize = "13px")
+        DT::formatStyle(c("excerpt_html", "tag_html"), fontSize = "13px")
+      # Warning: 
+      #   Error in name2int: You specified the columns: excerpt, tag_html, 
+      #   but the column names of the data are ba_doc_file, rowid, excerpt_html, tag_html
+      # datatable.call [/share/github/apps_dev/edit-ba/server.R#41]
     },
     # * --> datatable.options ----
     datatable.options = list(
@@ -155,6 +162,10 @@ shinyServer(function(input, output, session) {
     # update_dtedit_page()  # in global.R
     # browser()
     
+    # update tags from Google Sheet to db + csv + lookup
+    update_tags()
+    tags        <-  get_tags() 
+    tag_choices <<- get_tag_choices(tags)
     update_ba()
     
     ba_doc_files_rx(

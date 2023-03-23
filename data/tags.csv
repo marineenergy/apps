@@ -1,164 +1,89 @@
-facet,item_id,item_label
-attachment,1,Available on Tethys
-content,542,Journal Article
-content,545,Report
-content,540,Conference Paper
-content,539,Book Chapter
-content,544,Presentation
-content,550,Project Site
-content,546,Thesis
-content,551,Research Study
-content,538,Book
-content,548,Website
-content,549,Workshop Article
-content,543,Magazine Article
-content,552,Summary
-content,541,Guidance
-content,547,Video
-country,189,United Kingdom
-country,190,United States of America
-country,31,Canada
-country,9,Australia
-country,164,Spain
-country,82,Ireland
-country,61,France
-country,172,Sweden
-country,36,China
-country,84,Italy
-country,143,Portugal
-country,132,Norway
-country,47,Denmark
-country,128,New Zealand
-country,86,Japan
-country,127,Netherlands
-country,79,International
-country,65,Germany
-country,92,Korea South
-country,67,Greece
-country,35,Chile
-country,142,Poland
-country,17,Belgium
-country,24,Brazil
-country,115,Mexico
-country,60,Finland
-country,77,India
-country,83,Israel
-country,162,South Africa
-country,78,Indonesia
-country,108,Malaysia
-country,122,Mozambique
-country,146,Romania
-country,147,Russia
-country,6,Antigua & Barbuda
-country,12,Bahamas
-country,121,Morocco
-country,175,Taiwan
-country,5,Angola
-country,14,Bangladesh
-country,25,Brunei
-country,37,Colombia
-country,41,Costa Rica
-country,66,Ghana
-country,75,Hungary
-country,80,Iran
-country,96,Laos
-country,103,Lithuania
-country,106,Madagascar
-country,116,Micronesia
-country,137,Panama
-country,140,Peru
-country,141,Philippines
-country,144,Puerto Rico
-country,145,Qatar
-country,152,Saudi Arabia
-country,159,Slovenia
-country,180,Tonga
-country,181,Trinidad & Tobago
-date,2022,2022
-date,2021,2021
-date,2020,2020
-date,2019,2019
-date,2018,2018
-date,2017,2017
-date,2016,2016
-date,2015,2015
-date,2014,2014
-date,2013,2013
-date,2012,2012
-date,2011,2011
-date,2010,2010
-date,2009,2009
-date,2008,2008
-date,2007,2007
-date,2006,2006
-date,2005,2005
-date,2004,2004
-date,2003,2003
-date,2002,2002
-date,2001,2001
-date,2000,2000
-date,1999,1999
-date,1998,1998
-date,1997,1997
-date,1996,1996
-date,1995,1995
-date,1994,1994
-date,1993,1993
-date,1992,1992
-date,1991,1991
-date,1990,1990
-date,1989,1989
-date,1988,1988
-date,1987,1987
-date,1986,1986
-date,1985,1985
-date,1984,1984
-date,1983,1983
-date,1982,1982
-date,1981,1981
-date,1980,1980
-date,1979,1979
-date,1978,1978
-date,1977,1977
-date,1976,1976
-date,1975,1975
-date,1973,1973
-date,1971,1971
-date,1969,1969
-date,1968,1968
-date,1967,1967
-date,1966,1966
-date,1962,1962
-date,1957,1957
-date,1877,1877
-receptor,284,Human Dimensions
-receptor,281,Marine Mammals
-receptor,280,Fish
-receptor,279,Physical Environment
-receptor,270,Invertebrates
-receptor,271,Birds
-receptor,278,Ecosystem Processes
-receptor,283,Reptiles
-receptor,269,Bats
-receptor,293,Terrestrial Mammals
-stressor,355,Noise
-stressor,353,Changes in Flow
-stressor,356,Habitat Change
-stressor,351,Collision
-stressor,352,EMF
-stressor,530,Attraction
-stressor,531,Avoidance
-stressor,532,Displacement
-stressor,350,Chemicals
-stressor,533,Entrapment
-stressor,354,Lighting
-technology,423,Marine Energy
-technology,428,Tidal
-technology,429,Wave
-technology,426,Riverine
-technology,425,OTEC
-technology,424,Ocean Current
-technology,427,Salinity Gradient
-technology,430,Wind Energy
-technology,432,Offshore Wind
-technology,431,Land-Based Wind
+category,tag_sql,tag
+Consequence,Consequence,Consequence/ALL Consequences
+Consequence,Consequence.Attraction,Consequence/Attraction
+Consequence,Consequence.Avoidance,Consequence/Avoidance
+Consequence,Consequence.BehavioralChange,Consequence/Behavioral Change
+Consequence,Consequence.Collision,Consequence/Collision
+Consequence,Consequence.CommunityChange,Consequence/Community Change
+Consequence,Consequence.Displacement,Consequence/Displacement
+Consequence,Consequence.EntanglementEntrapment,Consequence/Entanglement or Entrapment
+Consequence,Consequence.Injury,Consequence/Injury
+Consequence,Consequence.Mortality,Consequence/Mortality
+Management,Management,Management/ALL Management
+Management,Management.BestPractices,Management/BestPractices
+Management,Management.Compliance,Management/Compliance
+Management,Management.DesignFeature,Management/DesignFeature
+Management,Management.Mitigation,Management/Mitigation
+Management,Management.Monitoring,Management/Monitoring
+Phase,Phase,Phase/ALL Phases
+Phase,Phase.1SiteCharacterizationandAssessment,Phase/1. Site Characterization and Assessment
+Phase,Phase.2Construction,Phase/2. Construction
+Phase,Phase.3OperationsandMaintenance,"Phase/3. Operations, Maintenance and Compliance"
+Phase,Phase.4Decommissioning,Phase/4. Decommissioning
+Receptor,Receptor,Receptor/ALL Receptors
+Receptor,Receptor.Bats,Receptor/Bats
+Receptor,Receptor.Benthos,Receptor/Benthos
+Receptor,Receptor.Birds,Receptor/Birds
+Receptor,Receptor.Birds.GroundNestingBirds,Receptor/Birds/Ground-Nesting Birds
+Receptor,Receptor.Birds.Passerines,Receptor/Birds/Passerines
+Receptor,Receptor.Birds.Raptors,Receptor/Birds/Raptors
+Receptor,Receptor.Birds.Seabirds,Receptor/Birds/Seabirds
+Receptor,Receptor.Birds.Shorebirds,Receptor/Birds/Shorebirds
+Receptor,Receptor.Birds.Waterfowl,Receptor/Birds/Waterfowl
+Receptor,Receptor.EcosystemProcesses,Receptor/Ecosystem Processes
+Receptor,Receptor.Fish,Receptor/Fish
+Receptor,Receptor.Fish.DemersalFish,Receptor/Fish/Demersal Fish
+Receptor,Receptor.Fish.PelagicFish,Receptor/Fish/Pelagic Fish
+Receptor,Receptor.Fish.Sharks,Receptor/Fish/Sharks
+Receptor,Receptor.Habitat,Receptor/Habitat
+Receptor,Receptor.Habitat.Critical,Receptor/Habitat/Critical
+Receptor,Receptor.Habitat.Benthos,Receptor/Habitat/Benthos
+Receptor,Receptor.Habitat.Intertidal,Receptor/Habitat/Intertidal
+Receptor,Receptor.HumanDimensions,Receptor/Human Dimensions
+Receptor,Receptor.HumanDimensions.ClimateChange,Receptor/Human Dimensions/Climate Change
+Receptor,Receptor.HumanDimensions.EnvironmentalImpactAssessment,Receptor/Human Dimensions/Environmental Impact Assessment
+Receptor,Receptor.HumanDimensions.Fisheries,Receptor/Human Dimensions/Fisheries
+Receptor,Receptor.HumanDimensions.LegalPolicy,Receptor/Human Dimensions/Legal & Policy
+Receptor,Receptor.HumanDimensions.LifeCycleAssessment,Receptor/Human Dimensions/Life Cycle Assessment
+Receptor,Receptor.HumanDimensions.MarineSpatialPlanning,Receptor/Human Dimensions/Marine Spatial Planning
+Receptor,Receptor.HumanDimensions.Navigation,Receptor/Human Dimensions/Navigation
+Receptor,Receptor.HumanDimensions.RecreationTourism,Receptor/Human Dimensions/Recreation & Tourism
+Receptor,Receptor.HumanDimensions.SocialEconomicData,Receptor/Human Dimensions/Social & Economic Data
+Receptor,Receptor.HumanDimensions.StakeholderEngagement,Receptor/Human Dimensions/Stakeholder Engagement
+Receptor,Receptor.HumanDimensions.VisualImpacts,Receptor/Human Dimensions/Visual Impacts
+Receptor,Receptor.Invertebrates,Receptor/Invertebrates
+Receptor,Receptor.MarineMammals,Receptor/Marine Mammals
+Receptor,Receptor.MarineMammals.Cetaceans,Receptor/Marine Mammals/Cetaceans
+Receptor,Receptor.MarineMammals.Pinnipeds,Receptor/Marine Mammals/Pinnipeds
+Receptor,Receptor.PhysicalEnvironment,Receptor/Physical Environment
+Receptor,Receptor.PhysicalEnvironment.SedimentTransport,Receptor/Physical Environment/Sediment Transport
+Receptor,Receptor.PhysicalEnvironment.WaterQuality,Receptor/Physical Environment/Water Quality
+Receptor,Receptor.Reptiles,Receptor/Reptiles
+Receptor,Receptor.TerrestrialMammals,Receptor/Terrestrial Mammals
+Stressor,Stressor,Stressor/ALL Stressors
+Stressor,Stressor.BehavioralInteraction,Stressor/Behavioral Interaction
+Stressor,Stressor.BehavioralInteraction.Attraction,Stressor/Behavioral Interaction/Attraction
+Stressor,Stressor.BehavioralInteraction.Avoidance,Stressor/Behavioral Interaction/Avoidance
+Stressor,Stressor.BehavioralInteraction.Displacement,Stressor/Behavioral Interaction/Displacement
+Stressor,Stressor.EMF,Stressor/EMF
+Stressor,Stressor.HabitatChange,Stressor/Habitat Change
+Stressor,Stressor.InvasiveSpecies,Stressor/InvasiveSpecies
+Stressor,Stressor.Lighting,Stressor/Lighting
+Stressor,Stressor.Noise,Stressor/Noise
+Stressor,Stressor.Noise.Airborne,Stressor/Noise/Airborne
+Stressor,Stressor.Noise.Underwater,Stressor/Noise/Underwater
+Stressor,Stressor.PhysicalInteraction,Stressor/Physical Interaction
+Stressor,Stressor.PhysicalInteraction.ChangesinFlow,Stressor/Physical Interaction/Changes in Flow
+Stressor,Stressor.PhysicalInteraction.Chemicals,Stressor/Physical Interaction/Chemicals
+Stressor,Stressor.PhysicalInteraction.DynamicEffects,Stressor/Physical Interaction/Dynamic Effects
+Technology,Technology,Technology/ALL Technologies
+Technology,Technology.Current,Technology/Current
+Technology,Technology.Current.OceanCurrent,Technology/Current/Ocean Current
+Technology,Technology.OTEC,Technology/OTEC
+Technology,Technology.Current.Riverine,Technology/Current/Riverine
+Technology,Technology.SalinityGradient,Technology/Salinity Gradient
+Technology,Technology.Current.Tidal,Technology/Current/Tidal
+Technology,Technology.Wave,Technology/Wave
+Technology,Technology.OffshoreWind,Technology/Offshore Wind
+Technology,Technology.OffshoreWind.Fixed,Technology/Offshore Wind/Fixed
+Technology,Technology.OffshoreWind.Floating,Technology/Offshore Wind/Floating

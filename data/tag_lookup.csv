@@ -1,0 +1,209 @@
+content,tag_category,content_tag,tag_sql
+ferc_docs,Consequence,Attraction,Consequence.Attraction
+ferc_docs,Consequence,Avoidance,Consequence.Avoidance
+ferc_docs,Consequence,BehavioralChange,Consequence.BehavioralChange
+ferc_docs,Consequence,Collision,Consequence.Collision
+ferc_docs,Consequence,CommunityChange,Consequence.CommunityChange
+ferc_docs,Consequence,Displacement,Consequence.Displacement
+ferc_docs,Consequence,EntanglementEntrapment,Consequence.EntanglementEntrapment
+ferc_docs,Consequence,Injury,Consequence.Injury
+ferc_docs,Consequence,Mortality,Consequence.Mortality
+ferc_docs,Phase,1. Site Characterization and Assessment,Phase.1SiteCharacterizationandAssessment
+ferc_docs,Phase,2. Construction,Phase.2Construction
+ferc_docs,Phase,3. Operations and Maintenance,Phase.3OperationsandMaintenance
+ferc_docs,Phase,"3. Operations, Maintenance and Compliance",Phase.3OperationsandMaintenance
+ferc_docs,Phase,4. Decommissioning,Phase.4Decommissioning
+ferc_docs,Phase,ALL,Phase
+ferc_docs,Receptor,ALL,Receptor
+ferc_docs,Receptor,Bats,Receptor.Bats
+ferc_docs,Receptor,Birds,Receptor.Birds
+ferc_docs,Receptor,Birds.GroundNestingBirds,Receptor.Birds.GroundNestingBirds
+ferc_docs,Receptor,Birds.Passerines,Receptor.Birds.Passerines
+ferc_docs,Receptor,Birds.Raptors,Receptor.Birds.Raptors
+ferc_docs,Receptor,Birds.Seabirds,Receptor.Birds.Seabirds
+ferc_docs,Receptor,Birds.Shorebirds,Receptor.Birds.Shorebirds
+ferc_docs,Receptor,Birds.Waterfowl,Receptor.Birds.Waterfowl
+ferc_docs,Receptor,Ecosystem Processes,Receptor.EcosystemProcesses
+ferc_docs,Receptor,Fish,Receptor.Fish
+ferc_docs,Receptor,Fish.Demersal Fish,Receptor.Fish.DemersalFish
+ferc_docs,Receptor,Fish.Pelagic Fish,Receptor.Fish.PelagicFish
+ferc_docs,Receptor,Fish.Sharks,Receptor.Fish.Sharks
+ferc_docs,Receptor,Habitat.Benthos,Receptor.Habitat.Benthos
+ferc_docs,Receptor,Habitat.Intertidal,Receptor.Habitat.Intertidal
+ferc_docs,Receptor,Human Dimensions,Receptor.HumanDimensions
+ferc_docs,Receptor,Human Dimensions.Climate Change,Receptor.HumanDimensions.ClimateChange
+ferc_docs,Receptor,Human Dimensions.Environmental Impact Assessment,Receptor.HumanDimensions.EnvironmentalImpactAssessment
+ferc_docs,Receptor,Human Dimensions.Fisheries,Receptor.HumanDimensions.Fisheries
+ferc_docs,Receptor,Human Dimensions.Legal & Policy,Receptor.HumanDimensions.LegalPolicy
+ferc_docs,Receptor,Human Dimensions.Life Cycle Assessment,Receptor.HumanDimensions.LifeCycleAssessment
+ferc_docs,Receptor,Human Dimensions.Marine Spatial Planning,Receptor.HumanDimensions.MarineSpatialPlanning
+ferc_docs,Receptor,Human Dimensions.Navigation,Receptor.HumanDimensions.Navigation
+ferc_docs,Receptor,Human Dimensions.Recreation & Tourism,Receptor.HumanDimensions.RecreationTourism
+ferc_docs,Receptor,Human Dimensions.Social & Economic Data,Receptor.HumanDimensions.SocialEconomicData
+ferc_docs,Receptor,Human Dimensions.Stakeholder Engagement,Receptor.HumanDimensions.StakeholderEngagement
+ferc_docs,Receptor,Human Dimensions.Visual Impacts,Receptor.HumanDimensions.VisualImpacts
+ferc_docs,Receptor,Invertebrates,Receptor.Invertebrates
+ferc_docs,Receptor,Marine Mammals,Receptor.MarineMammals
+ferc_docs,Receptor,Marine Mammals.Cetaceans,Receptor.MarineMammals.Cetaceans
+ferc_docs,Receptor,Marine Mammals.Pinnipeds,Receptor.MarineMammals.Pinnipeds
+ferc_docs,Receptor,Physical Environment,Receptor.PhysicalEnvironment
+ferc_docs,Receptor,Physical Environment.Sediment Transport,Receptor.PhysicalEnvironment.SedimentTransport
+ferc_docs,Receptor,Physical Environment.Water Quality,Receptor.PhysicalEnvironment.WaterQuality
+ferc_docs,Receptor,Reptiles,Receptor.Reptiles
+ferc_docs,Receptor,Terrestrial Mammals,Receptor.TerrestrialMammals
+ferc_docs,Stressor,ALL,Stressor
+ferc_docs,Stressor,Behavioral Interaction,Stressor.BehavioralInteraction
+ferc_docs,Stressor,Behavioral Interaction.Attraction,Stressor.BehavioralInteraction.Attraction
+ferc_docs,Stressor,Behavioral Interaction.Avoidance,Stressor.BehavioralInteraction.Avoidance
+ferc_docs,Stressor,Behavioral Interaction.Displacement,Stressor.BehavioralInteraction.Displacement
+ferc_docs,Stressor,EMF,Stressor.EMF
+ferc_docs,Stressor,Habitat Change,Stressor.HabitatChange
+ferc_docs,Stressor,Invasive Species,Stressor.InvasiveSpecies
+ferc_docs,Stressor,Lighting,Stressor.Lighting
+ferc_docs,Stressor,Noise,Stressor.Noise
+ferc_docs,Stressor,Noise Underwater,Stressor.Noise.Underwater
+ferc_docs,Stressor,Physical Interaction,Stressor.PhysicalInteraction
+ferc_docs,Stressor,Physical Interaction.Changes in Flow,Stressor.PhysicalInteraction.ChangesinFlow
+ferc_docs,Stressor,Physical Interaction.Chemicals,Stressor.PhysicalInteraction.Chemicals
+ferc_docs,Stressor,Physical Interaction.Collision,Stressor.PhysicalInteraction
+ferc_docs,Stressor,Physical Interaction.Collision,Consequence.Collision
+ferc_docs,Stressor,Physical Interaction.Dynamic Effects,Stressor.PhysicalInteraction.DynamicEffects
+ferc_docs,Stressor,Physical Interaction.Entanglement,Stressor.PhysicalInteraction
+ferc_docs,Stressor,Physical Interaction.Entanglement,Consequence.EntanglementEntrapment
+ferc_docs,Stressor,Physical Interaction.Entrapment,Stressor.PhysicalInteraction
+ferc_docs,Stressor,Physical Interaction.Entrapment,Consequence.EntanglementEntrapment
+ferc_docs,Stressor,PhysicalInteraction.Collision,Stressor.PhysicalInteraction
+ferc_docs,Stressor,PhysicalInteraction.Collision,Consequence.Collision
+ferc_docs,Stressor,PhysicalInteraction.Entanglement,Stressor.PhysicalInteraction
+ferc_docs,Stressor,PhysicalInteraction.Entanglement,Consequence.EntanglementEntrapment
+ferc_docs,Stressor,PhysicalInteraction.Entrapment,Stressor.PhysicalInteraction
+ferc_docs,Stressor,PhysicalInteraction.Entrapment,Consequence.EntanglementEntrapment
+ferc_docs,Technology,Marine Energy.Tidal,Technology.Current.Tidal
+ferc_docs,Technology,Marine Energy.Wave,Technology.Wave
+tethys_mgt,Management,Compliance,Management.Compliance
+tethys_mgt,Management,Design feature,Management.DesignFeature
+tethys_mgt,Management,Mitigation,Management.Mitigation
+tethys_mgt,Management,Monitoring,Management.Monitoring
+tethys_mgt,Phase,Decommissioning,Phase.4Decommissioning
+tethys_mgt,Phase,Installation,Phase.2Construction
+tethys_mgt,Phase,Operation & Maintenance,Phase.3OperationsandMaintenance
+tethys_mgt,Receptor,Benthic,Receptor.Habitat.Benthos
+tethys_mgt,Receptor,Benthic,Receptor.Habitat.Benthos
+tethys_mgt,Receptor,Benthic,Receptor.Habitat.Benthos
+tethys_mgt,Receptor,Benthic,Receptor.Invertebrates
+tethys_mgt,Receptor,Benthic,Receptor.Fish.DemersalFish
+tethys_mgt,Receptor,Benthic,Receptor.Invertebrates
+tethys_mgt,Receptor,Benthic,Receptor.Habitat.Benthos
+tethys_mgt,Receptor,Birds,Receptor.Birds
+tethys_mgt,Receptor,Birds,Receptor.Birds
+tethys_mgt,Receptor,Birds,Receptor.Birds.Seabirds
+tethys_mgt,Receptor,Birds,Receptor.Birds.Seabirds
+tethys_mgt,Receptor,Birds,Receptor.Birds.GroundNestingBirds
+tethys_mgt,Receptor,Birds,Receptor.Birds.Seabirds
+tethys_mgt,Receptor,Birds,Receptor.Birds.Seabirds
+tethys_mgt,Receptor,Fish,Receptor.Fish
+tethys_mgt,Receptor,Fish,Receptor.Fish.Sharks
+tethys_mgt,Receptor,Fish,Receptor.Fish.Sharks
+tethys_mgt,Receptor,Fish,Receptor.Fish.PelagicFish
+tethys_mgt,Receptor,Fish,Receptor.Fish.Sharks
+tethys_mgt,Receptor,Fish,Receptor.Fish
+tethys_mgt,Receptor,Fish,Receptor.Fish.DemersalFish
+tethys_mgt,Receptor,Fish,Receptor.Fish.Sharks
+tethys_mgt,Receptor,Fish,Receptor.Fish
+tethys_mgt,Receptor,Fish,Receptor.Fish
+tethys_mgt,Receptor,Fish,Receptor.Fish.PelagicFish
+tethys_mgt,Receptor,Fish,Receptor.Fish.PelagicFish
+tethys_mgt,Receptor,Fish,Receptor.Fish.Sharks
+tethys_mgt,Receptor,Habitat,Receptor
+tethys_mgt,Receptor,Habitat,Receptor.Habitat.Benthos
+tethys_mgt,Receptor,Habitat,Receptor.Invertebrates
+tethys_mgt,Receptor,Habitat,Receptor.Habitat.Benthos
+tethys_mgt,Receptor,Habitat,Receptor.Habitat.Intertidal
+tethys_mgt,Receptor,Marine Mammals,Receptor.MarineMammals
+tethys_mgt,Receptor,Marine Mammals,Receptor.MarineMammals.Cetaceans
+tethys_mgt,Receptor,Marine Mammals,Receptor.MarineMammals
+tethys_mgt,Receptor,Marine Mammals,Receptor.MarineMammals.Pinnipeds
+tethys_mgt,Receptor,Marine Mammals,Receptor.MarineMammals
+tethys_mgt,Receptor,Reptiles,Receptor.Reptiles
+tethys_mgt,Receptor,Reptiles,Receptor.Reptiles
+tethys_mgt,Stressor,Airborne noise,Stressor.Noise.Airborne
+tethys_mgt,Stressor,Barrier to movement,Stressor.BehavioralInteraction.Displacement
+tethys_mgt,Stressor,Changes in sediment dynamics,Stressor.PhysicalInteraction
+tethys_mgt,Stressor,Changes in sediment dynamics,Receptor.PhysicalEnvironment.SedimentTransport
+tethys_mgt,Stressor,Changes in water flow,Stressor.PhysicalInteraction.ChangesinFlow
+tethys_mgt,Stressor,Collision risk,Stressor.PhysicalInteraction
+tethys_mgt,Stressor,Collision risk,Consequence.Collision
+tethys_mgt,Stressor,Contamination,Stressor.PhysicalInteraction.Chemicals
+tethys_mgt,Stressor,Displacement,Stressor.BehavioralInteraction.Displacement
+tethys_mgt,Stressor,Dissipation of wave energy,Stressor.PhysicalInteraction.ChangesinFlow
+tethys_mgt,Stressor,EMF and thermal pressure,Stressor.EMF
+tethys_mgt,Stressor,EMF and thermal pressure,Stressor.PhysicalInteraction
+tethys_mgt,Stressor,Entanglement,Stressor.PhysicalInteraction
+tethys_mgt,Stressor,Entanglement,Consequence.EntanglementEntrapment
+tethys_mgt,Stressor,Entrapment,Stressor.PhysicalInteraction
+tethys_mgt,Stressor,Entrapment,Consequence.EntanglementEntrapment
+tethys_mgt,Stressor,Habitat creation,Stressor.HabitatChange
+tethys_mgt,Stressor,Lighting,Stressor.Lighting
+tethys_mgt,Stressor,Loss of habitat,Stressor.HabitatChange
+tethys_mgt,Stressor,Loss of seabed habitat,Stressor.HabitatChange
+tethys_mgt,Stressor,Loss of seabed habitat,Receptor.Habitat.Benthos
+tethys_mgt,Stressor,Marine Non-Native Species (MNNS),Stressor.InvasiveSpecies
+tethys_mgt,Stressor,Underwater noise,Stressor.Noise.Underwater
+tethys_mgt,Stressor,Vessel collision,Stressor.PhysicalInteraction
+tethys_mgt,Stressor,Vessel collision,Consequence.Collision
+tethys_mgt,Stressor,Vessel disturbance,Stressor.BehavioralInteraction
+tethys_mgt,Technology,Tidal,Technology.Current.Tidal
+tethys_mgt,Technology,Wave,Technology.Wave
+tethys_pubs,Consequence,Collision,Consequence.Collision
+tethys_pubs,Consequence,Entrapment,Consequence.EntanglementEntrapment
+tethys_pubs,Receptor,Bats,Receptor.Bats
+tethys_pubs,Receptor,Birds,Receptor.Birds
+tethys_pubs,Receptor,Cetaceans,Receptor.MarineMammals.Cetaceans
+tethys_pubs,Receptor,Ecosystem Processes,Receptor.EcosystemProcesses
+tethys_pubs,Receptor,Environmental Impact Assessment,Receptor.HumanDimensions.EnvironmentalImpactAssessment
+tethys_pubs,Receptor,Fish,Receptor.Fish
+tethys_pubs,Receptor,Fisheries,Receptor.HumanDimensions.Fisheries
+tethys_pubs,Receptor,Ground-Nesting Birds,Receptor.Birds.GroundNestingBirds
+tethys_pubs,Receptor,Human Dimensions,Receptor.HumanDimensions
+tethys_pubs,Receptor,Invertebrates,Receptor.Invertebrates
+tethys_pubs,Receptor,Legal & Policy,Receptor.HumanDimensions.LegalPolicy
+tethys_pubs,Receptor,Life Cycle Assessment,Receptor.HumanDimensions.LifeCycleAssessment
+tethys_pubs,Receptor,Marine Mammals,Receptor.MarineMammals
+tethys_pubs,Receptor,Marine Spatial Planning,Receptor.HumanDimensions.MarineSpatialPlanning
+tethys_pubs,Receptor,Navigation,Receptor.HumanDimensions.Navigation
+tethys_pubs,Receptor,Passerines,Receptor.Birds.Passerines
+tethys_pubs,Receptor,Pelagic Fish,Receptor.Fish.PelagicFish
+tethys_pubs,Receptor,Physical Environment,Receptor.PhysicalEnvironment
+tethys_pubs,Receptor,Pinnipeds,Receptor.MarineMammals.Pinnipeds
+tethys_pubs,Receptor,Raptors,Receptor.Birds.Raptors
+tethys_pubs,Receptor,Recreation & Tourism,Receptor.HumanDimensions.RecreationTourism
+tethys_pubs,Receptor,Reptiles,Receptor.Reptiles
+tethys_pubs,Receptor,Seabirds,Receptor.Birds.Seabirds
+tethys_pubs,Receptor,Sediment Transport,Receptor.PhysicalEnvironment.SedimentTransport
+tethys_pubs,Receptor,Shorebirds,Receptor.Birds.Shorebirds
+tethys_pubs,Receptor,Social & Economic Data,Receptor.HumanDimensions.SocialEconomicData
+tethys_pubs,Receptor,Stakeholder Engagement,Receptor.HumanDimensions.StakeholderEngagement
+tethys_pubs,Receptor,Terrestrial Mammals,Receptor.TerrestrialMammals
+tethys_pubs,Receptor,Visual Impacts,Receptor.HumanDimensions.VisualImpacts
+tethys_pubs,Receptor,Water Quality,Receptor.PhysicalEnvironment.WaterQuality
+tethys_pubs,Receptor,Waterfowl,Receptor.Birds.Waterfowl
+tethys_pubs,Stressor,Attraction,Stressor.BehavioralInteraction.Attraction
+tethys_pubs,Stressor,Avoidance,Stressor.BehavioralInteraction.Avoidance
+tethys_pubs,Stressor,Changes in Flow,Stressor.PhysicalInteraction.ChangesinFlow
+tethys_pubs,Stressor,Chemicals,Stressor.PhysicalInteraction.Chemicals
+tethys_pubs,Stressor,Collision,Stressor.PhysicalInteraction
+tethys_pubs,Stressor,Displacement,Stressor.BehavioralInteraction.Displacement
+tethys_pubs,Stressor,EMF,Stressor.EMF
+tethys_pubs,Stressor,Entrapment,Stressor.PhysicalInteraction
+tethys_pubs,Stressor,Habitat Change,Stressor.HabitatChange
+tethys_pubs,Stressor,Lighting,Stressor.Lighting
+tethys_pubs,Stressor,Noise,Stressor.Noise
+tethys_pubs,Technology,Current/Ocean Current,Technology.Current.OceanCurrent
+tethys_pubs,Technology,Current/Riverine,Technology.Current.Riverine
+tethys_pubs,Technology,Current/Tidal,Technology.Current.Tidal
+tethys_pubs,Technology,OTEC,Technology.OTEC
+tethys_pubs,Technology,Salinity Gradient,Technology.SalinityGradient
+tethys_pubs,Technology,Wave,Technology.Wave
+tethys_pubs,Receptor,Climate Change,Receptor.HumanDimensions.ClimateChange
+tethys_pubs,Receptor,Demersal Fish,Receptor.Fish.DemersalFish
+tethys_pubs,Receptor,Environmental Justice,Receptor.HumanDimensions.SocialEconomicData
