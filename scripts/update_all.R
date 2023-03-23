@@ -16,6 +16,15 @@ source(here("scripts/common.R")) # connection object
 source(here("scripts/db.R")) # connection object
 source(here("scripts/update.R")) # connection object
 
+# update data/projects.csv
+update_projects()
+
+# update data/project_sites.csv
+update_project_sites()
+
+# update data/project_permits.csv, data/project_times.csv
+update_project_timelines()
+
 # update db tables: tags
 update_tags()
 
@@ -30,12 +39,6 @@ update_tethys_tags()
 
 # update data/tethys_intxns.csv
 update_tethys_intxns()
-
-# update data/project_sites.csv
-update_project_sites()
-
-# update data/project_permits.csv, data/project_times.csv
-update_project_timelines()
 
 # update ferc docs
 update_ferc_docs()
