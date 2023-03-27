@@ -7,6 +7,13 @@ source(file.path(dir_scripts, "edit_interface.R"))
 source(file.path(dir_scripts, "shiny_report.R"))
 source(file.path(dir_scripts, "update.R"))
 
+# https://stackoverflow.com/questions/64239320/dbpool-object-expiring
+ck_con <- function(){
+  if (!con$valid)
+    source(file.path(dir_scripts, "db.R"))
+}
+ck_con()
+
 # LIBRARIES ----
 # devtools::install_github("DavidPatShuiFong/DTedit@f1617e253d564bce9b2aa67e0662d4cf04d7931f")
 shelf(
@@ -136,6 +143,7 @@ d_ba_docs <- tbl(con, "ba_docs") |>
 
 # INSERT
 ba.insert.callback <- function(data, row) {
+  ck_con()
   
   # not_list <- function(x){ !is.list(x) }
   d <- data |>
@@ -174,6 +182,8 @@ ba.insert.callback <- function(data, row) {
 
 # UPDATE
 ba.update.callback <- function(data, olddata, row) {
+  ck_con()
+  
   # browser()
   d <- data |>
     slice(row) |>
@@ -208,6 +218,7 @@ ba.update.callback <- function(data, olddata, row) {
 
 # DELETE
 ba.delete.callback <- function(data, row) {
+  ck_con()
   
   d <- data |> 
     slice(row) # |> na_if("NA") |> na_if("")

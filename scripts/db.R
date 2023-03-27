@@ -30,7 +30,8 @@ db_params <- switch(machine, # common.R:machine
 #   password = readLines(db_params$pwd_txt))
 
 # use con on all other functions
-con <<- pool::dbPool(
+# https://shiny.rstudio.com/articles/pool-advanced.html
+con <- pool::dbPool(
   drv      = RPostgres::Postgres(),
   dbname   = db_params$dbname,
   host     = db_params$host,
