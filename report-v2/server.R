@@ -250,11 +250,13 @@ server <- function(input, output, session) {
   #* get_projects ----
   get_projects <- reactive({
     
-    # #message("get_projects - beg")
+    if (debug)
+      message("get_projects - beg")
     
     prj <- get_projects_tbl(ixns = values$ixns)
     
-    # #message("get_projects - end")
+    if (debug)
+      message("get_projects - end")
     
     prj
   })
@@ -262,11 +264,13 @@ server <- function(input, output, session) {
   #* prj_map ----
   output$prj_map <- renderLeaflet({
     
-    # #message("prj_map - beg")
+    if (debug)
+      message("prj_map - beg")
     
     m <- map_projects(get_projects())
     
-    # #message("prj_map - end")
+    if (debug)
+      message("prj_map - end")
     
     m
   })

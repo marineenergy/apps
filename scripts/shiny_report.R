@@ -139,8 +139,7 @@ get_content_data <- function(ixns, type = "publications", ...){
   # type = "publications"; ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Technology.Tidal", "Receptor.Fish", "Consequence.Collision"))
   # type = "publications"; ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Technology.Tidal", "Receptor.Fish", "Consequence.Collision"), c("Receptor.Fish", "Management.Compliance"))
   
-  # if (type=="projects")
-  #   browser()
+  # type = "projects"; ixns = list()
   
   tbl_tags <- get_content_tags_tbl(type)
   get_rowids_per_ixn <- function(tags){
@@ -161,6 +160,7 @@ get_content_data <- function(ixns, type = "publications", ...){
   # functions of lazy data, ie before collect(), per content type
   get_prj_tags <- function(){
     tbl(con, "project_sites") %>% 
+      select(-geometry) |> 
       left_join(
         tbl(con, "project_tags"), by = "rowid")  }
   get_mgt_tags <- function(){
@@ -187,19 +187,19 @@ get_content_data <- function(ixns, type = "publications", ...){
         tbl(con, "mc_spatial_tags"),
         by = "rowid")  }
   
-  
   # get lazy data per content type
-  d <- list(
+  d <- switch(
+    type,
     projects     = get_prj_tags(),
     management   = get_mgt_tags(),
     documents    = get_doc_tags(),
     publications = get_pub_tags(),
-    spatial      = get_spa_tags())[[type]]
+    spatial      = get_spa_tags())
   
   if (!is.null(rowids))
     d <- filter(d, rowid %in% !!rowids)
   
-  d <- d_to_tags_html(d) %>%  
+  d <- d_to_tags_html(d) %>%
     mutate(
       across(where(is.character), na_if, "NA"))
   
@@ -900,8 +900,10 @@ plot_project_timelines <- function(d_projects){
   cols        <- setNames(
     c(cols_type, cols_status), 
     c(permit_types, project_statuses))
-  symbls_type  <- c(rep('triangle-up', 3), 'triangle-down', 'triangle-up', 'triangle-down', 'triangle-up', 'triangle-down', rep('triangle-up', 3))
+  symbls_type  <- c(rep('triangle-up', 3), 'triangle-down', 'triangle-up', 'triangle-down', 'triangle-up', 'triangle-down', rep('triangle-up', 3), 'triangle-down')
+  # + last symbls_type triangle-down for permit_type == Decommissioning
   stopifnot(length(permit_types) == length(symbls_type))
+
   symbls_status <- rep(NA, 2)
   symbls <- setNames(
     c(symbls_type,  symbls_status), 
