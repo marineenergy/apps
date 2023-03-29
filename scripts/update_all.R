@@ -19,12 +19,6 @@ source(here("scripts/update.R")) # connection object
 # update data/projects.csv
 update_projects()
 
-# update data/project_sites.csv
-update_project_sites()
-
-# update data/project_permits.csv, data/project_times.csv
-update_project_timelines()
-
 # update db tables: tags
 update_tags()
 
