@@ -139,32 +139,38 @@ update_ba <- function(){
   # local CSVs
   ba_projects_csv <- here("data/ba_projects.csv")
   ba_sites_csv    <- here("data/ba_sites.csv")
-  # ba_docs_csv     <- here("data/ba_docs.csv")
+  ba_docs_csv     <- here("data/ba_docs.csv")
 
   d_ba_projects <- get_gsheet_data(
-    "ba_projects", sheet_id = gsheet_ba) %>% 
-    arrange(ba_project_code)
+    "ba_projects", sheet_id = gsheet_ba)|> 
+    arrange(ba_project) |> 
+    select(-locations_count)
   write_csv(d_ba_projects, ba_projects_csv)
 
   d_ba_sites <- get_gsheet_data(
-    "ba_sites", sheet_id = gsheet_ba) %>% 
-    arrange(ba_project_code, site_description)
+    "ba_sites", sheet_id = gsheet_ba)|> 
+    arrange(ba_project, site_name)
   write_csv(d_ba_sites, ba_sites_csv)
   
-  # d_ba_docs <- get_gsheet_data(
-  #   "ba_docs", sheet_id = gsheet_ba) %>%
-  #   arrange(ba_project_code, ba_doc)
-  # write_csv(d_ba_docs, ba_docs_csv)
+  d_ba_docs <- get_gsheet_data(
+    "ba_docs", sheet_id = gsheet_ba) |> 
+    select(-ba_doc_title) |> 
+    arrange(ba_project, ba_doc_file)
+  write_csv(d_ba_docs, ba_docs_csv)
   
   dbWriteTable(con, "ba_projects", d_ba_projects, overwrite = T)
-  dbWriteTable(con, "ba_sites", d_ba_sites, overwrite = T)
-  # dbWriteTable(con, "ba_docs", d_ba_docs, overwrite = T)
-  # dbExecute(con, "ALTER TABLE project_tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
+  dbExecute(con, "ALTER TABLE ba_projects ALTER COLUMN tag_technology TYPE ltree USING text2ltree(tag_technology);")
+  dbWriteTable(con, "ba_sites"   , d_ba_sites   , overwrite = T)
+  dbWriteTable(con, "ba_docs"    , d_ba_docs    , overwrite = T)
   # dbExecute(con, "CREATE INDEX idx_project_tags_tag_sql ON project_tags USING GIST (tag_sql);")
+  # TODO: indexes
 }
 
 update_tags <- function(){
   source(here("scripts/db.R"))
+  
+  tags_csv       <- here("data/tags.csv")
+  tag_lookup_csv <- here("data/tag_lookup.csv")
   
   # rename original tags
   # DBI::dbSendQuery(con, "ALTER TABLE tags RENAME TO tags_0;")
@@ -210,6 +216,10 @@ update_tags <- function(){
   #   Management  = "All Management Categories",
   #   Consequence = "All Consequences")
   # stopifnot(all(tags %>% distinct(category) %>% pull(category) %in% names(categories_all)))
+  
+  # write tags and tag_lookup to csv (eg for reading into edit-ba app)
+  readr::write_csv(tags, tags_csv)
+  readr::write_csv(tag_lookup, tag_lookup_csv)
   
   # add columns for fast, pretty printing to shiny and reports
   tags <- tags %>% 

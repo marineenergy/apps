@@ -1,6 +1,6 @@
 shelf(DBI, DT, glue, tidyr)
 
-# get_ferc() helper functions ----
+# get_ba() helper functions ----
 merge_tags <- function(tag_list_col) {
   tag_list_col %>% 
     unlist() %>% 
@@ -18,7 +18,8 @@ merge_tags_named <- function(tag_list_col) {
     unique() 
 }
 
-# read in & merge ferc_docs & ferc_doc_tags from db ----
+# read in & merge ba_docs & ba_doc_tags from db ----
+
 get_ferc <- function() {
   # read in ferc_docs and merge w/ table created by inner join b/w
   # ferc_doc_tags and tags lookup
@@ -59,11 +60,116 @@ get_ferc <- function() {
       detail, tag_sql, tag_named, tag_html) %>% 
     arrange(project, document, prj_doc_attachment) %>%
     data.frame()
-
+  
   d_ferc 
 }
 
+
+# OLD: get_ba(); NEW: get_ba_docs(), get_ba_doc_excerpts()
+get_ba <- function() {
+  # read in ba_docs and merge w/ table created by inner join b/w
+  # ba_doc_tags and tags lookup
+  d_ba <- tbl(con, "ba_doc_excerpt_tags") |> 
+    collect() |> 
+    mutate(tag_sql = as.character(tag_sql)) |> 
+    inner_join(
+      get_tags_nocat() |> 
+        select(tag_sql, tag_named, tag_html),
+      by = "tag_sql") |> 
+    left_join(
+      tbl(con, "ba_docs") |> 
+        left_join(
+          tbl(con, "ba_doc_excerpts"),
+          by = "ba_doc_file") |> 
+        collect(),
+      by = "rowid") |> 
+    arrange(ba_project, ba_doc_file, rowid, tag_sql) |> 
+    group_by(rowid) |> 
+    tidyr::nest(
+      tag_sql   = tag_sql,         # for UPDATING / storage
+      tag_named = tag_named,       # for EDIT INTERFACE
+      tag_html  = tag_html) |>     # for VIEW dtedit table
+    mutate(
+      tag_sql       = map(tag_sql,   merge_tags),
+      tag_named     = map(tag_named, merge_tags_named),
+      tag_html      = map(tag_html,  merge_tags_html),
+      # document -> document_html
+      document_html = ifelse(
+        is.na(ba_doc_url),
+        ba_doc_file,
+        glue(
+          "<a href='{ba_doc_url}' target='_blank'>{ba_doc_file}</a>") |> 
+          as.character()) ) |> 
+    relocate(
+      ba_project, ba_doc_file, rowid, excerpt, tag_sql, tag_named, tag_html) %>% 
+    arrange(ba_project, ba_doc_file) %>%
+    data.frame()
+
+  d_ba
+}
+
+get_ba_docs <- function() {
+  
+  d_ba_docs <- tbl(con, "ba_docs") |>
+    select(
+      ba_project, ba_doc_file, ba_doc_url, prepared_by, institution, date_report, date_test_beg, date_test_end) |> 
+    collect() |> 
+    mutate(
+      ba_doc_html = ifelse(
+        is.na(ba_doc_url),
+        ba_doc_file,
+        glue(
+          "<a href='{ba_doc_url}' target='_blank'>{ba_doc_file}</a>") |> 
+          as.character())) |> 
+    arrange(ba_project, ba_doc_file) |> 
+    relocate(
+      ba_project, ba_doc_file, ba_doc_url, ba_doc_html) |> 
+    data.frame()
+  
+  d_ba_docs
+}
+
+get_ba_doc_excerpts <- function(gpt_version = "3.5", ck_gpt = FALSE) {
+  
+  d_ba_doc_excerpts <- tbl(con, "ba_doc_excerpts") |> 
+    collect() |> 
+    left_join(
+      tbl(con, "ba_doc_excerpt_tags") |> 
+        collect() |> 
+        mutate(tag_sql = as.character(tag_sql)) |> 
+        inner_join(
+          get_tags_nocat() |> 
+            select(tag_sql, tag_named, tag_html),
+          by = "tag_sql"),
+      by = "rowid",
+      multiple = "all") |> 
+    arrange(ba_doc_file, rowid, tag_sql) |> 
+    group_by(rowid) |> 
+    tidyr::nest(
+      tag_sql   = tag_sql,         # for UPDATING / storage
+      tag_named = tag_named,       # for EDIT INTERFACE
+      tag_html  = tag_html) |>     # for VIEW dtedit table
+    mutate(
+      tag_sql       = map(tag_sql,   merge_tags),
+      tag_named     = map(tag_named, merge_tags_named),
+      tag_html      = map(tag_html,  merge_tags_html)) |> 
+    relocate(
+      ba_doc_file, rowid, excerpt, tag_sql, tag_named, tag_html) |> 
+    # select(-ba_doc_file, -ba_doc_url) |> 
+    arrange(ba_doc_file, rowid) |> 
+    mutate(
+      excerpt_html  = map_chr(
+        excerpt, stringr::str_replace_all, pattern="[\n|\r|\r\n|\n\r]", replacement="<br>"),
+      ck_gpt      = !!ck_gpt,
+      gpt_version = !!gpt_version) |> 
+    data.frame()
+  
+  d_ba_doc_excerpts
+}
+
+
 # write project data to db ---- for update.R
+
 update_ferc_prjs <- function(){
   d_prj_doc_sec <- dbReadTable(con, "projects") %>% tibble() %>% collect() %>% 
     select(prj = project) %>% 

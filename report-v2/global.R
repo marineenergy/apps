@@ -4,6 +4,7 @@ dir_scripts <<- here::here("scripts")
 dir_data    <<- here::here("data")
 source(file.path(dir_scripts, "db.R"))
 source(file.path(dir_scripts, "shiny_report.R")) # loads content d_*
+debug = T
 
 # devtools::install_github("RinteRface/shinydashboardPlus@4f23ece8c1ab50ae8e9505400ea7c266c6a04731") # Dec 7, 2020
 librarian::shelf(

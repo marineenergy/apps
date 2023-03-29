@@ -16,8 +16,17 @@ web_url = "https://marineenergy.app"
 map_default <- leaflet(
   options = leafletOptions(
     zoomControl = T,
-    attributionControl = F)) %>%
-  addProviderTiles(providers$Esri.OceanBasemap) %>% 
+    attributionControl = F)) |> 
+  # add base: blue bathymetry and light brown/green topography
+  addProviderTiles(
+    "Esri.OceanBasemap",
+    options = providerTileOptions(
+      variant = "Ocean/World_Ocean_Base")) |>
+  # add reference: placename labels and borders
+  addProviderTiles(
+    "Esri.OceanBasemap",
+    options = providerTileOptions(
+      variant = "Ocean/World_Ocean_Reference")) |>
   setView(-93.4, 37.4, 4)
 
 nbsp <- "\u00A0" # Unicode (UTF-8) for non-breaking space

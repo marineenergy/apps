@@ -29,8 +29,17 @@ server <- function(input, output, session) {
     m <- leaflet(
       options = leafletOptions(
         zoomControl        = F,
-        attributionControl = F)) %>%
-      addProviderTiles(providers$Esri.OceanBasemap) %>% 
+        attributionControl = F)) |> 
+      # add base: blue bathymetry and light brown/green topography
+      addProviderTiles(
+        "Esri.OceanBasemap",
+        options = providerTileOptions(
+          variant = "Ocean/World_Ocean_Base")) |>
+      # add reference: placename labels and borders
+      addProviderTiles(
+        "Esri.OceanBasemap",
+        options = providerTileOptions(
+          variant = "Ocean/World_Ocean_Reference")) |>
       setView(-93.4, 37.4, 2)
     
     message("output$map_side - end")
@@ -47,8 +56,17 @@ server <- function(input, output, session) {
     m <- leaflet(
       options = leafletOptions(
         zoomControl = T,
-        attributionControl = F)) %>% 
-      addProviderTiles(providers$Esri.OceanBasemap) %>% 
+        attributionControl = F)) |> 
+      # add base: blue bathymetry and light brown/green topography
+      addProviderTiles(
+        "Esri.OceanBasemap",
+        options = providerTileOptions(
+          variant = "Ocean/World_Ocean_Base")) |>
+      # add reference: placename labels and borders
+      addProviderTiles(
+        "Esri.OceanBasemap",
+        options = providerTileOptions(
+          variant = "Ocean/World_Ocean_Reference")) |>
       # addPolygons(data = ply_editable_0, group = "ply_editable") %>% 
       setView(-93.4, 37.4, 4)
     
@@ -232,11 +250,13 @@ server <- function(input, output, session) {
   #* get_projects ----
   get_projects <- reactive({
     
-    # #message("get_projects - beg")
+    if (debug)
+      message("get_projects - beg")
     
     prj <- get_projects_tbl(ixns = values$ixns)
     
-    # #message("get_projects - end")
+    if (debug)
+      message("get_projects - end")
     
     prj
   })
@@ -244,11 +264,54 @@ server <- function(input, output, session) {
   #* prj_map ----
   output$prj_map <- renderLeaflet({
     
-    # #message("prj_map - beg")
+    if (debug)
+      message("prj_map - beg")
     
     m <- map_projects(get_projects())
     
-    # #message("prj_map - end")
+    if (debug)
+      message("prj_map - end")
+    
+    m
+  })
+  
+  #* ba_map ----
+  output$ba_map <- renderLeaflet({
+    
+    # #message("ba_map - beg")
+    
+    ba_sites <- tbl(con, "ba_sites") %>% 
+      collect() %>% 
+      mutate(
+        label_html = glue(
+          "<b>{ba_project}</b><br>
+          at {site_name}") %>% lapply(htmltools::HTML))
+    
+    m <- leaflet::leaflet(
+      data    = ba_sites, width = "100%",
+      options = leaflet::leafletOptions(
+        zoomControl = F)) |> 
+      # add base: blue bathymetry and light brown/green topography
+      leaflet::addProviderTiles(
+        "Esri.OceanBasemap",
+        options = providerTileOptions(
+          variant = "Ocean/World_Ocean_Base")) |>
+      # add reference: placename labels and borders
+      leaflet::addProviderTiles(
+        "Esri.OceanBasemap",
+        options = providerTileOptions(
+          variant = "Ocean/World_Ocean_Reference")) |>
+      leaflet::addMarkers(
+        lat   = ~lat,
+        lng   = ~lon,
+        label = ~label_html,
+        popup = ~label_html,
+        clusterOptions = 
+          markerClusterOptions()) |> 
+      htmlwidgets::onRender("function(el, x) {
+          L.control.zoom({ position: 'topright' }).addTo(this) }")
+    
+    # #message("ba_map - end")
     
     m
   })
@@ -466,16 +529,47 @@ server <- function(input, output, session) {
     
     m <- ifelse(
       n_ixns == 0 & n_cks == 0,
-      HTML(glue("FERC Documents <small>({d_docs_n} rows)</small>")),
-      HTML(glue("FERC Documents <small>({n_docs} of {d_docs_n} rows; filtered by {n_ixns} interactions & {n_cks} checkboxes)</small>")))
+      HTML(glue("BioAssessment Documents <small>({d_docs_n} rows)</small>")),
+      HTML(glue("BioAssessment Documents <small>({n_docs} of {d_docs_n} rows; filtered by {n_ixns} interactions & {n_cks} checkboxes)</small>")))
   
-    #message("msg_docs - end")
+    #message("box_docs - end")
+    
+    m
+  })
+  
+  #* box_ba ----
+  output$box_ba <- renderText({
+    
+    #message("box_ba - beg")
+    
+    n_ixns <- length(values$ixns)
+    n_cks  <- length(input$cks_docs)
+    n_docs <- nrow(get_docs())
+    
+    m <- ifelse(
+      n_ixns == 0 & n_cks == 0,
+      HTML(glue("BioAssessment Documents <small>({d_docs_n} rows)</small>")),
+      HTML(glue("BioAssessment Documents <small>({n_docs} of {d_docs_n} rows; filtered by {n_ixns} interactions & {n_cks} checkboxes)</small>")))
+  
+    #message("box_ba - end")
     
     m
   })
   
   #* tbl_docs ----
   output$tbl_docs <- renderDataTable({
+    
+    #message("tbl_docs - beg")
+    
+    d <- get_docs()
+    
+    #message("tbl_docs - end")
+    
+    d
+  }, escape = F, rownames = F)
+  
+  #* tbl_ba ----
+  output$tbl_ba <- renderDataTable({
     
     #message("tbl_docs - beg")
     
