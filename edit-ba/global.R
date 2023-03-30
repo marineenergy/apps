@@ -72,6 +72,7 @@ if (!"ba_doc_excerpts" %in% db_tbls){
       ba_doc_file, excerpt, rowid, ck_ixn, ck_obs, ck_mp, ck_amp, ck_bmps)
 
   dbWriteTable(con, "ba_doc_excerpts", d_ba_doc_excerpts, overwrite = T)
+
   # TODO: indexes
 }
 
@@ -92,6 +93,7 @@ if (!"ba_doc_excerpt_tags" %in% db_tbls){
     select(
       rowid, tag_sql)
   dbWriteTable(con, "ba_doc_excerpt_tags", d_ba_doc_excerpt_tags)
+  dbExecute(con, "ALTER TABLE ba_doc_excerpt_tags ALTER COLUMN tag_sql TYPE ltree USING text2ltree(tag_sql);")
   # TODO: indexes
 }
 

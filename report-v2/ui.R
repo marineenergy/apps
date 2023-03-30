@@ -175,15 +175,6 @@ ui <- dashboardPage(
           #*** ba_subtab_tbl ----
           tabPanel(
             "Table of Excerpts",
-            checkboxGroupInput(
-              "cks_docs",
-              "Binary Filters:",
-              c(
-                "Ixn: Presented as potential interaction?"              = "ck_ixn",
-                "Obs: Described from observations at the project site?" = "ck_obs",
-                "MP: Monitoring Plan?"                                  = "ck_mp",
-                "AMP: Adaptive Management Plan?"                        = "ck_amp",
-                "BMP: Best Management Practices applied?"               = "ck_bmps")),
             fluidRow(
               box(
                 title = uiOutput("box_ba", inline=T), width = 12,

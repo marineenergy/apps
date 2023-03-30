@@ -499,6 +499,22 @@ server <- function(input, output, session) {
   })
   
   #* msg_docs ----
+  #* get_ba() ----
+  get_ba <- reactive({
+    
+    if (debug)
+      message("get_ba() - beg")
+    
+    d <- get_ba_tbl(ixns = values$ixns, cks = input$cks_docs)
+    #d <- get_docs_tbl(ixns = values$ixns, cks = input$cks_docs)
+    
+    if (debug)
+      message("get_ba() - end")
+    
+    d
+  })
+  
+  #* msg_docs ----
   output$msg_docs <- renderUI({
     
     #message("msg_docs - beg")
@@ -571,11 +587,13 @@ server <- function(input, output, session) {
   #* tbl_ba ----
   output$tbl_ba <- renderDataTable({
     
-    #message("tbl_docs - beg")
+    if (debug)
+      message("tbl_ba - beg")
     
-    d <- get_docs()
+    d <- get_ba()
     
-    #message("tbl_docs - end")
+    if (debug)
+      message("tbl_ba - end")
     
     d
   }, escape = F, rownames = F)
