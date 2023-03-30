@@ -172,10 +172,10 @@ ba.insert.callback <- function(data, row) {
   d_excerpts <- get_new_excerpts(d) # data to INSERT into ba_docs
   d_tags     <- get_new_tags(d)     # data to INSERT into ba_doc_extract_tags
   
-  conn <- poolCheckout(con)
-  dbAppendTable(conn, "ba_doc_excerpts", d_excerpts)
-  dbAppendTable(conn, "ba_doc_excerpt_tags", d_tags)
-  poolReturn(conn)
+  #con <- poolCheckout(con)
+  dbAppendTable(con, "ba_doc_excerpts", d_excerpts)
+  dbAppendTable(con, "ba_doc_excerpt_tags", d_tags)
+  #poolReturn(conn)
   
   get_ba_doc_excerpts(gpt_version_init)
 }
@@ -206,12 +206,12 @@ ba.update.callback <- function(data, olddata, row) {
   d_excerpts <- get_new_excerpts(d) # data to INSERT into ba_docs
   d_tags     <- get_new_tags(d)     # data to INSERT into ba_doc_extract_tags
 
-  conn <- poolCheckout(con)
-  dbExecute(conn, glue("DELETE FROM ba_doc_excerpts WHERE rowid = {d$rowid}"))
-  dbAppendTable(conn, "ba_doc_excerpts", d_excerpts)
-  dbExecute(conn, glue("DELETE FROM ba_doc_excerpt_tags WHERE rowid = {d$rowid}"))
-  dbAppendTable(conn, "ba_doc_excerpt_tags", d_tags)
-  poolReturn(conn)
+  #conn <- poolCheckout(con)
+  dbExecute(con, glue("DELETE FROM ba_doc_excerpts WHERE rowid = {d$rowid}"))
+  dbAppendTable(con, "ba_doc_excerpts", d_excerpts)
+  dbExecute(con, glue("DELETE FROM ba_doc_excerpt_tags WHERE rowid = {d$rowid}"))
+  dbAppendTable(con, "ba_doc_excerpt_tags", d_tags)
+  #poolReturn(conn)
   
   get_ba_doc_excerpts(gpt_version_init)
 }
@@ -223,10 +223,10 @@ ba.delete.callback <- function(data, row) {
   d <- data |> 
     slice(row) # |> na_if("NA") |> na_if("")
   
-  conn <- poolCheckout(con)
-  dbExecute(conn, glue("DELETE FROM ba_doc_excerpts WHERE rowid = {d$rowid}"))
-  dbExecute(conn, glue("DELETE FROM ba_doc_excerpt_tags WHERE rowid = {d$rowid}"))
-  poolReturn(conn)
+  #conn <- poolCheckout(con)
+  dbExecute(con, glue("DELETE FROM ba_doc_excerpts WHERE rowid = {d$rowid}"))
+  dbExecute(con, glue("DELETE FROM ba_doc_excerpt_tags WHERE rowid = {d$rowid}"))
+  #poolReturn(conn)
   
   get_ba_doc_excerpts(gpt_version_init)
 }
