@@ -11,7 +11,7 @@ ui <- dashboardPage(
       navbarTab(tabName = "tab_prj",     "Projects"),
       navbarTab(tabName = "tab_mgt",     "Management"),
       navbarTab(tabName = "tab_docs",    "Documents"),
-      navbarTab(tabName = "tab_ba",      "BioAssessments"),
+      # navbarTab(tabName = "tab_ba",      "BioAssessments"),
       navbarTab(tabName = "tab_pubs",    "Publications"),
       navbarTab(tabName = "tab_spatial", "Spatial"),
       navbarTab(tabName = "tab_rpt",     "Reports")),
