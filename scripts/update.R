@@ -883,6 +883,15 @@ update_tethys_mgt <- function(){
   mgt_csv      <- here("data/tethys_mgt.csv")
   mgt_tags_csv <- here("data/tethys_mgt_tags.csv")
   
+  # archive existing
+  tbl(con, "tethys_mgt") |> 
+    collect() |> 
+    write_csv(mgt_csv)
+  
+  tbl(con, "tethys_mgt_tags") |> 
+    collect() |> 
+    write_csv(mgt_tags_csv)
+  
   # read web
   d <- read_csv(mgt_api_url)
 
