@@ -1,3 +1,4 @@
+# source(here::here("scripts/common.R")); source(here::here("scripts/db.R"))
 
 update_projects <- function(){
   
@@ -874,6 +875,9 @@ update_tethys_mgt_0 <- function(){
 }
 
 update_tethys_mgt <- function(){
+  
+  librarian::shelf(
+    readr, tibble, tidyr)
   
   mgt_api          <- "https://tethys.pnnl.gov/export/tethys-management-measures-tool.csv"
   mgt_api_csv      <- here("data/tethys_mgt_api.csv")
