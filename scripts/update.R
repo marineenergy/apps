@@ -1,3 +1,4 @@
+# source(here::here("scripts/common.R")); source(here::here("scripts/db.R"))
 
 update_projects <- function(){
   
@@ -875,93 +876,131 @@ update_tethys_mgt_0 <- function(){
 
 update_tethys_mgt <- function(){
   
-  mgt_api          <- "https://tethys.pnnl.gov/export/tethys-management-measures-tool.csv"
-  mgt_api_csv      <- here("data/tethys_mgt_api.csv")
-  mgt_api_tags_csv <- here("data/tethys_mgt_tags.csv")
+  librarian::shelf(
+    purrr, readr, tibble, tidyr)
   
-  mgt_0 <- read_csv(here("data/tethys_mgt.csv"))
+  mgt_url      <- "https://tethys.pnnl.gov/export/tethys-management-measures-tool.csv"
+  mgt_api_csv  <- here("data/tethys_mgt_api.csv")
+  mgt_csv      <- here("data/tethys_mgt.csv")
+  mgt_tags_csv <- here("data/tethys_mgt_tags.csv")
   
-  # read web
-  mgt <- read_csv(mgt_api)
+  # archive existing
+  tbl_mgt <- tbl(con, "tethys_mgt") |> 
+    collect() 
+  write_csv(tbl_mgt, mgt_csv)
+  tbl_mgt_tags <- tbl(con, "tethys_mgt_tags") |> 
+    collect()
+  write_csv(tbl_mgt_tags, mgt_tags_csv)
   
-  # names(mgt)
-  # names(mgt_0)
-  # 
-  # %>% 
-  #   html_table() %>% 
-  #   .[[1]] %>%
-  #   mutate(across(where(is.character), ~na_if(., "n/a"))) %>% 
-  #   tibble()
-  
-  #paste(names(mgt), collapse = ", ")
-  # Technology, Management Measure Category, Phase of Project, Stressor, Receptor, 
-  #   Specific Receptor, Interaction, Specific Management Measures, Implications of Measure
-  mgt <- mgt %>% 
-    group_by(Interaction, `Specific Management Measures`, `Implications of Measure`) %>% 
-    nest() %>% 
-    ungroup() %>% 
-    rowid_to_column("rowid")
-  
-  # write mgt_csv
-  mgt %>% 
-    select(-data) %>% 
-    write_csv(mgt_csv)
+  # read web api
+  d <- read_csv(mgt_url)
+  write_csv(d, mgt_api_csv)
+  # compare new and old fields
+  # names(d)
+  # [1] "Technology"                   "Management_Measure_Category" 
+  # [3] "Project_Phase"                "Stressor"                    
+  # [5] "Receptor"                     "Specific_Receptor"           
+  # [7] "Interaction"                  "Specific_Management_Measures"
+  # [9] "Implications_of_Measure"      "Comments_on_Past_Experience" 
+  # [11] "Cost_of_Management_Measure"   "When_Is_It_Needed"           
+  # [13] "Advantages"                   "Challenges"                  
+  # [15] "Project_Documents"            "Project_Sites"
+  # names(tbl_mgt)
+  # [1] "rowid"                        "Interaction"                 
+  # [3] "Specific Management Measures" "Implications of Measure" 
+
+  mgt <- d |> 
+    select(
+      Interaction, Specific_Management_Measures, Implications_of_Measure,
+      Technology, Management_Measure_Category, Project_Phase, Stressor, Receptor, Specific_Receptor) |>
+    # TODO: include these fields skipping for now:
+    #   Comments_on_Past_Experience, Cost_of_Management_Measure, When_Is_It_Needed, Advantages, Challenges, Project_Documents, Project_Sites
+    group_by(Interaction, Specific_Management_Measures, Implications_of_Measure) |> 
+    nest(
+      data = c(Technology, Management_Measure_Category, Project_Phase, Stressor, Receptor, Specific_Receptor)) |>
+    rowid_to_column("rowid") |> 
+    rename_with(~str_replace_all(.x, "_", " ")) |> 
+    mutate(
+      data_nrow = map_int(data, nrow)) |> 
+    ungroup()
+  # nrow(mgt) # 339 -> 200 after grouping
+  # table(d_mgt$data_nrow)
+  #   1   2   3   4   5   6 
+  # 123  44  18   6   4   5
+  # View(mgt)
   
   # OLD: match tags from tag_lookup in db
   # tag_lookup <- tbl(con, "tag_lookup") %>% 
   #   filter(content == "tethys_mgt")
-  tag_lookup <- get_gsheet_data("tag_lookup") %>% 
-    filter(content == "tethys_mgt") %>% 
-    select(-content)
-  #table(tag_lookup$tag_category)
-  # Management      Phase   Receptor   Stressor Technology 
-  #          5          3         39         22          2
-  # TODO: update db tag_lookup, optional?
+  tag_lookup <- get_gsheet_data("tag_lookup") |>
+    filter(content == "tethys_mgt") |>
+    select(tag_category, content_tag, tag_sql) |> 
+    arrange(tag_sql)
+  # OLD: table(tag_lookup$tag_category):
+  #   Management      Phase   Receptor   Stressor Technology 
+  #            5          3         39         22          2
+  # NEW: table(tag_lookup$tag_category):
+  #   Management      Phase   Receptor   Stressor Technology 
+  #            4          3         29         29          2
   
   get_tag_content <- function(d_r){
-    # d_r <- mgt$data[[1]]
-    d_r %>% 
+    # d_r <- d_mgt$data[[1]]
+    d_r |>
       select(
         Technology, 
-        Stressor, 
-        Management = `Management Measure Category`,
-        Phase      = `Phase of Project`) %>% 
+        Stressor,
+        Receptor,
+        Management = Management_Measure_Category,
+        Phase      = Project_Phase) |>
       pivot_longer(
         everything(), 
         names_to  = "tag_category", 
-        values_to = "content_tag") %>% 
+        values_to = "content_tag") |>
       bind_rows(
-        d_r %>% 
+        d_r |>
           select(
-            content_tag       = Receptor, 
-            content_tag_extra = `Specific Receptor`) %>% 
+            content_tag = Specific_Receptor) |> 
           mutate(
-            tag_category = "Receptor") %>% 
-          select(tag_category, content_tag, content_tag_extra)) %>% 
-      distinct(tag_category, content_tag, content_tag_extra) %>% 
-      arrange(desc(tag_category), content_tag, content_tag_extra)
+            tag_category = "Receptor") |>
+          select(tag_category, content_tag)) |>
+      distinct(tag_category, content_tag) |>
+      arrange(desc(tag_category), content_tag)
   }
   
-  mgt_tags <- mgt %>%
-    select(rowid, data) %>% 
+  mgt_tags <- mgt |> 
+    select(rowid, data) |>  
     mutate(
-      tags = map(data, get_tag_content)) %>% 
-    select(-data) %>% 
-    unnest(tags) %>% 
+      tags = map(data, get_tag_content)) |> 
+    select(-data) |>
+    unnest(tags) |>
+    separate_rows(content_tag, sep=", ") |> 
     left_join(
       tag_lookup,
-      by = c("tag_category", "content_tag", "content_tag_extra")) %>% 
-    arrange(rowid, tag_sql, tag_category, content_tag, content_tag_extra)
-  
-  mgt_tags_missing_tag_sql <- mgt_tags %>% filter(is.na(tag_sql))
-  stopifnot(nrow(mgt_tags_missing_tag_sql) == 0)
-  
-  mgt_tags %>% 
-    select(rowid, tag_sql) %>% 
-    write_csv(mgt_tags_csv)
-  
-  mgt      <- read_csv(mgt_csv, col_types = cols())
-  mgt_tags <- read_csv(mgt_tags_csv, col_types = cols())
+      by = c("tag_category", "content_tag"),
+      relationship = "many-to-many") |>
+    arrange(rowid, tag_sql, tag_category, content_tag) |> 
+    filter(
+      !is.na(content_tag)) |> 
+    distinct() |> # 3,859 -> 2,498
+    filter(
+      !(tag_category == "Management" & content_tag  == "None identified"))
+
+  mgt_tags_missing <- mgt_tags |> 
+    filter(is.na(tag_sql)) |> 
+    select(tag_category, content_tag) |>  # select(-rowid) 
+    distinct() |> 
+    arrange(tag_category, content_tag)
+  write_csv(mgt_tags_missing, here("data/tethys_mgt_tags_missing.csv"))
+  stopifnot(nrow(mgt_tags_missing) == 0)
+
+  # write to csv  
+  # TODO: write mgt_csv
+  mgt <- mgt |>
+    select(-data)
+  write_csv(mgt, mgt_csv)
+  mgt_tags <- mgt_tags|> 
+    select(rowid, tag_sql)
+  write_csv(mgt_tags, mgt_tags_csv)
   
   # TODO: ALTER TABLE tethys_mgt_tags ALTER COLUMN rowid PRIMARY KEY.
   # TODO: ADD FOREIGN KEYS for tethys_mgt

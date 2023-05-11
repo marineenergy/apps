@@ -151,45 +151,36 @@ ui <- dashboardPage(
       
       
       #** tab_ba ----
-      # tabItem(
-      #   tabName = "tab_ba",
-      #   # div(
-      #   #   "Filters by:", icon("tags"),
-      #   #   get_content_tag_categories("documents", html=T)),
-      #   helpText(
-      #     HTML("For a proposed project that is likely to affect species listed 
-      #     as endangered or threatened under the Endangered Species Act (ESA) or
-      #     their designated critical habitat, the U.S. Department of Energy (DOE) 
-      #     must provide the National Marine Fisheries Service (NMFS) and/or the 
-      #     US Fish and Wildlife Service (USFWS) with a Biological Assessment (BA) 
-      #     or Biological Evaluation (BE) and seek concurrence that the project is 
-      #     unlikely to adversely affect the species or habitat.")),
-      #   # conditionalPanel(
-      #   #   condition = "output.msg_docs",
-      #   #   htmlOutput("msg_docs")),
-      #   tabsetPanel(
-      #     #*** ba_subtab_map ----
-      #     tabPanel(
-      #       "Map of BA Projects",
-      #       leafletOutput("ba_map")),
-      #     #*** ba_subtab_tbl ----
-      #     tabPanel(
-      #       "Table of Excerpts",
-      #       checkboxGroupInput(
-      #         "cks_docs", 
-      #         "Binary Filters:",
-      #         c(
-      #           "Ixn: Presented as potential interaction?"              = "ck_ixn",
-      #           "Obs: Described from observations at the project site?" = "ck_obs",
-      #           "MP: Monitoring Plan?"                                  = "ck_mp",
-      #           "AMP: Adaptive Management Plan?"                        = "ck_amp",
-      #           "BMP: Best Management Practices applied?"               = "ck_bmps")),
-      #       fluidRow(
-      #         box(
-      #           title = uiOutput("box_ba", inline=T), width = 12,
-      #           withSpinner(
-      #             color = "#3C8DBC",
-      #             dataTableOutput("tbl_ba"))))) )),
+      tabItem(
+        tabName = "tab_ba",
+        # div(
+        #   "Filters by:", icon("tags"),
+        #   get_content_tag_categories("documents", html=T)),
+        helpText(
+          HTML("For a proposed project that is likely to affect species listed
+          as endangered or threatened under the Endangered Species Act (ESA) or
+          their designated critical habitat, the U.S. Department of Energy (DOE)
+          must provide the National Marine Fisheries Service (NMFS) and/or the
+          US Fish and Wildlife Service (USFWS) with a Biological Assessment (BA)
+          or Biological Evaluation (BE) and seek concurrence that the project is
+          unlikely to adversely affect the species or habitat.")),
+        # conditionalPanel(
+        #   condition = "output.msg_docs",
+        #   htmlOutput("msg_docs")),
+        tabsetPanel(
+          #*** ba_subtab_map ----
+          tabPanel(
+            "Map of BA Projects",
+            leafletOutput("ba_map")),
+          #*** ba_subtab_tbl ----
+          tabPanel(
+            "Table of Excerpts",
+            fluidRow(
+              box(
+                title = uiOutput("box_ba", inline=T), width = 12,
+                withSpinner(
+                  color = "#3C8DBC",
+                  dataTableOutput("tbl_ba"))))) )),
       
       #** tab_pubs ----
       tabItem(

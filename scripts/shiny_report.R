@@ -140,6 +140,7 @@ get_content_data <- function(ixns, type = "publications", ...){
   # type = "publications"; ixns = list(c("Stressor.Noise.Airborne", "Receptor.MarineMammals"), c("Technology.Tidal", "Receptor.Fish", "Consequence.Collision"), c("Receptor.Fish", "Management.Compliance"))
   
   # type = "projects"; ixns = list()
+  # type = "bioassessments"; ixns = list()
   
   tbl_tags <- get_content_tags_tbl(type)
   get_rowids_per_ixn <- function(tags){
@@ -173,6 +174,15 @@ get_content_data <- function(ixns, type = "publications", ...){
       left_join(
         tbl(con, "ferc_doc_tags"),
         by = "rowid")  }
+  get_ba_tags <- function(){
+    tbl(con, "ba_docs") |> 
+      select(ba_project, ba_doc_file, ba_doc_url) |> 
+      left_join(
+        tbl(con, "ba_doc_excerpts") %>% 
+          left_join(
+            tbl(con, "ba_doc_excerpt_tags"),
+            by = "rowid"),
+        by = "ba_doc_file") }
   get_pub_tags <- function(){
     tbl(con, "tethys_pubs") %>% 
       select(rowid, uri, title) %>% 
@@ -190,11 +200,12 @@ get_content_data <- function(ixns, type = "publications", ...){
   # get lazy data per content type
   d <- switch(
     type,
-    projects     = get_prj_tags(),
-    management   = get_mgt_tags(),
-    documents    = get_doc_tags(),
-    publications = get_pub_tags(),
-    spatial      = get_spa_tags())
+    projects       = get_prj_tags(),
+    management     = get_mgt_tags(),
+    documents      = get_doc_tags(),
+    bioassessments = get_ba_tags(),
+    publications   = get_pub_tags(),
+    spatial        = get_spa_tags())
   
   if (!is.null(rowids))
     d <- filter(d, rowid %in% !!rowids)
@@ -216,6 +227,7 @@ get_content_ixns <- function(ixns, type = "publications"){
   # type = "projects"; ixns = list(c("Technology.OffshoreWind"), c("Technology.Tidal", "Receptor.Fish", "Consequence.Collision"))
   
   # type = "management"; ixns = list("Technology.Current.Tidal")
+  # type = "bioassessments"; ixns = list()
   
   # ixns_0 <- ixns
   attr(ixns, "message") <- NULL
@@ -317,7 +329,8 @@ get_content_ixns <- function(ixns, type = "publications"){
 }
 
 get_content_tag_categories <- function(type, html=F){
-  # content = "documents"
+  # type = "documents"
+  # type = "bioassessments"
   tbl   <- get_content_tags_tbl(type)
   
   cats <- dbGetQuery(con,  glue("SELECT DISTINCT subltree(tag_sql, 0, 1) AS tag_cat FROM {tbl};")) %>% 
@@ -335,11 +348,12 @@ get_content_tag_categories <- function(type, html=F){
 
 get_content_tags_tbl <- function(type = "publications"){
   c(
-    projects     = "project_tags",
-    management   = "tethys_mgt_tags",
-    documents    = "ferc_doc_tags",
-    publications = "tethys_pub_tags",
-    spatial      = "mc_spatial_tags")[type]
+    projects       = "project_tags",
+    management     = "tethys_mgt_tags",
+    documents      = "ferc_doc_tags",
+    bioassessments = "ba_doc_excerpt_tags",
+    publications   = "tethys_pub_tags",
+    spatial        = "mc_spatial_tags")[type]
 }
 
 get_docs_tbl <- function(ixns = NULL, cks = NULL, type = "documents"){
@@ -373,6 +387,31 @@ get_docs_tbl <- function(ixns = NULL, cks = NULL, type = "documents"){
       AMP = ck_amp, 
       PME = ck_pme, 
       BMP = ck_bmps)
+  
+  if (!is.null(attr(ixns, "message")))
+    attr(d, "message") <- attr(ixns, "message")
+  
+  d
+}
+
+get_ba_tbl <- function(ixns = NULL, cks = NULL, type = "bioassessments"){
+  ixns  <- get_content_ixns(ixns, type)
+  d     <- get_content_data(ixns, type)
+  
+  # filter by checkboxes
+  if (!is.null(cks) && length(cks) > 0){
+    for (col_bln in cks){
+      d <- d %>% 
+        filter(.data[[col_bln]] == TRUE)  }  }
+  
+  d <- d |> 
+    mutate(
+      Document = ifelse(
+        is.na(ba_doc_url),
+        ba_doc_file,
+        glue("<a href='{ba_doc_url}' target='_blank'>{ba_doc_file}</a>"))) |> 
+    select(
+      ID, Project=ba_project, Document, Excerpt=excerpt, Tags)
   
   if (!is.null(attr(ixns, "message")))
     attr(d, "message") <- attr(ixns, "message")
