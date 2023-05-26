@@ -545,8 +545,8 @@ server <- function(input, output, session) {
     
     m <- ifelse(
       n_ixns == 0 & n_cks == 0,
-      HTML(glue("BioAssessment Documents <small>({d_docs_n} rows)</small>")),
-      HTML(glue("BioAssessment Documents <small>({n_docs} of {d_docs_n} rows; filtered by {n_ixns} interactions & {n_cks} checkboxes)</small>")))
+      HTML(glue("FERC Excerpts <small>({d_docs_n} rows)</small>")),
+      HTML(glue("FERC Excerpts <small>({n_docs} of {d_docs_n} rows; filtered by {n_ixns} interactions & {n_cks} checkboxes)</small>")))
   
     #message("box_docs - end")
     
@@ -564,8 +564,8 @@ server <- function(input, output, session) {
     
     m <- ifelse(
       n_ixns == 0 & n_cks == 0,
-      HTML(glue("BioAssessment Documents <small>({d_docs_n} rows)</small>")),
-      HTML(glue("BioAssessment Documents <small>({n_docs} of {d_docs_n} rows; filtered by {n_ixns} interactions & {n_cks} checkboxes)</small>")))
+      HTML(glue("BioAssessment Excerpts <small>({d_docs_n} rows)</small>")),
+      HTML(glue("BioAssessment Excerpts <small>({n_docs} of {d_docs_n} rows; filtered by {n_ixns} interactions & {n_cks} checkboxes)</small>")))
   
     #message("box_ba - end")
     
