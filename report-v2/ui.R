@@ -157,13 +157,30 @@ ui <- dashboardPage(
         #   "Filters by:", icon("tags"),
         #   get_content_tag_categories("documents", html=T)),
         helpText(
-          HTML("For a proposed project that is likely to affect species listed
+          tagList(
+          "For a proposed project that is likely to affect species listed
           as endangered or threatened under the Endangered Species Act (ESA) or
           their designated critical habitat, the U.S. Department of Energy (DOE)
           must provide the National Marine Fisheries Service (NMFS) and/or the
           US Fish and Wildlife Service (USFWS) with a Biological Assessment (BA)
           or Biological Evaluation (BE) and seek concurrence that the project is
-          unlikely to adversely affect the species or habitat.")),
+          unlikely to adversely affect the species or habitat.", br(), br(),
+          "The DOE Water Power Technologies Office updated its NEPA guidance and 
+          template for grant awardees in 2023. Please consult the most recent ", 
+          a("template", 
+            href   = "https://marineenergy.app/files/template_ba_v1.0_final.docx",
+            target = "_blank"), " and ",
+          a("guidance document", 
+            href   = "https://marineenergy.app/files/guidance_template-ba-v1.0_final.docx",
+            target = "_blank"), ". Other Biological Assessments contained 
+          within this repository may be helpful resources but may not be 
+          indicative of the required information for the assessment unless dated 
+          2023 or later.", br(), br(),
+          "Additional information can be found on the DOE Energy Efficiency and 
+          Renewable Energy", a(
+            "Project Management Center", 
+            href = "https://www.eere-pmc.energy.gov/NEPA.aspx", 
+            target = "_blank"), ".")),
         # conditionalPanel(
         #   condition = "output.msg_docs",
         #   htmlOutput("msg_docs")),
