@@ -1177,6 +1177,9 @@ d_mgt_n <- tbl(con, "tethys_mgt") %>% summarize(n = n()) %>% pull(n)
 # load documents ----
 d_docs_n <- tbl(con, "ferc_docs") %>% summarize(n = n()) %>% pull(n)
 
+# load ba ----
+d_ba_n <- tbl(con, "ba_doc_excerpts") %>% summarize(n = n()) %>% pull(n)
+
 # load publications ----
 d_pubs_n <- tbl(con, "tethys_pubs") %>% summarize(n = n()) %>% pull(n)
 
