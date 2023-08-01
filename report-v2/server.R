@@ -280,12 +280,38 @@ server <- function(input, output, session) {
     
     # #message("ba_map - beg")
     
-    ba_sites <- tbl(con, "ba_sites") %>% 
-      collect() %>% 
+    d_docs <- tbl(con, "ba_sites") |> 
+      left_join(
+        tbl(con, "ba_docs"),
+        by = "ba_project") |> 
+      select(site_name, ba_project, ba_doc_file, ba_doc_url) |> 
+      collect() |> 
+      group_by(site_name) |> 
+      nest(data = c(ba_project, ba_doc_file, ba_doc_url)) |> 
+      mutate(
+        docs = map_chr(data, \(x){
+          x |> 
+            mutate(
+              h = glue("
+                <li>{ba_project}: <a href='{ba_doc_url}'>{ba_doc_file}</a></li>")) |> 
+            pull(h) |> 
+            paste(collapse= "\n") })) |> 
+      select(site_name, docs)
+
+    ba_sites <- tbl(con, "ba_sites") |> 
+      group_by(site_name, lat, lon) |> 
+      summarize(n_projects = n()) |> 
+      collect() |> 
+      left_join(
+        d_docs,
+        by = "site_name") |> 
       mutate(
         label_html = glue(
-          "<b>{ba_project}</b><br>
-          at {site_name}") %>% lapply(htmltools::HTML))
+          "Site: <b>{site_name}</b><br>
+          Project documents:
+          <ul style='padding-inline-start: 20px;'>
+          {docs}
+          <ul>") %>% lapply(htmltools::HTML))
     
     m <- leaflet::leaflet(
       data    = ba_sites, width = "100%",
@@ -505,7 +531,7 @@ server <- function(input, output, session) {
     if (debug)
       message("get_ba() - beg")
     
-    d <- get_ba_tbl(ixns = values$ixns, cks = input$cks_docs)
+    d <- get_ba_tbl(ixns = values$ixns)
     #d <- get_docs_tbl(ixns = values$ixns, cks = input$cks_docs)
     
     if (debug)
