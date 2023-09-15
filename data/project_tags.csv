@@ -19,6 +19,6 @@ rowid,tag_sql
 18,Technology.Wave
 19,Technology.Current.Tidal
 20,Technology.Wave
-21,Technology.Current.Tidal
-22,Technology.Wave
+21,Technology.Wave
+22,Technology.Current.Tidal
 23,Technology.Wave

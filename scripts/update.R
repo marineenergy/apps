@@ -59,6 +59,20 @@ update_projects <- function(){
   write_csv(project_tags   , prj_tags_csv)
   write_csv(project_permits, prj_permits_csv)
   
+  # 2023-09-14 update: RITE Inactive 2021-12-23 ...
+  # NEW:
+  #projects |> 
+  #  filter(project == "RITE")
+  #     rowid project tag_technology date_beg   date_end   project_status   longitude latitude
+  #     <chr> <chr>   <chr>          <date>     <date>     <chr>                <dbl>    <dbl>
+  #   1 17    RITE    Current.Tidal  2002-09-09 2021-12-23 Inactive Project     -73.9     40.8
+  # OLD:
+  #tbl(con, "projects") |> 
+  #  filter(project == "RITE")
+  #   rowid project tag_technology date_beg   date_end   project_status longitude latitude
+  #   <chr> <chr>   <chr>          <date>     <date>     <chr>              <dbl>    <dbl>
+  # 1 17    RITE    Current.Tidal  2002-09-09 2023-03-27 Active Project     -73.9     40.8
+
   dbWriteTable(con, "projects", projects, overwrite = T)
   dbWriteTable(con, "project_permits", project_permits, overwrite = T)
   #dbListTables(con) %>% sort() %>% str_extract("proj.*") %>% na.omit()
