@@ -8,6 +8,7 @@ ui <- dashboardPage(
     titleWidth = 310,
     #** navbarMenu ----
     leftUi = navbarMenu(
+      id = "tabs",
       navbarTab(tabName = "tab_prj",     "Projects"),
       navbarTab(tabName = "tab_mgt",     "Management"),
       navbarTab(tabName = "tab_docs",    "Documents"),
