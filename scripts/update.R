@@ -80,7 +80,6 @@ update_projects <- function(){
         prj == "RITE"          ~ "Roosevelt Island Tidal Energy"))
   dbWriteTable(con, "project_names", project_names, overwrite = T)
   
-  
   md2html <- function(x){
     markdownToHTML(text = x, fragment.only = T, options = c())}
   

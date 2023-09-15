@@ -22,6 +22,17 @@ server <- function(input, output, session) {
       footer   = googleSignInUI_btn_signout("login"))
   })
   
+  # tab switch by url ----
+  observe({
+    q <- parseQueryString(session$clientData$url_search)
+    
+    if ("tab" %in% names(q)){
+      if (!q$tab %in% c("prj","mgt","docs","ba","pubs","spatial","rpt"))
+        next
+      updateTabItems(session, inputId = "tabs", selected = glue("tab_{q$tab}"))
+    }
+  })
+  
   # map ----
   output$map_side <- renderLeaflet({
     message("output$map_side - beg")
