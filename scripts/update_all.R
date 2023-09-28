@@ -19,6 +19,10 @@ source(here("scripts/update.R")) # connection object
 # update data/projects.csv
 update_projects()
 
+# update BioAssessment data/ba_projects|sites|docs.csv
+update_ba()
+
+
 # update db tables: tags
 update_tags()
 
