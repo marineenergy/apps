@@ -9,8 +9,16 @@ source(file.path(dir_scripts, "update.R"))
 
 # LIBRARIES ----
 # devtools::install_github("DavidPatShuiFong/DTedit@f1617e253d564bce9b2aa67e0662d4cf04d7931f")
+# DEBUG
+devtools::load_all("/share/github/DTedit")
+
+#https://github.com/rstudio/DT/releases/tag/v0.19
+# remotes::install_github("rstudio/DT@v0.19") # vs 0.33
+
 shelf(
   bbest/DTedit, # DavidPatShuiFong/DTedit, # [@bbest pr](https://github.com/DavidPatShuiFong/DTedit/pull/35)
+  # DavidPatShuiFong/DTedit, # 4 commits behind jbryer/DTedit
+  # jbryer/DTedit,
   DBI, DT, 
   glue, purrr, readr, tidyr,
   shiny, shinycssloaders)
@@ -80,9 +88,12 @@ prj_doc_lookup <- prj_doc_sec_lookup %>%
 
 # INSERT
 ferc.insert.callback <- function(data, row) {
-  # browser()
-  d <- data %>% slice(row) %>% 
-    na_if("NA") %>% na_if("") %>% 
+  d <- data |> slice(row) |> tibble() |> 
+    # na_if("NA") %>% na_if("") %>%
+    #   Error in na_if(., "NA") : 
+    #     Can't convert `y` <character> to match type of `x` <data.frame>.
+    mutate(across(where(is.character), na_if, "")) |> 
+    mutate(across(where(is.character), na_if, "NA")) |> 
     mutate(rowid = max(get_ferc()$rowid) + 1)
   d_docs <- get_new_docs(d) # %>% tibble() # data to INSERT into ferc_docs
   d_tags <- get_new_tags(d) # %>% tibble()  # data to INSERT into ferc_doc_tags
