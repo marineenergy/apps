@@ -16,8 +16,9 @@ ck_con()
 
 # LIBRARIES ----
 # devtools::install_github("DavidPatShuiFong/DTedit@f1617e253d564bce9b2aa67e0662d4cf04d7931f")
+# devtools::load_all("/share/github/DTedit")
 shelf(
-  DavidPatShuiFong/DTedit, # [@bbest pr](https://github.com/DavidPatShuiFong/DTedit/pull/35)
+  bbest/DTedit, # [@bbest pr](https://github.com/DavidPatShuiFong/DTedit/pull/35)
   DBI, DT, 
   glue, purrr, readr, tidyr,
   shiny, shinycssloaders, shinyFeedback)
@@ -28,6 +29,7 @@ options(readr.show_col_types = FALSE)
 # fs::file_touch(here::here("edit-ba/restart.txt"))
 
 # GPT params
+py           <- "/opt/venv/bin/python"   # default python venv from docker container
 gpt_py       <- "/share/github/ba/tag_excerpt_gpt.py"
 gpt_versions <- c("4","3.5")
 #gpt_version <- "3.5"
@@ -159,7 +161,7 @@ ba.insert.callback <- function(data, row) {
   if (d$ck_gpt){
     tmp_txt <- tempfile(fileext=".txt")
     writeLines(d$excerpt, tmp_txt)
-    cmd <- glue('python "{gpt_py}" "{tmp_txt}" "{d$gpt_version}"')
+    cmd <- glue('{py} "{gpt_py}" "{tmp_txt}" "{d$gpt_version}"')
     message(cmd)
     res <- system(cmd, intern = T)
     unlink(tmp_txt)
