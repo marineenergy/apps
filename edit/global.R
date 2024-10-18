@@ -89,9 +89,6 @@ prj_doc_lookup <- prj_doc_sec_lookup %>%
 # INSERT
 ferc.insert.callback <- function(data, row) {
   d <- data |> slice(row) |> tibble() |> 
-    # na_if("NA") %>% na_if("") %>%
-    #   Error in na_if(., "NA") : 
-    #     Can't convert `y` <character> to match type of `x` <data.frame>.
     mutate(across(where(is.character), na_if, "")) |> 
     mutate(across(where(is.character), na_if, "NA")) |> 
     mutate(rowid = max(get_ferc()$rowid) + 1)
@@ -117,12 +114,10 @@ ferc.insert.callback <- function(data, row) {
 
 # UPDATE
 ferc.update.callback <- function(data, olddata, row) {
-  # browser()
-  d <- data %>% slice(row) %>% 
-    tibble() %>% 
-    mutate(across(starts_with("ck_"), as.logical)) %>% 
-    na_if("NA") %>% 
-    na_if("") 
+  d <- data |> slice(row) |>
+    tibble() |> 
+    mutate(across(where(is.character), na_if, "")) |> 
+    mutate(across(where(is.character), na_if, "NA"))
   d_docs <- get_new_docs(d)  # data to UPDATE ferc_docs
   d_tags <- get_new_tags(d)  # data to be APPENDED to ferc_doc_tags
   
@@ -162,8 +157,11 @@ ferc.update.callback <- function(data, olddata, row) {
 
 # DELETE
 ferc.delete.callback <- function(data, row) {
-  # browser()
-  d <- data %>% slice(row) %>% na_if("NA") %>% na_if("")
+  d <- data |> 
+    slice(row) |> 
+    mutate(across(where(is.character), na_if, "")) |> 
+    mutate(across(where(is.character), na_if, "NA"))
+  
   sql_delete_docs <- glue("DELETE FROM ferc_docs WHERE rowid = {d$rowid};")
   sql_delete_tags <- glue("DELETE FROM ferc_doc_tags WHERE rowid = {d$rowid}")
   
