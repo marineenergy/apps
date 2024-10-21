@@ -1,4 +1,5 @@
 # AI generated at https://gallery.shinyapps.io/assistant/ 
+# [Shiny Assistant: Prototype and build Shiny applications with the help of AI | Winston Chang | Posit - YouTube](https://www.youtube.com/watch?v=fJNKdwdVQ8Q)
 #
 # Prompt 1:
 # Create a table editing app that updates a database with two tables, one of
