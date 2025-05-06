@@ -8,7 +8,7 @@ debug = T
 
 # devtools::install_github("RinteRface/shinydashboardPlus@4f23ece8c1ab50ae8e9505400ea7c266c6a04731") # Dec 7, 2020
 librarian::shelf(
-  DT, r-lib/gargle, MarkEdmondson1234/googleAuthR, htmltools, httr, jsonlite, leaflet, mapedit, plotly, purrr,
+  DT, r-lib/gargle, MarkEdmondson1234/googleAuthR, geojsonio, htmltools, httr, jsonlite, leaflet, mapedit, plotly, purrr,
   sf, shinydashboard, RinteRface/shinydashboardPlus, shiny, shinycssloaders, shinyjs, shinyWidgets)
 renderDataTable <- DT::renderDataTable
 # devtools::session_info() # confirm versions, esp shinydashboardPlus
